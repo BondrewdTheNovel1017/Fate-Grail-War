@@ -7,7 +7,7 @@
    last night's battles happened (and learn a servant's true name), or, for the students, go to school. */
 var FIELD = { baseR: 380, perLvl: 70, slow: [1, 1, 0.9, 0.86, 0.82, 0.78], bolt: [0, 0, 0, 7, 5, 3.5], boltDmg: 7, home: [1, 1, 1.06, 1.08, 1.12, 1.15], seen: 5 };
 var DAYTASK = { fortify: 35, ley: 30, trace: 22, school: 30, contest: 320 };
-var LEY = [{ x: 1500, y: 1060, name: 'Ryuudou Temple ley line' }, { x: 1260, y: 3060, name: 'Church hill ley line' }, { x: 10400, y: 4900, name: 'Central Park ley line' }];
+var LEY = [{ x: 1500, y: 1060, name: 'Ryuudou Temple ley line' }, { x: 1260, y: 3060, name: 'Church hill ley line' }, { x: 10450, y: 5050, name: 'Civic Hall ley line' }];
 var SCHOOL = { x: 4050, y: 2720, name: 'Homurahara Academy' }, STUDENTS = { shirou: 1, rin: 1, sakura: 1 };
 function initFields() {
   G.fields = {}; G.seenBy = {}; G.tn = {}; G.traces = []; G.tasks = [];
@@ -21,6 +21,7 @@ function initFields() {
     G.seenBy[t] = {}; G.tn[t] = {};
   });
   G.f.forEach(function (f) { if (!f.def.isMaster) G.tn[f.team][f.def.id] = true; });
+  if (G.clock) newPhaseEvents();
 }
 function fieldR(F) { return FIELD.baseR + FIELD.perLvl * F.lvl; }
 function fieldAlive(F) { return G.f.some(function (f) { return f.team === F.team && f.st !== 'dead' && (f.def.isMaster || f.def.cls === 'Caster'); }); }
@@ -40,7 +41,7 @@ function fieldsTick(dt) {
     G.f.forEach(function (e) {
       if (e.team === F.team || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = inHomeField(F, e);
-      if (inside && !concealed(e)) {
+      if (inside && !concealed(e) && !truceZone(e)) {
         G.seenBy[F.team][e.idx] = G.time + FIELD.seen;
         if (!F.inside[e.idx]) FX.field('intrude', F, e);
         intr.push(e);
@@ -104,6 +105,7 @@ function finishTask(t, k) {
   if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); note = 'Bounded field strengthened to level ' + F.lvl; }
   else if (k.kind === 'ley') { if (m) { m.mana = m.manaMax; m.manaBonus = 40; } note = 'Mana overflows: full mana and 40 stored'; }
   else if (k.kind === 'school') { G.expo[t] = Math.max(0, (G.expo[t] || 0) - 35); if (m) m.mana = m.manaMax; note = 'A normal school day: suspicion fades'; }
+  else if (k.kind === 'summons') { summonsDone(t); note = 'The overseer clears your name, tells you where the Grail will descend, and names a rival'; }
   else if (k.kind === 'banquet') { banquetDone(t, k); note = 'You share the king\u2019s wine, and the names of everyone at the table'; }
   else if (k.kind === 'trace') { var id = k.sv.filter(function (q) { return !G.tn[t][q]; })[0], s = G.f.filter(function (f) { return f.def.id === id; })[0]; if (s) learnName(t, s, 'trace'); note = 'Traces read'; }
   FX.task(t, k, note);
@@ -117,7 +119,7 @@ function aiDayGoal(f) {
   var best = null, bs = -1e9;
   G.tasks.forEach(function (k) {
     if (!taskFor(f.team, k)) return;
-    var v = { fortify: 60, trace: 50, ley: 30, school: 45, banquet: k.host === f.team ? 120 : 40 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
+    var v = { fortify: 60, trace: 50, ley: 30, school: 45, banquet: k.host === f.team ? 120 : 40, summons: 45 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
     if (G.f.some(function (e) { return e.team !== f.team && e.st !== 'dead' && Math.hypot(e.x - k.x, e.y - k.y) < 500 && knows(f, e); })) v -= 60;
     if (v > bs) { bs = v; best = k; }
   });

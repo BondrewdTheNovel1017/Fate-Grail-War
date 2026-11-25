@@ -16,6 +16,8 @@ function hurt(att, def, a, mult, src) {
   if (att && G.tn && att.team !== def.team && !def.def.isMaster && G.clock && G.tn[att.team] && G.tn[att.team][def.def.id]) dmg *= 1.1; // true name known
   if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
   if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
+  if (att && att.rampT > G.time) dmg *= EVT.berserk.dmg; // Berserker unchained
+  if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
   if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; }
@@ -106,7 +108,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) npSeen(f); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -336,7 +338,7 @@ function stepF(f, dt) {
   var dec = Math.exp(-9 * dt); f.kx *= dec; f.ky *= dec;
 }
 function explode(p) {
-  var e = p.a.explode; p.exploded = true; hitMobsAt(p.x, p.y, e.r, e.dmg);
+  var e = p.a.explode; p.exploded = true; hitMobsAt(p.x, p.y, e.r, e.dmg, p.owner.team);
   FX.fx('explode', p.x, p.y, { def: p.owner.def, r: e.r, big: e.big }); FX.snd(e.big ? 'boomBig' : 'boom', { x: p.x, y: p.y, idx: -1 }); FX.shake(e.big ? 16 : 9);
   enemiesOf(p.owner).forEach(function (o) { if (Math.hypot(o.x - p.x, o.y - p.y) <= e.r + FR) { var r = hurt(p.owner, o, { dmg: e.dmg, stag: e.stag || 0.7, power: e.big ? 3 : 2, gb: true, unblock: !!e.unblock, noParry: true, arc: 0, key: p.a.key, kind: 'blast', spell: true, hs: 0.08 }, p.mult, { x: p.x, y: p.y }); if (r === 'hit') { var an = Math.atan2(o.y - p.y, o.x - p.x); o.kx = Math.cos(an) * 300; o.ky = Math.sin(an) * 300; } } });
 }
@@ -351,7 +353,7 @@ function stepProj(dt) {
     if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
     var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
     for (var wi = 0; wi < es.length && !p.dead; wi++) { var we = es[wi]; if ((!p.a.wave || p.a.beam || p.a.key === 'np') && !p.a.strip && we.wallT > 0 && dist(p, we) < 190) { p.dead = true; FX.spark(p.x, p.y, '#ffd36b', 8); if (p.a.key === 'np') { FX.text(we, 'NP BLOCKED'); FX.fx('wallBlock', p.x, p.y, we); } } }
-    if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg)) p.dead = !p.a.beam && !p.a.wave;
+    if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg, p.owner.team)) p.dead = !p.a.beam && !p.a.wave;
     for (var ti = 0; ti < es.length && !p.dead; ti++) {
       tgt = es[ti];
       var dx = tgt.x - sx, dy = tgt.y - sy, seg = Math.hypot(ox, oy) || 1, tt = clamp((dx * ox + dy * oy) / (seg * seg), 0, 1);

@@ -43,6 +43,7 @@ function knowsExact(f, e) {
   if (!e || !f || e.team === f.team) return true;
   // an Assassin in Presence Concealment is found only up close, or by the one it just struck
   if (concealed(e) && !(sameZone(f, e) && dist(f, e) < 120) && !(f.lastHit && f.lastHit.by === e && G.time - (f.lastHitT || -99) < 3)) return false;
+  if (G.ghost && ghosted(f, e)) return false;
   if (G.seenBy && G.seenBy[f.team] && G.seenBy[f.team][e.idx] > G.time) return true;
   if (!clockOn() || G.clock.final) return true;
   if (G.reveal[e.team] > G.time) return true;
@@ -57,7 +58,9 @@ function knows(f, e) { return knowsExact(f, e) || (clockOn() && (G.expo[e.team] 
 function rumored(team) { return clockOn() && !G.clock.final && (G.expo[team] || 0) >= EXPO.rumor; }
 // where an AI goes looking when it knows of nobody: landmarks, rival homes, busy places
 function huntPoint(f) {
-  var E = G.event; if (E && E.kind === 'harbor' && !f.def.isMaster && f.hp > f.def.hp * 0.6) return { x: E.x, y: E.y };
+  var E = G.event;
+  if (E && E.kind === 'challenge' && (E.host === f || E.goers[f.idx])) return { x: E.x, y: E.y };
+  if (E && E.kind === 'horror' && !f.def.isMaster && f.team !== E.culprit && f.hp > f.def.hp * 0.5) return { x: E.boss.x, y: 2430 };
   var nz = null, nd = 1e9; (G.noise || []).forEach(function (q) { var d = Math.hypot(q.x - f.x, q.y - f.y); if (G.time - q.t < 15 && d < q.r && d < nd && d > 150) { nd = d; nz = q; } });
   if (nz) { f.hunt = { x: nz.x, y: nz.y }; f.huntT = G.time + 20; return f.hunt; }
   if (f.hunt && G.time < f.huntT && dist(f, f.hunt) > 220) return f.hunt;

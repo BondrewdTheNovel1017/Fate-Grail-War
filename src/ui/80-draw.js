@@ -405,7 +405,7 @@ function drawWorld() {
   });
   ghosts.forEach(function (gh) { var I = IMG[gh.id].body; if (!weaponOK(I)) return; g.save(); g.globalAlpha = 0.4 * (1 - gh.t / gh.life); g.translate(gh.x, gh.y); g.rotate(gh.face); g.drawImage(I.im, I.x, I.y, I.w, I.h); g.restore(); });
   puffs.forEach(function (p) { var pp = p.t / p.life; g.beginPath(); g.arc(p.x, p.y, p.r * (1 + 1.8 * pp), 0, 6.283); g.fillStyle = 'rgba(' + p.rgb + ',' + (0.45 * (1 - pp)) + ')'; g.fill(); });
-  drawCivs(g); drawMobs(g);
+  drawCivs(g); drawMobs(g); G.f.forEach(function (f) { if (visL(f)) drawRampAura(g, f); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawField(f, i, ar); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawTelegraph(f, i, ar); });
   // a fighter frozen by their own hit-stop shudders in place when they are the one hit

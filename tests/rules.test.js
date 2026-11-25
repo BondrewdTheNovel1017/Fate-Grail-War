@@ -372,15 +372,37 @@ test('the school event: servants are held out, everyone inside is drained, three
   assert.ok(!G.event, 'breaking the three circles ends it'); assert.ok(ev.includes('circle'));
 });
 
-test('harbor challenge and Church bounty give a Command Seal back; the Grail draws everyone to the temple', () => {
+test('the Challenge and the Church\'s bounty give a Command Seal back; an unanswered challenge rewards its host', () => {
   const E = loadEngine(), M = E.MASTERS, S = E.SERV;
-  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.cu, master: M.waver }, { servant: S.gilles, master: M.kariya }, { servant: S.medea, master: M.shirou }], { nights: 3 });
-  const rin = G.f.find((f) => f.def.id === 'rin'), rich = rin.partner, cu = G.f.find((f) => f.def.id === 'cu'), gil = G.f.find((f) => f.def.id === 'gilles');
-  E.useSeal(rin, 'heal'); assert.ok(rin.sealUsed.heal);
-  E.startHarbor(); cu.x = E.EVT.harbor.x; cu.y = E.EVT.harbor.y; cu.lastHit = { by: rich, key: 'light' }; E.kill(cu, true);
-  assert.ok(!rin.sealUsed.heal, 'winning at the harbor restores a seal'); assert.ok(!G.event);
-  E.useSeal(rin, 'heal'); G.clock.n = 2; E.startBounty(); assert.strictEqual(G.event.team, gil.team, 'the Church hunts Caster first');
-  assert.ok(E.knows(cu, gil) || true); gil.lastHit = { by: rich, key: 'light' }; E.kill(gil, true); assert.ok(!rin.sealUsed.heal, 'the bounty pays a seal');
-  E.startGrail(); const g = G.event; const far = rin; far.x = 9000; far.y = 6000; const h = far.hp; E.eventsTick(1);
-  assert.ok(far.hp < h, 'outside the Grail\'s light you wither'); for (let i = 0; i < 400; i++) E.eventsTick(1); assert.ok(g.r <= E.EVT.grail.r1 + 1);
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.diarmuid, master: M.kayneth }, { servant: S.gilles, master: M.kariya }, { servant: S.medea, master: M.shirou }], { nights: 3 });
+  const rin = G.f.find((f) => f.def.id === 'rin'), rich = rin.partner, dia = G.f.find((f) => f.def.id === 'diarmuid'), kay = dia.partner, gil = G.f.find((f) => f.def.id === 'gilles');
+  E.startChallenge(); assert.strictEqual(G.event.host, dia, 'Diarmuid issues the challenge');
+  E.useSeal(kay, 'heal'); dia.x = G.event.x; dia.y = G.event.y; G.event.t = G.event.dur; E.eventsTick(0.01);
+  assert.ok(!kay.sealUsed.heal, 'nobody answered: the host regains a seal');
+  E.useSeal(rin, 'heal'); E.startChallenge(); const C = G.event; dia.x = C.x; dia.y = C.y; dia.lastHit = { by: rich, key: 'light' }; E.kill(dia, true);
+  assert.ok(!rin.sealUsed.heal, 'winning the challenge restores a seal');
+  E.useSeal(rin, 'heal'); E.startBounty(); assert.strictEqual(G.event.team, gil.team, 'the Church hunts Gilles first');
+  gil.lastHit = { by: rich, key: 'light' }; E.kill(gil, true); assert.ok(!rin.sealUsed.heal, 'the bounty pays a seal');
+});
+
+test('the Horror in the River, the False Death and Berserker Unchained', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, ev = [];
+  E.FX.event = (k) => ev.push(k);
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.hassan, master: M.kirei }, { servant: S.heracles, master: M.illya }, { servant: S.gilles, master: M.kariya }], { nights: 3 });
+  const rich = G.f.find((f) => f.def.id === 'richard'), has = G.f.find((f) => f.def.id === 'hassan'), her = G.f.find((f) => f.def.id === 'heracles');
+  E.startHorror(); const H = G.event; assert.strictEqual(H.culprit, G.f.find((f) => f.def.id === 'gilles').team, 'Gilles raised it');
+  rich.x = 6000; rich.y = 2430; G.f.find((f) => f.def.id === 'illya').x = 6050; G.f.find((f) => f.def.id === 'illya').y = 2430;
+  H.boss.x = 6000; H.boss.y = 2560; assert.ok(E.inTruce(rich, G.f.find((f) => f.def.id === 'illya')), 'truce near the horror');
+  H.boss.hp = 1; E.press(rich, 'light'); for (let i = 0; i < 40; i++) E.simStep(E.STEP);
+  assert.ok(ev.includes('horrorDown'), 'a blow from the bridge brings it down');
+  G.event = null; G.clock.evDone = false; E.startFalseDeath(); assert.strictEqual(G.event.team, has.team, 'the Assassin fakes its death');
+  rich.x = 3000; rich.y = 3000; has.x = 3300; has.y = 3000; assert.ok(!E.knowsExact(rich, has), 'nobody knows it is alive');
+  G.event = null; E.startBerserk(); assert.strictEqual(G.event.f, her, 'Heracles is unchained'); assert.ok(her.rampT > G.time && E.knows(rich, her));
+});
+
+test('the final night: the Grail descends on one of three ley lines, pure or corrupted', () => {
+  const E = loadEngine(), seen = new Set();
+  for (let n = 0; n < 30; n++) { const G = E.newWar(E.warTeams('richard', 'rin', 3), { nights: 3 }); G.clock.final = true; G.clock.phase = 'night'; G.clock.t = 61; E.newPhaseEvents(); E.eventsTick(0.1); seen.add(G.event.name + (G.event.corrupt ? '*' : '')); }
+  const names = new Set([...seen].map((s) => s.replace('*', '')));
+  assert.strictEqual(names.size, 3, [...seen].join(', ')); assert.ok([...seen].some((s) => s.endsWith('*')) && [...seen].some((s) => !s.endsWith('*')), 'both natures appear');
 });

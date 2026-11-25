@@ -100,7 +100,7 @@ function kill(f, noRevive) {
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
   else { G.f.forEach(pickTarget); }
   if (G.tn) traceKill(f);
-  if (G.event) { harborKill(f); bountyKill(f); }
+  if (G.event) { challengeKill(f); bountyKill(f); }
   if (G.mode === 'war') { if (f.killer && f.killer.st !== 'dead' && f.killer !== f) FX.say(f.killer, 'kill'); if (f.partner && f.partner.st !== 'dead' && f.partner.team === f.team) FX.say(f.partner, f.def.isMaster ? 'masterdown' : 'servantdown'); }
   FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); if (FX.near(f.x, f.y)) { G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.slow(1.1); }
 }
