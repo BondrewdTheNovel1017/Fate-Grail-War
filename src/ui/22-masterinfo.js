@@ -40,7 +40,7 @@ function masterDetailHTML(m) {
   h += '<div class="dbox" style="--bc:' + c + '"><h4>Attacks</h4><ul><li><b>Light, ' + esc(A.light.name) + '</b>: ' + esc(I.light || '') + '</li><li><b>Heavy, ' + esc(A.heavy.name) + '</b>: ' + esc(I.heavy || '') + '</li>' + (I.ammo ? '<li><b>Magazine</b>: ' + esc(I.ammo) + '</li>' : '') + '</ul></div>';
   h += '<div class="dgrid"><div class="dbox" style="--bc:var(--unb)"><h4>Skill: ' + esc(A.skill.name) + '<span>' + A.skill.cd + 's cooldown &middot; ' + MANA.skillCost + ' mana</span></h4><p>' + esc(I.skill || '') + '</p></div>' +
     '<div class="dbox" style="--bc:var(--gold)"><h4>Signature: ' + esc(A.np.name) + '<span>' + A.np.cd + 's cooldown &middot; ' + MANA.sigCost + ' mana</span></h4><p>' + esc(I.np || '') + '</p></div></div>';
-  h += '<p class="note" style="margin:0">In the war, a master’s mana also pays for their servant’s Noble Phantasm. Masters deal half damage to servants.</p></div>';
+  h += '<p class="note" style="margin:0">In the war, a master’s mana also pays for their servant’s Noble Phantasm. Masters deal half damage to servants' + (m.fightsServants ? ', except Shirou: he deals full damage and fights beside his servant.' : '.') + '</p></div>';
   return h;
 }
 function entityRosterHTML(kind, cur, attr, withRandom) {

@@ -321,9 +321,13 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
 (function () {
 /*ENGINE_START*/
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, near: function () { return true; } };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, near: function () { return true; } };
 // hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
+// Hit-stop is per fighter: only the attacker and the one hit freeze, the rest of the war keeps moving.
+function hitPause(att, def, v) { if (att) att.hs = Math.max(att.hs || 0, v); if (def) def.hs = Math.max(def.hs || 0, v); }
+// The whole screen freezes only for big moments near the viewer: kills, God Hand, a Noble Phantasm connecting, a parry a human is part of.
 function hitstopAt(o, v) { if (o && FX.near(o.x, o.y)) G.hitstop = Math.max(G.hitstop, v); }
+function humanIn(a, b) { return !!((a && a.idx !== undefined && !G.ai[a.idx]) || (b && b.idx !== undefined && !G.ai[b.idx])); }
 var G = null;
 var PILLARS = [];
 /* ---- maps: obstacles are circles (o); rectangular blocks (b) are drawn as boxes and collide as a row of hidden circles ---- */
@@ -1056,8 +1060,8 @@ var MASTERS = {
     heavy: { name: 'Calico long burst', ammo: true, kind: 'barrage', max: 0, gb: false, stag: 0.05, wind: 0.3, act: 1.3, rec: 0.5, dmg: 1.8, speed: 1700, range: 640, rate: 0.065, spread: 0.09, track: 2.2, power: 1, noStag: true, reach: 0, lunge: 0, cost: 26, shape: 'tracer' },
     skill: { name: 'Time Alter: Double Accel', kind: 'haste', dur: 3, wind: 0.15, act: 0.05, rec: 0.15, cd: 12, cost: 12 },
     np: { name: 'Origin Bullet', kind: 'proj', speed: 2600, range: 950, dmg: 18, rad: 5, silence: 10, vsServant: 0.9, wind: 0.55, act: 0.05, rec: 0.7, cost: 0, shape: 'tracer', cd: 32, aiUse: 'origin' } }),
-  shirou: MD({ id: 'shirou', name: 'Shirou Emiya', type: 'Fledgling mage', col: '#d9783a', hp: 115, spd: 212, guard: 0.5, trace: true, vsServant: 0.6, ranged: false, combo: 3,
-    brief: 'A fledgling who gets up close with a reinforced blade and stands in a servant\u2019s fight. Fighting fills his Trace: at 40 he learns Trace On (Kanshou and Bakuya, Overedge), at 100 he can open Unlimited Blade Works once.',
+  shirou: MD({ id: 'shirou', name: 'Shirou Emiya', type: 'Fledgling mage', col: '#d9783a', hp: 115, spd: 212, guard: 0.5, trace: true, fightsServants: true, ranged: false, combo: 3,
+    brief: 'A fledgling who gets up close with a reinforced blade and stands in a servant\u2019s fight: the one master who deals full damage to servants, with the health of a human. Fighting fills his Trace: at 40 he learns Trace On (Kanshou and Bakuya, Overedge), at 100 he can open Unlimited Blade Works once.',
     light: { name: 'Reinforced blade', kind: 'melee', dmg: 5, reach: 78, arc: 0.95, wind: 0.24, act: 0.08, rec: 0.22, lunge: 30, cost: 8, stag: 0.3, power: 1 },
     heavy: { name: 'Reinforced cleave', kind: 'melee', dmg: 13, reach: 90, arc: 1.0, wind: 0.42, max: 0.9, act: 0.12, rec: 0.6, lunge: 60, cost: 20, stag: 0.6, power: 2, gb: true },
     skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.3, act: 0.05, rec: 0.2, cd: 14, cost: 12 },
@@ -1326,7 +1330,7 @@ function hurt(att, def, a, mult, src) {
   var dmg = a.dmg * (att ? att.def.dmg : 1) * (mult || 1);
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
   if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
-  if (att && att.def.isMaster && !def.def.isMaster) dmg *= (a.vsServant || 0.5);
+  if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
@@ -1343,14 +1347,14 @@ function hurt(att, def, a, mult, src) {
     def.stat.parry++; FX.text(def, 'COUNTER'); FX.spark(def.x, def.y, '#ffd36b', 12); FX.shake(5); FX.snd('counter', def); FX.fx('counter', def.x, def.y, def);
     if (att && melee) { var rd = 12 * def.def.dmg; att.hp -= rd; def.stat.dealt += rd; setStag(att, 0.9); if (att.hp <= 0) kill(att); }
     else if (!melee) { src.dead = true; }
-    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); hitstopAt(def, 0.1);
+    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); hitPause(melee ? att : null, def, 0.1); if (humanIn(att, def)) hitstopAt(def, 0.1);
     return 'counter';
   }
   var front = Math.abs(angDiff(def.face, angTo(def, s))) < 1.75;
   if (def.guarding && front && !a.unblock) {
     if (def.parryOk && def.guardT <= (def.def.parryWin || PARRY) && !a.noParry) {
       def.stat.parry++; gainMom(def, 12); def.ripo = 1.2; FX.text(def, 'PARRY'); FX.spark(def.x, def.y, '#ffffff', 14); FX.shake(6); FX.snd('parry', def); FX.fx('parry', def.x, def.y, def);
-      hitstopAt(def, 0.12);
+      hitPause(melee ? att : null, def, 0.12); if (humanIn(att, def)) hitstopAt(def, 0.12);
       if (att && melee) setStag(att, 0.9); else if (src) src.dead = true;
       return 'parry';
     }
@@ -1359,13 +1363,13 @@ function hurt(att, def, a, mult, src) {
     if (a.gb || def.sta <= 0) {
       def.stat.gbreak++; def.sta = Math.max(def.sta, 0); def.guarding = false;
       var gd = dmg * 0.6; def.hp -= gd; def.stat.taken += gd; if (att) { att.stat.dealt += gd; att.stat.hits++; gainMom(att, gd * 0.5); }
-      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); hitstopAt(def, 0.1);
+      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); hitPause(melee ? att : null, def, 0.1);
       if (def.hp <= 0) kill(def);
       return 'gbreak';
     }
     var cd = dmg * (1 - def.def.guard * (1 - ((att && att.def.guardPierce) || 0))); def.hp -= cd; def.stat.taken += cd; def.stat.blocks++;
     if (att) { att.stat.dealt += cd; gainMom(att, cd * 0.4); }
-    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); hitstopAt(def, 0.035);
+    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); hitPause(melee ? att : null, def, 0.035);
     if (def.hp <= 0) kill(def);
     return 'block';
   }
@@ -1385,7 +1389,8 @@ function hurt(att, def, a, mult, src) {
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
   if (a.power >= 3) { FX.slow(0.5); FX.fx('npHit', def.x, def.y, def); }
-  hitstopAt(def, a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045));
+  var hsv = a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045);
+  if (a.power >= 3 && a.key === 'np' && att && !att.def.isMaster) hitstopAt(def, hsv); else hitPause(melee ? att : null, def, hsv);
   FX.shake(a.power >= 3 ? 12 : a.power >= 2 ? 6 : 2.5);
   if (def.hp <= 0) { kill(def); return 'kill'; }
   var arrowFlinch = a.kind === 'proj' && a.power < 2 && (def.st === 'wind' || def.st === 'act');
@@ -1491,7 +1496,7 @@ function strikeInit(f) {
   else if (k === 'buff') { if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
   else if (k === 'drain') { var pd2 = f.partner; if (pd2 && pd2.st !== 'dead' && f.hp > a.selfDmg + 5) { f.hp -= a.selfDmg; pd2.mom = Math.min(100, pd2.mom + a.mom); FX.text(f, '-' + a.selfDmg); FX.text(pd2, 'MANA SURGE'); FX.fx('seal', pd2.x, pd2.y, pd2); } }
   else if (k === 'gift') { var pg = f.partner; if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
-  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
+  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); var gil = G.f.filter(function (o) { return o.def.id === 'gilgamesh' && o.st !== 'dead' && o.inM && o.team !== f.team; })[0]; if (gil) FX.duo(f, 'ubwgil', gil, 'ubwgilR'); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
   else if (k === 'wall') { f.wallT = a.dur; FX.shake(5); }
   else if (k === 'veil') { f.veilT = a.dur; FX.shake(2); FX.fx('veil', f.x, f.y, f); }
   else if (k === 'rain') {
@@ -1512,6 +1517,7 @@ function strikeInit(f) {
   if (a.kind !== 'pulses' && a.kind !== 'charge') f.hitDone = true;
 }
 function stepF(f, dt) {
+  if (f.hs > 0) { f.hs -= dt; return; }
   var o = f.foe, a = f.act, vx = 0, vy = 0;
   f.iframes = (f.ghT > 0 || (f.st === 'act' && f.act && f.act.diveI && f.t < f.act.diveI) || (f.st === 'dodge' && f.t > 0.03 && f.t < 0.27) || (f.st === 'wind' && f.act && f.act.hop && f.t > 0.03 && f.t < 0.2)) ? 1 : 0;
   f.t += dt;
@@ -1649,7 +1655,7 @@ function explode(p) {
 }
 function stepProj(dt) {
   for (var i = G.proj.length - 1; i >= 0; i--) {
-    var p = G.proj[i];
+    var p = G.proj[i]; if (p.owner && p.owner.hs > 0) continue;
     var sx = p.x, sy = p.y, ox = p.vx * dt, oy = p.vy * dt;
     if (p.a.home) { var ht = p.homeT; if (!ht || ht.st === 'dead' || !sameLayer(ht, p.owner)) { ht = p.homeT = (p.owner.foe && p.owner.foe.st !== 'dead' && sameLayer(p.owner.foe, p.owner) && p.owner.foe.team !== p.owner.team) ? p.owner.foe : nearestEnemyTo(p.owner, p, 900); } if (ht) { var va = Math.atan2(p.vy, p.vx), want = Math.atan2(ht.y - p.y, ht.x - p.x), dA = angDiff(va, want), turn = clamp(dA, -p.a.home * dt, p.a.home * dt), sp2 = Math.hypot(p.vx, p.vy); va += turn; p.vx = Math.cos(va) * sp2; p.vy = Math.sin(va) * sp2; ox = p.vx * dt; oy = p.vy * dt; } }
     p.x += ox; p.y += oy; p.trav += Math.hypot(ox, oy);
@@ -1948,6 +1954,8 @@ function aiMaster(ai, dt) {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
     if (want) { press(f, 'skill'); return; }
   }
+  // Shirou stands in a servant's fight: he joins his servant against a servant it is already fighting, while he is healthy
+  if (f.def.fightsServants && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
   if (thr && td < 330) {
     var aw = angTo(thr, f), gx = f.x + Math.cos(aw) * 260, gy = f.y + Math.sin(aw) * 260;
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }
@@ -2533,7 +2541,7 @@ function masterDetailHTML(m) {
   h += '<div class="dbox" style="--bc:' + c + '"><h4>Attacks</h4><ul><li><b>Light, ' + esc(A.light.name) + '</b>: ' + esc(I.light || '') + '</li><li><b>Heavy, ' + esc(A.heavy.name) + '</b>: ' + esc(I.heavy || '') + '</li>' + (I.ammo ? '<li><b>Magazine</b>: ' + esc(I.ammo) + '</li>' : '') + '</ul></div>';
   h += '<div class="dgrid"><div class="dbox" style="--bc:var(--unb)"><h4>Skill: ' + esc(A.skill.name) + '<span>' + A.skill.cd + 's cooldown &middot; ' + MANA.skillCost + ' mana</span></h4><p>' + esc(I.skill || '') + '</p></div>' +
     '<div class="dbox" style="--bc:var(--gold)"><h4>Signature: ' + esc(A.np.name) + '<span>' + A.np.cd + 's cooldown &middot; ' + MANA.sigCost + ' mana</span></h4><p>' + esc(I.np || '') + '</p></div></div>';
-  h += '<p class="note" style="margin:0">In the war, a master’s mana also pays for their servant’s Noble Phantasm. Masters deal half damage to servants.</p></div>';
+  h += '<p class="note" style="margin:0">In the war, a master’s mana also pays for their servant’s Noble Phantasm. Masters deal half damage to servants' + (m.fightsServants ? ', except Shirou: he deals full damage and fights beside his servant.' : '.') + '</p></div>';
   return h;
 }
 function entityRosterHTML(kind, cur, attr, withRandom) {
@@ -3198,7 +3206,7 @@ function enterGame(nTeams, title, sub) {
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
   if (title) { FX.banner(title, sub); return; }
-  BUB = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
+  BUB = []; DUO = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }
@@ -3677,7 +3685,8 @@ function drawWorld() {
   puffs.forEach(function (p) { var pp = p.t / p.life; g.beginPath(); g.arc(p.x, p.y, p.r * (1 + 1.8 * pp), 0, 6.283); g.fillStyle = 'rgba(' + p.rgb + ',' + (0.45 * (1 - pp)) + ')'; g.fill(); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawField(f, i, ar); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawTelegraph(f, i, ar); });
-  G.f.forEach(function (f, i, ar) { if (visL(f)) drawFighter(f, i, ar); });
+  // a fighter frozen by their own hit-stop shudders in place when they are the one hit
+  G.f.forEach(function (f, i, ar) { if (!visL(f)) return; var sh = f.hs > 0 && f.hit > 0; if (sh) { ctx.save(); ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6); } drawFighter(f, i, ar); if (sh) ctx.restore(); });
   G.proj.forEach(function (p) { if (!visL(p.owner)) return; var a = Math.atan2(p.vy, p.vx); if (p.a.beam) { g.save(); g.translate(p.x, p.y); g.rotate(a); var bl = g.createLinearGradient(-170, 0, 0, 0); bl.addColorStop(0, 'rgba(255,255,255,0)'); bl.addColorStop(1, 'rgba(255,255,255,.95)'); var bs = p.a.bw || 1; g.fillStyle = bl; g.fillRect(-170 * bs, -26 * bs, 170 * bs, 52 * bs); g.restore(); return; }
     if (p.a.shape === 'spear') { g.save(); g.translate(p.x, p.y); g.rotate(a); var sg = g.createLinearGradient(-160, 0, 0, 0); sg.addColorStop(0, 'rgba(220,40,50,0)'); sg.addColorStop(1, 'rgba(220,40,50,.7)'); g.fillStyle = sg; g.fillRect(-160, -7, 160, 14); g.shadowColor = '#ff3040'; g.shadowBlur = 16; g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.fillStyle = '#7a1a1a'; g.fillRect(-70, -2.5, 72, 5); g.strokeRect(-70, -2.5, 72, 5); g.fillStyle = '#c33a30'; g.beginPath(); g.moveTo(2, -6); g.lineTo(26, 0); g.lineTo(2, 6); g.lineTo(8, 0); g.closePath(); g.fill(); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'drill') { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var dk = 0; dk < 6; dk++) { g.beginPath(); g.arc(-18 - dk * 16, Math.sin(G.time * 40 + dk) * 5, 5 - dk * 0.6, 0, 6.283); g.fillStyle = 'rgba(160,210,255,' + (0.5 - dk * 0.07) + ')'; g.fill(); } g.shadowColor = '#9fd4ff'; g.shadowBlur = 18; g.fillStyle = '#e6f4ff'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(22, 0); g.lineTo(-14, -6); g.lineTo(-8, 0); g.lineTo(-14, 6); g.closePath(); g.fill(); g.stroke(); g.strokeStyle = 'rgba(90,140,200,.8)'; g.beginPath(); g.moveTo(16, -1); g.lineTo(-6, 3); g.moveTo(8, -3); g.lineTo(-10, 1); g.stroke(); g.restore(); return; }
@@ -4253,13 +4262,13 @@ var LINES = {
   hassan: { summon: ['Assassin answers from the shadows. Name the one who must die.'], engage: ['Your heart is already mine.'], kill: ['Gone, like smoke.'] },
   diarmuid: { summon: ['Lancer of the Fianna. My spears are yours, and my loyalty with them.'], engage: ['Face me with honor!'], kill: ['A fine duel.'], masterdown: ['My lord...! Forgive me.'] },
   cu: { summon: ["Lancer's here. So you're my Master? Let's make this a good fight."], engage: ["Now this'll be fun!"], kill: ['Not bad. Not good enough.'], np: ['Your heart is mine!'] },
-  gilgamesh: { summon: ['You summoned a king, mongrel. Try to be worth my time.'], engage: ['Know your place.'], kill: ['Fitting, for trash.'], np: ['Behold my treasury!'], low: ['You dare wound me?!'] },
+  gilgamesh: { ubwgilR: ['Mongrel...'], summon: ['You summoned a king, mongrel. Try to be worth my time.'], engage: ['Know your place.'], kill: ['Fitting, for trash.'], np: ['Behold my treasury!'], low: ['You dare wound me?!'] },
   iskandar: { summon: ['I am Rider, King of Conquerors! Now, where can I find a map of this land?'], engage: ['Join my army, and I may spare you!'], kill: ['A splendid foe. To the next!'], np: ['Behold, my eternal army!'] },
   gilles: { summon: ['Caster has arrived. Oh, what splendid horrors we shall make together!'], engage: ['Oh, how delightful!'], kill: ['Cool! Cool!'] },
   medusa: { summon: ['Rider. I will be your shield, Master. Give your orders.'], engage: ['Stay still.'], kill: ['...'] },
   medea: { summon: ["Caster. A circle this crude... you'll need me more than you know."], engage: ['How tiresome.'], kill: ['Fools never learn.'] },
   kojirou: { summon: ['Assassin. A mere swordsman, but a fine night for a duel.'], engage: ['Show me your blade.'], kill: ['A pity. It was a good moon.'], np: ['Swallow Reversal.'] },
-  shirou: { summon: ['M-Master? Wait, where did you even come from?!'], engage: ["I won't let anyone get hurt!"], kill: ['...Sorry.'], servantdown: ["No... I couldn't protect you."], low: ['I can still move...!'] },
+  shirou: { ubwgil: ["Let's go, King of Heroes. I hope you stored up enough weapons."], summon: ['M-Master? Wait, where did you even come from?!'], engage: ["I won't let anyone get hurt!"], kill: ['...Sorry.'], servantdown: ["No... I couldn't protect you."], low: ['I can still move...!'] },
   rin: { summon: ["Yes, I'm your Master. And you had better be the strongest one."], engage: ['Gandr, coming right up!'], kill: ['Hmph. Elegantly done.'], servantdown: ["Don't you dare disappear on me!"] },
   kiritsugu: { summon: ['I am. Follow the plan, and this ends quickly.'], engage: ['Target acquired.'], kill: ['Clean.'], servantdown: ['...Change of plans.'] },
   kirei: { summon: ['I am. Let us see what this war will show me.'], engage: ['How interesting.'], kill: ['May you find peace.'] },
@@ -4284,12 +4293,20 @@ FX.say = function (f, key) {
   var now = performance.now() / 1000; if (SAYT[f.idx] && now - SAYT[f.idx] < 5) return;
   var s = pickLine(f, key); if (!s) return; SAYT[f.idx] = now; showBubble(f, s, 2.0 + s.length * 0.035);
 };
+// a scripted exchange: the first line now, the answer a moment later; both ignore the chance and cooldown
+var DUO = [];
+FX.duo = function (a, ka, b, kb) {
+  if (!G || G.mode !== 'war' || !FX.near(a.x, a.y)) return;
+  var s = pickLine(a, ka); if (!s) return; SAYT[a.idx] = performance.now() / 1000; showBubble(a, s, 3.2, true);
+  DUO.push({ at: performance.now() + 2600, f: b, k: kb });
+};
 function wrapText(c, s, maxW) { var w = s.split(' '), out = [], cur = ''; w.forEach(function (x) { var t = cur ? cur + ' ' + x : x; if (c.measureText(t).width > maxW && cur) { out.push(cur); cur = x; } else cur = t; }); if (cur) out.push(cur); return out; }
 function drawBubbles(cx, cy, zoom) {
   if (!G || G.mode !== 'war') { BUB = []; return; }
   // a fighter that turns on a new foe close by may call out
   if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
   var now = performance.now(), c = ctx;
+  DUO = DUO.filter(function (d) { if (now < d.at) return true; if (d.f.st !== 'dead') { var s2 = pickLine(d.f, d.k); if (s2) { SAYT[d.f.idx] = now / 1000; showBubble(d.f, s2, 2.6, true); } } return false; });
   BUB = BUB.filter(function (b) { return (now - b.t0) / 1000 < b.life && (b.f.st !== 'dead' || INTRO); });
   BUB.forEach(function (b) {
     var f = b.f; if (!visL(f)) return;

@@ -10,7 +10,7 @@ function hurt(att, def, a, mult, src) {
   var dmg = a.dmg * (att ? att.def.dmg : 1) * (mult || 1);
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
   if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
-  if (att && att.def.isMaster && !def.def.isMaster) dmg *= (a.vsServant || 0.5);
+  if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
@@ -27,14 +27,14 @@ function hurt(att, def, a, mult, src) {
     def.stat.parry++; FX.text(def, 'COUNTER'); FX.spark(def.x, def.y, '#ffd36b', 12); FX.shake(5); FX.snd('counter', def); FX.fx('counter', def.x, def.y, def);
     if (att && melee) { var rd = 12 * def.def.dmg; att.hp -= rd; def.stat.dealt += rd; setStag(att, 0.9); if (att.hp <= 0) kill(att); }
     else if (!melee) { src.dead = true; }
-    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); hitstopAt(def, 0.1);
+    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); hitPause(melee ? att : null, def, 0.1); if (humanIn(att, def)) hitstopAt(def, 0.1);
     return 'counter';
   }
   var front = Math.abs(angDiff(def.face, angTo(def, s))) < 1.75;
   if (def.guarding && front && !a.unblock) {
     if (def.parryOk && def.guardT <= (def.def.parryWin || PARRY) && !a.noParry) {
       def.stat.parry++; gainMom(def, 12); def.ripo = 1.2; FX.text(def, 'PARRY'); FX.spark(def.x, def.y, '#ffffff', 14); FX.shake(6); FX.snd('parry', def); FX.fx('parry', def.x, def.y, def);
-      hitstopAt(def, 0.12);
+      hitPause(melee ? att : null, def, 0.12); if (humanIn(att, def)) hitstopAt(def, 0.12);
       if (att && melee) setStag(att, 0.9); else if (src) src.dead = true;
       return 'parry';
     }
@@ -43,13 +43,13 @@ function hurt(att, def, a, mult, src) {
     if (a.gb || def.sta <= 0) {
       def.stat.gbreak++; def.sta = Math.max(def.sta, 0); def.guarding = false;
       var gd = dmg * 0.6; def.hp -= gd; def.stat.taken += gd; if (att) { att.stat.dealt += gd; att.stat.hits++; gainMom(att, gd * 0.5); }
-      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); hitstopAt(def, 0.1);
+      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); hitPause(melee ? att : null, def, 0.1);
       if (def.hp <= 0) kill(def);
       return 'gbreak';
     }
     var cd = dmg * (1 - def.def.guard * (1 - ((att && att.def.guardPierce) || 0))); def.hp -= cd; def.stat.taken += cd; def.stat.blocks++;
     if (att) { att.stat.dealt += cd; gainMom(att, cd * 0.4); }
-    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); hitstopAt(def, 0.035);
+    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); hitPause(melee ? att : null, def, 0.035);
     if (def.hp <= 0) kill(def);
     return 'block';
   }
@@ -69,7 +69,8 @@ function hurt(att, def, a, mult, src) {
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
   if (a.power >= 3) { FX.slow(0.5); FX.fx('npHit', def.x, def.y, def); }
-  hitstopAt(def, a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045));
+  var hsv = a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045);
+  if (a.power >= 3 && a.key === 'np' && att && !att.def.isMaster) hitstopAt(def, hsv); else hitPause(melee ? att : null, def, hsv);
   FX.shake(a.power >= 3 ? 12 : a.power >= 2 ? 6 : 2.5);
   if (def.hp <= 0) { kill(def); return 'kill'; }
   var arrowFlinch = a.kind === 'proj' && a.power < 2 && (def.st === 'wind' || def.st === 'act');
@@ -175,7 +176,7 @@ function strikeInit(f) {
   else if (k === 'buff') { if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
   else if (k === 'drain') { var pd2 = f.partner; if (pd2 && pd2.st !== 'dead' && f.hp > a.selfDmg + 5) { f.hp -= a.selfDmg; pd2.mom = Math.min(100, pd2.mom + a.mom); FX.text(f, '-' + a.selfDmg); FX.text(pd2, 'MANA SURGE'); FX.fx('seal', pd2.x, pd2.y, pd2); } }
   else if (k === 'gift') { var pg = f.partner; if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
-  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
+  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); var gil = G.f.filter(function (o) { return o.def.id === 'gilgamesh' && o.st !== 'dead' && o.inM && o.team !== f.team; })[0]; if (gil) FX.duo(f, 'ubwgil', gil, 'ubwgilR'); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
   else if (k === 'wall') { f.wallT = a.dur; FX.shake(5); }
   else if (k === 'veil') { f.veilT = a.dur; FX.shake(2); FX.fx('veil', f.x, f.y, f); }
   else if (k === 'rain') {
@@ -196,6 +197,7 @@ function strikeInit(f) {
   if (a.kind !== 'pulses' && a.kind !== 'charge') f.hitDone = true;
 }
 function stepF(f, dt) {
+  if (f.hs > 0) { f.hs -= dt; return; }
   var o = f.foe, a = f.act, vx = 0, vy = 0;
   f.iframes = (f.ghT > 0 || (f.st === 'act' && f.act && f.act.diveI && f.t < f.act.diveI) || (f.st === 'dodge' && f.t > 0.03 && f.t < 0.27) || (f.st === 'wind' && f.act && f.act.hop && f.t > 0.03 && f.t < 0.2)) ? 1 : 0;
   f.t += dt;
@@ -333,7 +335,7 @@ function explode(p) {
 }
 function stepProj(dt) {
   for (var i = G.proj.length - 1; i >= 0; i--) {
-    var p = G.proj[i];
+    var p = G.proj[i]; if (p.owner && p.owner.hs > 0) continue;
     var sx = p.x, sy = p.y, ox = p.vx * dt, oy = p.vy * dt;
     if (p.a.home) { var ht = p.homeT; if (!ht || ht.st === 'dead' || !sameLayer(ht, p.owner)) { ht = p.homeT = (p.owner.foe && p.owner.foe.st !== 'dead' && sameLayer(p.owner.foe, p.owner) && p.owner.foe.team !== p.owner.team) ? p.owner.foe : nearestEnemyTo(p.owner, p, 900); } if (ht) { var va = Math.atan2(p.vy, p.vx), want = Math.atan2(ht.y - p.y, ht.x - p.x), dA = angDiff(va, want), turn = clamp(dA, -p.a.home * dt, p.a.home * dt), sp2 = Math.hypot(p.vx, p.vy); va += turn; p.vx = Math.cos(va) * sp2; p.vy = Math.sin(va) * sp2; ox = p.vx * dt; oy = p.vy * dt; } }
     p.x += ox; p.y += oy; p.trav += Math.hypot(ox, oy);

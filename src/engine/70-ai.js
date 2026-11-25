@@ -252,6 +252,8 @@ function aiMaster(ai, dt) {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
     if (want) { press(f, 'skill'); return; }
   }
+  // Shirou stands in a servant's fight: he joins his servant against a servant it is already fighting, while he is healthy
+  if (f.def.fightsServants && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
   if (thr && td < 330) {
     var aw = angTo(thr, f), gx = f.x + Math.cos(aw) * 260, gy = f.y + Math.sin(aw) * 260;
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }

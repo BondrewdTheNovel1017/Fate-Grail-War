@@ -75,13 +75,13 @@ var LINES = {
   hassan: { summon: ['Assassin answers from the shadows. Name the one who must die.'], engage: ['Your heart is already mine.'], kill: ['Gone, like smoke.'] },
   diarmuid: { summon: ['Lancer of the Fianna. My spears are yours, and my loyalty with them.'], engage: ['Face me with honor!'], kill: ['A fine duel.'], masterdown: ['My lord...! Forgive me.'] },
   cu: { summon: ["Lancer's here. So you're my Master? Let's make this a good fight."], engage: ["Now this'll be fun!"], kill: ['Not bad. Not good enough.'], np: ['Your heart is mine!'] },
-  gilgamesh: { summon: ['You summoned a king, mongrel. Try to be worth my time.'], engage: ['Know your place.'], kill: ['Fitting, for trash.'], np: ['Behold my treasury!'], low: ['You dare wound me?!'] },
+  gilgamesh: { ubwgilR: ['Mongrel...'], summon: ['You summoned a king, mongrel. Try to be worth my time.'], engage: ['Know your place.'], kill: ['Fitting, for trash.'], np: ['Behold my treasury!'], low: ['You dare wound me?!'] },
   iskandar: { summon: ['I am Rider, King of Conquerors! Now, where can I find a map of this land?'], engage: ['Join my army, and I may spare you!'], kill: ['A splendid foe. To the next!'], np: ['Behold, my eternal army!'] },
   gilles: { summon: ['Caster has arrived. Oh, what splendid horrors we shall make together!'], engage: ['Oh, how delightful!'], kill: ['Cool! Cool!'] },
   medusa: { summon: ['Rider. I will be your shield, Master. Give your orders.'], engage: ['Stay still.'], kill: ['...'] },
   medea: { summon: ["Caster. A circle this crude... you'll need me more than you know."], engage: ['How tiresome.'], kill: ['Fools never learn.'] },
   kojirou: { summon: ['Assassin. A mere swordsman, but a fine night for a duel.'], engage: ['Show me your blade.'], kill: ['A pity. It was a good moon.'], np: ['Swallow Reversal.'] },
-  shirou: { summon: ['M-Master? Wait, where did you even come from?!'], engage: ["I won't let anyone get hurt!"], kill: ['...Sorry.'], servantdown: ["No... I couldn't protect you."], low: ['I can still move...!'] },
+  shirou: { ubwgil: ["Let's go, King of Heroes. I hope you stored up enough weapons."], summon: ['M-Master? Wait, where did you even come from?!'], engage: ["I won't let anyone get hurt!"], kill: ['...Sorry.'], servantdown: ["No... I couldn't protect you."], low: ['I can still move...!'] },
   rin: { summon: ["Yes, I'm your Master. And you had better be the strongest one."], engage: ['Gandr, coming right up!'], kill: ['Hmph. Elegantly done.'], servantdown: ["Don't you dare disappear on me!"] },
   kiritsugu: { summon: ['I am. Follow the plan, and this ends quickly.'], engage: ['Target acquired.'], kill: ['Clean.'], servantdown: ['...Change of plans.'] },
   kirei: { summon: ['I am. Let us see what this war will show me.'], engage: ['How interesting.'], kill: ['May you find peace.'] },
@@ -106,12 +106,20 @@ FX.say = function (f, key) {
   var now = performance.now() / 1000; if (SAYT[f.idx] && now - SAYT[f.idx] < 5) return;
   var s = pickLine(f, key); if (!s) return; SAYT[f.idx] = now; showBubble(f, s, 2.0 + s.length * 0.035);
 };
+// a scripted exchange: the first line now, the answer a moment later; both ignore the chance and cooldown
+var DUO = [];
+FX.duo = function (a, ka, b, kb) {
+  if (!G || G.mode !== 'war' || !FX.near(a.x, a.y)) return;
+  var s = pickLine(a, ka); if (!s) return; SAYT[a.idx] = performance.now() / 1000; showBubble(a, s, 3.2, true);
+  DUO.push({ at: performance.now() + 2600, f: b, k: kb });
+};
 function wrapText(c, s, maxW) { var w = s.split(' '), out = [], cur = ''; w.forEach(function (x) { var t = cur ? cur + ' ' + x : x; if (c.measureText(t).width > maxW && cur) { out.push(cur); cur = x; } else cur = t; }); if (cur) out.push(cur); return out; }
 function drawBubbles(cx, cy, zoom) {
   if (!G || G.mode !== 'war') { BUB = []; return; }
   // a fighter that turns on a new foe close by may call out
   if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
   var now = performance.now(), c = ctx;
+  DUO = DUO.filter(function (d) { if (now < d.at) return true; if (d.f.st !== 'dead') { var s2 = pickLine(d.f, d.k); if (s2) { SAYT[d.f.idx] = now / 1000; showBubble(d.f, s2, 2.6, true); } } return false; });
   BUB = BUB.filter(function (b) { return (now - b.t0) / 1000 < b.life && (b.f.st !== 'dead' || INTRO); });
   BUB.forEach(function (b) {
     var f = b.f; if (!visL(f)) return;

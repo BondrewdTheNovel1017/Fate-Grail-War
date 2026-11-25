@@ -33,7 +33,7 @@ function enterGame(nTeams, title, sub) {
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
   if (title) { FX.banner(title, sub); return; }
-  BUB = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
+  BUB = []; DUO = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }

@@ -245,3 +245,35 @@ test('city: arches, gates and roofs can be walked under; the church stands clear
   E.MAP.roads.forEach((r) => { const hw = r.w / 2, x0 = r.h ? r.x0 : r.x0 - hw, x1 = r.h ? r.x1 : r.x0 + hw, y0 = r.h ? r.y0 - hw : r.y0, y1 = r.h ? r.y0 + hw : r.y1;
     const ov = x0 < ch.x + ch.w / 2 && x1 > ch.x - ch.w / 2 && y0 < ch.y + ch.h / 2 && y1 > ch.y - ch.h / 2; assert.ok(!ov, 'church overlaps a ' + r.kind); });
 });
+
+test('Shirou opening Unlimited Blade Works on Gilgamesh starts their exchange', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, calls = [];
+  E.FX.duo = (a, ka, b, kb) => calls.push([a.def.id, ka, b.def.id, kb]);
+  const G = E.newWar([{ servant: S.cu, master: M.shirou }, { servant: S.gilgamesh, master: M.rin }], { map: 'fuyuki', quick: true });
+  const sh = G.f.find((f) => f.def.id === 'shirou'), gil = G.f.find((f) => f.def.id === 'gilgamesh');
+  G.f.forEach((f) => { if (f !== sh && f !== gil) { f.x = 200; f.y = 200; } });
+  gil.x = sh.x + 150; gil.y = sh.y; sh.mom = 100;
+  for (let i = 0; i < 10; i++) E.simStep(E.STEP);
+  assert.strictEqual(sh.A.np.kind, 'ubw');
+  E.press(sh, 'np'); for (let i = 0; i < 150 && !calls.length; i++) E.simStep(E.STEP);
+  assert.deepStrictEqual(calls[0], ['shirou', 'ubwgil', 'gilgamesh', 'ubwgilR']);
+});
+
+test('Shirou deals full damage to servants; other masters deal half', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.cu, master: M.shirou }, { servant: S.richard, master: M.rin }], { map: 'fuyuki', quick: true });
+  const sh = G.f.find((f) => f.def.id === 'shirou'), rin = G.f.find((f) => f.def.id === 'rin'), rich = G.f.find((f) => f.def.id === 'richard');
+  const hit = (att) => { rich.hp = rich.def.hp; rich.guarding = false; rich.st = 'idle'; rich.iframes = 0; const h0 = rich.hp; E.hurt(att, rich, { dmg: 10, power: 1, kind: 'melee' }, 1, { x: rich.x - 1, y: rich.y }); return h0 - rich.hp; };
+  const a = hit(sh), b = hit(rin);
+  assert.ok(a > b * 1.8, 'Shirou ' + a + ' vs Rin ' + b);
+});
+
+test('hit-stop freezes only the two fighters in a hit; the rest of the war moves on', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 3), { map: 'fuyuki', quick: true });
+  const [a, d, c] = [G.f[0], G.f[2], G.f[4]];
+  d.x = a.x + 60; d.y = a.y; E.hurt(a, d, { dmg: 5, power: 2, key: 'heavy' });
+  assert.ok(a.hs > 0 && d.hs > 0, 'attacker and defender freeze');
+  assert.ok(!(c.hs > 0) && G.hitstop === 0, 'nobody else does');
+  const t0 = G.time; E.simStep(E.STEP); assert.ok(G.time > t0, 'the war keeps running');
+});
