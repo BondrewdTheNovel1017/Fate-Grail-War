@@ -710,6 +710,12 @@ MAPS.city = (function () {
   part(sh, 'circle', sh.x0 + 230, sh.y0 + 150, sh.x0 + 390, sh.y0 + 310);
   B(sh.x0 + 520, sh.y0 + 120, 120, 60, 'shelf'); B(sh.x0 + 100, sh.y0 + 330, 120, 70, 'table'); B(sh.x0 + 120, sh.y0 + 110, 80, 80, 'crate'); B(sh.x0 + 520, sh.y0 + 340, 90, 90, 'crate');
   door('shed', 'shed', 1620, 5285, 0, -1, sh.x0 + 310, sh.y0 + 60, 0, -1);
+  // the Great Cavern beneath Ryuudou Temple, where the Greater Grail sleeps; its mouth opens behind the temple
+  var gc = room('cavern', 'The Great Cavern', IX + 1000, 5300, 2600, 2300, 'cave');
+  part(gc, 'crater', gc.x0 + 950, gc.y0 + 800, gc.x0 + 1650, gc.y0 + 1500);
+  [[420, 500], [2150, 520], [600, 1700], [2000, 1800], [1300, 380], [380, 1150], [2250, 1150]].forEach(function (p) { o.push({ x: gc.x0 + p[0], y: gc.y0 + p[1], r: 70, k: 'rock' }); });
+  B(2120, 360, 180, 100, 'cave_mouth', { name: 'Cave mouth' });
+  door('cavern', 'cavern', 2120, 425, 0, 1, gc.x0 + 1300, gc.y0 + 70, 0, -1);
   // summoning spots: where each master starts the war alone
   var spots = {
     emiya: { x: sh.x0 + 310, y: sh.y0 + 230, name: 'The storehouse, Emiya residence' },
@@ -732,7 +738,7 @@ MAPS.city = (function () {
   };
   return {
     id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
-    walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]]], // footpaths through walled yards the road graph cannot see
+    walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]], [[1500, 1400], [1500, 1100], [2240, 1100], [2240, 560], [2120, 495]]], // footpaths through walled yards the road graph cannot see
     spots: spots, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
     river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [2850, 1800], [5000, 1180]]
   };
@@ -845,7 +851,7 @@ function doorTick(f, dt) {
   var mx = f.inp.mx, my = f.inp.my; if (Math.hypot(mx, my) < 0.2) return;
   for (var i = 0; i < MAP.doors.length; i++) {
     var d = MAP.doors[i];
-    if (f.x < MAP.cityW) { if (Math.hypot(f.x - d.out.x, f.y - d.out.y) < 52 && (mx * -d.out.nx + my * -d.out.ny) > 0.3) { stepDoor(f, d.in.x - d.in.nx * 60, d.in.y - d.in.ny * 60, d, true); return; } }
+    if (f.x < MAP.cityW) { if (!d.ruined && Math.hypot(f.x - d.out.x, f.y - d.out.y) < 52 && (mx * -d.out.nx + my * -d.out.ny) > 0.3) { stepDoor(f, d.in.x - d.in.nx * 60, d.in.y - d.in.ny * 60, d, true); return; } }
     else if (Math.hypot(f.x - d.in.x, f.y - d.in.y) < 52 && (mx * d.in.nx + my * d.in.ny) > 0.3) { stepDoor(f, d.out.x + d.out.nx * 60, d.out.y + d.out.ny * 60, d, false); return; }
   }
 }
@@ -1414,7 +1420,7 @@ function witness(x, y, teams, k) {
     if (c.flee <= 0) { c.flee = 4 + rnd() * 2; c.fx = x; c.fy = y; }
     if (G.time - c.saw > CIV.cool) { c.saw = G.time; n++; }
   });
-  if (n) { var v = n * (day ? EXPO.perD : EXPO.perN) * k; teams.forEach(function (t, i) { expose(t, i ? v * 0.5 : v); }); }
+  if (n) { var v = n * (day ? EXPO.perD : EXPO.perN) * k * (inFestival(x, y) ? EVT2.festival.mult : 1); teams.forEach(function (t, i) { expose(t, i ? v * 0.5 : v); }); }
   return n;
 }
 function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
@@ -1459,7 +1465,7 @@ function civTick(dt) {
     }
     if (c.wait > 0) { c.wait -= dt; c.vx = c.vy = 0; continue; }
     var from = N[c.node];
-    if (c.to < 0) { var adj = from.cadj || []; if (!adj.length) { c.to = c.node; } else c.to = adj[Math.floor(rnd() * adj.length)]; }
+    if (c.to < 0) { var adj = from.cadj || []; if (!adj.length) { c.to = c.node; } else { c.to = adj[Math.floor(rnd() * adj.length)]; if (c.fest && G.festival) { var bx = EVT2.festival.x, by = EVT2.festival.y, bn = adj.slice().sort(function (p, q) { return Math.hypot(N[p].x - bx, N[p].y - by) - Math.hypot(N[q].x - bx, N[q].y - by); })[0]; if (Math.hypot(from.x - bx, from.y - by) > 550) c.to = bn; } } }
     var to = N[c.to], dx = to.x - from.x, dy = to.y - from.y, L = Math.hypot(dx, dy) || 1, tx = to.x - dy / L * c.off, ty = to.y + dx / L * c.off;
     var mx = tx - c.x, my = ty - c.y, md = Math.hypot(mx, my);
     if (md < 8) { c.node = c.to; c.to = -1; if (rnd() < 0.15) c.wait = 1 + rnd() * 4; continue; }
@@ -1551,6 +1557,7 @@ function startDay() {
 function taskFor(team, k) {
   if (k.team !== undefined && k.team !== team) return false;
   if (k.done[team]) return false;
+  if (k.kind === 'relic' && k.claimed !== undefined) return false;
   if (k.kind === 'school') return G.f.some(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead' && STUDENTS[f.def.id]; });
   if (k.kind === 'trace') return k.sv.some(function (id) { return !G.tn[team][id] && G.f.some(function (f) { return f.def.id === id && f.team !== team; }); });
   return true;
@@ -1574,6 +1581,7 @@ function finishTask(t, k) {
   if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); note = 'Bounded field strengthened to level ' + F.lvl; }
   else if (k.kind === 'ley') { if (m) { m.mana = m.manaMax; m.manaBonus = 40; } note = 'Mana overflows: full mana and 40 stored'; }
   else if (k.kind === 'school') { G.expo[t] = Math.max(0, (G.expo[t] || 0) - 35); if (m) m.mana = m.manaMax; note = 'A normal school day: suspicion fades'; }
+  else if (k.kind === 'relic') { relicDone(t, k); note = 'The relic is yours. Your servant hits a little harder for the rest of the war'; }
   else if (k.kind === 'summons') { summonsDone(t); note = 'The overseer clears your name, tells you where the Grail will descend, and names a rival'; }
   else if (k.kind === 'banquet') { banquetDone(t, k); note = 'You share the king\u2019s wine, and the names of everyone at the table'; }
   else if (k.kind === 'trace') { var id = k.sv.filter(function (q) { return !G.tn[t][q]; })[0], s = G.f.filter(function (f) { return f.def.id === id; })[0]; if (s) learnName(t, s, 'trace'); note = 'Traces read'; }
@@ -1588,7 +1596,7 @@ function aiDayGoal(f) {
   var best = null, bs = -1e9;
   G.tasks.forEach(function (k) {
     if (!taskFor(f.team, k)) return;
-    var v = { fortify: 60, trace: 50, ley: 30, school: 45, banquet: k.host === f.team ? 120 : 40, summons: 45 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
+    var v = { fortify: 60, trace: 50, ley: 30, school: 45, banquet: k.host === f.team ? 120 : 40, summons: 45, relic: 55 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
     if (G.f.some(function (e) { return e.team !== f.team && e.st !== 'dead' && Math.hypot(e.x - k.x, e.y - k.y) < 500 && knows(f, e); })) v -= 60;
     if (v > bs) { bs = v; best = k; }
   });
@@ -1613,6 +1621,7 @@ function hurt(att, def, a, mult, src) {
   if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
   if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
   if (att && att.rampT > G.time) dmg *= EVT.berserk.dmg; // Berserker unchained
+  if (att && att.relic) dmg *= EVT2.festival.relicDmg; // the festival relic
   if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
@@ -1704,7 +1713,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); npRepelsShadow(f); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -2003,7 +2012,7 @@ var EVT = {
   grail: { at: 60, r0: 4200, r1: 750, shrink: 330, dmg: 3, dmgC: 5, heal: 2, poolEvery: 3.5 }
 };
 var GRAIL_SITES = [{ x: 1500, y: 1060, name: 'Ryuudou Temple' }, { x: 1300, y: 3080, name: 'the Fuyuki Church hill' }, { x: 10450, y: 5050, name: 'the Fuyuki Civic Hall' }];
-var NIGHT_DECK = { challenge: 'diarmuid', bounty: 'gilles', horror: 'gilles', falsedeath: 'hassan', berserk: ['heracles', 'lancelot'] }, DAY_DECK = { school: 'medusa', banquet: 'iskandar', summons: null };
+var NIGHT_DECK = { challenge: 'diarmuid', bounty: 'gilles', horror: 'gilles', falsedeath: 'hassan', berserk: ['heracles', 'lancelot'], demo: 'kiritsugu', shadow: null }, DAY_DECK = { school: 'medusa', banquet: 'iskandar', summons: null, festival: null };
 function eventsOn() { return clockOn() && !G.quick && MAP.cityW; }
 function evAlive(id) { return G.f.filter(function (f) { return f.def.id === id && f.st !== 'dead'; })[0]; }
 function loreHost(ids) { if (!ids) return null; ids = [].concat(ids); for (var i = 0; i < ids.length; i++) { var f = evAlive(ids[i]); if (f) return f; } return null; }
@@ -2012,11 +2021,13 @@ function buildDecks() {
   G.deck = { night: deal(NIGHT_DECK), day: deal(DAY_DECK) };
   if (G.forceSchool) G.deck.day = ['school'].concat(G.deck.day.filter(function (k) { return k !== 'school'; }));
 }
-function grailSite() { if (!G.grailSite) G.grailSite = GRAIL_SITES[Math.floor(rnd() * GRAIL_SITES.length)]; return G.grailSite; }
+function grailSite() { if (!G.grailSite) { var cv = cavernSite(); G.grailSite = cv && rnd() < EVT2.cavern.chance ? cv : GRAIL_SITES[Math.floor(rnd() * GRAIL_SITES.length)]; } return G.grailSite; }
 function servantsAlive() { return G.f.filter(function (f) { return f.st !== 'dead' && !f.def.isMaster; }); }
 function canRun(k) {
   var sv = servantsAlive(), teams = {}; sv.forEach(function (f) { teams[f.team] = 1; }); var n = Object.keys(teams).length;
   if (k === 'bounty' || k === 'challenge') return n >= 3;
+  if (k === 'shadow') return shadowOk();
+  if (k === 'demo') return n >= 2 && G.fields && Object.keys(G.fields).some(function (t) { return G.fields[t].lvl > 0 && !G.fields[t].backup; });
   return n >= 2;
 }
 function eventsTick(dt) {
@@ -2033,6 +2044,8 @@ function eventsTick(dt) {
   else if (E.kind === 'bounty' && !G.f.some(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })) endEvent(null);
   else if (E.kind === 'horror') horrorTick(E, dt);
   else if (E.kind === 'berserk') berserkTick(E, dt);
+  else if (E.kind === 'demo') demoTick(E, dt);
+  else if (E.kind === 'shadow') shadowTick(E, dt);
   else if (E.kind === 'school') schoolTick(E, dt);
   else if (E.kind === 'grail') grailTick(E, dt);
 }
@@ -2040,7 +2053,7 @@ function eventsTick(dt) {
 function newPhaseEvents() {
   var c = G.clock; if (!c) return; if (!G.deck) buildDecks();
   if (G.event && G.event.kind !== 'grail') { if (G.event.kind === 'horror') horrorDawn(G.event); endEvent(null); }
-  c.evDone = false; c.pending = null;
+  c.evDone = false; c.pending = null; G.festival = false;
   if (c.phase === 'night') {
     if (c.final) { c.pending = 'grail'; return; }
     // a long war may have one still night in the middle: a breather before the next storm
@@ -2052,11 +2065,12 @@ function newPhaseEvents() {
     if (k === 'school') c.pending = 'school';
     else if (k === 'banquet') startBanquet();
     else if (k === 'summons') startSummons();
+    else if (k === 'festival') startFestival();
   }
 }
 function draw(which) { var D = G.deck[which]; for (var i = 0; i < D.length; i++) if (canRun(D[i])) return D.splice(i, 1)[0]; return null; }
 function startNight(k) {
-  if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk();
+  if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk(); else if (k === 'demo') startDemolition(); else if (k === 'shadow') startShadow();
   if (!G.event) G.clock.evDone = true;
 }
 function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = []; if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
@@ -2254,25 +2268,124 @@ function summonsDone(t) {
    corrupted, its mud wells up inside the ring and maddens the servants near its center ---- */
 function startGrail() {
   var g = EVT.grail, site = grailSite(), dead = G.f.filter(function (f) { return f.st === 'dead' && !f.def.isMaster; }).length;
-  var corrupt = rnd() < Math.min(0.75, 0.25 + 0.04 * dead);
-  G.event = { kind: 'grail', x: site.x, y: site.y, name: site.name, r: g.r0, t: 0, corrupt: corrupt, pools: [], poolT: 3 }; G.clock.evDone = true; FX.event('grail', G.event);
+  var corrupt = site.cavern || G.shadowSeen || rnd() < Math.min(0.75, 0.25 + 0.04 * dead);
+  G.event = { kind: 'grail', x: site.x, y: site.y, name: site.name, r: site.cavern ? EVT2.cavern.r0 : g.r0, t: 0, corrupt: corrupt, pools: [], poolT: 3, cavern: !!site.cavern }; G.clock.evDone = true; FX.event('grail', G.event);
 }
 function grailTick(E, dt) {
-  var g = EVT.grail; E.r = g.r1 + (g.r0 - g.r1) * Math.max(0, 1 - E.t / g.shrink);
+  var g = EVT.grail, r0 = E.cavern ? EVT2.cavern.r0 : g.r0, r1 = E.cavern ? EVT2.cavern.r1 : g.r1; E.r = r1 + (r0 - r1) * Math.max(0, 1 - E.t / g.shrink);
   G.f.forEach(function (f) {
-    if (f.st === 'dead' || f.x > MAP.cityW || f.inM) return; var d = Math.hypot(f.x - E.x, f.y - E.y);
+    if (f.st === 'dead' || f.inM) return;
+    if (E.cavern) { if (!inCavern(f)) { if (E.t > EVT2.cavern.grace) { var kc = g.dmgC * dt; f.hp -= kc; f.stat.taken += kc; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } } return; } }
+    else if (f.x > MAP.cityW) return;
+    var d = Math.hypot(f.x - E.x, f.y - E.y);
     if (d > E.r) { var k = (E.corrupt ? g.dmgC : g.dmg) * dt; f.hp -= k; f.stat.taken += k; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } return; }
     if (!E.corrupt && d < 280 && f.spirit !== 2) f.hp = Math.min(f.def.hp, f.hp + g.heal * dt);
     if (E.corrupt && d < 450 && !f.def.isMaster && f.hp > f.def.hp * 0.2) f.hp -= 0.8 * dt;
   });
   if (!E.corrupt) return;
   E.poolT -= dt;
-  if (E.poolT <= 0) { E.poolT = g.poolEvery; var a = rnd() * 6.283, rr = Math.pow(rnd(), 1.6) * Math.min(E.r * 0.8, 1400); E.pools.push({ x: E.x + Math.cos(a) * rr, y: E.y + Math.sin(a) * rr, r: 120, t: 0 }); }
-  E.pools.forEach(function (p) { p.t += dt; if (p.t < 1.2) return; G.f.forEach(function (f) { if (f.st === 'dead' || f.spirit === 2 || f.inM || Math.hypot(f.x - p.x, f.y - p.y) > p.r) return; f.hp -= 7 * dt; f.stat.taken += 7 * dt; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } }); });
+  if (E.poolT <= 0) { E.poolT = g.poolEvery; var a = rnd() * 6.283, rr = Math.pow(rnd(), 1.6) * Math.min(E.r * 0.8, E.cavern ? 900 : 1400); E.pools.push({ x: E.x + Math.cos(a) * rr, y: E.y + Math.sin(a) * rr, r: 120, t: 0 }); }
+  E.pools.forEach(function (p) { p.t += dt; if (p.t < 1.2) return; G.f.forEach(function (f) { if (f.st === 'dead' || f.spirit === 2 || f.inM || (E.cavern && !inCavern(f)) || Math.hypot(f.x - p.x, f.y - p.y) > p.r) return; f.hp -= 7 * dt; f.stat.taken += 7 * dt; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } }); });
   E.pools = E.pools.filter(function (p) { return p.t < 7.2; });
 }
 function grailPull(f) { var E = G.event; if (!E || E.kind !== 'grail') return null; return { x: E.x, y: E.y, r: E.r }; }
 function grailMad(f) { var E = G.event; return !!(E && E.kind === 'grail' && E.corrupt && !f.def.isMaster && Math.hypot(f.x - E.x, f.y - E.y) < 450); }
+/* ---- second batch of events: the Demolition, the Shadow, the Festival; and the Great Cavern as a fourth final site ---- */
+var EVT2 = {
+  demo: { charges: 3, ring: 230, plant: 6, disarm: 4, dur: 150, fuse: 25, need: 2, blastR: 460, blastDmg: 45 },
+  shadow: { spd: 150, touch: 70, drain: 20, swallow: 0.15, sense: 2000, minNight: 2, minDead: 2 },
+  festival: { x: 3700, y: 4700, r: 720, crowd: 45, mult: 3, relicNeed: 15, relicDmg: 1.08 },
+  cavern: { chance: 0.15, r0: 1150, r1: 450, grace: 75 }
+};
+function rebuildRects() { RECTS = []; MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); }); buildRectGrid(); }
+/* ---- the Demolition: a mage killer comes to blow up a rival's home. Lore: Kiritsugu and the Hyatt.
+   The attacking master plants the charges by hand; the defenders disarm them. If the house goes up,
+   it is rubble, and the team starts again at a level 1 backup base. ---- */
+function homeBlock(h) { var best = null, bd = 1e9; MAP.b.forEach(function (b) { if (b.ruin || b.x > MAP.cityW) return; if (h.canon ? b.home !== h.key : !b.gen) return; var d = Math.hypot(b.x - h.x, b.y - h.y); if (d < bd) { bd = d; best = b; } }); return bd < 600 ? best : null; }
+function freeSpot(x, y, ax, ay) { for (var i = 0; i < 12; i++) { if (!rectsIn(x - 30, y - 30, x + 30, y + 30).some(function (r) { return inRect(r, x, y, 30); })) return [x, y]; x += ax * 40; y += ay * 40; } return [x, y]; }
+function startDemolition() {
+  var D = EVT2.demo, agg = null, tgt = -1, kir = evAlive('kiritsugu');
+  if (kir) agg = kir;
+  else { var ms = G.f.filter(function (f) { return f.def.isMaster && f.st !== 'dead' && f.partner && f.partner.st !== 'dead'; }).sort(function (a, b) { return teamKills(b.team) - teamKills(a.team) || (rnd() - 0.5); }); agg = ms[0]; }
+  if (!agg) return;
+  var kay = evAlive('kayneth');
+  if (kay && kay.team !== agg.team && G.fields[kay.team] && G.fields[kay.team].lvl > 0) tgt = kay.team;
+  else { var c = Object.keys(G.fields).map(Number).filter(function (t) { var F = G.fields[t]; return t !== agg.team && F.lvl > 0 && masterOf(t) && !F.backup; }).sort(function (a, b) { return G.fields[b].lvl - G.fields[a].lvl || (rnd() - 0.5); }); tgt = c.length ? c[0] : -1; }
+  if (tgt < 0) return;
+  var F = G.fields[tgt], ch = [];
+  for (var i = 0; i < D.charges; i++) { var a = i * 6.283 / D.charges + 0.5, p = freeSpot(F.x + Math.cos(a) * D.ring, F.y + Math.sin(a) * D.ring, Math.cos(a), Math.sin(a)); ch.push({ x: p[0], y: p[1], r: 60, planted: false, prog: 0, dis: 0 }); }
+  G.event = { kind: 'demo', agg: agg, team: agg.team, target: tgt, x: F.x, y: F.y, charges: ch, t: 0, dur: D.dur, fuse: -1 };
+  FX.event('demo', G.event);
+}
+function demoTick(E, dt) {
+  var D = EVT2.demo, a = E.agg;
+  // the defenders always know where the attacking master is
+  G.f.forEach(function (f) { if (f.team === E.target) G.seenBy[E.target][a.idx] = G.time + 2; });
+  if (a.st === 'dead' && E.fuse < 0) { expose(E.team, 30); endEvent('The bomber is down. The house stands.'); return; }
+  E.charges.forEach(function (c) {
+    if (!c.planted && a.st !== 'dead' && Math.hypot(a.x - c.x, a.y - c.y) < c.r && a.st !== 'stag') { c.prog += dt; if (c.prog >= D.plant) { c.planted = true; c.prog = 0; c.dis = 0; FX.event('charge', E); } }
+    if (c.planted) { var def = G.f.some(function (f) { return f.team === E.target && f.st !== 'dead' && f.spirit !== 2 && Math.hypot(f.x - c.x, f.y - c.y) < c.r && G.time - (f.lastHitT || -99) > 0.6; }); if (def) { c.dis += dt; if (c.dis >= D.disarm) { c.planted = false; c.dis = 0; FX.event('disarm', E); } } else c.dis = Math.max(0, c.dis - dt * 0.5); }
+  });
+  var n = E.charges.filter(function (c) { return c.planted; }).length;
+  if (E.fuse < 0 && n === D.charges) { E.fuse = D.fuse; FX.event('fuse', E); }
+  if (E.fuse >= 0) { E.fuse -= dt; if (E.fuse <= 0) { if (n >= D.need) demolish(E); else { expose(E.team, 30); endEvent('Too few charges went off. The house stands.'); } return; } }
+  else if (E.t >= E.dur) { expose(E.team, 30); endEvent('The bomber ran out of time. The house stands.'); }
+}
+function demolish(E) {
+  var D = EVT2.demo, F = G.fields[E.target], h = G.homes.filter(function (q) { return q.team === E.target; })[0];
+  G.f.forEach(function (f) { if (f.st !== 'dead' && f.spirit !== 2 && f.x < MAP.cityW && Math.hypot(f.x - F.x, f.y - F.y) < D.blastR) hurt(null, f, { dmg: D.blastDmg, power: 3, stag: 1.0, kind: 'proj', key: 'blast', hs: 0.1, unblock: true }, 1, { x: F.x, y: F.y }); });
+  var b = h && homeBlock(h); if (b) { b.ruin = true; b.k = 'rubble'; }
+  (MAP.doors || []).forEach(function (d) { if (F.rooms.indexOf(d.room) >= 0) d.ruined = true; });
+  // the backup base: a small safehouse on a free plot
+  var used = G.homes.map(function (q) { return [q.x, q.y - 120]; }), free = MAP.plots.filter(function (p) { return !used.some(function (u) { return Math.hypot(u[0] - p[0], u[1] - p[1]) < 300; }) && !MAP.b.some(function (q) { return q.gen && Math.hypot(q.x - p[0], q.y - p[1]) < 200; }); });
+  var p = free.sort(function (a2, b2) { return Math.hypot(a2[0] - F.x, a2[1] - F.y) - Math.hypot(b2[0] - F.x, b2[1] - F.y); })[0] || MAP.plots[0];
+  MAP.b.push({ x: p[0], y: p[1] - 20, w: 200, h: 150, k: 'safehouse', gen: true, name: 'Backup safehouse' }); rebuildRects();
+  if (h) { h.x = p[0]; h.y = p[1] + 110; h.canon = false; h.name = 'Backup safehouse'; }
+  F.x = p[0]; F.y = p[1] + 110; F.lvl = 1; F.rooms = []; F.backup = true; F.name = 'Backup safehouse'; F.inside = {};
+  G.f.forEach(function (f) { if (f.team === E.target) f.home = [F.x, F.y]; });
+  var am = masterOf(E.team); if (am) am.manaBonus = (am.manaBonus || 0) + 40;
+  FX.event('demolished', { team: E.target, agg: E.team, x: E.x, y: E.y }); FX.shake(18);
+  endEvent(null);
+}
+/* ---- the Shadow: the Grail's corruption walks the streets. It cannot be fought, only fled.
+   It swallows the weakened. Once it has been seen, the Grail will be black. ---- */
+function shadowOk() { var c = G.clock; return c.n >= EVT2.shadow.minNight && G.f.filter(function (f) { return f.st === 'dead' && !f.def.isMaster; }).length >= EVT2.shadow.minDead; }
+function startShadow() {
+  var ok = civNodes().filter(function (n) { return G.f.every(function (f) { return f.st === 'dead' || f.x > MAP.cityW || Math.hypot(f.x - n.x, f.y - n.y) > 1500; }); }), n = ok.length ? ok[Math.floor(rnd() * ok.length)] : civNodes()[0];
+  G.shadowSeen = true;
+  G.event = { kind: 'shadow', x: n.x, y: n.y, t: 0, stun: 0, wand: null, wandT: 0 }; FX.event('shadow', G.event);
+}
+function shadowTick(E, dt) {
+  var S = EVT2.shadow;
+  if (E.stun > 0) { E.stun -= dt; return; }
+  var tg = null, bd = S.sense;
+  G.f.forEach(function (f) { if (f.st === 'dead' || f.x > MAP.cityW || f.spirit === 2) return; var d = Math.hypot(f.x - E.x, f.y - E.y), weak = f.hp < f.def.hp * 0.5; if ((weak && d < bd) || (d < 900 && d < bd * 0.5)) { bd = weak ? d : d * 2; tg = f; } });
+  var gx, gy;
+  if (tg) { gx = tg.x; gy = tg.y; } else { if (!E.wand || E.wandT < G.time || Math.hypot(E.x - E.wand.x, E.y - E.wand.y) < 80) { var q = BUSY[Math.floor(rnd() * BUSY.length)]; E.wand = { x: q[0], y: q[1] }; E.wandT = G.time + 20; } gx = E.wand.x; gy = E.wand.y; }
+  var d = Math.hypot(gx - E.x, gy - E.y); if (d > 5) { E.x += (gx - E.x) / d * S.spd * dt; E.y += (gy - E.y) / d * S.spd * dt; }
+  G.f.forEach(function (f) {
+    if (f.st === 'dead' || f.x > MAP.cityW || f.spirit === 2 || Math.hypot(f.x - E.x, f.y - E.y) > S.touch + FR) return;
+    f.hp -= S.drain * dt; f.stat.taken += S.drain * dt; f.lastHitT = G.time;
+    if (f.hp < f.def.hp * S.swallow || f.hp <= 0) { f.cause = 'shadow'; FX.event('swallowed', { f: f, team: f.team }); kill(f, true); }
+  });
+  G.civ.forEach(function (c) { if (c.on && Math.hypot(c.x - E.x, c.y - E.y) < 500 && c.flee <= 0) { c.flee = 4; c.fx = E.x; c.fy = E.y; } });
+}
+// a Noble Phantasm cannot hurt the Shadow, but it can drive it back
+function npRepelsShadow(f) { var E = G.event; if (!E || E.kind !== 'shadow' || Math.hypot(f.x - E.x, f.y - E.y) > 600) return; var a = Math.atan2(E.y - f.y, E.x - f.x); E.x += Math.cos(a) * 260; E.y += Math.sin(a) * 260; E.stun = 3; FX.event('repelled', E); }
+function shadowNear(f, r) { var E = G.event; return !!(E && E.kind === 'shadow' && f.x < MAP.cityW && Math.hypot(f.x - E.x, f.y - E.y) < (r || 500)); }
+/* ---- the Festival: the shopping street is packed. Fighting there is seen by everyone, and a relic is for sale ---- */
+function startFestival() {
+  var Fs = EVT2.festival, ns = civNodes().filter(function (n) { return Math.hypot(n.x - Fs.x, n.y - Fs.y) < 650; }), extra = 0;
+  if (ns.length) G.civ.forEach(function (c) { if (extra >= Fs.crowd || c.on) return; var n = ns[Math.floor(rnd() * ns.length)]; c.on = true; c.onT = G.time; c.x = n.x; c.y = n.y; c.node = n.id; c.to = -1; c.fest = true; extra++; });
+  G.festival = true;
+  G.tasks.push({ kind: 'relic', x: Fs.x, y: Fs.y, r: 120, name: 'The relic stall', need: Fs.relicNeed, prog: {}, done: {} });
+  FX.event('festival', {});
+}
+function inFestival(x, y) { return !!(G.festival && isDay() && Math.hypot(x - EVT2.festival.x, y - EVT2.festival.y) < EVT2.festival.r); }
+function relicDone(t, k) { k.claimed = t; var s = G.f.filter(function (f) { return f.team === t && !f.def.isMaster && f.st !== 'dead'; })[0] || masterOf(t); if (s) { s.relic = true; FX.text(s, 'RELIC CLAIMED'); } FX.event('relic', { team: t }); }
+/* ---- the Great Cavern: the rarest final site, always corrupted. The fight happens underground ---- */
+function cavernSite() { var rm = (MAP.rooms || []).filter(function (r) { return r.id === 'cavern'; })[0]; return rm ? { x: (rm.x0 + rm.x1) / 2, y: (rm.y0 + rm.y1) / 2 + 100, name: 'the Great Cavern beneath Ryuudou Temple', cavern: true, room: rm } : null; }
+function inCavern(f) { var rm = roomAt(f.x, f.y); return !!(rm && rm.id === 'cavern'); }
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -2480,6 +2593,11 @@ function aiWar(ai, dt) {
   if (f.sealOrder > 0 && st !== 'charge') st = 'charge';
   if (m && m.fleeing && !f.isPlayerMate && !(f.sealOrder > 0) && st === 'charge') st = 'protect';
   if (f.rampT > G.time && !G.ai[f.idx] === false) { var rt = rampTarget(f); if (f.spirit === 2) press(f, 'spirit'); if (rt) { f.lock = rt; f.foe = rt; if (dist(f, rt) > 380) { moveTo(f, rt.x, rt.y, 1); return; } aiTick(ai, dt); return; } }
+  if (shadowNear(f, 480) && !f.isPlayerMate) { var sa = Math.atan2(f.y - G.event.y, f.x - G.event.x); moveTo(f, f.x + Math.cos(sa) * 400, f.y + Math.sin(sa) * 400, 1); noOffense(f); return; }
+  var ED = G.event; if (ED && ED.kind === 'demo' && !f.isPlayerMate) {
+    if (ED.target === f.team && ED.agg.st !== 'dead' && f.hp > f.def.hp * 0.3) { f.lock = ED.agg; f.foe = ED.agg; if (f.spirit === 2) press(f, 'spirit'); if (dist(f, ED.agg) > 300) { moveTo(f, ED.agg.x, ED.agg.y, 1); return; } aiTick(ai, dt); return; }
+    if (ED.team === f.team && m && m === ED.agg && st === 'charge') st = 'protect';
+  }
   var EH = G.event; if (EH && EH.kind === 'horror' && !EH.boss.dead && f.team !== EH.culprit && !f.isPlayerMate && f.hp > f.def.hp * 0.45 && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) < 3200 && !(near && nd < 300 && !inTruce(f, near))) { if (f.spirit === 2) press(f, 'spirit'); var bx = clamp(EH.boss.x, 5720, 6280), by = EH.boss.y < 3300 ? 2440 : 5560; if (Math.hypot(f.x - bx, f.y - by) > 60) moveTo(f, bx, by, 1); else { f.inp.mx = 0; f.inp.my = 0; } if (f.st === 'idle' && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) - EH.boss.r < (f.A.light.reach || 80) + 20) press(f, 'light'); return; }
   var gps = grailPull(f); if (gps && !f.isPlayerMate && Math.hypot(f.x - gps.x, f.y - gps.y) > gps.r - 200 && !(near && nd < 300)) { if (f.spirit === 2) press(f, 'spirit'); moveTo(f, gps.x, gps.y, 1); return; }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
@@ -2537,6 +2655,14 @@ function aiMaster(ai, dt) {
   // before the final night a wounded master breaks off and runs home; the servant covers the retreat
   if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75) f.fleeing = true; else if (f.hp > f.def.hp * 0.9) f.fleeing = false; } else f.fleeing = false;
   if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
+  if (shadowNear(f, 520) && !f.isPlayerMate) { var sm = Math.atan2(f.y - G.event.y, f.x - G.event.x); moveTo(f, f.x + Math.cos(sm) * 400, f.y + Math.sin(sm) * 400, 1); return; }
+  var EM = G.event;
+  if (EM && EM.kind === 'demo' && !f.isPlayerMate) {
+    var tc = null, tcd = 1e9;
+    if (EM.agg === f) EM.charges.forEach(function (c) { var d = Math.hypot(f.x - c.x, f.y - c.y); if (!c.planted && d < tcd) { tcd = d; tc = c; } });
+    else if (EM.target === f.team) EM.charges.forEach(function (c) { var d = Math.hypot(f.x - c.x, f.y - c.y); if (c.planted && d < tcd) { tcd = d; tc = c; } });
+    if (tc && !(thr && td < 200)) { if (tcd > 30) moveTo(f, tc.x, tc.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
+  }
   var gpm = grailPull(f); if (gpm && Math.hypot(f.x - gpm.x, f.y - gpm.y) > gpm.r - 200 && !(thr && td < 300)) { moveTo(f, gpm.x, gpm.y, 1); return; }
   // by day a master works on the day's tasks, or goes home to rest, unless an enemy servant is right there
   if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) {
@@ -4202,6 +4328,7 @@ function drawObs(g, p) {
   if (k === 'column') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = '#b8b2a6'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.45, 0, 6.283); g.fillStyle = 'rgba(255,255,255,.2)'; g.fill(); return; }
   if (k === 'chair') { g.fillStyle = '#5a3e28'; g.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); return; }
   if (k === 'tree' || k === 'pine') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = k === 'pine' ? '#1f3d2a' : '#24432a'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.25, p.y - p.r * 0.25, p.r * 0.6, 0, 6.283); g.fillStyle = k === 'pine' ? '#2c5238' : '#335e39'; g.fill(); g.beginPath(); g.arc(p.x - p.r * 0.35, p.y - p.r * 0.38, p.r * 0.25, 0, 6.283); g.fillStyle = 'rgba(160,210,140,.18)'; g.fill(); return; }
+  if (k === 'rock') { g.beginPath(); g.ellipse(p.x, p.y, p.r, p.r * 0.85, 0.4, 0, 6.283); g.fillStyle = '#4a443c'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.ellipse(p.x - p.r * 0.2, p.y - p.r * 0.25, p.r * 0.5, p.r * 0.35, 0.4, 0, 6.283); g.fillStyle = '#5e574c'; g.fill(); return; }
   if (k === 'persimmon') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = '#3a4a26'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.2, p.y - p.r * 0.2, p.r * 0.65, 0, 6.283); g.fillStyle = '#4e5e30'; g.fill(); g.fillStyle = '#e8823a'; for (var pk = 0; pk < 9; pk++) { var pa = pk * 2.4, pr = p.r * (0.3 + (pk % 3) * 0.22); g.beginPath(); g.arc(p.x + Math.cos(pa) * pr, p.y + Math.sin(pa) * pr, 4, 0, 6.283); g.fill(); } return; }
   if (k === 'lantern') { g.save(); g.translate(p.x, p.y); g.rotate(0.785); g.fillStyle = '#8a867a'; g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.fillRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.strokeRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.restore(); g.beginPath(); g.arc(p.x, p.y, 6, 0, 6.283); g.fillStyle = 'rgba(255,200,110,.85)'; g.fill(); return; }
   if (k === 'lamp') { var lg = g.createRadialGradient(p.x, p.y, 2, p.x, p.y, 120); lg.addColorStop(0, 'rgba(255,220,140,.22)'); lg.addColorStop(1, 'rgba(255,220,140,0)'); g.fillStyle = lg; g.beginPath(); g.arc(p.x, p.y, 120, 0, 6.283); g.fill(); }
@@ -4283,7 +4410,7 @@ function drawWorld() {
   });
   ghosts.forEach(function (gh) { var I = IMG[gh.id].body; if (!weaponOK(I)) return; g.save(); g.globalAlpha = 0.4 * (1 - gh.t / gh.life); g.translate(gh.x, gh.y); g.rotate(gh.face); g.drawImage(I.im, I.x, I.y, I.w, I.h); g.restore(); });
   puffs.forEach(function (p) { var pp = p.t / p.life; g.beginPath(); g.arc(p.x, p.y, p.r * (1 + 1.8 * pp), 0, 6.283); g.fillStyle = 'rgba(' + p.rgb + ',' + (0.45 * (1 - pp)) + ')'; g.fill(); });
-  drawCivs(g); drawMobs(g); G.f.forEach(function (f) { if (visL(f)) drawRampAura(g, f); });
+  drawCivs(g); drawMobs(g); drawShadow(g); G.f.forEach(function (f) { if (visL(f)) drawRampAura(g, f); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawField(f, i, ar); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawTelegraph(f, i, ar); });
   // a fighter frozen by their own hit-stop shudders in place when they are the one hit
@@ -4414,7 +4541,7 @@ function drawCity(g, m) {
   drawYards(g, vr, t);
   // interiors
   m.rooms.forEach(function (rm) { if (vis(vr, rm.x0, rm.y0, rm.x1, rm.y1)) drawRoom(g, rm, t); });
-  drawCircles(g, vr, t); drawFields(g, vr, t); drawTasks(g, vr, t); drawEventsGround(g, vr, t);
+  drawCircles(g, vr, t); drawFields(g, vr, t); drawTasks(g, vr, t); drawEventsGround(g, vr, t); drawEvents2Ground(g, vr, t);
   if (m.labels) { g.save(); g.textAlign = 'center'; g.font = '700 58px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.10)'; m.labels.forEach(function (lb) { if (vis(vr, lb[1] - 600, lb[2] - 70, lb[1] + 600, lb[2] + 20)) g.fillText(lb[0], lb[1], lb[2]); }); g.restore(); }
 }
 function zoneTexture(g, z, vr) {
@@ -4579,6 +4706,8 @@ function drawCityBlock(g, b, i) {
     case 'fence': g.strokeStyle = '#1a1c20'; g.lineWidth = 4; g.beginPath(); if (w >= h) { g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); } else { g.moveTo(b.x, y0); g.lineTo(b.x, y0 + h); } g.stroke(); g.fillStyle = '#2a2d33'; for (var fp = 0; fp <= (w >= h ? w : h); fp += 40) { if (w >= h) g.fillRect(x0 + fp - 4, b.y - 4, 8, 8); else g.fillRect(b.x - 4, y0 + fp - 4, 8, 8); } break;
     case 'warehouse': flatRoof(g, x0, y0, w, h, '#56656e', i); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var wq = x0 + 14; wq < x0 + w; wq += 14) { g.beginPath(); g.moveTo(wq, y0 + 4); g.lineTo(wq, y0 + h - 4); g.stroke(); } break;
     case 'cross_m': g.fillStyle = '#7d7a72'; g.fillRect(x0, y0, w, h); g.fillStyle = '#d6d2c6'; g.fillRect(b.x - 4, y0 + 4, 8, h - 8); g.fillRect(x0 + 6, b.y - 8, w - 12, 7); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'rubble': g.fillStyle = '#3a3632'; g.fillRect(x0, y0, w, h); for (var rb = 0; rb < 40; rb++) { var rx = x0 + ((rb * 97) % 100) / 100 * w, ry = y0 + ((rb * 61) % 100) / 100 * h; g.fillStyle = ['#5a554e', '#4a4540', '#6a5a4a', '#2a2622'][rb % 4]; g.fillRect(rx - 10, ry - 7, 16 + (rb % 3) * 6, 10 + (rb % 2) * 6); } g.fillStyle = 'rgba(255,140,60,.25)'; g.beginPath(); g.arc(b.x, b.y, Math.min(w, h) * 0.3, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'cave_mouth': g.fillStyle = '#4a4640'; g.beginPath(); g.ellipse(b.x, b.y, w / 2, h / 2, 0, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#0a0806'; g.beginPath(); g.ellipse(b.x, b.y + h * 0.2, w * 0.28, h * 0.3, 0, 0, 6.283); g.fill(); break;
     case 'woodpile': for (var wr = 0; wr < 3; wr++) for (var wc = 0; wc < 5; wc++) { g.fillStyle = wr % 2 ? '#7a5434' : '#8a6040'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 7, 0, 6.283); g.fill(); g.strokeStyle = '#2a1a10'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = '#c9a074'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 3, 0, 6.283); g.fill(); } break;
     case 'crate': g.fillStyle = '#6a4a2c'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#3a2616'; g.lineWidth = 4; g.strokeRect(x0 + 5, y0 + 5, w - 10, h - 10); g.beginPath(); g.moveTo(x0 + 5, y0 + 5); g.lineTo(x0 + w - 5, y0 + h - 5); g.stroke(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     // interior furniture and walls
@@ -4598,7 +4727,7 @@ function drawCityBlock(g, b, i) {
   }
 }
 function drawRoom(g, rm, t) {
-  var F = { marble: ['#7e7a72', '#6e6a62'], wood: ['#4f3826', '#46321f'], darkwood: ['#2f2328', '#271d22'], stone: ['#4e4b45', '#45423d'], tatami: ['#7a7a52', '#6e6e48'] }[rm.floor] || ['#444', '#3a3a3a'];
+  var F = { cave: ['#2c2824', '#24201c'], marble: ['#7e7a72', '#6e6a62'], wood: ['#4f3826', '#46321f'], darkwood: ['#2f2328', '#271d22'], stone: ['#4e4b45', '#45423d'], tatami: ['#7a7a52', '#6e6e48'] }[rm.floor] || ['#444', '#3a3a3a'];
   var w = rm.x1 - rm.x0, h = rm.y1 - rm.y0;
   g.fillStyle = F[0]; g.fillRect(rm.x0, rm.y0, w, h);
   if (rm.floor === 'marble') { g.fillStyle = F[1]; for (var tx = rm.x0; tx < rm.x1; tx += 80) for (var ty = rm.y0 + ((tx - rm.x0) / 80 % 2) * 80; ty < rm.y1; ty += 160) g.fillRect(tx, ty, 80, 80); }
@@ -4610,6 +4739,7 @@ function drawRoom(g, rm, t) {
     else if (p.kind === 'wood' || p.kind === 'stone') { g.fillStyle = p.kind === 'wood' ? '#4f3826' : '#4e4b45'; g.fillRect(p.x0, p.y0, pw, ph); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var ly = p.y0; ly < p.y1; ly += p.kind === 'wood' ? 24 : 70) { g.beginPath(); g.moveTo(p.x0, ly); g.lineTo(p.x1, ly); g.stroke(); } }
     else if (p.kind === 'stairs') { g.fillStyle = '#6e6a62'; g.fillRect(p.x0, p.y0, pw, ph); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; for (var sy = p.y0; sy < p.y1; sy += 20) { g.beginPath(); g.moveTo(p.x0, sy); g.lineTo(p.x1, sy); g.stroke(); } g.fillStyle = '#5a1a1e'; g.fillRect(cx - 60, p.y0, 120, ph); }
     else if (p.kind === 'workshop' || p.kind === 'pit') { g.fillStyle = p.kind === 'pit' ? '#1e1622' : '#2c2b33'; g.fillRect(p.x0, p.y0, pw, ph); }
+    else if (p.kind === 'crater') { g.fillStyle = '#16100e'; g.beginPath(); g.ellipse(cx, cy, pw / 2, ph / 2, 0, 0, 6.283); g.fill(); g.strokeStyle = '#3a2a24'; g.lineWidth = 8; g.stroke(); runeCircle(g, cx, cy, pw / 2 - 40, '#c0203a', t * 0.2, 0.35); }
     else if (p.kind === 'circle') { runeCircle(g, cx, cy, pw / 2, p.kind === 'circle' && rm.id === 'emiya' ? '#7fc4ee' : '#e04a5a', t * 0.4, 0.75); }
     else if (p.kind === 'wormpit') { g.fillStyle = '#120c14'; g.beginPath(); g.arc(cx, cy, pw / 2, 0, 6.283); g.fill(); g.strokeStyle = '#4a3458'; g.lineWidth = 4; for (var wk = 0; wk < 14; wk++) { var wa = wk * 0.45 + t * 0.6, wr = pw / 2 * (0.3 + 0.6 * ((wk * 37) % 10) / 10); g.beginPath(); g.arc(cx + Math.cos(wa) * wr, cy + Math.sin(wa) * wr, 10, wa, wa + 3); g.stroke(); } }
   });
@@ -5234,11 +5364,12 @@ function drawEventHud(x, y, mx0, my0, mw, mh) {
   else if (E.kind === 'horror') s = 'HORROR IN THE RIVER · ' + Math.ceil(100 * Math.max(0, E.boss.hp) / E.boss.max) + '%';
   else if (E.kind === 'falsedeath') s = E.team === G.f[MEI].team ? 'BELIEVED DEAD · UNTIL DAWN' : E.f.def.cls.toUpperCase() + ' HAS FALLEN';
   else if (E.kind === 'berserk') s = 'BERSERKER UNCHAINED · ' + fmtT(E.dur - E.t);
+  else if (event2Hud(E)) s = event2Hud(E);
   else if (E.kind === 'grail') s = 'THE GRAIL' + (E.corrupt ? ', BLACK' : '') + ' · ' + E.name.replace(/^the /, '').toUpperCase();
   var col = EV_COL[E.kind] || '#e9e4d3';
   c.font = '700 ' + (VW < 560 ? 13 : 15) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right'; var tw = c.measureText(s).width + 16;
   c.fillStyle = 'rgba(8,14,20,.8)'; c.fillRect(x - tw, y - 15, tw, 21); c.fillStyle = col; c.fillText(s, x - 6, y);
-  var ex = E.kind === 'bounty' ? (G.f.filter(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })[0] || E) : E.kind === 'horror' ? E.boss : E.kind === 'berserk' ? E.f : E; if (ex.x === undefined || E.kind === 'falsedeath') return 24;
+  var ex = E.kind === 'bounty' ? (G.f.filter(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })[0] || E) : E.kind === 'horror' ? E.boss : E.kind === 'berserk' ? E.f : E; if (E.kind === 'grail' && E.cavern) ex = { x: 2120, y: 425 }; if (ex.x === undefined || E.kind === 'falsedeath') return 24;
   var px = mx0 + ex.x / MW * mw, py = my0 + ex.y / H * mh, p = 0.5 + 0.5 * Math.sin(G.time * 5);
   c.strokeStyle = col; c.lineWidth = 2; c.globalAlpha = 0.6 + 0.4 * p; c.beginPath(); c.arc(px, py, 5 + 3 * p, 0, 6.283); c.stroke();
   if (E.kind === 'grail') { c.save(); c.beginPath(); c.rect(mx0, my0, mw, mh); c.clip(); c.beginPath(); c.arc(px, py, E.r / MW * mw, 0, 6.283); c.stroke(); c.restore(); }
@@ -5289,6 +5420,54 @@ function drawGrailHeart(g, E, t) {
   g.fillStyle = E.corrupt ? '#0a0206' : '#fffaf0'; g.beginPath(); g.arc(E.x, E.y, R, 0, 6.283); g.fill();
   g.strokeStyle = E.corrupt ? '#e0203a' : '#ffd36b'; g.lineWidth = 6; g.stroke();
   g.restore();
+}
+/* ---- second batch on screen: charges and rubble, the Shadow, the festival, the Great Cavern ---- */
+(function () {
+  var base = FX.event;
+  FX.event = function (kind, d, msg) {
+    if (!G || !G.f[MEI]) return; var my = G.f[MEI].team;
+    if (kind === 'demo') { if (d.team === my) FX.banner('Bring the house down', 'Plant the charges at ' + teamName(d.target).replace('’s team', '’s home') + ' by hand, then hold them until the fuse runs out.'); else if (d.target === my) FX.banner('Your home is under attack', teamName(d.team) + '’s master is planting charges at your house. Stop them, or lose it.'); else FX.banner('A Demolition', teamName(d.team) + ' moves on ' + teamName(d.target).replace('’s team', '’s home') + ' with explosives.'); return; }
+    if (kind === 'charge') { if (d.team === my || d.target === my) note('A charge is set (' + d.charges.filter(function (c) { return c.planted; }).length + '/' + d.charges.length + ')', '#f0a85a'); return; }
+    if (kind === 'disarm') { if (d.team === my || d.target === my) note('A charge is pulled out.', '#7fc4ee'); return; }
+    if (kind === 'fuse') { if (d.team === my || d.target === my) FX.banner('The fuse is lit', EVT2.demo.fuse + ' seconds. ' + (d.target === my ? 'Pull the charges, or get clear!' : 'Keep them off the charges, then get clear of the blast!')); return; }
+    if (kind === 'demolished') { FX.snd('boomBig', { x: d.x, y: d.y, idx: -1 }); flashFx('#ffb060', 0.4, 0.5); if (d.team === my) FX.banner('Your home is rubble', 'Start over at a backup safehouse. Its bounded field is back to level 1.'); else FX.banner('A house comes down', teamName(d.team).replace('’s team', '’s home') + ' is rubble.'); return; }
+    if (kind === 'shadow') { FX.banner('A Shadow Walks the City', 'Something black moves through Fuyuki. It cannot be fought, only fled. It swallows the wounded.'); FX.snd('bell'); return; }
+    if (kind === 'swallowed') { if (d.team === my) FX.banner('Swallowed by the Shadow', ''); else note(knownName(d.f) + ' was swallowed by the Shadow.', '#c0203a'); return; }
+    if (kind === 'repelled') { note('A Noble Phantasm drives the Shadow back.'); return; }
+    if (kind === 'festival') { FX.banner('The Shopping Street Festival', 'Crowds pack the arcade: fighting there is seen three times over. A stall is selling a strange relic; the first to claim it keeps it.'); return; }
+    if (kind === 'relic') { if (d.team === my) FX.banner('The relic is yours', 'Your servant hits a little harder for the rest of the war.'); else note(teamName(d.team) + ' bought the relic.'); return; }
+    base(kind, d, msg);
+  };
+})();
+EV_COL.demo = '#f0a85a'; EV_COL.shadow = '#c0203a'; TASK_ICON.relic = 'Relic stall'; TASK_COL.relic = '#e8bf4a';
+function drawEvents2Ground(g, vr, t) {
+  var E = G && G.event;
+  if (G.festival && isDay()) { var Fs = EVT2.festival; g.save(); for (var i = 0; i < 24; i++) { var lx = 3130 + i * 50, ly = 4640 + (i % 2) * 120; g.fillStyle = i % 3 ? '#e04a3a' : '#f0c060'; g.globalAlpha = 0.8 + 0.2 * Math.sin(t * 3 + i); g.beginPath(); g.arc(lx, ly, 8, 0, 6.283); g.fill(); } g.restore(); }
+  if (!E || E.kind !== 'demo') return;
+  var my = G.f[MEI].team;
+  E.charges.forEach(function (c) {
+    g.save(); g.translate(c.x, c.y);
+    g.strokeStyle = c.planted ? '#ff5a3a' : 'rgba(240,168,90,.7)'; g.lineWidth = 3; g.setLineDash([8, 8]); g.beginPath(); g.arc(0, 0, c.r, 0, 6.283); g.stroke(); g.setLineDash([]);
+    if (c.planted) { var bl = Math.sin(t * (E.fuse >= 0 ? 14 : 5)) > 0; g.fillStyle = '#4a4038'; g.fillRect(-14, -10, 28, 20); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(-14, -10, 28, 20); g.fillStyle = bl ? '#ff3a2a' : '#5a1a14'; g.beginPath(); g.arc(8, -4, 4, 0, 6.283); g.fill(); }
+    var p = c.planted ? c.dis / EVT2.demo.disarm : c.prog / EVT2.demo.plant;
+    if (p > 0) { g.strokeStyle = c.planted ? '#7fc4ee' : '#f0a85a'; g.lineWidth = 6; g.beginPath(); g.arc(0, 0, c.r + 10, -1.571, -1.571 + 6.283 * p); g.stroke(); }
+    g.restore();
+  });
+  if (E.fuse >= 0) { g.save(); g.font = '700 40px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ff5a3a'; g.fillText(Math.ceil(E.fuse), E.x, E.y - 200); g.restore(); }
+}
+// the Shadow: a black, shifting mass with a ragged edge
+function drawShadow(g) {
+  var E = G.event; if (!E || E.kind !== 'shadow') return; var t = G.time;
+  g.save(); var sg = g.createRadialGradient(E.x, E.y, 10, E.x, E.y, 170); sg.addColorStop(0, 'rgba(0,0,0,.95)'); sg.addColorStop(0.5, 'rgba(20,0,12,.75)'); sg.addColorStop(1, 'rgba(60,0,20,0)'); g.fillStyle = sg; g.fillRect(E.x - 170, E.y - 170, 340, 340);
+  g.fillStyle = '#050002'; g.beginPath(); for (var i = 0; i <= 24; i++) { var a = i / 24 * 6.283, r = 58 + 12 * Math.sin(t * 3 + i * 1.7) + 6 * Math.sin(t * 7 + i); if (i === 0) g.moveTo(E.x + Math.cos(a) * r, E.y + Math.sin(a) * r * 0.9); else g.lineTo(E.x + Math.cos(a) * r, E.y + Math.sin(a) * r * 0.9); } g.closePath(); g.fill();
+  g.strokeStyle = '#c0203a'; g.lineWidth = 2; g.globalAlpha = 0.6 + 0.3 * Math.sin(t * 5); g.stroke();
+  g.fillStyle = '#e0203a'; g.globalAlpha = 1; g.beginPath(); g.arc(E.x - 12, E.y - 8, 3, 0, 6.283); g.arc(E.x + 12, E.y - 8, 3, 0, 6.283); g.fill();
+  g.restore();
+}
+function event2Hud(E) {
+  if (E.kind === 'demo') { var n = E.charges.filter(function (c) { return c.planted; }).length; return 'DEMOLITION · ' + n + '/' + E.charges.length + ' charges' + (E.fuse >= 0 ? ' · FUSE ' + Math.ceil(E.fuse) : ' · ' + fmtT(E.dur - E.t)); }
+  if (E.kind === 'shadow') return 'THE SHADOW WALKS · UNTIL DAWN';
+  return null;
 }
 /* ---- multiplayer test: host-authoritative, relayed through the claude.ai room (WebRTC is blocked in artifacts) ---- */
 var NET = { ns: null, R: null, role: null, code: '', me: null, game: null, mirror: false, snapAt: 0, sentAt: 0, lastHost: null, seq: 0, ev: [], lastSeq: 0, prev: {}, cnt: {}, g: 0, h: 0, so: null, lk: -1, msg: '' };
@@ -5468,6 +5647,6 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet();
 requestAnimationFrame(frame);
-window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, ev: { startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, ev: { startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
 </script>

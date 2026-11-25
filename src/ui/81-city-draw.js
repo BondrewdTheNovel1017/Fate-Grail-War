@@ -44,7 +44,7 @@ function drawCity(g, m) {
   drawYards(g, vr, t);
   // interiors
   m.rooms.forEach(function (rm) { if (vis(vr, rm.x0, rm.y0, rm.x1, rm.y1)) drawRoom(g, rm, t); });
-  drawCircles(g, vr, t); drawFields(g, vr, t); drawTasks(g, vr, t); drawEventsGround(g, vr, t);
+  drawCircles(g, vr, t); drawFields(g, vr, t); drawTasks(g, vr, t); drawEventsGround(g, vr, t); drawEvents2Ground(g, vr, t);
   if (m.labels) { g.save(); g.textAlign = 'center'; g.font = '700 58px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.10)'; m.labels.forEach(function (lb) { if (vis(vr, lb[1] - 600, lb[2] - 70, lb[1] + 600, lb[2] + 20)) g.fillText(lb[0], lb[1], lb[2]); }); g.restore(); }
 }
 function zoneTexture(g, z, vr) {
@@ -209,6 +209,8 @@ function drawCityBlock(g, b, i) {
     case 'fence': g.strokeStyle = '#1a1c20'; g.lineWidth = 4; g.beginPath(); if (w >= h) { g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); } else { g.moveTo(b.x, y0); g.lineTo(b.x, y0 + h); } g.stroke(); g.fillStyle = '#2a2d33'; for (var fp = 0; fp <= (w >= h ? w : h); fp += 40) { if (w >= h) g.fillRect(x0 + fp - 4, b.y - 4, 8, 8); else g.fillRect(b.x - 4, y0 + fp - 4, 8, 8); } break;
     case 'warehouse': flatRoof(g, x0, y0, w, h, '#56656e', i); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var wq = x0 + 14; wq < x0 + w; wq += 14) { g.beginPath(); g.moveTo(wq, y0 + 4); g.lineTo(wq, y0 + h - 4); g.stroke(); } break;
     case 'cross_m': g.fillStyle = '#7d7a72'; g.fillRect(x0, y0, w, h); g.fillStyle = '#d6d2c6'; g.fillRect(b.x - 4, y0 + 4, 8, h - 8); g.fillRect(x0 + 6, b.y - 8, w - 12, 7); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'rubble': g.fillStyle = '#3a3632'; g.fillRect(x0, y0, w, h); for (var rb = 0; rb < 40; rb++) { var rx = x0 + ((rb * 97) % 100) / 100 * w, ry = y0 + ((rb * 61) % 100) / 100 * h; g.fillStyle = ['#5a554e', '#4a4540', '#6a5a4a', '#2a2622'][rb % 4]; g.fillRect(rx - 10, ry - 7, 16 + (rb % 3) * 6, 10 + (rb % 2) * 6); } g.fillStyle = 'rgba(255,140,60,.25)'; g.beginPath(); g.arc(b.x, b.y, Math.min(w, h) * 0.3, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'cave_mouth': g.fillStyle = '#4a4640'; g.beginPath(); g.ellipse(b.x, b.y, w / 2, h / 2, 0, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#0a0806'; g.beginPath(); g.ellipse(b.x, b.y + h * 0.2, w * 0.28, h * 0.3, 0, 0, 6.283); g.fill(); break;
     case 'woodpile': for (var wr = 0; wr < 3; wr++) for (var wc = 0; wc < 5; wc++) { g.fillStyle = wr % 2 ? '#7a5434' : '#8a6040'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 7, 0, 6.283); g.fill(); g.strokeStyle = '#2a1a10'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = '#c9a074'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 3, 0, 6.283); g.fill(); } break;
     case 'crate': g.fillStyle = '#6a4a2c'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#3a2616'; g.lineWidth = 4; g.strokeRect(x0 + 5, y0 + 5, w - 10, h - 10); g.beginPath(); g.moveTo(x0 + 5, y0 + 5); g.lineTo(x0 + w - 5, y0 + h - 5); g.stroke(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     // interior furniture and walls
@@ -228,7 +230,7 @@ function drawCityBlock(g, b, i) {
   }
 }
 function drawRoom(g, rm, t) {
-  var F = { marble: ['#7e7a72', '#6e6a62'], wood: ['#4f3826', '#46321f'], darkwood: ['#2f2328', '#271d22'], stone: ['#4e4b45', '#45423d'], tatami: ['#7a7a52', '#6e6e48'] }[rm.floor] || ['#444', '#3a3a3a'];
+  var F = { cave: ['#2c2824', '#24201c'], marble: ['#7e7a72', '#6e6a62'], wood: ['#4f3826', '#46321f'], darkwood: ['#2f2328', '#271d22'], stone: ['#4e4b45', '#45423d'], tatami: ['#7a7a52', '#6e6e48'] }[rm.floor] || ['#444', '#3a3a3a'];
   var w = rm.x1 - rm.x0, h = rm.y1 - rm.y0;
   g.fillStyle = F[0]; g.fillRect(rm.x0, rm.y0, w, h);
   if (rm.floor === 'marble') { g.fillStyle = F[1]; for (var tx = rm.x0; tx < rm.x1; tx += 80) for (var ty = rm.y0 + ((tx - rm.x0) / 80 % 2) * 80; ty < rm.y1; ty += 160) g.fillRect(tx, ty, 80, 80); }
@@ -240,6 +242,7 @@ function drawRoom(g, rm, t) {
     else if (p.kind === 'wood' || p.kind === 'stone') { g.fillStyle = p.kind === 'wood' ? '#4f3826' : '#4e4b45'; g.fillRect(p.x0, p.y0, pw, ph); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var ly = p.y0; ly < p.y1; ly += p.kind === 'wood' ? 24 : 70) { g.beginPath(); g.moveTo(p.x0, ly); g.lineTo(p.x1, ly); g.stroke(); } }
     else if (p.kind === 'stairs') { g.fillStyle = '#6e6a62'; g.fillRect(p.x0, p.y0, pw, ph); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; for (var sy = p.y0; sy < p.y1; sy += 20) { g.beginPath(); g.moveTo(p.x0, sy); g.lineTo(p.x1, sy); g.stroke(); } g.fillStyle = '#5a1a1e'; g.fillRect(cx - 60, p.y0, 120, ph); }
     else if (p.kind === 'workshop' || p.kind === 'pit') { g.fillStyle = p.kind === 'pit' ? '#1e1622' : '#2c2b33'; g.fillRect(p.x0, p.y0, pw, ph); }
+    else if (p.kind === 'crater') { g.fillStyle = '#16100e'; g.beginPath(); g.ellipse(cx, cy, pw / 2, ph / 2, 0, 0, 6.283); g.fill(); g.strokeStyle = '#3a2a24'; g.lineWidth = 8; g.stroke(); runeCircle(g, cx, cy, pw / 2 - 40, '#c0203a', t * 0.2, 0.35); }
     else if (p.kind === 'circle') { runeCircle(g, cx, cy, pw / 2, p.kind === 'circle' && rm.id === 'emiya' ? '#7fc4ee' : '#e04a5a', t * 0.4, 0.75); }
     else if (p.kind === 'wormpit') { g.fillStyle = '#120c14'; g.beginPath(); g.arc(cx, cy, pw / 2, 0, 6.283); g.fill(); g.strokeStyle = '#4a3458'; g.lineWidth = 4; for (var wk = 0; wk < 14; wk++) { var wa = wk * 0.45 + t * 0.6, wr = pw / 2 * (0.3 + 0.6 * ((wk * 37) % 10) / 10); g.beginPath(); g.arc(cx + Math.cos(wa) * wr, cy + Math.sin(wa) * wr, 10, wa, wa + 3); g.stroke(); } }
   });

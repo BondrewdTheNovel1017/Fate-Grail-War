@@ -251,6 +251,12 @@ MAPS.city = (function () {
   part(sh, 'circle', sh.x0 + 230, sh.y0 + 150, sh.x0 + 390, sh.y0 + 310);
   B(sh.x0 + 520, sh.y0 + 120, 120, 60, 'shelf'); B(sh.x0 + 100, sh.y0 + 330, 120, 70, 'table'); B(sh.x0 + 120, sh.y0 + 110, 80, 80, 'crate'); B(sh.x0 + 520, sh.y0 + 340, 90, 90, 'crate');
   door('shed', 'shed', 1620, 5285, 0, -1, sh.x0 + 310, sh.y0 + 60, 0, -1);
+  // the Great Cavern beneath Ryuudou Temple, where the Greater Grail sleeps; its mouth opens behind the temple
+  var gc = room('cavern', 'The Great Cavern', IX + 1000, 5300, 2600, 2300, 'cave');
+  part(gc, 'crater', gc.x0 + 950, gc.y0 + 800, gc.x0 + 1650, gc.y0 + 1500);
+  [[420, 500], [2150, 520], [600, 1700], [2000, 1800], [1300, 380], [380, 1150], [2250, 1150]].forEach(function (p) { o.push({ x: gc.x0 + p[0], y: gc.y0 + p[1], r: 70, k: 'rock' }); });
+  B(2120, 360, 180, 100, 'cave_mouth', { name: 'Cave mouth' });
+  door('cavern', 'cavern', 2120, 425, 0, 1, gc.x0 + 1300, gc.y0 + 70, 0, -1);
   // summoning spots: where each master starts the war alone
   var spots = {
     emiya: { x: sh.x0 + 310, y: sh.y0 + 230, name: 'The storehouse, Emiya residence' },
@@ -273,7 +279,7 @@ MAPS.city = (function () {
   };
   return {
     id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
-    walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]]], // footpaths through walled yards the road graph cannot see
+    walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]], [[1500, 1400], [1500, 1100], [2240, 1100], [2240, 560], [2120, 495]]], // footpaths through walled yards the road graph cannot see
     spots: spots, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
     river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [2850, 1800], [5000, 1180]]
   };

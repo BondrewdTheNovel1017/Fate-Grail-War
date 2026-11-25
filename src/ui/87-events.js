@@ -88,11 +88,12 @@ function drawEventHud(x, y, mx0, my0, mw, mh) {
   else if (E.kind === 'horror') s = 'HORROR IN THE RIVER · ' + Math.ceil(100 * Math.max(0, E.boss.hp) / E.boss.max) + '%';
   else if (E.kind === 'falsedeath') s = E.team === G.f[MEI].team ? 'BELIEVED DEAD · UNTIL DAWN' : E.f.def.cls.toUpperCase() + ' HAS FALLEN';
   else if (E.kind === 'berserk') s = 'BERSERKER UNCHAINED · ' + fmtT(E.dur - E.t);
+  else if (event2Hud(E)) s = event2Hud(E);
   else if (E.kind === 'grail') s = 'THE GRAIL' + (E.corrupt ? ', BLACK' : '') + ' · ' + E.name.replace(/^the /, '').toUpperCase();
   var col = EV_COL[E.kind] || '#e9e4d3';
   c.font = '700 ' + (VW < 560 ? 13 : 15) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right'; var tw = c.measureText(s).width + 16;
   c.fillStyle = 'rgba(8,14,20,.8)'; c.fillRect(x - tw, y - 15, tw, 21); c.fillStyle = col; c.fillText(s, x - 6, y);
-  var ex = E.kind === 'bounty' ? (G.f.filter(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })[0] || E) : E.kind === 'horror' ? E.boss : E.kind === 'berserk' ? E.f : E; if (ex.x === undefined || E.kind === 'falsedeath') return 24;
+  var ex = E.kind === 'bounty' ? (G.f.filter(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })[0] || E) : E.kind === 'horror' ? E.boss : E.kind === 'berserk' ? E.f : E; if (E.kind === 'grail' && E.cavern) ex = { x: 2120, y: 425 }; if (ex.x === undefined || E.kind === 'falsedeath') return 24;
   var px = mx0 + ex.x / MW * mw, py = my0 + ex.y / H * mh, p = 0.5 + 0.5 * Math.sin(G.time * 5);
   c.strokeStyle = col; c.lineWidth = 2; c.globalAlpha = 0.6 + 0.4 * p; c.beginPath(); c.arc(px, py, 5 + 3 * p, 0, 6.283); c.stroke();
   if (E.kind === 'grail') { c.save(); c.beginPath(); c.rect(mx0, my0, mw, mh); c.clip(); c.beginPath(); c.arc(px, py, E.r / MW * mw, 0, 6.283); c.stroke(); c.restore(); }

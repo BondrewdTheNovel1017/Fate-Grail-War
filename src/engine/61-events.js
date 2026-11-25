@@ -15,7 +15,7 @@ var EVT = {
   grail: { at: 60, r0: 4200, r1: 750, shrink: 330, dmg: 3, dmgC: 5, heal: 2, poolEvery: 3.5 }
 };
 var GRAIL_SITES = [{ x: 1500, y: 1060, name: 'Ryuudou Temple' }, { x: 1300, y: 3080, name: 'the Fuyuki Church hill' }, { x: 10450, y: 5050, name: 'the Fuyuki Civic Hall' }];
-var NIGHT_DECK = { challenge: 'diarmuid', bounty: 'gilles', horror: 'gilles', falsedeath: 'hassan', berserk: ['heracles', 'lancelot'] }, DAY_DECK = { school: 'medusa', banquet: 'iskandar', summons: null };
+var NIGHT_DECK = { challenge: 'diarmuid', bounty: 'gilles', horror: 'gilles', falsedeath: 'hassan', berserk: ['heracles', 'lancelot'], demo: 'kiritsugu', shadow: null }, DAY_DECK = { school: 'medusa', banquet: 'iskandar', summons: null, festival: null };
 function eventsOn() { return clockOn() && !G.quick && MAP.cityW; }
 function evAlive(id) { return G.f.filter(function (f) { return f.def.id === id && f.st !== 'dead'; })[0]; }
 function loreHost(ids) { if (!ids) return null; ids = [].concat(ids); for (var i = 0; i < ids.length; i++) { var f = evAlive(ids[i]); if (f) return f; } return null; }
@@ -24,11 +24,13 @@ function buildDecks() {
   G.deck = { night: deal(NIGHT_DECK), day: deal(DAY_DECK) };
   if (G.forceSchool) G.deck.day = ['school'].concat(G.deck.day.filter(function (k) { return k !== 'school'; }));
 }
-function grailSite() { if (!G.grailSite) G.grailSite = GRAIL_SITES[Math.floor(rnd() * GRAIL_SITES.length)]; return G.grailSite; }
+function grailSite() { if (!G.grailSite) { var cv = cavernSite(); G.grailSite = cv && rnd() < EVT2.cavern.chance ? cv : GRAIL_SITES[Math.floor(rnd() * GRAIL_SITES.length)]; } return G.grailSite; }
 function servantsAlive() { return G.f.filter(function (f) { return f.st !== 'dead' && !f.def.isMaster; }); }
 function canRun(k) {
   var sv = servantsAlive(), teams = {}; sv.forEach(function (f) { teams[f.team] = 1; }); var n = Object.keys(teams).length;
   if (k === 'bounty' || k === 'challenge') return n >= 3;
+  if (k === 'shadow') return shadowOk();
+  if (k === 'demo') return n >= 2 && G.fields && Object.keys(G.fields).some(function (t) { return G.fields[t].lvl > 0 && !G.fields[t].backup; });
   return n >= 2;
 }
 function eventsTick(dt) {
@@ -45,6 +47,8 @@ function eventsTick(dt) {
   else if (E.kind === 'bounty' && !G.f.some(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })) endEvent(null);
   else if (E.kind === 'horror') horrorTick(E, dt);
   else if (E.kind === 'berserk') berserkTick(E, dt);
+  else if (E.kind === 'demo') demoTick(E, dt);
+  else if (E.kind === 'shadow') shadowTick(E, dt);
   else if (E.kind === 'school') schoolTick(E, dt);
   else if (E.kind === 'grail') grailTick(E, dt);
 }
@@ -52,7 +56,7 @@ function eventsTick(dt) {
 function newPhaseEvents() {
   var c = G.clock; if (!c) return; if (!G.deck) buildDecks();
   if (G.event && G.event.kind !== 'grail') { if (G.event.kind === 'horror') horrorDawn(G.event); endEvent(null); }
-  c.evDone = false; c.pending = null;
+  c.evDone = false; c.pending = null; G.festival = false;
   if (c.phase === 'night') {
     if (c.final) { c.pending = 'grail'; return; }
     // a long war may have one still night in the middle: a breather before the next storm
@@ -64,11 +68,12 @@ function newPhaseEvents() {
     if (k === 'school') c.pending = 'school';
     else if (k === 'banquet') startBanquet();
     else if (k === 'summons') startSummons();
+    else if (k === 'festival') startFestival();
   }
 }
 function draw(which) { var D = G.deck[which]; for (var i = 0; i < D.length; i++) if (canRun(D[i])) return D.splice(i, 1)[0]; return null; }
 function startNight(k) {
-  if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk();
+  if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk(); else if (k === 'demo') startDemolition(); else if (k === 'shadow') startShadow();
   if (!G.event) G.clock.evDone = true;
 }
 function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = []; if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
@@ -266,21 +271,24 @@ function summonsDone(t) {
    corrupted, its mud wells up inside the ring and maddens the servants near its center ---- */
 function startGrail() {
   var g = EVT.grail, site = grailSite(), dead = G.f.filter(function (f) { return f.st === 'dead' && !f.def.isMaster; }).length;
-  var corrupt = rnd() < Math.min(0.75, 0.25 + 0.04 * dead);
-  G.event = { kind: 'grail', x: site.x, y: site.y, name: site.name, r: g.r0, t: 0, corrupt: corrupt, pools: [], poolT: 3 }; G.clock.evDone = true; FX.event('grail', G.event);
+  var corrupt = site.cavern || G.shadowSeen || rnd() < Math.min(0.75, 0.25 + 0.04 * dead);
+  G.event = { kind: 'grail', x: site.x, y: site.y, name: site.name, r: site.cavern ? EVT2.cavern.r0 : g.r0, t: 0, corrupt: corrupt, pools: [], poolT: 3, cavern: !!site.cavern }; G.clock.evDone = true; FX.event('grail', G.event);
 }
 function grailTick(E, dt) {
-  var g = EVT.grail; E.r = g.r1 + (g.r0 - g.r1) * Math.max(0, 1 - E.t / g.shrink);
+  var g = EVT.grail, r0 = E.cavern ? EVT2.cavern.r0 : g.r0, r1 = E.cavern ? EVT2.cavern.r1 : g.r1; E.r = r1 + (r0 - r1) * Math.max(0, 1 - E.t / g.shrink);
   G.f.forEach(function (f) {
-    if (f.st === 'dead' || f.x > MAP.cityW || f.inM) return; var d = Math.hypot(f.x - E.x, f.y - E.y);
+    if (f.st === 'dead' || f.inM) return;
+    if (E.cavern) { if (!inCavern(f)) { if (E.t > EVT2.cavern.grace) { var kc = g.dmgC * dt; f.hp -= kc; f.stat.taken += kc; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } } return; } }
+    else if (f.x > MAP.cityW) return;
+    var d = Math.hypot(f.x - E.x, f.y - E.y);
     if (d > E.r) { var k = (E.corrupt ? g.dmgC : g.dmg) * dt; f.hp -= k; f.stat.taken += k; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } return; }
     if (!E.corrupt && d < 280 && f.spirit !== 2) f.hp = Math.min(f.def.hp, f.hp + g.heal * dt);
     if (E.corrupt && d < 450 && !f.def.isMaster && f.hp > f.def.hp * 0.2) f.hp -= 0.8 * dt;
   });
   if (!E.corrupt) return;
   E.poolT -= dt;
-  if (E.poolT <= 0) { E.poolT = g.poolEvery; var a = rnd() * 6.283, rr = Math.pow(rnd(), 1.6) * Math.min(E.r * 0.8, 1400); E.pools.push({ x: E.x + Math.cos(a) * rr, y: E.y + Math.sin(a) * rr, r: 120, t: 0 }); }
-  E.pools.forEach(function (p) { p.t += dt; if (p.t < 1.2) return; G.f.forEach(function (f) { if (f.st === 'dead' || f.spirit === 2 || f.inM || Math.hypot(f.x - p.x, f.y - p.y) > p.r) return; f.hp -= 7 * dt; f.stat.taken += 7 * dt; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } }); });
+  if (E.poolT <= 0) { E.poolT = g.poolEvery; var a = rnd() * 6.283, rr = Math.pow(rnd(), 1.6) * Math.min(E.r * 0.8, E.cavern ? 900 : 1400); E.pools.push({ x: E.x + Math.cos(a) * rr, y: E.y + Math.sin(a) * rr, r: 120, t: 0 }); }
+  E.pools.forEach(function (p) { p.t += dt; if (p.t < 1.2) return; G.f.forEach(function (f) { if (f.st === 'dead' || f.spirit === 2 || f.inM || (E.cavern && !inCavern(f)) || Math.hypot(f.x - p.x, f.y - p.y) > p.r) return; f.hp -= 7 * dt; f.stat.taken += 7 * dt; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } }); });
   E.pools = E.pools.filter(function (p) { return p.t < 7.2; });
 }
 function grailPull(f) { var E = G.event; if (!E || E.kind !== 'grail') return null; return { x: E.x, y: E.y, r: E.r }; }

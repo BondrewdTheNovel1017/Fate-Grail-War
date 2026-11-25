@@ -205,6 +205,11 @@ function aiWar(ai, dt) {
   if (f.sealOrder > 0 && st !== 'charge') st = 'charge';
   if (m && m.fleeing && !f.isPlayerMate && !(f.sealOrder > 0) && st === 'charge') st = 'protect';
   if (f.rampT > G.time && !G.ai[f.idx] === false) { var rt = rampTarget(f); if (f.spirit === 2) press(f, 'spirit'); if (rt) { f.lock = rt; f.foe = rt; if (dist(f, rt) > 380) { moveTo(f, rt.x, rt.y, 1); return; } aiTick(ai, dt); return; } }
+  if (shadowNear(f, 480) && !f.isPlayerMate) { var sa = Math.atan2(f.y - G.event.y, f.x - G.event.x); moveTo(f, f.x + Math.cos(sa) * 400, f.y + Math.sin(sa) * 400, 1); noOffense(f); return; }
+  var ED = G.event; if (ED && ED.kind === 'demo' && !f.isPlayerMate) {
+    if (ED.target === f.team && ED.agg.st !== 'dead' && f.hp > f.def.hp * 0.3) { f.lock = ED.agg; f.foe = ED.agg; if (f.spirit === 2) press(f, 'spirit'); if (dist(f, ED.agg) > 300) { moveTo(f, ED.agg.x, ED.agg.y, 1); return; } aiTick(ai, dt); return; }
+    if (ED.team === f.team && m && m === ED.agg && st === 'charge') st = 'protect';
+  }
   var EH = G.event; if (EH && EH.kind === 'horror' && !EH.boss.dead && f.team !== EH.culprit && !f.isPlayerMate && f.hp > f.def.hp * 0.45 && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) < 3200 && !(near && nd < 300 && !inTruce(f, near))) { if (f.spirit === 2) press(f, 'spirit'); var bx = clamp(EH.boss.x, 5720, 6280), by = EH.boss.y < 3300 ? 2440 : 5560; if (Math.hypot(f.x - bx, f.y - by) > 60) moveTo(f, bx, by, 1); else { f.inp.mx = 0; f.inp.my = 0; } if (f.st === 'idle' && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) - EH.boss.r < (f.A.light.reach || 80) + 20) press(f, 'light'); return; }
   var gps = grailPull(f); if (gps && !f.isPlayerMate && Math.hypot(f.x - gps.x, f.y - gps.y) > gps.r - 200 && !(near && nd < 300)) { if (f.spirit === 2) press(f, 'spirit'); moveTo(f, gps.x, gps.y, 1); return; }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
@@ -262,6 +267,14 @@ function aiMaster(ai, dt) {
   // before the final night a wounded master breaks off and runs home; the servant covers the retreat
   if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75) f.fleeing = true; else if (f.hp > f.def.hp * 0.9) f.fleeing = false; } else f.fleeing = false;
   if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
+  if (shadowNear(f, 520) && !f.isPlayerMate) { var sm = Math.atan2(f.y - G.event.y, f.x - G.event.x); moveTo(f, f.x + Math.cos(sm) * 400, f.y + Math.sin(sm) * 400, 1); return; }
+  var EM = G.event;
+  if (EM && EM.kind === 'demo' && !f.isPlayerMate) {
+    var tc = null, tcd = 1e9;
+    if (EM.agg === f) EM.charges.forEach(function (c) { var d = Math.hypot(f.x - c.x, f.y - c.y); if (!c.planted && d < tcd) { tcd = d; tc = c; } });
+    else if (EM.target === f.team) EM.charges.forEach(function (c) { var d = Math.hypot(f.x - c.x, f.y - c.y); if (c.planted && d < tcd) { tcd = d; tc = c; } });
+    if (tc && !(thr && td < 200)) { if (tcd > 30) moveTo(f, tc.x, tc.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
+  }
   var gpm = grailPull(f); if (gpm && Math.hypot(f.x - gpm.x, f.y - gpm.y) > gpm.r - 200 && !(thr && td < 300)) { moveTo(f, gpm.x, gpm.y, 1); return; }
   // by day a master works on the day's tasks, or goes home to rest, unless an enemy servant is right there
   if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) {

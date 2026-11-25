@@ -86,7 +86,7 @@ function witness(x, y, teams, k) {
     if (c.flee <= 0) { c.flee = 4 + rnd() * 2; c.fx = x; c.fy = y; }
     if (G.time - c.saw > CIV.cool) { c.saw = G.time; n++; }
   });
-  if (n) { var v = n * (day ? EXPO.perD : EXPO.perN) * k; teams.forEach(function (t, i) { expose(t, i ? v * 0.5 : v); }); }
+  if (n) { var v = n * (day ? EXPO.perD : EXPO.perN) * k * (inFestival(x, y) ? EVT2.festival.mult : 1); teams.forEach(function (t, i) { expose(t, i ? v * 0.5 : v); }); }
   return n;
 }
 function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
@@ -131,7 +131,7 @@ function civTick(dt) {
     }
     if (c.wait > 0) { c.wait -= dt; c.vx = c.vy = 0; continue; }
     var from = N[c.node];
-    if (c.to < 0) { var adj = from.cadj || []; if (!adj.length) { c.to = c.node; } else c.to = adj[Math.floor(rnd() * adj.length)]; }
+    if (c.to < 0) { var adj = from.cadj || []; if (!adj.length) { c.to = c.node; } else { c.to = adj[Math.floor(rnd() * adj.length)]; if (c.fest && G.festival) { var bx = EVT2.festival.x, by = EVT2.festival.y, bn = adj.slice().sort(function (p, q) { return Math.hypot(N[p].x - bx, N[p].y - by) - Math.hypot(N[q].x - bx, N[q].y - by); })[0]; if (Math.hypot(from.x - bx, from.y - by) > 550) c.to = bn; } } }
     var to = N[c.to], dx = to.x - from.x, dy = to.y - from.y, L = Math.hypot(dx, dy) || 1, tx = to.x - dy / L * c.off, ty = to.y + dx / L * c.off;
     var mx = tx - c.x, my = ty - c.y, md = Math.hypot(mx, my);
     if (md < 8) { c.node = c.to; c.to = -1; if (rnd() < 0.15) c.wait = 1 + rnd() * 4; continue; }
