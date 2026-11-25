@@ -28,7 +28,7 @@ function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2)) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
   var best = null, bd = 1e9, es = enemiesOf(f);
-  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
+  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
   if (best) f.foe = best;
 }
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
@@ -36,10 +36,15 @@ function newWar(teamsIn, opts) {
   var spawnOrder = opts && opts.spawnOrder;
   opts = opts || {}; setMap(opts.map || 'city');
   var homes = MAP.homes ? assignHomes(teamsIn) : null;
-  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick };
+  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick, circles: [] };
   teamsIn.forEach(function (t, ti) {
-    var sp = homes ? [homes[ti].x, homes[ti].y] : MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
-    sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
+    // in the city each master starts at their summoning circle; the servant appears on it
+    var spot = homes ? summonSpot(homes[ti]) : null;
+    var sp = spot ? [spot.x, spot.y] : MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0] + (spot ? 0 : 0), sp[1] - (spot ? 10 : 0), 0, 0), ms = mkF(t.master, sp[0] - (spot ? 0 : 70), sp[1] + (spot ? 75 : 40), 0, 0);
+    sv.home = ms.home = homes ? [homes[ti].x, homes[ti].y] : sp; initMana(ms);
+    if (spot) G.circles.push({ x: sp[0], y: sp[1], team: ti, col: t.master.col, name: spot.name });
+    sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = spot ? -Math.PI / 2 : Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
+    if (spot) ms.face = -Math.PI / 2;
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
@@ -85,7 +90,7 @@ function gainMom(f, v) { if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0
 function kill(f, noRevive) {
   if (!noRevive && f.def.godHand && !f.gh) {
     f.gh = true; f.hp = f.def.hp * 0.2; f.ghT = 1.2; f.st = 'stag'; f.t = 0; f.dur = 0.5; f.act = null; f.combo = 0; f.guarding = false; f.sta = Math.max(f.sta, 60); f.exh = 0;
-    FX.text(f, 'GOD HAND'); FX.fx('godhand', f.x, f.y, f); FX.snd('godhand', f); FX.shake(10); G.hitstop = Math.max(G.hitstop, 0.3); FX.slow(0.6);
+    FX.text(f, 'GOD HAND'); FX.fx('godhand', f.x, f.y, f); FX.snd('godhand', f); if (FX.near(f.x, f.y)) { FX.shake(10); G.hitstop = Math.max(G.hitstop, 0.3); FX.slow(0.6); }
     return;
   }
   f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0;
@@ -93,5 +98,7 @@ function kill(f, noRevive) {
   if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? ARCHER_INDEPENDENT : ORPHAN_TIME; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
   var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
-  else { G.f.forEach(pickTarget); } G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); FX.slow(1.1);
+  else { G.f.forEach(pickTarget); }
+  if (G.mode === 'war') { if (f.killer && f.killer.st !== 'dead' && f.killer !== f) FX.say(f.killer, 'kill'); if (f.partner && f.partner.st !== 'dead' && f.partner.team === f.team) FX.say(f.partner, f.def.isMaster ? 'masterdown' : 'servantdown'); }
+  FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); if (FX.near(f.x, f.y)) { G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.slow(1.1); }
 }

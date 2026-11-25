@@ -2,7 +2,7 @@
    Top-down at night, light from the upper left: roofs get a lit and a shaded side, taller buildings cast longer shadows. */
 var CITY_PAL = {
   miyama: '#2f3530', shinto: '#2c2f34', forest: '#1d3022', temple: '#57524a', hill: '#2c382b', churchyard: '#2b382c', schoolyard: '#54473a', park: '#2a4430',
-  sand: '#8a7c5c', plaza: '#45484e', harbor: '#3a3e44', castle: '#4a4b48', emiya: '#474d3e', garden: '#2b472f', arcade: '#4a4646', water: '#1b3a55', pond: '#1e4260'
+  sand: '#8a7c5c', plaza: '#45484e', harbor: '#3a3e44', castle: '#4a4b48', emiya: '#474d3e', garden: '#2b472f', arcade: '#4a4646', water: '#1b3a55', pond: '#1e4260', churchhill: '#26362a', clearing: '#3b4637', cemetery: '#2c3a2e'
 };
 function cityCache(m) {
   if (m._cc) return m._cc;
@@ -35,23 +35,23 @@ function drawCity(g, m) {
   // embankments
   g.fillStyle = '#4a4d4f'; g.fillRect(5680, 0, 22, 7300); g.fillRect(6298, 0, 22, 7300); g.fillRect(0, 7290, CW, 14);
   // roads: sidewalks, asphalt, markings
-  var order = { path: 0, stairs: 1, rail: 2, street: 3, avenue: 4 };
+  var order = { lane: 0, path: 0, stairs: 1, rail: 2, street: 3, avenue: 4 };
   m.roads.slice().sort(function (a, b) { return order[a.kind] - order[b.kind]; }).forEach(function (r) { drawRoad(g, r, vr); });
   cc.ix.forEach(function (q) { if (vis(vr, q.x - 200, q.y - 200, q.x + 200, q.y + 200)) drawIntersection(g, q); });
   drawBridges(g, m, vr, t);
   // street lamps (pools of light)
   cc.lamps.forEach(function (l) { if (!vis(vr, l[0] - 90, l[1] - 90, l[0] + 90, l[1] + 90)) return; var lg = g.createRadialGradient(l[0], l[1], 2, l[0], l[1], 90); lg.addColorStop(0, 'rgba(255,214,140,.20)'); lg.addColorStop(1, 'rgba(255,214,140,0)'); g.fillStyle = lg; g.fillRect(l[0] - 90, l[1] - 90, 180, 180); g.fillStyle = '#c9c3b0'; g.beginPath(); g.arc(l[0], l[1], 4, 0, 6.283); g.fill(); });
-  // home markers under everything else on the ground
-  if (G && G.homes) G.homes.forEach(function (h) { if (!vis(vr, h.x - 200, h.y - 200, h.x + 200, h.y + 200)) return; var tf = G.f.find(function (f) { return f.team === h.team; }); var col = tf ? teamCol(tf) : '#fff'; g.save(); g.globalAlpha = 0.5; g.strokeStyle = col; g.lineWidth = 4; g.setLineDash([16, 10]); g.beginPath(); g.arc(h.x, h.y, 70, 0, 6.283); g.stroke(); g.restore(); });
+  drawYards(g, vr, t);
   // interiors
   m.rooms.forEach(function (rm) { if (vis(vr, rm.x0, rm.y0, rm.x1, rm.y1)) drawRoom(g, rm, t); });
+  drawCircles(g, vr, t);
   if (m.labels) { g.save(); g.textAlign = 'center'; g.font = '700 58px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.10)'; m.labels.forEach(function (lb) { if (vis(vr, lb[1] - 600, lb[2] - 70, lb[1] + 600, lb[2] + 20)) g.fillText(lb[0], lb[1], lb[2]); }); g.restore(); }
 }
 function zoneTexture(g, z, vr) {
   var x0 = Math.max(z.x0, vr ? vr.x0 : z.x0), x1 = Math.min(z.x1, vr ? vr.x1 : z.x1), y0 = Math.max(z.y0, vr ? vr.y0 : z.y0), y1 = Math.min(z.y1, vr ? vr.y1 : z.y1), k = z.kind;
   if (x1 <= x0 || y1 <= y0) return;
   g.save(); g.beginPath(); g.rect(x0, y0, x1 - x0, y1 - y0); g.clip();
-  if (k === 'forest' || k === 'park' || k === 'hill' || k === 'garden' || k === 'churchyard') {
+  if (k === 'forest' || k === 'park' || k === 'hill' || k === 'garden' || k === 'churchyard' || k === 'churchhill' || k === 'cemetery') {
     for (var gx = x0 - (x0 % 90); gx < x1; gx += 90) for (var gy = y0 - (y0 % 90); gy < y1; gy += 90) { var h = Math.sin(gx * 12.9898 + gy * 78.233) * 43758.5453; h -= Math.floor(h); g.fillStyle = h < 0.5 ? 'rgba(120,170,110,.07)' : 'rgba(0,0,0,.10)'; g.beginPath(); g.arc(gx + h * 60, gy + (1 - h) * 60, 26 + h * 30, 0, 6.283); g.fill(); }
     if (k === 'park' || k === 'garden') { g.strokeStyle = 'rgba(160,200,140,.05)'; g.lineWidth = 30; for (var sx = x0 - (x0 % 120); sx < x1; sx += 120) { g.beginPath(); g.moveTo(sx, y0); g.lineTo(sx, y1); g.stroke(); } }
   } else if (k === 'temple' || k === 'castle' || k === 'emiya') {
@@ -76,6 +76,7 @@ function drawRoad(g, r, vr) {
   if (!vis(vr, x0 - 40, y0 - 40, x0 + w + 40, y0 + h + 40)) return;
   var k = r.kind;
   if (k === 'path') { g.fillStyle = '#5e5a4c'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); g.fillStyle = 'rgba(255,255,255,.04)'; for (var s = 0; s < (r.h ? w : h); s += 34) { if (r.h) g.fillRect(x0 + s, y0 + 3, 30, h - 6); else g.fillRect(x0 + 3, y0 + s, w - 6, 30); } return; }
+  if (k === 'lane') { g.fillStyle = '#4c4e50'; g.fillRect(x0 - 8, y0 - 8, w + 16, h + 16); g.fillStyle = '#383a3d'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(200,200,190,.28)'; g.lineWidth = 2; g.strokeRect(x0 + 4, y0 + 4, w - 8, h - 8); return; }
   if (k === 'stairs') { g.fillStyle = '#6e6a5e'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2; for (var st = y0; st < y0 + h; st += 16) { g.beginPath(); g.moveTo(x0, st); g.lineTo(x0 + w, st); g.stroke(); } g.fillStyle = '#4a463c'; g.fillRect(x0 - 10, y0, 10, h); g.fillRect(x0 + w, y0, 10, h); return; }
   if (k === 'rail') {
     var a0 = Math.max(x0, vr ? vr.x0 : x0), a1 = Math.min(x0 + w, vr ? vr.x1 : x0 + w);
@@ -115,17 +116,6 @@ function drawBridges(g, m, vr, t) {
     g.strokeStyle = 'rgba(225,225,225,.5)'; g.setLineDash([40, 40]); [-55, 55].forEach(function (o) { g.beginPath(); g.moveTo(x0, by + o); g.lineTo(x1, by + o); g.stroke(); }); g.setLineDash([]);
     // piers
     g.fillStyle = '#5b5f66'; [5700, 6300].forEach(function (px) { g.fillRect(px - 30, by - half - 40, 60, 24); g.fillRect(px - 30, by + half + 16, 60, 24); });
-    // the arch ribs, bracing and hangers; the deck rises toward the middle
-    var ax0 = 5640, ax1 = 6360, red = '#b8322a', redL = '#e05040';
-    for (var i = 0; i < 18; i++) { var u = (i + 0.5) / 18, ux = ax0 + (ax1 - ax0) * u, hg = Math.sin(Math.PI * u); if (hg < 0.35) continue; g.strokeStyle = 'rgba(184,50,42,' + (0.55 + hg * 0.4) + ')'; g.lineWidth = 6; var dx = (ax1 - ax0) / 18; g.beginPath(); g.moveTo(ux - dx / 2, by - half - 10); g.lineTo(ux + dx / 2, by + half + 10); g.moveTo(ux + dx / 2, by - half - 10); g.lineTo(ux - dx / 2, by + half + 10); g.stroke(); }
-    [-1, 1].forEach(function (sd) {
-      var ry = by + sd * (half + 10);
-      g.strokeStyle = '#5e1712'; g.lineWidth = 20; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
-      g.strokeStyle = red; g.lineWidth = 14; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
-      g.strokeStyle = redL; g.lineWidth = 4; g.beginPath(); g.moveTo(ax0 + 30, ry - sd * 3); g.lineTo(ax1 - 30, ry - sd * 3); g.stroke();
-      g.fillStyle = '#e9e4d3'; for (var hx = ax0 + 40; hx < ax1 - 20; hx += 40) { g.beginPath(); g.arc(hx, ry, 2.5, 0, 6.283); g.fill(); }
-    });
-    g.strokeStyle = red; g.lineWidth = 10; [ax0, ax1].forEach(function (ex) { g.beginPath(); g.moveTo(ex, by - half - 10); g.lineTo(ex, by + half + 10); g.stroke(); });
     // lamps on the walkways
     for (var lx = x0 + 40; lx < x1; lx += 120) [-1, 1].forEach(function (sd) { var ly = by + sd * (half + 6), lg = g.createRadialGradient(lx, ly, 2, lx, ly, 70); lg.addColorStop(0, 'rgba(255,214,140,.25)'); lg.addColorStop(1, 'rgba(255,214,140,0)'); g.fillStyle = lg; g.fillRect(lx - 70, ly - 70, 140, 140); });
   }
@@ -173,7 +163,7 @@ function flatRoof(g, x0, y0, w, h, col, i, extra) {
   g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h);
 }
 function drawCityBlock(g, b, i) {
-  if (b.hide) return;
+  if (b.hide || b.over) return;
   var k = b.k, x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, w = b.w, h = b.h, sh = BHEIGHT[k] === undefined ? 10 : BHEIGHT[k];
   if (sh > 2 && k !== 'iwall') { g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.moveTo(x0 + w, y0); g.lineTo(x0 + w + sh * 0.7, y0 + sh); g.lineTo(x0 + w + sh * 0.7, y0 + h + sh); g.lineTo(x0 + sh * 0.7, y0 + h + sh); g.lineTo(x0, y0 + h); g.closePath(); g.fill(); }
   switch (k) {
@@ -218,6 +208,9 @@ function drawCityBlock(g, b, i) {
     case 'castlewall': case 'wall': g.fillStyle = k === 'castlewall' ? '#8a8f98' : '#8b857a'; g.fillRect(x0, y0, w, h); g.fillStyle = 'rgba(0,0,0,.25)'; var hz = w >= h; for (var mq = 0; mq < (hz ? w : h); mq += 24) { if (hz) g.fillRect(x0 + mq, y0, 12, h * 0.4); else g.fillRect(x0, y0 + mq, w * 0.4, 12); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     case 'fence': g.strokeStyle = '#1a1c20'; g.lineWidth = 4; g.beginPath(); if (w >= h) { g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); } else { g.moveTo(b.x, y0); g.lineTo(b.x, y0 + h); } g.stroke(); g.fillStyle = '#2a2d33'; for (var fp = 0; fp <= (w >= h ? w : h); fp += 40) { if (w >= h) g.fillRect(x0 + fp - 4, b.y - 4, 8, 8); else g.fillRect(b.x - 4, y0 + fp - 4, 8, 8); } break;
     case 'warehouse': flatRoof(g, x0, y0, w, h, '#56656e', i); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var wq = x0 + 14; wq < x0 + w; wq += 14) { g.beginPath(); g.moveTo(wq, y0 + 4); g.lineTo(wq, y0 + h - 4); g.stroke(); } break;
+    case 'cross_m': g.fillStyle = '#7d7a72'; g.fillRect(x0, y0, w, h); g.fillStyle = '#d6d2c6'; g.fillRect(b.x - 4, y0 + 4, 8, h - 8); g.fillRect(x0 + 6, b.y - 8, w - 12, 7); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'woodpile': for (var wr = 0; wr < 3; wr++) for (var wc = 0; wc < 5; wc++) { g.fillStyle = wr % 2 ? '#7a5434' : '#8a6040'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 7, 0, 6.283); g.fill(); g.strokeStyle = '#2a1a10'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = '#c9a074'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 3, 0, 6.283); g.fill(); } break;
+    case 'crate': g.fillStyle = '#6a4a2c'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#3a2616'; g.lineWidth = 4; g.strokeRect(x0 + 5, y0 + 5, w - 10, h - 10); g.beginPath(); g.moveTo(x0 + 5, y0 + 5); g.lineTo(x0 + w - 5, y0 + h - 5); g.stroke(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     // interior furniture and walls
     case 'iwall': g.fillStyle = '#16130f'; g.fillRect(x0, y0, w, h); g.fillStyle = '#3d362d'; g.fillRect(x0 + 3, y0 + 3, w - 6, h - 6); g.fillStyle = 'rgba(255,240,210,.07)'; g.fillRect(x0 + 3, y0 + 3, w - 6, 3); break;
     case 'table': g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, w, h); g.fillStyle = '#5a3e28'; g.fillRect(x0, y0, w, h); g.fillStyle = '#d6d0c2'; g.fillRect(x0 + 8, y0 + 8, w - 16, h - 16); g.fillStyle = '#c9a43a'; for (var cd = x0 + 40; cd < x0 + w - 20; cd += 90) { g.beginPath(); g.arc(cd, b.y, 5, 0, 6.283); g.fill(); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
@@ -255,6 +248,7 @@ function drawRoom(g, rm, t) {
 // cover what this viewer cannot see: the interiors while outside, everything but the current room while inside
 function zoneMask(g) {
   if (!MAP.cityW || !G || !G.f[MEI]) return;
+  drawDoors(g);
   var me = G.f[MEI], vr = VIEWR || { x0: 0, y0: 0, x1: MAP.w, y1: MAP.h }, rm = roomAt(me.x, me.y);
   g.fillStyle = '#050608';
   if (!rm) { if (vr.x1 > MAP.cityW) g.fillRect(MAP.cityW, vr.y0 - 10, vr.x1 - MAP.cityW + 10, vr.y1 - vr.y0 + 20); return; }

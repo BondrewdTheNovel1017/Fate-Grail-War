@@ -14,4 +14,4 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet();
 requestAnimationFrame(frame);
-window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };

@@ -182,7 +182,8 @@ startAct = function (f, key) {
   if (ok && key === 'heavy' && f.pendGoal) { f.goal = Math.max(f.A.heavy.wind, f.pendGoal); f.windTotal = f.goal; f.pendGoal = 0; }
   return ok;
 };
-function nearestEnemyTo(f, pt, maxD) { var b = null, bd = maxD || 1e9; enemiesOf(f).forEach(function (e) { var d = dist(e, pt); if (d < bd) { bd = d; b = e; } }); return b; }
+function zoneGap(a, b) { return MAP.cityW && !sameZone(a, b) ? 2500 : 0; }
+function nearestEnemyTo(f, pt, maxD) { var b = null, bd = maxD || 1e9; enemiesOf(f).forEach(function (e) { var d = dist(e, pt) + zoneGap(e, pt.def ? pt : f); if (d < bd) { bd = d; b = e; } }); return b; }
 function moveTo(f, x, y, k) {
   var sv = steer(f, x, y), now = G.time;
   if (f._mvT === undefined || now - f._mvT > 0.5) { var moved = f._mvX === undefined ? 99 : Math.hypot(f.x - f._mvX, f.y - f._mvY); f._mvX = f.x; f._mvY = f.y; f._mvT = now; if (moved < 12 && Math.hypot(x - f.x, y - f.y) > 60 && f.st === 'idle' && !(f.rootT > 0)) { f._usA = Math.atan2(sv[1], sv[0]) + (Math.random() < 0.5 ? 1 : -1) * (1.2 + Math.random()); f._usT = now + 0.8; } }
@@ -194,7 +195,7 @@ function aiWar(ai, dt) {
   var f = ai.f; if (f.st === 'dead' || G.over) return;
   if (f.def.isMaster) return aiMaster(ai, dt);
   var m = f.partner && f.partner.st !== 'dead' ? f.partner : null, st = f.stance || 'charge';
-  var near = nearestEnemyTo(f, f, 1e9), nd = near ? dist(f, near) : 1e9;
+  var near = nearestEnemyTo(f, f, 1e9), nd = near ? dist(f, near) + zoneGap(f, near) : 1e9;
   if (f.hp < f.def.hp * 0.25 && f.def.id !== 'heracles' && f.orphanT <= 0 && near && near.hp > f.hp * 1.2 && !(f.sealOrder > 0) && !f.isPlayerMate) st = 'retreat';
   if (f.hp < f.def.hp * 0.5 && nd > 900 && f.orphanT <= 0 && !(f.sealOrder > 0)) f.recover = true;
   if (f.recover && (f.hp > f.def.hp * 0.85 || (near && nd < 300))) f.recover = false;

@@ -14,7 +14,9 @@ const { chromium } = require('playwright');
     const p = await b.newPage({ viewport: { width: w, height: h } }); p.on('pageerror', (e) => errs.push(name + ': ' + e.message));
     await p.goto(url); await p.waitForTimeout(400);
     await p.screenshot({ path: path.join(out, name + '-setup.png') });
-    await p.click('[data-playas=master]'); await p.click('#go'); await p.waitForTimeout(1500);
+    await p.click('[data-playas=master]'); await p.click('#go'); await p.waitForTimeout(5000);
+    await p.screenshot({ path: path.join(out, name + '-intro.png') });
+    await p.keyboard.press(' '); await p.waitForTimeout(1500);
     await p.screenshot({ path: path.join(out, name + '-war.png') });
     // contract scene: our servant dies, an enemy's master dies, their orphan is next to us
     await p.evaluate(() => { const G = window.__duel.G, me = G.f[0]; const o = G.f.find((f) => f.team !== me.team && !f.def.isMaster); me.partner.hp = 1; me.partner.st = 'dead'; o.partner.st = 'dead'; o.orphanT = 18; o.x = me.x + 110; o.y = me.y; });

@@ -129,7 +129,7 @@ var hassan = {
 /* =================== CAERWYN (original) =================== */
 var caerwyn = {
   id: 'caerwyn', name: 'King Arthur', cls: 'Saber', col: '#dfeaf4',
-  basis: 'The king of Arthurian legend, imagined as a woman and drawn our own way: a white wool cloak, hammered bronze plate, a plain bronze circlet and a long honey-blonde braid. Her blade is pale steel with a bronze hilt.',
+  basis: 'The king of Arthurian legend, imagined as a woman and drawn our own way: a white wool cloak, hammered bronze plate, a plain bronze circlet and a long honey-blonde braid. Her blade is bright silver with a gold line down its middle, set in a gold hilt.',
   pal: [['Cloak', '#e6edf2'], ['Bronze', '#b98a4a'], ['Hair', '#e3c06a'], ['Steel', '#dfe7ea'], ['Gem', '#dfeaf4']],
   notes: ['A white cloak with bronze plate: the lightest silhouette in the roster. Change the palette strings at the top of this entry to recolor her.', 'The long blonde braid trails behind her in the arena, next to the cloak, so facing is easy to read.', 'The circlet ring is the one detail that marks her as royalty from above.'],
   body: function () {
@@ -142,10 +142,10 @@ var caerwyn = {
       '<circle cx="2" cy="0" r="10" fill="#e3c06a"/><ellipse cx="6" cy="0" rx="5" ry="7" fill="#d9a98a" stroke="none"/><path d="M-1 -9 Q8 -10 11 -4 M-1 9 Q8 10 11 4" stroke="#b98a4a" stroke-width="2.2" fill="none"/><path d="M10 -3 L14 0 L10 3Z" fill="#d9a98a" stroke-width="1.4"/><circle cx="5" cy="0" r="1.8" fill="#dfeaf4" stroke-width="1"/></g>';
   },
   weapon: function () {
-    return '<defs>' + grad('qw', '#f2f7f8', '#9fb2bb') + grad('qh', '#dcae6a', '#8a5f2a') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
-      '<rect x="-7" y="-2.8" width="16" height="5.6" rx="2" fill="#5a3a22"/><path d="M-7 -2.8 L9 2.8 M-7 2.8 L9 -2.8" stroke="#3a2418" stroke-width="1" fill="none"/><circle cx="-9" cy="0" r="4.6" fill="url(#qh)"/><circle cx="-9" cy="0" r="1.9" fill="#dfeaf4" stroke-width="1"/>' +
-      '<path d="M12 -3.8 L58 -5 Q74 -3 84 0 Q74 3 58 5 L12 3.8Z" fill="url(#qw)"/><path d="M14 0 L76 0" stroke="#7d909b" stroke-width="1.4" fill="none"/>' +
-      '<path d="M9 -2 Q6 -9 10 -13 Q15 -9 14 -2Z M9 2 Q6 9 10 13 Q15 9 14 2Z" fill="url(#qh)"/><rect x="8.5" y="-4.5" width="5" height="9" rx="1.5" fill="url(#qh)"/><circle cx="11" cy="0" r="1.6" fill="#dfeaf4" stroke-width="1"/></g>';
+    return '<defs>' + grad('qw', '#fbfdfe', '#a9b6bf') + grad('qh', '#f4d77a', '#a8781e') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
+      '<rect x="-7" y="-2.8" width="16" height="5.6" rx="2" fill="url(#qh)"/><path d="M-7 -2.8 L9 2.8 M-7 2.8 L9 -2.8" stroke="#7a5414" stroke-width="1" fill="none"/><circle cx="-9" cy="0" r="4.6" fill="url(#qh)"/><circle cx="-9" cy="0" r="1.9" fill="#3a6ab8" stroke-width="1"/>' +
+      '<path d="M12 -3.8 L58 -5 Q74 -3 84 0 Q74 3 58 5 L12 3.8Z" fill="url(#qw)"/><path d="M14 0 L72 0" stroke="#d9ad3c" stroke-width="2.2" fill="none"/><path d="M14 -1.2 L70 -1.4" stroke="#fff4c4" stroke-width="0.7" fill="none"/>' +
+      '<path d="M9 -2 Q6 -9 10 -13 Q15 -9 14 -2Z M9 2 Q6 9 10 13 Q15 9 14 2Z" fill="url(#qh)"/><rect x="8.5" y="-4.5" width="5" height="9" rx="1.5" fill="url(#qh)"/><circle cx="11" cy="0" r="1.6" fill="#3a6ab8" stroke-width="1"/></g>';
   },
   wvb: '-16 -18 106 36', tdvb: '-50 -50 100 100'
 };

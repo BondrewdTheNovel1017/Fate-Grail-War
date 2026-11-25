@@ -27,14 +27,14 @@ function hurt(att, def, a, mult, src) {
     def.stat.parry++; FX.text(def, 'COUNTER'); FX.spark(def.x, def.y, '#ffd36b', 12); FX.shake(5); FX.snd('counter', def); FX.fx('counter', def.x, def.y, def);
     if (att && melee) { var rd = 12 * def.def.dmg; att.hp -= rd; def.stat.dealt += rd; setStag(att, 0.9); if (att.hp <= 0) kill(att); }
     else if (!melee) { src.dead = true; }
-    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); G.hitstop = Math.max(G.hitstop, 0.1);
+    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); hitstopAt(def, 0.1);
     return 'counter';
   }
   var front = Math.abs(angDiff(def.face, angTo(def, s))) < 1.75;
   if (def.guarding && front && !a.unblock) {
     if (def.parryOk && def.guardT <= (def.def.parryWin || PARRY) && !a.noParry) {
       def.stat.parry++; gainMom(def, 12); def.ripo = 1.2; FX.text(def, 'PARRY'); FX.spark(def.x, def.y, '#ffffff', 14); FX.shake(6); FX.snd('parry', def); FX.fx('parry', def.x, def.y, def);
-      G.hitstop = Math.max(G.hitstop, 0.12);
+      hitstopAt(def, 0.12);
       if (att && melee) setStag(att, 0.9); else if (src) src.dead = true;
       return 'parry';
     }
@@ -43,20 +43,20 @@ function hurt(att, def, a, mult, src) {
     if (a.gb || def.sta <= 0) {
       def.stat.gbreak++; def.sta = Math.max(def.sta, 0); def.guarding = false;
       var gd = dmg * 0.6; def.hp -= gd; def.stat.taken += gd; if (att) { att.stat.dealt += gd; att.stat.hits++; gainMom(att, gd * 0.5); }
-      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); G.hitstop = Math.max(G.hitstop, 0.1);
+      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); hitstopAt(def, 0.1);
       if (def.hp <= 0) kill(def);
       return 'gbreak';
     }
     var cd = dmg * (1 - def.def.guard * (1 - ((att && att.def.guardPierce) || 0))); def.hp -= cd; def.stat.taken += cd; def.stat.blocks++;
     if (att) { att.stat.dealt += cd; gainMom(att, cd * 0.4); }
-    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); G.hitstop = Math.max(G.hitstop, 0.035);
+    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); hitstopAt(def, 0.035);
     if (def.hp <= 0) kill(def);
     return 'block';
   }
   var ar = armored(def), taken = dmg * (ar ? (def.wallT > 0 ? 0.4 : 0.9) : 1);
   if (def.st === 'rec' && def.key === 'counter') taken = dmg;
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
-  def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
+  def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
@@ -69,7 +69,7 @@ function hurt(att, def, a, mult, src) {
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
   if (a.power >= 3) { FX.slow(0.5); FX.fx('npHit', def.x, def.y, def); }
-  G.hitstop = Math.max(G.hitstop, a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045));
+  hitstopAt(def, a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045));
   FX.shake(a.power >= 3 ? 12 : a.power >= 2 ? 6 : 2.5);
   if (def.hp <= 0) { kill(def); return 'kill'; }
   var arrowFlinch = a.kind === 'proj' && a.power < 2 && (def.st === 'wind' || def.st === 'act');
@@ -101,7 +101,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -175,7 +175,7 @@ function strikeInit(f) {
   else if (k === 'buff') { if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
   else if (k === 'drain') { var pd2 = f.partner; if (pd2 && pd2.st !== 'dead' && f.hp > a.selfDmg + 5) { f.hp -= a.selfDmg; pd2.mom = Math.min(100, pd2.mom + a.mom); FX.text(f, '-' + a.selfDmg); FX.text(pd2, 'MANA SURGE'); FX.fx('seal', pd2.x, pd2.y, pd2); } }
   else if (k === 'gift') { var pg = f.partner; if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
-  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'I am the bone of my sword'); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
+  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
   else if (k === 'wall') { f.wallT = a.dur; FX.shake(5); }
   else if (k === 'veil') { f.veilT = a.dur; FX.shake(2); FX.fx('veil', f.x, f.y, f); }
   else if (k === 'rain') {

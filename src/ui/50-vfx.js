@@ -51,9 +51,9 @@ function beamFx(f, x, y, sc, life) { var fa2 = f.face; vfx(life, function (g, p,
         if (tt < 0.75 && Math.random() < 0.5) FX.shake(4 * sc);
       }); }
 function flashFx(col, a, life) { flashes.push({ col: col, a: a, t: 0, life: life }); }
-FX.slow = function (s) { slowT = Math.max(slowT, s); };
+FX.slow = function (s) { if (fxPos && !FX.near(fxPos.x, fxPos.y)) return; slowT = Math.max(slowT, s); };
 FX.snd = playSnd;
-FX.banner = function (s, sub) { if (!s) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); band = { t: 2.0, text: s, sub: sub || '', col: c }; };
+FX.banner = function (s, sub, who) { if (!s) return; if (who && G && G.mode === 'war' && who.team !== (G.f[MEI] || {}).team && !(viewDist(who.x, who.y) < 1700 && (!MAP.cityW || zoneOfXY(who.x, who.y) === viewZone()))) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); band = { t: 2.0, text: s, sub: sub || '', col: c }; };
 function npfireGen(f, x, y) {
   var A = f.A.np, c = f.def.col, fa = f.face;
   if (A.kind === 'charge') {
@@ -75,6 +75,7 @@ function npfireGen(f, x, y) {
 }
 function rgbaOf(h, a) { return 'rgba(' + rgbOf(h) + ',' + a + ')'; }
 FX.fx = function (name, x, y, f) {
+  fxPos = { x: x, y: y };
   var col = f && f.def ? f.def.col : '#fff', id = f && f.def ? f.def.id : '';
   switch (name) {
     case 'parry': ringFx(x, y, 8, 72, '#ffffff', 0.3, 6); raysFx(x, y, 8, 14, 64, '#ffffff', 0.24, 3); break;
@@ -193,5 +194,5 @@ FX.fx = function (name, x, y, f) {
       break;
   }
 };
-FX.spark = function (x, y, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, s = 80 + Math.random() * 220; parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: 0.25 + Math.random() * 0.25, col: col }); } };
+FX.spark = function (x, y, col, n) { fxPos = { x: x, y: y }; for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, s = 80 + Math.random() * 220; parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: 0.25 + Math.random() * 0.25, col: col }); } };
 

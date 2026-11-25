@@ -34,10 +34,11 @@ function buildNav(M) {
   // interiors: a loose grid of waypoints in each room, linked where the way is clear
   (M.rooms || []).forEach(function (rm) {
     var pts = [];
-    for (var x = rm.x0 + 120; x < rm.x1 - 60; x += 260) for (var y = rm.y0 + 120; y < rm.y1 - 60; y += 260) {
+    for (var x = rm.x0 + 90; x < rm.x1 - 50; x += 170) for (var y = rm.y0 + 90; y < rm.y1 - 50; y += 170) {
       if (rectsIn(x - 30, y - 30, x + 30, y + 30).some(function (r) { return inRect(r, x, y, 30); })) continue;
       pts.push(node(x, y, rm.id));
     }
+    (rm.gaps || []).forEach(function (gp) { pts.push(node(gp.x, gp.y, rm.id)); pts.push(node(gp.x + (gp.v ? -90 : 0), gp.y + (gp.v ? 0 : -90), rm.id)); pts.push(node(gp.x + (gp.v ? 90 : 0), gp.y + (gp.v ? 0 : 90), rm.id)); });
     rm.nodes = pts;
     for (var a = 0; a < pts.length; a++) for (var b2 = a + 1; b2 < pts.length; b2++) { var d = Math.hypot(pts[a].x - pts[b2].x, pts[a].y - pts[b2].y); if (d < 400 && rectLos(pts[a].x, pts[a].y, pts[b2].x, pts[b2].y, 18)) link(pts[a], pts[b2], d); }
   });
@@ -127,4 +128,8 @@ function assignHomes(teams, rnd) {
   });
   RECTS = []; MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); }); buildRectGrid();
   return out;
+}
+function summonSpot(h) {
+  if (h.canon && MAP.spots && MAP.spots[h.key]) return MAP.spots[h.key];
+  return { x: h.x, y: h.y - 20, name: h.name };
 }

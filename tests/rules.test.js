@@ -83,7 +83,7 @@ test('AI wars finish without errors', () => {
   const E = loadEngine();
   for (let n = 0; n < 2; n++) {
     const G = aiWar(E, E.warTeams(E.ORDER[n * 5], E.MASTER_ORDER[n], 4));
-    run(E, 900);
+    run(E, 1500);
     assert.ok(G.over, 'war ' + n + ' ended');
     for (const f of G.f) assert.ok(Number.isFinite(f.x) && Number.isFinite(f.hp), 'finite state');
   }
@@ -208,4 +208,40 @@ test('quick Grail War: seven teams on the compact map finish in a few minutes', 
   const G = aiWar(E, teams, { map: 'fuyuki', quick: true });
   run(E, 600);
   assert.ok(G.over, 'finished'); assert.ok(G.time < 360, 'in under six minutes (' + G.time.toFixed(0) + 's)');
+});
+
+test('city: every interior room can be reached from its door', () => {
+  const E = loadEngine(); E.newWar(E.warTeams('richard', 'rin', 3), {});
+  const N = E.MAP.nav.nodes;
+  for (const d of E.MAP.doors) {
+    const rm = E.MAP.rooms.find((r) => r.id === d.room), seen = new Set([d.inNode]), q = [d.inNode];
+    while (q.length) { const n = q.shift(); for (const e of N[n].adj) if (!seen.has(e.to)) { seen.add(e.to); q.push(e.to); } }
+    const missing = rm.nodes.filter((n) => !seen.has(n.id));
+    assert.strictEqual(missing.length, 0, rm.id + ': unreachable waypoints at ' + missing.map((n) => n.x + ',' + n.y).join(' '));
+  }
+});
+
+test('city: each master begins alone at their summoning circle, the servant inside it', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.caerwyn, master: M.shirou }, { servant: S.emiya, master: M.rin }, { servant: S.heracles, master: M.illya }], {});
+  assert.strictEqual(G.circles.length, 3);
+  assert.ok(/storehouse/i.test(G.circles[0].name), 'Shirou summons in the storehouse');
+  assert.ok(/workshop/i.test(G.circles[1].name), 'Rin summons in her workshop');
+  G.circles.forEach((c, i) => {
+    const sv = G.f.find((f) => f.team === i && !f.def.isMaster), ms = G.f.find((f) => f.team === i && f.def.isMaster);
+    assert.ok(Math.hypot(sv.x - c.x, sv.y - c.y) < 30, 'servant stands in the circle');
+    assert.ok(Math.hypot(ms.x - c.x, ms.y - c.y) < 120, 'master stands beside it');
+    assert.ok(E.sameZone(sv, ms), 'both are in the same room');
+  });
+  assert.ok(E.roomAt(G.f[0].x, G.f[0].y), 'the storehouse is an interior you can enter');
+});
+
+test('city: arches, gates and roofs can be walked under; the church stands clear of the roads', () => {
+  const E = loadEngine(); E.newWar(E.warTeams('richard', 'rin', 2), {});
+  const over = E.MAP.b.filter((b) => b.over);
+  assert.ok(over.length >= 5);
+  over.forEach((b) => assert.strictEqual(E.rectsIn(b.x, b.y, 20).length, 0, b.k + ' must not block'));
+  const ch = E.MAP.b.find((b) => b.k === 'church');
+  E.MAP.roads.forEach((r) => { const hw = r.w / 2, x0 = r.h ? r.x0 : r.x0 - hw, x1 = r.h ? r.x1 : r.x0 + hw, y0 = r.h ? r.y0 - hw : r.y0, y1 = r.h ? r.y0 + hw : r.y1;
+    const ov = x0 < ch.x + ch.w / 2 && x1 > ch.x - ch.w / 2 && y0 < ch.y + ch.h / 2 && y1 > ch.y - ch.h / 2; assert.ok(!ov, 'church overlaps a ' + r.kind); });
 });

@@ -52,7 +52,8 @@ function frame(now) {
   var dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused) {
     acc += dt * speedMul * (slowT > 0 ? 0.4 : 1); if (slowT > 0) slowT -= dt;
-    if (NET.mirror) { acc = 0; netClientFrame(dt); }
+    if (INTRO) { acc = 0; introTick(dt); }
+    else if (NET.mirror) { acc = 0; netClientFrame(dt); }
     else {
     var f = G.f[MEI], mv = readMove(); f.inp.mx = mv[0]; f.inp.my = mv[1];
     var guard = 0; while (acc >= STEP && guard++ < 6) { netApplyInputs(); simStep(STEP); acc -= STEP; }

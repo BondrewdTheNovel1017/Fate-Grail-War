@@ -220,3 +220,5 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
 #nmE svg { transform: scaleX(-1); }
 @media (max-width: 520px) { .nm { font-size: 11.5px; letter-spacing: .03em; gap: 4px; } #nmP .hth svg, #nmE .hth svg { width: 58px; height: 29px; } #nmP, #nmE { gap: 5px; } }
 .hth { background: #16293a; border-radius: 4px; padding: 1px; line-height: 0; }
+
+body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel .minis, body.intro #duel .hint { visibility: hidden; }

@@ -226,6 +226,8 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
 #nmE svg { transform: scaleX(-1); }
 @media (max-width: 520px) { .nm { font-size: 11.5px; letter-spacing: .03em; gap: 4px; } #nmP .hth svg, #nmE .hth svg { width: 58px; height: 29px; } #nmP, #nmE { gap: 5px; } }
 .hth { background: #16293a; border-radius: 4px; padding: 1px; line-height: 0; }
+
+body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel .minis, body.intro #duel .hint { visibility: hidden; }
 </style>
 
 <main class="wrap">
@@ -319,7 +321,9 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
 (function () {
 /*ENGINE_START*/
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {} };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, near: function () { return true; } };
+// hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
+function hitstopAt(o, v) { if (o && FX.near(o.x, o.y)) G.hitstop = Math.max(G.hitstop, v); }
 var G = null;
 var PILLARS = [];
 /* ---- maps: obstacles are circles (o); rectangular blocks (b) are drawn as boxes and collide as a row of hidden circles ---- */
@@ -454,7 +458,7 @@ setMap('arena');
    city blocks, trees, estate plots for masters, and walk-in interiors placed in a strip east of the city
    (x > cityW) and reached through doors. Buildings collide as rectangles (MAP.rects); trees and posts as circles. */
 MAPS.city = (function () {
-  var CW = 12000, CH = 8000, IX = 12400;                 // city size; interiors live at x >= IX
+  var CW = 12000, CH = 8000, IX = 12400, IW = 3800;                 // city size; interiors live at x >= IX
   var v = 20241125; function R() { v = (v * 1664525 + 1013904223) >>> 0; return v / 4294967296; }
   var roads = [], zones = [], b = [], o = [], labels = [], doors = [], rooms = [], reserved = [], lamps = [];
   function road(kind, x0, y0, x1, y1, w, name) { roads.push({ kind: kind, x0: Math.min(x0, x1), y0: Math.min(y0, y1), x1: Math.max(x0, x1), y1: Math.max(y0, y1), w: w, h: y0 === y1, name: name }); }
@@ -488,7 +492,7 @@ MAPS.city = (function () {
   road('street', 200, 3600, 5500, 3600, 130);
   road('street', 200, 4700, 5500, 4700, 130);
   road('street', 200, 6450, 5500, 6450, 130);
-  road('street', 1300, 2400, 1300, 6900, 130);
+  road('street', 1300, 3600, 1300, 6900, 130);
   road('street', 4400, 1250, 4400, 6900, 130);
   // Shinto streets
   road('street', 6550, 300, 6550, 6650, 120);
@@ -501,24 +505,26 @@ MAPS.city = (function () {
   // paths, stairs and the railway (all walkable)
   road('stairs', 1500, 1480, 1500, 2400, 110, 'Ryuudou stairs');
   road('path', 1500, 1060, 1500, 1480, 90);
-  road('path', 1100, 2400, 1100, 2760, 90);
+  road('lane', 900, 3250, 900, 3600, 70); road('lane', 900, 3250, 1450, 3250, 70); road('lane', 1450, 3150, 1450, 3250, 60);
   road('path', 5350, 2400, 5350, 6950, 80);
   road('path', 3550, 830, 3550, 1250, 70);
   road('path', 5000, 830, 5000, 1250, 70);
   road('path', 2700, 1800, 3000, 1800, 60);
-  road('path', 2050, 4700, 2050, 4920, 70);
+  road('path', 2050, 4700, 2050, 4830, 70);
   road('path', 9800, 2400, 11000, 2400, 110, 'Einzbern forest road');
   road('path', 11000, 1760, 11000, 2400, 110);
   road('path', 9800, 5250, 11700, 5250, 80);
   road('path', 10750, 4600, 10750, 6650, 80);
   road('rail', 4300, 4050, 11800, 4050, 120, 'Railway');
   zone('railbridge', RX0 - 40, 3990, RX1 + 40, 4110);
+  B(6000, 2400, 720, 250, 'bridgearch', { walk: true, over: true });
 
   /* ---------- ground zones (drawn under everything) ---------- */
   zone('forest', 0, 0, 2450, 2290);              // Mount Enzou
   zone('temple', 700, 250, 2300, 1460);          // Ryuudou Temple grounds
   zone('hill', 2450, 0, RX0, 2290);              // foreigners' district on the hill
-  zone('churchyard', 250, 2510, 2900, 3530);     // church hill and cemetery
+  zone('churchhill', 250, 2510, 2900, 3530);     // the church's own wooded hill
+  zone('clearing', 1150, 2790, 1760, 3320); zone('cemetery', 430, 2700, 1060, 3110);
   zone('schoolyard', 3100, 2510, 5000, 3530);    // Homurahara Academy
   zone('park', 5000, 2510, RX0, 6950);           // riverside park (west bank)
   zone('sand', 0, 6960, RX0, SEA);               // Fuyuki beach
@@ -527,14 +533,14 @@ MAPS.city = (function () {
   zone('forest', 9900, 0, CW, 3980);             // Einzbern forest
   zone('castle', 10300, 600, 11700, 1760);       // castle courtyard
   zone('harbor', 6400, 6760, CW, SEA);           // cargo harbor apron
-  zone('emiya', 1500, 4850, 2600, 5450);         // Emiya residence yard
+  zone('emiya', 1460, 4800, 2840, 5470);         // Emiya residence: front and back yard
   zone('garden', 3150, 330, 3950, 1110);         // Tohsaka garden
   zone('garden', 4600, 330, 5400, 1110);         // Matou grounds
 
   /* ---------- landmarks ---------- */
   // Ryuudou Temple
   B(1500, 650, 760, 260, 'temple', { name: 'Ryuudou Temple' }); B(950, 900, 200, 160, 'temple2'); B(2050, 900, 200, 160, 'temple2'); B(1080, 1220, 120, 120, 'belltower');
-  B(1500, 1470, 360, 30, 'gate_jp'); reserve(700, 250, 2300, 1500);
+  B(1500, 1470, 360, 60, 'gate_jp', { walk: true, over: true }); reserve(700, 250, 2300, 1500);
   [[1180, 1350], [1820, 1350], [1180, 1100], [1820, 1100]].forEach(function (p) { T(p[0], p[1], 14, 'lantern'); });
   T(1950, 1250, 46, 'pine'); T(1060, 450, 44, 'pine'); T(2120, 450, 40, 'pine');
   // Foreigners' district
@@ -544,21 +550,24 @@ MAPS.city = (function () {
   B(5000, 335, 800, 18, 'fence'); B(4600, 720, 18, 780, 'fence'); B(5400, 720, 18, 780, 'fence'); B(4750, 1105, 300, 18, 'fence'); B(5250, 1105, 300, 18, 'fence');
   B(2600, 1800, 220, 170, 'house_w', { name: 'Mackenzie House', home: 'mackenzie' }); reserve(2440, 1680, 2760, 1930);
   [[3250, 450], [3850, 450], [3250, 1000], [3850, 1000], [4700, 450], [5300, 450]].forEach(function (p) { T(p[0], p[1], 36); });
-  // Fuyuki Church and the foreign cemetery
-  B(1100, 2960, 420, 360, 'church', { name: 'Fuyuki Church', home: 'church' }); reserve(820, 2740, 1380, 3180);
-  for (var gx = 0; gx < 7; gx++) for (var gy = 0; gy < 3; gy++) B(1650 + gx * 150, 2760 + gy * 140, 50, 26, 'grave');
-  reserve(1600, 2720, 2700, 3110);
-  [[500, 2700], [500, 3300], [1700, 3350], [2300, 3350], [2800, 2700]].forEach(function (p) { T(p[0], p[1], 40); });
+  // Fuyuki Church: alone on a wooded hill, a small lane winding up from the street
+  B(1450, 2990, 380, 300, 'church', { name: 'Fuyuki Church', home: 'church' }); reserve(1150, 2790, 1760, 3330);
+  for (var gx = 0; gx < 5; gx++) for (var gy = 0; gy < 3; gy++) B(520 + gx * 120, 2760 + gy * 120, 46, 24, 'grave');
+  B(745, 2730, 40, 40, 'cross_m'); reserve(430, 2700, 1060, 3110);
+  B(900, 3440, 120, 26, 'torii_c', { walk: true, over: true });
   // Homurahara Academy
   B(4050, 2700, 1300, 220, 'school', { name: 'Homurahara Academy' }); B(4850, 3250, 300, 260, 'gym'); B(3400, 3300, 260, 120, 'dojo_s');
   reserve(3100, 2510, 5000, 3530);
-  // Emiya residence (walled compound)
-  B(1900, 5060, 560, 230, 'house_jpL', { name: 'Emiya Residence', home: 'emiya' }); B(2380, 5280, 300, 200, 'dojo'); B(1640, 5350, 170, 120, 'storehouse');
-  B(1530, 5150, 20, 620, 'wall'); B(2620, 5150, 20, 620, 'wall'); B(2060, 5440, 1100, 20, 'wall'); B(1765, 4850, 490, 20, 'wall'); B(2370, 4850, 520, 20, 'wall');
-  reserve(1500, 4830, 2650, 5470); T(1700, 4950, 32); T(2500, 4980, 30);
+  // Emiya residence: walled compound with a front yard, the house, and a back yard with the dojo, pond and the storehouse
+  B(2000, 5040, 640, 200, 'house_jpL', { name: 'Emiya Residence', home: 'emiya' }); B(2620, 5300, 330, 260, 'dojo'); B(1620, 5380, 240, 160, 'storehouse', { name: 'Storehouse' });
+  B(1720, 4790, 540, 20, 'wall'); B(2480, 4790, 740, 20, 'wall'); B(1450, 5135, 20, 690, 'wall'); B(2850, 5135, 20, 690, 'wall'); B(2150, 5480, 1400, 20, 'wall');
+  B(2050, 4790, 170, 46, 'gate_roof', { walk: true, over: true });
+  B(2090, 5320, 260, 130, 'water', { nb: true, hide: true }); B(1810, 5420, 70, 40, 'woodpile');
+  T(1600, 4860, 14, 'lantern'); T(2420, 4860, 14, 'lantern'); T(2210, 5260, 12, 'lantern'); T(1520, 4860, 26, 'pine'); T(2770, 4880, 30, 'pine'); T(1870, 5225, 30, 'persimmon');
+  reserve(1450, 4780, 2860, 5490);
   // Mount Miyama shopping street (covered arcade along H5)
   for (var sx = 3170; sx <= 4250; sx += 135) { B(sx, 4580, 120, 110, 'shop'); B(sx, 4820, 120, 110, 'shop'); }
-  zone('arcade', 3100, 4630, 4300, 4770);
+  zone('arcade', 3100, 4630, 4300, 4770); B(3700, 4700, 1200, 150, 'arcade_roof', { walk: true, over: true });
   reserve(3100, 4520, 4300, 4880);
   // Shinto: Hyatt hotel, Center Building, Verde, station
   B(7700, 850, 560, 460, 'hotel', { name: 'Hyatt Hotel', home: 'hyatt' }); reserve(7400, 600, 8000, 1220);
@@ -572,7 +581,7 @@ MAPS.city = (function () {
   B(10150, 4880, 460, 260, 'civic', { name: 'Fuyuki Civic Hall' }); reserve(9050, 4700, 11800, 6560);
   // Einzbern Castle
   B(11000, 1150, 980, 620, 'castle', { name: 'Einzbern Castle', home: 'einzbern' });
-  B(10560, 980, 220, 220, 'castletower'); B(11440, 980, 220, 220, 'castletower');
+  B(11000, 1500, 200, 60, 'castle_arch', { walk: true, over: true }); B(10560, 980, 220, 220, 'castletower'); B(11440, 980, 220, 220, 'castletower');
   B(11000, 610, 1400, 26, 'castlewall'); B(10300, 1180, 26, 1160, 'castlewall'); B(11700, 1180, 26, 1160, 'castlewall');
   B(10600, 1760, 600, 26, 'castlewall'); B(11400, 1760, 600, 26, 'castlewall');
   reserve(10280, 590, 11720, 1780);
@@ -588,6 +597,7 @@ MAPS.city = (function () {
   for (var py = 2600; py < 6900; py += 230) { if (Math.abs(py - 4050) < 120 || Math.abs(py - 5600) < 140 || Math.abs(py - 3600) < 90 || Math.abs(py - 4700) < 90 || Math.abs(py - 6450) < 90) continue; T(5120 + R() * 60, py, 30 + R() * 10); T(5580 + R() * 40, py + 100, 28 + R() * 10); }
   reserve(5000, 2510, RX0, 6960);
 
+  reserve(2080, 1500, 2420, 1820); // Waver's clearing
   /* ---------- estate plots: where duplicate family houses and safehouses can appear ---------- */
   var plots = [[2700, 600], [4000, 1800], [4950, 1820], [700, 4150], [3700, 6050], [7700, 5100], [9380, 2850], [10450, 3300], [6950, 2850], [700, 6050]];
   plots.forEach(function (p) { reserve(p[0] - 260, p[1] - 190, p[0] + 260, p[1] + 190); });
@@ -611,7 +621,6 @@ MAPS.city = (function () {
   fill(300, 5720, 1200, 6340, jp, 230, 190, 40); fill(1400, 5720, 2900, 6340, jp, 230, 190, 40); fill(3100, 5720, 4300, 6340, jp, 230, 190, 40);
   fill(300, 6560, 1200, 6900, jp, 230, 160, 40); fill(1400, 6560, 2900, 6900, jp, 230, 160, 40); fill(3100, 6560, 4300, 6900, jp, 230, 160, 40);
   fill(4500, 3700, 5000, 6900, jp, 210, 190, 40);
-  fill(2500, 2510, 2900, 3530, 'house_w', 200, 200, 50);
   // the hill: a few western houses
   fill(2500, 1350, 4300, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70); fill(4500, 1350, 5600, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70);
   fill(2500, 120, 3050, 800, 'house_w', 260, 230, 60);
@@ -631,12 +640,13 @@ MAPS.city = (function () {
     }
   }
   forest(60, 60, 2450, 2290, 170);
+  forest(280, 2540, 2880, 3500, 150);
   forest(9950, 60, CW - 60, 3950, 160, function (x, y) { return Math.abs(y - 2400) < 120 && x < 11060 || Math.abs(x - 11000) < 110 && y > 1700 && y < 2450; });
   // street trees along the avenues
   [[3000, 2600, 6800, 'v'], [8100, 500, 6500, 'v']].forEach(function (s) { for (var t = s[1]; t < s[2]; t += 300) { [-1, 1].forEach(function (side) { var x = s[0] + side * 128, y = t; if (!hits(x - 14, y - 14, x + 14, y + 14, -40)) T(x, y, 16, 'street'); }); } });
 
   /* ---------- labels ---------- */
-  labels.push(['MOUNT ENZOU', 900, 2000], ['RYUUDOU TEMPLE', 1500, 220], ['TOHSAKA MANSION', 3550, 280], ['MATOU RESIDENCE', 5000, 280], ['FUYUKI CHURCH', 1100, 2600],
+  labels.push(['MOUNT ENZOU', 900, 2000], ['RYUUDOU TEMPLE', 1500, 220], ['TOHSAKA MANSION', 3550, 280], ['MATOU RESIDENCE', 5000, 280], ['FUYUKI CHURCH', 1450, 2780],
     ['HOMURAHARA ACADEMY', 4050, 2560], ['MIYAMA', 2200, 4250], ['EMIYA RESIDENCE', 2060, 4800], ['MOUNT MIYAMA SHOPPING STREET', 3700, 4480], ['FUYUKI BRIDGE', 6000, 2180],
     ['MION RIVER', 6000, 3300], ['SHINTO', 7300, 2050], ['HYATT HOTEL', 7700, 560], ['CENTER BUILDING', 8525, 1490], ['VERDE', 8525, 2620], ['FUYUKI STATION', 7700, 3400],
     ['CENTRAL PARK', 10400, 4780], ['SEMINA APARTMENTS', 7700, 4660], ['HARBOR', 9300, 6830], ['FUYUKI BEACH', 2500, 7150], ['EINZBERN FOREST', 10800, 3500], ['EINZBERN CASTLE', 11000, 560], ['MION BRIDGE', 6000, 5420]);
@@ -645,15 +655,16 @@ MAPS.city = (function () {
   function room(id, name, x0, y0, w, h, floor) { var r = { id: id, name: name, x0: x0, y0: y0, x1: x0 + w, y1: y0 + h, floor: floor, parts: [] }; rooms.push(r);
     B(x0 + w / 2, y0 + 12, w, 24, 'iwall'); B(x0 + w / 2, y0 + h - 12, w, 24, 'iwall'); B(x0 + 12, y0 + h / 2, 24, h, 'iwall'); B(x0 + w - 12, y0 + h / 2, 24, h, 'iwall'); return r; }
   function iw(x, y, w, h) { B(x, y, w, h, 'iwall'); }
+  // interior walls with doorways: offsets are relative to the room's corner; gaps are [from, to] along the wall
+  function wallV(r, x, y0, y1, gaps) { var cur = y0; (gaps || []).concat([[y1, y1]]).forEach(function (g) { if (g[0] - cur > 4) iw(r.x0 + x, r.y0 + (cur + g[0]) / 2, 24, g[0] - cur); cur = g[1]; }); r.gaps = (r.gaps || []).concat((gaps || []).map(function (g) { return { x: r.x0 + x, y: r.y0 + (g[0] + g[1]) / 2, v: true }; })); }
+  function wallH(r, y, x0, x1, gaps) { var cur = x0; (gaps || []).concat([[x1, x1]]).forEach(function (g) { if (g[0] - cur > 4) iw(r.x0 + (cur + g[0]) / 2, r.y0 + y, g[0] - cur, 24); cur = g[1]; }); r.gaps = (r.gaps || []).concat((gaps || []).map(function (g) { return { x: r.x0 + (g[0] + g[1]) / 2, y: r.y0 + y, v: false }; })); }
   function part(r, kind, x0, y0, x1, y1) { r.parts.push({ kind: kind, x0: x0, y0: y0, x1: x1, y1: y1 }); }
   function door(id, room, ox, oy, onx, ony, ix, iy, inx, iny) { doors.push({ id: id, room: room, out: { x: ox, y: oy, nx: onx, ny: ony }, in: { x: ix, y: iy, nx: inx, ny: iny } }); }
   // Einzbern Castle: entrance hall, grand staircase, banquet hall, library, chapel
   var c = room('einzbern', 'Einzbern Castle', IX + 200, 200, 2600, 1900, 'marble');
   var cx0 = c.x0, cy0 = c.y0;
-  iw(cx0 + 900, cy0 + 600, 24, 1000); iw(cx0 + 1700, cy0 + 600, 24, 1000);            // hall side walls (north part)
-  iw(cx0 + 450, cy0 + 1110, 900, 24); iw(cx0 + 2150, cy0 + 1110, 900, 24);           // wings
-  iw(cx0 + 900, cy0 + 1560, 24, 420); iw(cx0 + 1700, cy0 + 1560, 24, 420);
-  iw(cx0 + 900, cy0 + 1300, 24, 120); iw(cx0 + 1700, cy0 + 1300, 24, 120);
+  wallV(c, 900, 24, 1876, [[500, 660], [1150, 1300]]); wallV(c, 1700, 24, 1876, [[500, 660], [1150, 1300]]);   // the great hall's walls, with doorways to the wings
+  wallH(c, 1110, 24, 900, [[380, 540]]); wallH(c, 1110, 1700, 2576, [[2060, 2220]]);
   part(c, 'carpet', cx0 + 1180, cy0 + 300, cx0 + 1420, cy0 + 1880); part(c, 'stairs', cx0 + 1050, cy0 + 120, cx0 + 1550, cy0 + 330);
   part(c, 'wood', cx0 + 30, cy0 + 30, cx0 + 890, cy0 + 1100); part(c, 'wood', cx0 + 1710, cy0 + 30, cx0 + 2570, cy0 + 1100);
   part(c, 'stone', cx0 + 30, cy0 + 1120, cx0 + 890, cy0 + 1870); part(c, 'stone', cx0 + 1710, cy0 + 1120, cx0 + 2570, cy0 + 1870);
@@ -665,15 +676,15 @@ MAPS.city = (function () {
   door('einzbern', 'einzbern', 11000, 1485, 0, 1, cx0 + 1300, cy0 + 1820, 0, 1);
   // Tohsaka Mansion: foyer, parlor, workshop
   var t = room('tohsaka', 'Tohsaka Mansion', IX + 200, 2400, 1500, 1050, 'wood');
-  iw(t.x0 + 540, t.y0 + 360, 24, 640); iw(t.x0 + 960, t.y0 + 360, 24, 640); iw(t.x0 + 270, t.y0 + 680, 520, 24); iw(t.x0 + 1230, t.y0 + 680, 520, 24);
-  iw(t.x0 + 540, t.y0 + 900, 24, 200); iw(t.x0 + 960, t.y0 + 900, 24, 200);
+  wallV(t, 540, 24, 1026, [[380, 520], [780, 920]]); wallV(t, 960, 24, 1026, [[380, 520], [780, 920]]);
+  wallH(t, 680, 24, 540, [[200, 340]]); wallH(t, 680, 960, 1476, [[1120, 1260]]);
   part(t, 'carpet', t.x0 + 560, t.y0 + 30, t.x0 + 940, t.y0 + 1020); part(t, 'workshop', t.x0 + 980, t.y0 + 700, t.x0 + 1470, t.y0 + 1020);
   B(t.x0 + 270, t.y0 + 300, 260, 110, 'sofa'); B(t.x0 + 270, t.y0 + 470, 160, 90, 'table'); for (var ts = 0; ts < 3; ts++) B(t.x0 + 1060 + ts * 140, t.y0 + 140, 100, 200, 'shelf');
   part(t, 'circle', t.x0 + 1165, t.y0 + 810, t.x0 + 1285, t.y0 + 930); B(t.x0 + 1380, t.y0 + 760, 120, 60, 'table');
   door('tohsaka', 'tohsaka', 3550, 835, 0, 1, t.x0 + 750, t.y0 + 975, 0, 1);
   // Matou Residence: dark halls and the worm pit cellar
   var m = room('matou', 'Matou Residence', IX + 1900, 2400, 1500, 1050, 'darkwood');
-  iw(m.x0 + 750, m.y0 + 520, 24, 700); iw(m.x0 + 375, m.y0 + 520, 700, 24); iw(m.x0 + 1125, m.y0 + 520, 700, 24); iw(m.x0 + 750, m.y0 + 960, 24, 140);
+  wallV(m, 750, 24, 1026, [[300, 440], [700, 840]]); wallH(m, 520, 24, 750, [[300, 440]]); wallH(m, 520, 750, 1476, [[1000, 1140]]);
   part(m, 'pit', m.x0 + 780, m.y0 + 30, m.x0 + 1470, m.y0 + 510); part(m, 'wormpit', m.x0 + 1005, m.y0 + 150, m.x0 + 1245, m.y0 + 390);
   B(m.x0 + 300, m.y0 + 250, 220, 90, 'table'); B(m.x0 + 380, m.y0 + 800, 300, 60, 'shelf');
   door('matou', 'matou', 5000, 835, 0, 1, m.x0 + 560, m.y0 + 975, 0, 1);
@@ -683,27 +694,42 @@ MAPS.city = (function () {
   for (var pr = 0; pr < 6; pr++) { B(k.x0 + 260, k.y0 + 480 + pr * 120, 330, 40, 'pew'); B(k.x0 + 840, k.y0 + 480 + pr * 120, 330, 40, 'pew'); }
   B(k.x0 + 550, k.y0 + 180, 260, 70, 'altar'); B(k.x0 + 980, k.y0 + 230, 120, 160, 'confessional');
   [[k.x0 + 180, k.y0 + 300], [k.x0 + 920, k.y0 + 300]].forEach(function (p) { T(p[0], p[1], 24, 'column'); });
-  door('church', 'church', 1100, 2755, 0, -1, k.x0 + 550, k.y0 + 1225, 0, 1);
+  door('church', 'church', 1450, 3155, 0, 1, k.x0 + 550, k.y0 + 1225, 0, 1);
   // Emiya Residence: rooms, the dojo, the storehouse where Saber was summoned
   var e = room('emiya', 'Emiya Residence', IX + 1500, 3700, 1600, 1000, 'tatami');
-  iw(e.x0 + 600, e.y0 + 280, 24, 520); iw(e.x0 + 1050, e.y0 + 500, 24, 980); iw(e.x0 + 300, e.y0 + 560, 560, 24);
+  wallV(e, 1050, 24, 976, [[420, 560]]); wallV(e, 600, 24, 560, [[200, 340]]); wallH(e, 560, 24, 600, [[260, 400]]);
   part(e, 'wood', e.x0 + 1070, e.y0 + 30, e.x0 + 1570, e.y0 + 970); part(e, 'stone', e.x0 + 30, e.y0 + 580, e.x0 + 590, e.y0 + 970);
   B(e.x0 + 300, e.y0 + 250, 220, 120, 'kotatsu'); part(e, 'circle', e.x0 + 230, e.y0 + 730, e.x0 + 370, e.y0 + 870); B(e.x0 + 1320, e.y0 + 90, 380, 30, 'rack');
-  door('emiya', 'emiya', 1900, 5200, 0, 1, e.x0 + 820, e.y0 + 925, 0, 1);
+  door('emiya', 'emiya', 2050, 4925, 0, -1, e.x0 + 820, e.y0 + 75, 0, -1);
+  // the Emiya storehouse: cramped, cluttered, and where a Servant was once summoned
+  var sh = room('shed', 'Emiya Storehouse', IX + 200, 5250, 620, 460, 'stone');
+  part(sh, 'circle', sh.x0 + 230, sh.y0 + 150, sh.x0 + 390, sh.y0 + 310);
+  B(sh.x0 + 520, sh.y0 + 120, 120, 60, 'shelf'); B(sh.x0 + 100, sh.y0 + 330, 120, 70, 'table'); B(sh.x0 + 120, sh.y0 + 110, 80, 80, 'crate'); B(sh.x0 + 520, sh.y0 + 340, 90, 90, 'crate');
+  door('shed', 'shed', 1620, 5285, 0, -1, sh.x0 + 310, sh.y0 + 60, 0, -1);
+  // summoning spots: where each master starts the war alone
+  var spots = {
+    emiya: { x: sh.x0 + 310, y: sh.y0 + 230, name: 'The storehouse, Emiya residence' },
+    tohsaka: { x: t.x0 + 1225, y: t.y0 + 870, name: 'The workshop, Tohsaka mansion' },
+    matou: { x: m.x0 + 1125, y: m.y0 + 270, name: 'The worm pit, Matou residence' },
+    einzbern: { x: cx0 + 1300, y: cy0 + 800, name: 'The great hall, Einzbern Castle' },
+    church: { x: k.x0 + 550, y: k.y0 + 340, name: 'Before the altar, Fuyuki Church' },
+    hyatt: { x: 7700, y: 1190, name: 'The forecourt, Hyatt Hotel' },
+    mackenzie: { x: 2250, y: 1660, name: 'A clearing in the woods of Mount Enzou' }
+  };
   // the gap between city and interiors is solid
   B(CW + 200, CH / 2, 400, CH, 'void', { hide: true });
 
   /* ---------- homes: where each master's team starts ---------- */
   var homes = {
     tohsaka: { name: 'Tohsaka Mansion', x: 3550, y: 1180, style: 'mansion_w' }, matou: { name: 'Matou Residence', x: 5000, y: 1180, style: 'mansion_d' },
-    einzbern: { name: 'Einzbern Castle', x: 11000, y: 1950, style: 'villa_e' }, church: { name: 'Fuyuki Church', x: 1100, y: 2500, style: 'church' },
+    einzbern: { name: 'Einzbern Castle', x: 11000, y: 1950, style: 'villa_e' }, church: { name: 'Fuyuki Church', x: 1450, y: 3330, style: 'church' },
     hyatt: { name: 'Hyatt Hotel', x: 7700, y: 1220, style: 'hotel' }, mackenzie: { name: 'Mackenzie House', x: 2850, y: 1800, style: 'house_w' },
     emiya: { name: 'Emiya Residence', x: 2050, y: 4620, style: 'house_jpL' }
   };
   return {
-    id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + 3200, h: CH, cityW: CW, rects: true,
-    o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1100, y: 2500, name: 'Fuyuki Church' },
-    river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1100, 2500], [7700, 1220], [2850, 1800], [5000, 1180]]
+    id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
+    spots: spots, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
+    river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [2850, 1800], [5000, 1180]]
   };
 })();
 /* ---- city navigation, doors, zones and homes ----
@@ -742,10 +768,11 @@ function buildNav(M) {
   // interiors: a loose grid of waypoints in each room, linked where the way is clear
   (M.rooms || []).forEach(function (rm) {
     var pts = [];
-    for (var x = rm.x0 + 120; x < rm.x1 - 60; x += 260) for (var y = rm.y0 + 120; y < rm.y1 - 60; y += 260) {
+    for (var x = rm.x0 + 90; x < rm.x1 - 50; x += 170) for (var y = rm.y0 + 90; y < rm.y1 - 50; y += 170) {
       if (rectsIn(x - 30, y - 30, x + 30, y + 30).some(function (r) { return inRect(r, x, y, 30); })) continue;
       pts.push(node(x, y, rm.id));
     }
+    (rm.gaps || []).forEach(function (gp) { pts.push(node(gp.x, gp.y, rm.id)); pts.push(node(gp.x + (gp.v ? -90 : 0), gp.y + (gp.v ? 0 : -90), rm.id)); pts.push(node(gp.x + (gp.v ? 90 : 0), gp.y + (gp.v ? 0 : 90), rm.id)); });
     rm.nodes = pts;
     for (var a = 0; a < pts.length; a++) for (var b2 = a + 1; b2 < pts.length; b2++) { var d = Math.hypot(pts[a].x - pts[b2].x, pts[a].y - pts[b2].y); if (d < 400 && rectLos(pts[a].x, pts[a].y, pts[b2].x, pts[b2].y, 18)) link(pts[a], pts[b2], d); }
   });
@@ -835,6 +862,10 @@ function assignHomes(teams, rnd) {
   });
   RECTS = []; MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); }); buildRectGrid();
   return out;
+}
+function summonSpot(h) {
+  if (h.canon && MAP.spots && MAP.spots[h.key]) return MAP.spots[h.key];
+  return { x: h.x, y: h.y - 20, name: h.name };
 }
 /* ---- reality marbles: replace the battlefield until another marble overwrites it or Enuma Elish breaks it ---- */
 var MARBLE_PULL = 900, MARBLE_R = 1150, MARBLE_LIFE = 25;
@@ -1132,7 +1163,7 @@ function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2)) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
   var best = null, bd = 1e9, es = enemiesOf(f);
-  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
+  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
   if (best) f.foe = best;
 }
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
@@ -1140,10 +1171,15 @@ function newWar(teamsIn, opts) {
   var spawnOrder = opts && opts.spawnOrder;
   opts = opts || {}; setMap(opts.map || 'city');
   var homes = MAP.homes ? assignHomes(teamsIn) : null;
-  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick };
+  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick, circles: [] };
   teamsIn.forEach(function (t, ti) {
-    var sp = homes ? [homes[ti].x, homes[ti].y] : MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
-    sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
+    // in the city each master starts at their summoning circle; the servant appears on it
+    var spot = homes ? summonSpot(homes[ti]) : null;
+    var sp = spot ? [spot.x, spot.y] : MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0] + (spot ? 0 : 0), sp[1] - (spot ? 10 : 0), 0, 0), ms = mkF(t.master, sp[0] - (spot ? 0 : 70), sp[1] + (spot ? 75 : 40), 0, 0);
+    sv.home = ms.home = homes ? [homes[ti].x, homes[ti].y] : sp; initMana(ms);
+    if (spot) G.circles.push({ x: sp[0], y: sp[1], team: ti, col: t.master.col, name: spot.name });
+    sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = spot ? -Math.PI / 2 : Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
+    if (spot) ms.face = -Math.PI / 2;
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
@@ -1189,7 +1225,7 @@ function gainMom(f, v) { if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0
 function kill(f, noRevive) {
   if (!noRevive && f.def.godHand && !f.gh) {
     f.gh = true; f.hp = f.def.hp * 0.2; f.ghT = 1.2; f.st = 'stag'; f.t = 0; f.dur = 0.5; f.act = null; f.combo = 0; f.guarding = false; f.sta = Math.max(f.sta, 60); f.exh = 0;
-    FX.text(f, 'GOD HAND'); FX.fx('godhand', f.x, f.y, f); FX.snd('godhand', f); FX.shake(10); G.hitstop = Math.max(G.hitstop, 0.3); FX.slow(0.6);
+    FX.text(f, 'GOD HAND'); FX.fx('godhand', f.x, f.y, f); FX.snd('godhand', f); if (FX.near(f.x, f.y)) { FX.shake(10); G.hitstop = Math.max(G.hitstop, 0.3); FX.slow(0.6); }
     return;
   }
   f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0;
@@ -1197,7 +1233,9 @@ function kill(f, noRevive) {
   if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? ARCHER_INDEPENDENT : ORPHAN_TIME; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
   var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
-  else { G.f.forEach(pickTarget); } G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); FX.slow(1.1);
+  else { G.f.forEach(pickTarget); }
+  if (G.mode === 'war') { if (f.killer && f.killer.st !== 'dead' && f.killer !== f) FX.say(f.killer, 'kill'); if (f.partner && f.partner.st !== 'dead' && f.partner.team === f.team) FX.say(f.partner, f.def.isMaster ? 'masterdown' : 'servantdown'); }
+  FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); if (FX.near(f.x, f.y)) { G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.slow(1.1); }
 }
 /* ---- mana link: a master's mana feeds their servant ----
    Masters regenerate mana; a materialized servant drains a little upkeep (more when far from its master).
@@ -1252,7 +1290,7 @@ function formContract(a, b) {
   s.team = m.team; s.partner = m; m.partner = s; s.orphanT = 0; s.recover = false; s.lock = null; m.lock = null; s.anchor = null;
   s.isPlayerMate = !!m.isPlayerMate || m === G.f[0]; s.home = m.home;
   if (m.manaMax === undefined) initMana(m);
-  FX.text(s, 'CONTRACT FORMED'); FX.fx('seal', m.x, m.y, m); FX.fx('seal', s.x, s.y, s); FX.snd('godhand', m);
+  FX.text(s, 'CONTRACT FORMED'); FX.say(s, 'contract'); FX.fx('seal', m.x, m.y, m); FX.fx('seal', s.x, s.y, s); FX.snd('godhand', m);
   G.contracts = (G.contracts || 0) + 1;
   G.f.forEach(pickTarget);
   return true;
@@ -1305,14 +1343,14 @@ function hurt(att, def, a, mult, src) {
     def.stat.parry++; FX.text(def, 'COUNTER'); FX.spark(def.x, def.y, '#ffd36b', 12); FX.shake(5); FX.snd('counter', def); FX.fx('counter', def.x, def.y, def);
     if (att && melee) { var rd = 12 * def.def.dmg; att.hp -= rd; def.stat.dealt += rd; setStag(att, 0.9); if (att.hp <= 0) kill(att); }
     else if (!melee) { src.dead = true; }
-    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); G.hitstop = Math.max(G.hitstop, 0.1);
+    def.st = 'rec'; def.t = 0; def.recDur = 0.25; def.key = 'counter'; def.act = def.A.skill; def.ripo = 1.4; gainMom(def, 12); hitstopAt(def, 0.1);
     return 'counter';
   }
   var front = Math.abs(angDiff(def.face, angTo(def, s))) < 1.75;
   if (def.guarding && front && !a.unblock) {
     if (def.parryOk && def.guardT <= (def.def.parryWin || PARRY) && !a.noParry) {
       def.stat.parry++; gainMom(def, 12); def.ripo = 1.2; FX.text(def, 'PARRY'); FX.spark(def.x, def.y, '#ffffff', 14); FX.shake(6); FX.snd('parry', def); FX.fx('parry', def.x, def.y, def);
-      G.hitstop = Math.max(G.hitstop, 0.12);
+      hitstopAt(def, 0.12);
       if (att && melee) setStag(att, 0.9); else if (src) src.dead = true;
       return 'parry';
     }
@@ -1321,20 +1359,20 @@ function hurt(att, def, a, mult, src) {
     if (a.gb || def.sta <= 0) {
       def.stat.gbreak++; def.sta = Math.max(def.sta, 0); def.guarding = false;
       var gd = dmg * 0.6; def.hp -= gd; def.stat.taken += gd; if (att) { att.stat.dealt += gd; att.stat.hits++; gainMom(att, gd * 0.5); }
-      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); G.hitstop = Math.max(G.hitstop, 0.1);
+      setStag(def, 0.9); FX.text(def, 'GUARD BREAK'); FX.spark(def.x, def.y, '#f08a3b', 12); FX.shake(8); FX.snd('gbreak', def); FX.fx('gbreak', def.x, def.y, def); hitstopAt(def, 0.1);
       if (def.hp <= 0) kill(def);
       return 'gbreak';
     }
     var cd = dmg * (1 - def.def.guard * (1 - ((att && att.def.guardPierce) || 0))); def.hp -= cd; def.stat.taken += cd; def.stat.blocks++;
     if (att) { att.stat.dealt += cd; gainMom(att, cd * 0.4); }
-    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); G.hitstop = Math.max(G.hitstop, 0.035);
+    gainMom(def, 3 + (def.def.blockMom || 0)); FX.spark(def.x, def.y, '#9ec4d8', 5); FX.snd('block', def, a); hitstopAt(def, 0.035);
     if (def.hp <= 0) kill(def);
     return 'block';
   }
   var ar = armored(def), taken = dmg * (ar ? (def.wallT > 0 ? 0.4 : 0.9) : 1);
   if (def.st === 'rec' && def.key === 'counter') taken = dmg;
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
-  def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
+  def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
@@ -1347,7 +1385,7 @@ function hurt(att, def, a, mult, src) {
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
   if (a.power >= 3) { FX.slow(0.5); FX.fx('npHit', def.x, def.y, def); }
-  G.hitstop = Math.max(G.hitstop, a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045));
+  hitstopAt(def, a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045));
   FX.shake(a.power >= 3 ? 12 : a.power >= 2 ? 6 : 2.5);
   if (def.hp <= 0) { kill(def); return 'kill'; }
   var arrowFlinch = a.kind === 'proj' && a.power < 2 && (def.st === 'wind' || def.st === 'act');
@@ -1379,7 +1417,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -1453,7 +1491,7 @@ function strikeInit(f) {
   else if (k === 'buff') { if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
   else if (k === 'drain') { var pd2 = f.partner; if (pd2 && pd2.st !== 'dead' && f.hp > a.selfDmg + 5) { f.hp -= a.selfDmg; pd2.mom = Math.min(100, pd2.mom + a.mom); FX.text(f, '-' + a.selfDmg); FX.text(pd2, 'MANA SURGE'); FX.fx('seal', pd2.x, pd2.y, pd2); } }
   else if (k === 'gift') { var pg = f.partner; if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
-  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'I am the bone of my sword'); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
+  else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
   else if (k === 'wall') { f.wallT = a.dur; FX.shake(5); }
   else if (k === 'veil') { f.veilT = a.dur; FX.shake(2); FX.fx('veil', f.x, f.y, f); }
   else if (k === 'rain') {
@@ -1840,7 +1878,8 @@ startAct = function (f, key) {
   if (ok && key === 'heavy' && f.pendGoal) { f.goal = Math.max(f.A.heavy.wind, f.pendGoal); f.windTotal = f.goal; f.pendGoal = 0; }
   return ok;
 };
-function nearestEnemyTo(f, pt, maxD) { var b = null, bd = maxD || 1e9; enemiesOf(f).forEach(function (e) { var d = dist(e, pt); if (d < bd) { bd = d; b = e; } }); return b; }
+function zoneGap(a, b) { return MAP.cityW && !sameZone(a, b) ? 2500 : 0; }
+function nearestEnemyTo(f, pt, maxD) { var b = null, bd = maxD || 1e9; enemiesOf(f).forEach(function (e) { var d = dist(e, pt) + zoneGap(e, pt.def ? pt : f); if (d < bd) { bd = d; b = e; } }); return b; }
 function moveTo(f, x, y, k) {
   var sv = steer(f, x, y), now = G.time;
   if (f._mvT === undefined || now - f._mvT > 0.5) { var moved = f._mvX === undefined ? 99 : Math.hypot(f.x - f._mvX, f.y - f._mvY); f._mvX = f.x; f._mvY = f.y; f._mvT = now; if (moved < 12 && Math.hypot(x - f.x, y - f.y) > 60 && f.st === 'idle' && !(f.rootT > 0)) { f._usA = Math.atan2(sv[1], sv[0]) + (Math.random() < 0.5 ? 1 : -1) * (1.2 + Math.random()); f._usT = now + 0.8; } }
@@ -1852,7 +1891,7 @@ function aiWar(ai, dt) {
   var f = ai.f; if (f.st === 'dead' || G.over) return;
   if (f.def.isMaster) return aiMaster(ai, dt);
   var m = f.partner && f.partner.st !== 'dead' ? f.partner : null, st = f.stance || 'charge';
-  var near = nearestEnemyTo(f, f, 1e9), nd = near ? dist(f, near) : 1e9;
+  var near = nearestEnemyTo(f, f, 1e9), nd = near ? dist(f, near) + zoneGap(f, near) : 1e9;
   if (f.hp < f.def.hp * 0.25 && f.def.id !== 'heracles' && f.orphanT <= 0 && near && near.hp > f.hp * 1.2 && !(f.sealOrder > 0) && !f.isPlayerMate) st = 'retreat';
   if (f.hp < f.def.hp * 0.5 && nd > 900 && f.orphanT <= 0 && !(f.sealOrder > 0)) f.recover = true;
   if (f.recover && (f.hp > f.def.hp * 0.85 || (near && nd < 300))) f.recover = false;
@@ -2087,7 +2126,7 @@ var hassan = {
 /* =================== CAERWYN (original) =================== */
 var caerwyn = {
   id: 'caerwyn', name: 'King Arthur', cls: 'Saber', col: '#dfeaf4',
-  basis: 'The king of Arthurian legend, imagined as a woman and drawn our own way: a white wool cloak, hammered bronze plate, a plain bronze circlet and a long honey-blonde braid. Her blade is pale steel with a bronze hilt.',
+  basis: 'The king of Arthurian legend, imagined as a woman and drawn our own way: a white wool cloak, hammered bronze plate, a plain bronze circlet and a long honey-blonde braid. Her blade is bright silver with a gold line down its middle, set in a gold hilt.',
   pal: [['Cloak', '#e6edf2'], ['Bronze', '#b98a4a'], ['Hair', '#e3c06a'], ['Steel', '#dfe7ea'], ['Gem', '#dfeaf4']],
   notes: ['A white cloak with bronze plate: the lightest silhouette in the roster. Change the palette strings at the top of this entry to recolor her.', 'The long blonde braid trails behind her in the arena, next to the cloak, so facing is easy to read.', 'The circlet ring is the one detail that marks her as royalty from above.'],
   body: function () {
@@ -2100,10 +2139,10 @@ var caerwyn = {
       '<circle cx="2" cy="0" r="10" fill="#e3c06a"/><ellipse cx="6" cy="0" rx="5" ry="7" fill="#d9a98a" stroke="none"/><path d="M-1 -9 Q8 -10 11 -4 M-1 9 Q8 10 11 4" stroke="#b98a4a" stroke-width="2.2" fill="none"/><path d="M10 -3 L14 0 L10 3Z" fill="#d9a98a" stroke-width="1.4"/><circle cx="5" cy="0" r="1.8" fill="#dfeaf4" stroke-width="1"/></g>';
   },
   weapon: function () {
-    return '<defs>' + grad('qw', '#f2f7f8', '#9fb2bb') + grad('qh', '#dcae6a', '#8a5f2a') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
-      '<rect x="-7" y="-2.8" width="16" height="5.6" rx="2" fill="#5a3a22"/><path d="M-7 -2.8 L9 2.8 M-7 2.8 L9 -2.8" stroke="#3a2418" stroke-width="1" fill="none"/><circle cx="-9" cy="0" r="4.6" fill="url(#qh)"/><circle cx="-9" cy="0" r="1.9" fill="#dfeaf4" stroke-width="1"/>' +
-      '<path d="M12 -3.8 L58 -5 Q74 -3 84 0 Q74 3 58 5 L12 3.8Z" fill="url(#qw)"/><path d="M14 0 L76 0" stroke="#7d909b" stroke-width="1.4" fill="none"/>' +
-      '<path d="M9 -2 Q6 -9 10 -13 Q15 -9 14 -2Z M9 2 Q6 9 10 13 Q15 9 14 2Z" fill="url(#qh)"/><rect x="8.5" y="-4.5" width="5" height="9" rx="1.5" fill="url(#qh)"/><circle cx="11" cy="0" r="1.6" fill="#dfeaf4" stroke-width="1"/></g>';
+    return '<defs>' + grad('qw', '#fbfdfe', '#a9b6bf') + grad('qh', '#f4d77a', '#a8781e') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
+      '<rect x="-7" y="-2.8" width="16" height="5.6" rx="2" fill="url(#qh)"/><path d="M-7 -2.8 L9 2.8 M-7 2.8 L9 -2.8" stroke="#7a5414" stroke-width="1" fill="none"/><circle cx="-9" cy="0" r="4.6" fill="url(#qh)"/><circle cx="-9" cy="0" r="1.9" fill="#3a6ab8" stroke-width="1"/>' +
+      '<path d="M12 -3.8 L58 -5 Q74 -3 84 0 Q74 3 58 5 L12 3.8Z" fill="url(#qw)"/><path d="M14 0 L72 0" stroke="#d9ad3c" stroke-width="2.2" fill="none"/><path d="M14 -1.2 L70 -1.4" stroke="#fff4c4" stroke-width="0.7" fill="none"/>' +
+      '<path d="M9 -2 Q6 -9 10 -13 Q15 -9 14 -2Z M9 2 Q6 9 10 13 Q15 9 14 2Z" fill="url(#qh)"/><rect x="8.5" y="-4.5" width="5" height="9" rx="1.5" fill="url(#qh)"/><circle cx="11" cy="0" r="1.6" fill="#3a6ab8" stroke-width="1"/></g>';
   },
   wvb: '-16 -18 106 36', tdvb: '-50 -50 100 100'
 };
@@ -2601,7 +2640,13 @@ var cv = $('#cv'), ctx = cv.getContext('2d'), VW = 1120, VH = 700, VIEW = { cx: 
 cv.addEventListener('pointerdown', function (e) { if (!running || !G) return; var r = cv.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * VW, sy = (e.clientY - r.top) / r.height * VH, wx = (sx - VW / 2) / VIEW.zoom + VIEW.cx, wy = (sy - VH / 2) / VIEW.zoom + VIEW.cy, f = G.f[MEI], best = null, bd = 80; enemiesOf(f).forEach(function (en) { var d = Math.hypot(en.x - wx, en.y - wy); if (d < bd) { bd = d; best = en; } }); if (NET.mirror) NET.lk = best ? G.f.indexOf(best) : -1; else f.lock = best; });
 var parts = [], texts = [], shake = 0, banner = { text: '', t: 0 }, cam = { x: 800, y: 550 };
 var running = false, paused = false, speedMul = 1, acc = 0, last = 0, endShown = false, hits = {};
-FX.shake = function (v) { shake = Math.max(shake, v); };
+/* what the viewer can see and hear: the camera's surroundings, in the same space (city or the same interior) */
+var fxPos = null;
+function viewZone() { var me = G && G.f[MEI]; return me ? zoneOfXY(me.x, me.y) : 'city'; }
+function zoneOfXY(x, y) { if (!MAP.cityW || x < MAP.cityW) return 'city'; var r = roomAt(x, y); return r ? r.id : 'void'; }
+function viewDist(x, y) { return Math.hypot(x - cam.x, y - cam.y); }
+FX.near = function (x, y) { if (!G || G.mode !== 'war') return true; if (MAP.cityW && zoneOfXY(x, y) !== viewZone()) return false; return viewDist(x, y) < Math.max(900, VW / (VIEW.zoom || 1) * 0.7); };
+FX.shake = function (v) { if (fxPos && !FX.near(fxPos.x, fxPos.y)) return; shake = Math.max(shake, v); };
 FX.text = function (f, s) { var big = isNaN(+s); texts.push({ x: f.x + (Math.random() - 0.5) * 16, y: f.y - 30, t: 0, s: s, col: big ? '#ffd36b' : (f.idx === 0 ? '#ff9aa2' : '#e9e4d3'), big: big }); };
 
 /* ===================== AUDIO ===================== */
@@ -2881,18 +2926,29 @@ function audInit() {
 }
 ['pointerdown', 'keydown'].forEach(function (ev) { window.addEventListener(ev, audInit, { passive: true }); });
 var lastSnd = {};
+var HEAR = [[/^(npfire|npcast|hitNP|marble)/, 3400], [/^(godhand|kill|execute|gbreak|explode|boom)/, 1800], [/^(gun|bow|drawBow)/, 1300]];
+function hearVol(name, f) {
+  if (!f || f.x === undefined || !G || G.mode !== 'war') return 1;
+  if (f === G.f[MEI]) return 1;
+  var range = 1000; for (var i = 0; i < HEAR.length; i++) if (HEAR[i][0].test(name)) { range = HEAR[i][1]; break; }
+  var d = viewDist(f.x, f.y), v = d < 350 ? 1 : Math.max(0, 1 - (d - 350) / (range - 350));
+  if (MAP.cityW && zoneOfXY(f.x, f.y) !== viewZone()) v *= range > 2000 ? 0.35 : 0;
+  return v * v;
+}
 function playSnd(name, f, extra) {
+  if (f && f.x !== undefined) fxPos = { x: f.x, y: f.y };
   if (!AUD.on || !AUD.ac || !AUD.o) return;
+  var hv = hearVol(name, f); if (hv < 0.03) return;
   var fn = SND[name] || (name.indexOf('npfire:') === 0 ? SND.npfireG : name.indexOf('skill:') === 0 ? SND.skillG : null); if (!fn) return;
   var nowt = AUD.ac.currentTime, key = name + (f && f.idx !== undefined ? f.idx : '');
   if (lastSnd[key] && nowt - lastSnd[key] < 0.03) return; lastSnd[key] = nowt;
   var pan = f && f.x !== undefined ? clamp((f.x - cam.x) / 420, -0.7, 0.7) : 0;
-  var outN = mkOut(AUD.o, pan);
+  var outN = mkOut(AUD.o, pan); if (hv < 0.99) { var hg = AUD.ac.createGain(); hg.gain.value = hv; hg.connect(outN); outN = hg; }
   if (name === 'npcast' && f) { var sub = AUD.ac.createGain(); sub.connect(outN); AUD.npBus = AUD.npBus || {}; AUD.npBus[f.idx] = sub; outN = sub; }
   if (name === 'npLost' && f && AUD.npBus && AUD.npBus[f.idx]) { try { var sg = AUD.npBus[f.idx].gain; sg.cancelScheduledValues(nowt); sg.setValueAtTime(sg.value, nowt); sg.linearRampToValueAtTime(0, nowt + 0.12); } catch (e) {} }
   try { fn(AUD.o, outN, nowt + 0.002, { f: f, a: extra }); } catch (e) {}
-  if (name === 'hitNP' || name === 'kill' || name === 'execute' || name.indexOf('npfire') === 0) { try { var mg = AUD.o.music.gain; mg.cancelScheduledValues(nowt); mg.setValueAtTime(mg.value, nowt); mg.linearRampToValueAtTime(0.18, nowt + 0.03); mg.linearRampToValueAtTime(0.7, nowt + 1.4); } catch (e) {} }
-  if (navigator.vibrate && (name === 'hitNP' || name === 'kill' || name === 'hitH' || name === 'gbreak')) { try { navigator.vibrate(name === 'hitH' || name === 'gbreak' ? 18 : 40); } catch (e) {} }
+  if (hv > 0.5 && (name === 'hitNP' || name === 'kill' || name === 'execute' || name.indexOf('npfire') === 0)) { try { var mg = AUD.o.music.gain; mg.cancelScheduledValues(nowt); mg.setValueAtTime(mg.value, nowt); mg.linearRampToValueAtTime(0.18, nowt + 0.03); mg.linearRampToValueAtTime(0.7, nowt + 1.4); } catch (e) {} }
+  if (hv > 0.6 && navigator.vibrate && (name === 'hitNP' || name === 'kill' || name === 'hitH' || name === 'gbreak')) { try { navigator.vibrate(name === 'hitH' || name === 'gbreak' ? 18 : 40); } catch (e) {} }
 }
 function audioTest(name) {
   var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; var ac = new OAC(2, 44100 * 5, 44100), o = buildBus(ac, ac.destination);
@@ -2962,9 +3018,9 @@ function beamFx(f, x, y, sc, life) { var fa2 = f.face; vfx(life, function (g, p,
         if (tt < 0.75 && Math.random() < 0.5) FX.shake(4 * sc);
       }); }
 function flashFx(col, a, life) { flashes.push({ col: col, a: a, t: 0, life: life }); }
-FX.slow = function (s) { slowT = Math.max(slowT, s); };
+FX.slow = function (s) { if (fxPos && !FX.near(fxPos.x, fxPos.y)) return; slowT = Math.max(slowT, s); };
 FX.snd = playSnd;
-FX.banner = function (s, sub) { if (!s) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); band = { t: 2.0, text: s, sub: sub || '', col: c }; };
+FX.banner = function (s, sub, who) { if (!s) return; if (who && G && G.mode === 'war' && who.team !== (G.f[MEI] || {}).team && !(viewDist(who.x, who.y) < 1700 && (!MAP.cityW || zoneOfXY(who.x, who.y) === viewZone()))) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); band = { t: 2.0, text: s, sub: sub || '', col: c }; };
 function npfireGen(f, x, y) {
   var A = f.A.np, c = f.def.col, fa = f.face;
   if (A.kind === 'charge') {
@@ -2986,6 +3042,7 @@ function npfireGen(f, x, y) {
 }
 function rgbaOf(h, a) { return 'rgba(' + rgbOf(h) + ',' + a + ')'; }
 FX.fx = function (name, x, y, f) {
+  fxPos = { x: x, y: y };
   var col = f && f.def ? f.def.col : '#fff', id = f && f.def ? f.def.id : '';
   switch (name) {
     case 'parry': ringFx(x, y, 8, 72, '#ffffff', 0.3, 6); raysFx(x, y, 8, 14, 64, '#ffffff', 0.24, 3); break;
@@ -3104,7 +3161,7 @@ FX.fx = function (name, x, y, f) {
       break;
   }
 };
-FX.spark = function (x, y, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, s = 80 + Math.random() * 220; parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: 0.25 + Math.random() * 0.25, col: col }); } };
+FX.spark = function (x, y, col, n) { fxPos = { x: x, y: y }; for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, s = 80 + Math.random() * 220; parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: 0.25 + Math.random() * 0.25, col: col }); } };
 
 var HUD = [];
 function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
@@ -3141,9 +3198,11 @@ function enterGame(nTeams, title, sub) {
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
   if (title) { FX.banner(title, sub); return; }
+  BUB = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
+  if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }
-function endMatch(toSetup) { running = false; if (NET.role === 'host' && NET.game) { NET.game = null; NET.R.presence({ game: null, s: null }).catch(function () {}); } if (NET.mirror) { NET.mirror = false; MEI = 0; if (NET.R) NET.R.presence({ ing: null, inp: null }).catch(function () {}); } renderNet(); document.body.classList.remove('ingame'); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} $('#duel').style.display = 'none'; $('#setup').style.display = 'block'; $('#end').classList.remove('on'); $('#pz').classList.remove('on'); }
+function endMatch(toSetup) { running = false; INTRO = null; document.body.classList.remove('intro'); if (NET.role === 'host' && NET.game) { NET.game = null; NET.R.presence({ game: null, s: null }).catch(function () {}); } if (NET.mirror) { NET.mirror = false; MEI = 0; if (NET.R) NET.R.presence({ ing: null, inp: null }).catch(function () {}); } renderNet(); document.body.classList.remove('ingame'); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} $('#duel').style.display = 'none'; $('#setup').style.display = 'block'; $('#end').classList.remove('on'); $('#pz').classList.remove('on'); }
 function startCurrent() { if (CFG.game === 'arena') startArena(); else startMatch(); }
 $('#go').addEventListener('click', startCurrent);
 $('#again').addEventListener('click', function () { if (NET.role === 'client') { netSay('Waiting for the host to start again.'); endMatch(); return; } startCurrent(); });
@@ -3535,6 +3594,7 @@ function drawObs(g, p) {
   if (k === 'column') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = '#b8b2a6'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.45, 0, 6.283); g.fillStyle = 'rgba(255,255,255,.2)'; g.fill(); return; }
   if (k === 'chair') { g.fillStyle = '#5a3e28'; g.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); return; }
   if (k === 'tree' || k === 'pine') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = k === 'pine' ? '#1f3d2a' : '#24432a'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.25, p.y - p.r * 0.25, p.r * 0.6, 0, 6.283); g.fillStyle = k === 'pine' ? '#2c5238' : '#335e39'; g.fill(); g.beginPath(); g.arc(p.x - p.r * 0.35, p.y - p.r * 0.38, p.r * 0.25, 0, 6.283); g.fillStyle = 'rgba(160,210,140,.18)'; g.fill(); return; }
+  if (k === 'persimmon') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = '#3a4a26'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.2, p.y - p.r * 0.2, p.r * 0.65, 0, 6.283); g.fillStyle = '#4e5e30'; g.fill(); g.fillStyle = '#e8823a'; for (var pk = 0; pk < 9; pk++) { var pa = pk * 2.4, pr = p.r * (0.3 + (pk % 3) * 0.22); g.beginPath(); g.arc(p.x + Math.cos(pa) * pr, p.y + Math.sin(pa) * pr, 4, 0, 6.283); g.fill(); } return; }
   if (k === 'lantern') { g.save(); g.translate(p.x, p.y); g.rotate(0.785); g.fillStyle = '#8a867a'; g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.fillRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.strokeRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.restore(); g.beginPath(); g.arc(p.x, p.y, 6, 0, 6.283); g.fillStyle = 'rgba(255,200,110,.85)'; g.fill(); return; }
   if (k === 'lamp') { var lg = g.createRadialGradient(p.x, p.y, 2, p.x, p.y, 120); lg.addColorStop(0, 'rgba(255,220,140,.22)'); lg.addColorStop(1, 'rgba(255,220,140,0)'); g.fillStyle = lg; g.beginPath(); g.arc(p.x, p.y, 120, 0, 6.283); g.fill(); }
   var fill = { pillar: '#34495a', lighthouse: '#e8e4d8', girder: '#a8302a', lamp: '#4a4f58', burner: '#7a6238', gatepost: '#a8302a', crane: '#d9a73a', bollard: '#2a2e33', cross: '#8e9198' }[k] || '#34495a';
@@ -3571,7 +3631,7 @@ function drawMarble(g, kind, al) {
   g.restore();
 }
 var MOX = 0, MOY = 0;
-function visL(o) { if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
+function visL(o) { if (INTRO && o.def && !o.def.isMaster && !INTRO.shown) return false; if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
 function drawWorld() {
   var g = ctx, mb = G.marble, mal = mb ? Math.min(1, mb.t / 0.9) : 0;
   var vz = VIEW.zoom || 1, vr = { x0: VIEW.cx - VW / 2 / vz - 150, y0: VIEW.cy - VH / 2 / vz - 150, x1: VIEW.cx + VW / 2 / vz + 150, y1: VIEW.cy + VH / 2 / vz + 150 }; VIEWR = vr;
@@ -3626,6 +3686,7 @@ function drawWorld() {
     if (p.a.shape === 'orb') { g.save(); g.translate(p.x, p.y); var oc = p.a.col || p.owner.def.col, os = p.a.size || 8; g.globalAlpha = 0.35; g.beginPath(); g.arc(-os * 1.7, 0, os * 1.1, 0, 6.283); g.fillStyle = oc; g.fill(); g.globalAlpha = 1; g.beginPath(); g.arc(0, 0, os, 0, 6.283); g.fillStyle = oc; g.shadowColor = oc; g.shadowBlur = 14 + os; g.fill(); g.shadowBlur = 0; g.beginPath(); g.arc(0, 0, os * 0.42, 0, 6.283); g.fillStyle = '#ffffff'; g.fill(); g.restore(); return; }
     if (p.a.shape === 'blade') { g.save(); g.translate(p.x, p.y); g.rotate(a); g.shadowColor = p.owner.def.col; g.shadowBlur = 10; g.fillStyle = '#f3f8fb'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(16, 0); g.lineTo(-8, -4); g.lineTo(-12, 0); g.lineTo(-8, 4); g.closePath(); g.fill(); g.stroke(); g.shadowBlur = 0; g.fillStyle = p.owner.def.col; g.fillRect(-14, -6, 4, 12); g.globalAlpha = 0.3; g.fillStyle = p.owner.def.col; g.fillRect(-46, -2, 34, 4); g.restore(); return; }
     if (p.a.wave) { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var tr = 3; tr >= 0; tr--) { g.globalAlpha = 0.16 * (4 - tr); g.beginPath(); g.arc(-26 - tr * 30, 0, 42, -0.95, 0.95); g.strokeStyle = '#dfeaf4'; g.lineWidth = 12 - tr * 2; g.lineCap = 'round'; g.stroke(); } g.globalAlpha = 0.55; g.beginPath(); g.arc(-8, 0, 44, -1.05, 1.05); g.strokeStyle = '#dfeaf4'; g.lineWidth = 20; g.stroke(); g.globalAlpha = 1; g.beginPath(); g.arc(-8, 0, 44, -1.0, 1.0); g.strokeStyle = '#ffffff'; g.lineWidth = 7; g.stroke(); g.restore(); return; } g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.beginPath(); g.moveTo(-22, 0); g.lineTo(6, 0); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.moveTo(6, -4); g.lineTo(14, 0); g.lineTo(6, 4); g.fill(); g.restore(); });
+  drawOverhead(g);
   V.forEach(function (v) { g.save(); v.draw(g, clamp(v.t / v.life, 0, 1), v.t); g.restore(); });
   parts.forEach(function (p) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.col; g.fillRect(p.x - 2, p.y - 2, 4, 4); }); g.globalAlpha = 1;
   texts.forEach(function (t) { g.globalAlpha = clamp(1 - t.t / 0.9, 0, 1); g.fillStyle = t.col; g.font = (t.big ? '700 20px' : '700 16px') + ' "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(t.s, t.x, t.y - t.t * 40); }); g.globalAlpha = 1;
@@ -3643,8 +3704,9 @@ function draw() {
   if (cv.width !== Math.round(VW * dpr) || cv.height !== Math.round(VH * dpr)) { cv.width = Math.round(VW * dpr); cv.height = Math.round(VH * dpr); }
   var k = cv.width / VW; ctx.setTransform(k, 0, 0, k, 0, 0);
   var a = G.f[MEI], b = a.foe || G.f[1], dd = Math.max(1, dist(a, b)), wb = a.st === 'dead' ? 1 : Math.min(G.mode === 'war' ? 0.3 : 0.38, (G.mode === 'war' ? 200 : 260) / dd), tx = a.x + (b.x - a.x) * wb, ty = a.y + (b.y - a.y) * wb;
+  if (INTRO) { tx = INTRO.c.x; ty = INTRO.c.y + 20; }
   cam.x += (tx - cam.x) * 0.14; cam.y += (ty - cam.y) * 0.14;
-  var zoom = clamp(Math.min(VW, VH) / (G.mode === 'war' ? 900 : 640), 0.55, 1.4), np = G.f.filter(function (f) { return f.key === 'np' && (f.st === 'act'); })[0]; if (np) zoom *= 1.12;
+  var zoom = clamp(Math.min(VW, VH) / (G.mode === 'war' ? 900 : 640), 0.55, 1.4), np = G.f.filter(function (f) { return f.key === 'np' && (f.st === 'act'); })[0]; if (np) zoom *= 1.12; if (INTRO) zoom *= 1.35;
   var cx = clamp(cam.x, VW / 2 / zoom, W - VW / 2 / zoom), cy = clamp(cam.y, VH / 2 / zoom, H - VH / 2 / zoom); VIEW.cx = cx; VIEW.cy = cy; VIEW.zoom = zoom;
   var sx = (Math.random() - 0.5) * shake, sy = (Math.random() - 0.5) * shake;
   ctx.fillStyle = '#0b141d'; ctx.fillRect(0, 0, VW, VH);
@@ -3675,6 +3737,8 @@ function draw() {
     if (band.sub) { var ss = 19; ctx.font = 'italic 400 ' + ss + 'px "Times New Roman", serif'; while (ctx.measureText(band.sub).width > VW - 60 && ss > 12) { ss -= 1; ctx.font = 'italic 400 ' + ss + 'px "Times New Roman", serif'; } ctx.fillStyle = band.col; ctx.fillText(band.sub, tx - (bp < 0.1 ? (1 - bs) * 60 : 0), by + 26); }
     ctx.shadowBlur = 0; ctx.globalAlpha = 1;
   }
+  drawBubbles(cx, cy, zoom);
+  if (INTRO) { drawIntro(); return; }
   // off-screen foe pointer
   var f0 = G.f[MEI], f1 = f0.foe || G.f[1], sxp = (f1.x - cx) * zoom + VW / 2, syp = (f1.y - cy) * zoom + VH / 2;
   if (sxp < 20 || sxp > VW - 20 || syp < 20 || syp > VH - 20) {
@@ -3695,7 +3759,7 @@ function draw() {
    Top-down at night, light from the upper left: roofs get a lit and a shaded side, taller buildings cast longer shadows. */
 var CITY_PAL = {
   miyama: '#2f3530', shinto: '#2c2f34', forest: '#1d3022', temple: '#57524a', hill: '#2c382b', churchyard: '#2b382c', schoolyard: '#54473a', park: '#2a4430',
-  sand: '#8a7c5c', plaza: '#45484e', harbor: '#3a3e44', castle: '#4a4b48', emiya: '#474d3e', garden: '#2b472f', arcade: '#4a4646', water: '#1b3a55', pond: '#1e4260'
+  sand: '#8a7c5c', plaza: '#45484e', harbor: '#3a3e44', castle: '#4a4b48', emiya: '#474d3e', garden: '#2b472f', arcade: '#4a4646', water: '#1b3a55', pond: '#1e4260', churchhill: '#26362a', clearing: '#3b4637', cemetery: '#2c3a2e'
 };
 function cityCache(m) {
   if (m._cc) return m._cc;
@@ -3728,23 +3792,23 @@ function drawCity(g, m) {
   // embankments
   g.fillStyle = '#4a4d4f'; g.fillRect(5680, 0, 22, 7300); g.fillRect(6298, 0, 22, 7300); g.fillRect(0, 7290, CW, 14);
   // roads: sidewalks, asphalt, markings
-  var order = { path: 0, stairs: 1, rail: 2, street: 3, avenue: 4 };
+  var order = { lane: 0, path: 0, stairs: 1, rail: 2, street: 3, avenue: 4 };
   m.roads.slice().sort(function (a, b) { return order[a.kind] - order[b.kind]; }).forEach(function (r) { drawRoad(g, r, vr); });
   cc.ix.forEach(function (q) { if (vis(vr, q.x - 200, q.y - 200, q.x + 200, q.y + 200)) drawIntersection(g, q); });
   drawBridges(g, m, vr, t);
   // street lamps (pools of light)
   cc.lamps.forEach(function (l) { if (!vis(vr, l[0] - 90, l[1] - 90, l[0] + 90, l[1] + 90)) return; var lg = g.createRadialGradient(l[0], l[1], 2, l[0], l[1], 90); lg.addColorStop(0, 'rgba(255,214,140,.20)'); lg.addColorStop(1, 'rgba(255,214,140,0)'); g.fillStyle = lg; g.fillRect(l[0] - 90, l[1] - 90, 180, 180); g.fillStyle = '#c9c3b0'; g.beginPath(); g.arc(l[0], l[1], 4, 0, 6.283); g.fill(); });
-  // home markers under everything else on the ground
-  if (G && G.homes) G.homes.forEach(function (h) { if (!vis(vr, h.x - 200, h.y - 200, h.x + 200, h.y + 200)) return; var tf = G.f.find(function (f) { return f.team === h.team; }); var col = tf ? teamCol(tf) : '#fff'; g.save(); g.globalAlpha = 0.5; g.strokeStyle = col; g.lineWidth = 4; g.setLineDash([16, 10]); g.beginPath(); g.arc(h.x, h.y, 70, 0, 6.283); g.stroke(); g.restore(); });
+  drawYards(g, vr, t);
   // interiors
   m.rooms.forEach(function (rm) { if (vis(vr, rm.x0, rm.y0, rm.x1, rm.y1)) drawRoom(g, rm, t); });
+  drawCircles(g, vr, t);
   if (m.labels) { g.save(); g.textAlign = 'center'; g.font = '700 58px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.10)'; m.labels.forEach(function (lb) { if (vis(vr, lb[1] - 600, lb[2] - 70, lb[1] + 600, lb[2] + 20)) g.fillText(lb[0], lb[1], lb[2]); }); g.restore(); }
 }
 function zoneTexture(g, z, vr) {
   var x0 = Math.max(z.x0, vr ? vr.x0 : z.x0), x1 = Math.min(z.x1, vr ? vr.x1 : z.x1), y0 = Math.max(z.y0, vr ? vr.y0 : z.y0), y1 = Math.min(z.y1, vr ? vr.y1 : z.y1), k = z.kind;
   if (x1 <= x0 || y1 <= y0) return;
   g.save(); g.beginPath(); g.rect(x0, y0, x1 - x0, y1 - y0); g.clip();
-  if (k === 'forest' || k === 'park' || k === 'hill' || k === 'garden' || k === 'churchyard') {
+  if (k === 'forest' || k === 'park' || k === 'hill' || k === 'garden' || k === 'churchyard' || k === 'churchhill' || k === 'cemetery') {
     for (var gx = x0 - (x0 % 90); gx < x1; gx += 90) for (var gy = y0 - (y0 % 90); gy < y1; gy += 90) { var h = Math.sin(gx * 12.9898 + gy * 78.233) * 43758.5453; h -= Math.floor(h); g.fillStyle = h < 0.5 ? 'rgba(120,170,110,.07)' : 'rgba(0,0,0,.10)'; g.beginPath(); g.arc(gx + h * 60, gy + (1 - h) * 60, 26 + h * 30, 0, 6.283); g.fill(); }
     if (k === 'park' || k === 'garden') { g.strokeStyle = 'rgba(160,200,140,.05)'; g.lineWidth = 30; for (var sx = x0 - (x0 % 120); sx < x1; sx += 120) { g.beginPath(); g.moveTo(sx, y0); g.lineTo(sx, y1); g.stroke(); } }
   } else if (k === 'temple' || k === 'castle' || k === 'emiya') {
@@ -3769,6 +3833,7 @@ function drawRoad(g, r, vr) {
   if (!vis(vr, x0 - 40, y0 - 40, x0 + w + 40, y0 + h + 40)) return;
   var k = r.kind;
   if (k === 'path') { g.fillStyle = '#5e5a4c'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); g.fillStyle = 'rgba(255,255,255,.04)'; for (var s = 0; s < (r.h ? w : h); s += 34) { if (r.h) g.fillRect(x0 + s, y0 + 3, 30, h - 6); else g.fillRect(x0 + 3, y0 + s, w - 6, 30); } return; }
+  if (k === 'lane') { g.fillStyle = '#4c4e50'; g.fillRect(x0 - 8, y0 - 8, w + 16, h + 16); g.fillStyle = '#383a3d'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(200,200,190,.28)'; g.lineWidth = 2; g.strokeRect(x0 + 4, y0 + 4, w - 8, h - 8); return; }
   if (k === 'stairs') { g.fillStyle = '#6e6a5e'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2; for (var st = y0; st < y0 + h; st += 16) { g.beginPath(); g.moveTo(x0, st); g.lineTo(x0 + w, st); g.stroke(); } g.fillStyle = '#4a463c'; g.fillRect(x0 - 10, y0, 10, h); g.fillRect(x0 + w, y0, 10, h); return; }
   if (k === 'rail') {
     var a0 = Math.max(x0, vr ? vr.x0 : x0), a1 = Math.min(x0 + w, vr ? vr.x1 : x0 + w);
@@ -3808,17 +3873,6 @@ function drawBridges(g, m, vr, t) {
     g.strokeStyle = 'rgba(225,225,225,.5)'; g.setLineDash([40, 40]); [-55, 55].forEach(function (o) { g.beginPath(); g.moveTo(x0, by + o); g.lineTo(x1, by + o); g.stroke(); }); g.setLineDash([]);
     // piers
     g.fillStyle = '#5b5f66'; [5700, 6300].forEach(function (px) { g.fillRect(px - 30, by - half - 40, 60, 24); g.fillRect(px - 30, by + half + 16, 60, 24); });
-    // the arch ribs, bracing and hangers; the deck rises toward the middle
-    var ax0 = 5640, ax1 = 6360, red = '#b8322a', redL = '#e05040';
-    for (var i = 0; i < 18; i++) { var u = (i + 0.5) / 18, ux = ax0 + (ax1 - ax0) * u, hg = Math.sin(Math.PI * u); if (hg < 0.35) continue; g.strokeStyle = 'rgba(184,50,42,' + (0.55 + hg * 0.4) + ')'; g.lineWidth = 6; var dx = (ax1 - ax0) / 18; g.beginPath(); g.moveTo(ux - dx / 2, by - half - 10); g.lineTo(ux + dx / 2, by + half + 10); g.moveTo(ux + dx / 2, by - half - 10); g.lineTo(ux - dx / 2, by + half + 10); g.stroke(); }
-    [-1, 1].forEach(function (sd) {
-      var ry = by + sd * (half + 10);
-      g.strokeStyle = '#5e1712'; g.lineWidth = 20; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
-      g.strokeStyle = red; g.lineWidth = 14; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
-      g.strokeStyle = redL; g.lineWidth = 4; g.beginPath(); g.moveTo(ax0 + 30, ry - sd * 3); g.lineTo(ax1 - 30, ry - sd * 3); g.stroke();
-      g.fillStyle = '#e9e4d3'; for (var hx = ax0 + 40; hx < ax1 - 20; hx += 40) { g.beginPath(); g.arc(hx, ry, 2.5, 0, 6.283); g.fill(); }
-    });
-    g.strokeStyle = red; g.lineWidth = 10; [ax0, ax1].forEach(function (ex) { g.beginPath(); g.moveTo(ex, by - half - 10); g.lineTo(ex, by + half + 10); g.stroke(); });
     // lamps on the walkways
     for (var lx = x0 + 40; lx < x1; lx += 120) [-1, 1].forEach(function (sd) { var ly = by + sd * (half + 6), lg = g.createRadialGradient(lx, ly, 2, lx, ly, 70); lg.addColorStop(0, 'rgba(255,214,140,.25)'); lg.addColorStop(1, 'rgba(255,214,140,0)'); g.fillStyle = lg; g.fillRect(lx - 70, ly - 70, 140, 140); });
   }
@@ -3866,7 +3920,7 @@ function flatRoof(g, x0, y0, w, h, col, i, extra) {
   g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h);
 }
 function drawCityBlock(g, b, i) {
-  if (b.hide) return;
+  if (b.hide || b.over) return;
   var k = b.k, x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, w = b.w, h = b.h, sh = BHEIGHT[k] === undefined ? 10 : BHEIGHT[k];
   if (sh > 2 && k !== 'iwall') { g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.moveTo(x0 + w, y0); g.lineTo(x0 + w + sh * 0.7, y0 + sh); g.lineTo(x0 + w + sh * 0.7, y0 + h + sh); g.lineTo(x0 + sh * 0.7, y0 + h + sh); g.lineTo(x0, y0 + h); g.closePath(); g.fill(); }
   switch (k) {
@@ -3911,6 +3965,9 @@ function drawCityBlock(g, b, i) {
     case 'castlewall': case 'wall': g.fillStyle = k === 'castlewall' ? '#8a8f98' : '#8b857a'; g.fillRect(x0, y0, w, h); g.fillStyle = 'rgba(0,0,0,.25)'; var hz = w >= h; for (var mq = 0; mq < (hz ? w : h); mq += 24) { if (hz) g.fillRect(x0 + mq, y0, 12, h * 0.4); else g.fillRect(x0, y0 + mq, w * 0.4, 12); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     case 'fence': g.strokeStyle = '#1a1c20'; g.lineWidth = 4; g.beginPath(); if (w >= h) { g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); } else { g.moveTo(b.x, y0); g.lineTo(b.x, y0 + h); } g.stroke(); g.fillStyle = '#2a2d33'; for (var fp = 0; fp <= (w >= h ? w : h); fp += 40) { if (w >= h) g.fillRect(x0 + fp - 4, b.y - 4, 8, 8); else g.fillRect(b.x - 4, y0 + fp - 4, 8, 8); } break;
     case 'warehouse': flatRoof(g, x0, y0, w, h, '#56656e', i); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var wq = x0 + 14; wq < x0 + w; wq += 14) { g.beginPath(); g.moveTo(wq, y0 + 4); g.lineTo(wq, y0 + h - 4); g.stroke(); } break;
+    case 'cross_m': g.fillStyle = '#7d7a72'; g.fillRect(x0, y0, w, h); g.fillStyle = '#d6d2c6'; g.fillRect(b.x - 4, y0 + 4, 8, h - 8); g.fillRect(x0 + 6, b.y - 8, w - 12, 7); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'woodpile': for (var wr = 0; wr < 3; wr++) for (var wc = 0; wc < 5; wc++) { g.fillStyle = wr % 2 ? '#7a5434' : '#8a6040'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 7, 0, 6.283); g.fill(); g.strokeStyle = '#2a1a10'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = '#c9a074'; g.beginPath(); g.arc(x0 + 8 + wc * (w - 16) / 4, y0 + 8 + wr * (h - 16) / 2, 3, 0, 6.283); g.fill(); } break;
+    case 'crate': g.fillStyle = '#6a4a2c'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#3a2616'; g.lineWidth = 4; g.strokeRect(x0 + 5, y0 + 5, w - 10, h - 10); g.beginPath(); g.moveTo(x0 + 5, y0 + 5); g.lineTo(x0 + w - 5, y0 + h - 5); g.stroke(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     // interior furniture and walls
     case 'iwall': g.fillStyle = '#16130f'; g.fillRect(x0, y0, w, h); g.fillStyle = '#3d362d'; g.fillRect(x0 + 3, y0 + 3, w - 6, h - 6); g.fillStyle = 'rgba(255,240,210,.07)'; g.fillRect(x0 + 3, y0 + 3, w - 6, 3); break;
     case 'table': g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, w, h); g.fillStyle = '#5a3e28'; g.fillRect(x0, y0, w, h); g.fillStyle = '#d6d0c2'; g.fillRect(x0 + 8, y0 + 8, w - 16, h - 16); g.fillStyle = '#c9a43a'; for (var cd = x0 + 40; cd < x0 + w - 20; cd += 90) { g.beginPath(); g.arc(cd, b.y, 5, 0, 6.283); g.fill(); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
@@ -3948,12 +4005,303 @@ function drawRoom(g, rm, t) {
 // cover what this viewer cannot see: the interiors while outside, everything but the current room while inside
 function zoneMask(g) {
   if (!MAP.cityW || !G || !G.f[MEI]) return;
+  drawDoors(g);
   var me = G.f[MEI], vr = VIEWR || { x0: 0, y0: 0, x1: MAP.w, y1: MAP.h }, rm = roomAt(me.x, me.y);
   g.fillStyle = '#050608';
   if (!rm) { if (vr.x1 > MAP.cityW) g.fillRect(MAP.cityW, vr.y0 - 10, vr.x1 - MAP.cityW + 10, vr.y1 - vr.y0 + 20); return; }
   g.fillRect(vr.x0 - 10, vr.y0 - 10, vr.x1 - vr.x0 + 20, rm.y0 - vr.y0 + 10); g.fillRect(vr.x0 - 10, rm.y1, vr.x1 - vr.x0 + 20, vr.y1 - rm.y1 + 10);
   g.fillRect(vr.x0 - 10, rm.y0, rm.x0 - vr.x0 + 10, rm.y1 - rm.y0); g.fillRect(rm.x1, rm.y0, vr.x1 - rm.x1 + 10, rm.y1 - rm.y0);
   g.fillStyle = 'rgba(233,228,211,.12)'; g.font = '700 46px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(rm.name.toUpperCase(), (rm.x0 + rm.x1) / 2, rm.y0 - 20);
+}
+/* ---- city details drawn around the buildings: yards, the church hill, doors, summoning circles,
+   and the things you walk under (gates, arches, roofs), which are drawn above the fighters ---- */
+function hsh2(a, b) { var h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); }
+function stone(g, x, y, r, col) { g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x + 3, y + 4, r, r * 0.8, 0, 0, 6.283); g.fill(); g.fillStyle = col || '#8a8578'; g.beginPath(); g.ellipse(x, y, r, r * 0.8, 0.3, 0, 6.283); g.fill(); g.strokeStyle = '#2a2824'; g.lineWidth = 1.5; g.stroke(); }
+function drawYards(g, vr, t) {
+  // the church hill: contour lines climb toward the clearing, so the church reads as standing above the city
+  if (vis(vr, 250, 2510, 2900, 3530)) {
+    g.save(); g.beginPath(); g.rect(250, 2510, 2650, 1020); g.clip();
+    for (var c = 1; c <= 7; c++) { var pad = c * 70; g.strokeStyle = 'rgba(0,0,0,' + (0.16 + c * 0.02) + ')'; g.lineWidth = 7; rrect(g, 1150 - pad, 2790 - pad * 0.7, 610 + pad * 2, 530 + pad * 1.4, 120 + pad); g.stroke(); g.strokeStyle = 'rgba(190,220,170,.09)'; g.lineWidth = 2; rrect(g, 1150 - pad + 4, 2790 - pad * 0.7 + 4, 610 + pad * 2, 530 + pad * 1.4, 120 + pad); g.stroke(); }
+    g.restore();
+    // the clearing is lit and raised: a lip of rock along its southern and eastern edges
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(1150, 3320, 610, 18); g.fillRect(1760, 2800, 16, 538);
+    g.fillStyle = '#6a6558'; g.fillRect(1150, 3316, 610, 6); g.fillRect(1756, 2796, 6, 526);
+    // gravel forecourt and a path to the door
+    g.fillStyle = '#5e5a4e'; g.fillRect(1380, 3140, 140, 180); g.fillStyle = 'rgba(255,255,255,.05)'; for (var gx = 1385; gx < 1515; gx += 13) for (var gy = 3145; gy < 3315; gy += 11) if (hsh2(gx, gy) < 0.35) g.fillRect(gx, gy, 3, 2);
+    // the cemetery: low wall around rows of graves
+    g.strokeStyle = '#6e6a60'; g.lineWidth = 8; g.strokeRect(440, 2690, 610, 410);
+  }
+  // Emiya house: stepping stones from the gate, a bicycle, the engawa, a koi pond, the laundry pole, a path to the storehouse
+  if (vis(vr, 1440, 4770, 2870, 5500)) {
+    g.fillStyle = '#5d584c'; g.fillRect(1470, 4810, 1370, 125); // raked gravel front yard
+    g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 2; for (var ry = 4822; ry < 4932; ry += 12) { g.beginPath(); g.moveTo(1470, ry); g.lineTo(1990, ry); g.moveTo(2110, ry); g.lineTo(2840, ry); g.stroke(); }
+    for (var sy = 4820; sy < 4930; sy += 34) stone(g, 2050 + (sy % 68 ? 8 : -8), sy, 17, '#9a958a');
+    // Shirou's bicycle by the porch
+    g.save(); g.translate(2270, 4900); g.strokeStyle = '#1a1c20'; g.lineWidth = 5; g.beginPath(); g.arc(-22, 0, 11, 0, 6.283); g.arc(22, 0, 11, 0, 6.283); g.stroke(); g.strokeStyle = '#3a6ab8'; g.lineWidth = 4; g.beginPath(); g.moveTo(-22, 0); g.lineTo(0, -4); g.lineTo(22, 0); g.moveTo(16, -10); g.lineTo(28, -10); g.stroke(); g.fillStyle = '#2a2420'; g.fillRect(-8, -9, 12, 6); g.restore();
+    // the mailbox by the gate
+    g.fillStyle = '#b8322a'; g.fillRect(2140, 4812, 20, 14); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(2140, 4812, 20, 14);
+    // back yard: grass, the engawa along the house, stepping stones
+    g.fillStyle = '#2f4430'; g.fillRect(1470, 5160, 980, 310);
+    for (var bx = 1480; bx < 2440; bx += 60) for (var by = 5170; by < 5460; by += 60) { var hh = hsh2(bx, by); g.fillStyle = hh < 0.5 ? 'rgba(140,190,120,.06)' : 'rgba(0,0,0,.08)'; g.beginPath(); g.arc(bx + hh * 40, by + (1 - hh) * 40, 18 + hh * 16, 0, 6.283); g.fill(); }
+    g.fillStyle = '#6a4a2e'; g.fillRect(1690, 5140, 620, 26); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.5; for (var ex = 1690; ex < 2310; ex += 22) { g.beginPath(); g.moveTo(ex, 5140); g.lineTo(ex, 5166); g.stroke(); }
+    [[1690, 5195], [1655, 5235], [1640, 5270]].forEach(function (p) { stone(g, p[0], p[1], 15, '#8f8a7e'); });
+    [[2330, 5200], [2390, 5230], [2440, 5270]].forEach(function (p) { stone(g, p[0], p[1], 14, '#8f8a7e'); });
+    // koi pond with rocks
+    g.fillStyle = '#4c5a44'; g.beginPath(); g.ellipse(2090, 5320, 146, 76, 0, 0, 6.283); g.fill();
+    g.fillStyle = '#1e4260'; g.beginPath(); g.ellipse(2090, 5320, 130, 63, 0, 0, 6.283); g.fill();
+    g.strokeStyle = 'rgba(150,195,230,.18)'; g.lineWidth = 2; for (var wv = 0; wv < 4; wv++) { var wx = 2010 + wv * 50, wy = 5300 + (wv % 2) * 30 + Math.sin(t + wv) * 4; g.beginPath(); g.moveTo(wx, wy); g.quadraticCurveTo(wx + 15, wy - 4, wx + 30, wy); g.stroke(); }
+    [[0, '#e8873a'], [2.1, '#eeeae0'], [4.2, '#d8452f']].forEach(function (k) { var a = t * 0.5 + k[0], kx = 2090 + Math.cos(a) * 80, ky = 5320 + Math.sin(a) * 34; g.save(); g.translate(kx, ky); g.rotate(a + 1.57); g.fillStyle = k[1]; g.beginPath(); g.ellipse(0, 0, 4, 10, 0, 0, 6.283); g.fill(); g.beginPath(); g.moveTo(0, 9); g.lineTo(-4, 15); g.lineTo(4, 15); g.fill(); g.restore(); });
+    [[1975, 5280, 16], [2205, 5350, 14], [2150, 5262, 10]].forEach(function (p) { stone(g, p[0], p[1], p[2], '#7d786c'); });
+    // laundry pole: two posts and a line with a white shirt
+    g.fillStyle = '#5a4a3a'; g.fillRect(2245, 5390, 8, 8); g.fillRect(2395, 5390, 8, 8);
+    g.strokeStyle = '#c9c3b0'; g.lineWidth = 2; g.beginPath(); g.moveTo(2249, 5394); g.lineTo(2399, 5394); g.stroke();
+    g.fillStyle = '#e9e4d3'; g.fillRect(2290, 5390, 26, 18); g.fillStyle = '#c9a43a'; g.fillRect(2340, 5390, 18, 22);
+  }
+}
+function rrect(g, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r); g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h); g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r); g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath(); }
+// each master's summoning circle stays on the ground where the war began, slowly fading
+function drawCircles(g, vr, t) {
+  if (!G || !G.circles) return;
+  G.circles.forEach(function (c) {
+    if (!vis(vr, c.x - 120, c.y - 120, c.x + 120, c.y + 120)) return;
+    var glow = INTRO && INTRO.c === c ? INTRO.glow : 0, al = INTRO ? 0.55 + glow * 0.45 : clamp(1 - G.time / 90, 0, 1) * 0.8;
+    if (al <= 0.01) return;
+    if (glow > 0) { var lg = g.createRadialGradient(c.x, c.y, 10, c.x, c.y, 150 + glow * 60); lg.addColorStop(0, rgbaOf(c.col, 0.35 * glow)); lg.addColorStop(1, rgbaOf(c.col, 0)); g.fillStyle = lg; g.fillRect(c.x - 220, c.y - 220, 440, 440); }
+    runeCircle(g, c.x, c.y, 88, c.col, t * (0.4 + glow * 2), al);
+  });
+}
+/* ---- doors: a lit, framed door on the outside with a mat and lanterns; inside, a bright opening marked EXIT ---- */
+function doorRoom(d) { for (var i = 0; i < MAP.rooms.length; i++) if (MAP.rooms[i].id === d.room) return MAP.rooms[i]; return null; }
+function chevrons(g, x, y, ax, ay, col, t) {
+  for (var i = 0; i < 3; i++) { var ph = ((t * 1.6 + i / 3) % 1), px = x + ax * (ph * 60 - 30), py = y + ay * (ph * 60 - 30); g.globalAlpha = Math.sin(ph * Math.PI) * 0.9; g.strokeStyle = col; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); g.moveTo(px - ay * 14 - ax * 10, py + ax * 14 - ay * 10); g.lineTo(px, py); g.lineTo(px + ay * 14 - ax * 10, py - ax * 14 - ay * 10); g.stroke(); }
+  g.globalAlpha = 1; g.lineCap = 'butt';
+}
+function drawDoors(g) {
+  if (!MAP.doors || !G) return;
+  var vr = VIEWR, t = G.time + (INTRO ? INTRO.t : 0), me = G.f[MEI], inside = !!roomAt(me.x, me.y);
+  MAP.doors.forEach(function (d) {
+    var o = d.out, i = d.in, rm = doorRoom(d);
+    // outside face, on the building's wall
+    if (!inside && vis(vr, o.x - 160, o.y - 160, o.x + 160, o.y + 160)) {
+      var ex = o.x - o.nx * 15, ey = o.y - o.ny * 15, tx = -o.ny, ty = o.nx, near = Math.hypot(me.x - o.x, me.y - o.y) < 340;
+      var lg = g.createRadialGradient(o.x + o.nx * 20, o.y + o.ny * 20, 4, o.x + o.nx * 20, o.y + o.ny * 20, 130); lg.addColorStop(0, 'rgba(255,205,120,.38)'); lg.addColorStop(1, 'rgba(255,205,120,0)'); g.fillStyle = lg; g.fillRect(o.x - 150, o.y - 150, 300, 300);
+      g.save(); g.translate(ex, ey); g.rotate(Math.atan2(ty, tx));
+      // mat, frame, double doors, handles: local x runs along the wall, local y points out of the building
+      var oy = o.nx * ty - o.ny * tx < 0 ? 1 : -1; // which local y is outward
+      g.fillStyle = '#5a3a2a'; g.fillRect(-34, oy > 0 ? 6 : -30, 68, 24);
+      g.fillStyle = '#d9c38a'; g.fillRect(-46, -10, 92, 20);
+      g.fillStyle = '#6a3a1e'; g.fillRect(-40, -7, 39, 14); g.fillRect(1, -7, 39, 14);
+      g.fillStyle = '#f2d78a'; g.beginPath(); g.arc(-6, 0, 2.6, 0, 6.283); g.arc(6, 0, 2.6, 0, 6.283); g.fill();
+      g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(-46, -10, 92, 20);
+      [-56, 56].forEach(function (lx) { g.fillStyle = '#2a2420'; g.fillRect(lx - 5, -5, 10, 10); g.fillStyle = 'rgba(255,214,140,' + (0.75 + 0.2 * Math.sin(t * 3 + lx)) + ')'; g.beginPath(); g.arc(lx, 0, 4, 0, 6.283); g.fill(); });
+      g.restore();
+      if (near) { chevrons(g, o.x + o.nx * 50, o.y + o.ny * 50, -o.nx, -o.ny, '#ffe0a0', t); doorLabel(g, o.x + o.nx * 105, o.y + o.ny * 105 + 8, 'ENTER', rm ? rm.name : ''); }
+    }
+    // inside face: a bright opening in the wall, moonlight spilling in
+    if (inside && rm && vis(vr, i.x - 200, i.y - 200, i.x + 200, i.y + 200)) {
+      var wx = i.nx > 0 ? rm.x1 : i.nx < 0 ? rm.x0 : i.x, wy = i.ny > 0 ? rm.y1 : i.ny < 0 ? rm.y0 : i.y, nearI = Math.hypot(me.x - i.x, me.y - i.y) < 340;
+      var sg = g.createLinearGradient(wx, wy, wx - i.nx * 170, wy - i.ny * 170); sg.addColorStop(0, 'rgba(180,205,240,.38)'); sg.addColorStop(1, 'rgba(180,205,240,0)');
+      g.fillStyle = sg; g.beginPath(); g.moveTo(wx - i.ny * 55, wy + i.nx * 55); g.lineTo(wx + i.ny * 55, wy - i.nx * 55); g.lineTo(wx + i.ny * 95 - i.nx * 170, wy - i.nx * 95 - i.ny * 170); g.lineTo(wx - i.ny * 95 - i.nx * 170, wy + i.nx * 95 - i.ny * 170); g.closePath(); g.fill();
+      g.save(); g.translate(wx, wy); g.rotate(Math.atan2(i.nx, -i.ny));
+      g.fillStyle = '#c9a43a'; g.fillRect(-64, -2, 128, 32); g.fillStyle = '#aebfd6'; g.fillRect(-54, -2, 108, 27); g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(-54, -2, 108, 7);
+      g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(-64, -2, 128, 32);
+      g.restore();
+      doorLabel(g, i.x - i.nx * 50, i.y - i.ny * 50 + 8, 'EXIT', '');
+      if (nearI) chevrons(g, i.x, i.y, i.nx, i.ny, '#cfe0ff', t);
+    }
+  });
+}
+function doorLabel(g, x, y, s, sub) {
+  g.save(); g.textAlign = 'center'; g.font = '700 22px "Barlow Condensed", sans-serif'; var w = Math.max(g.measureText(s).width, sub ? g.measureText(sub).width * 0.75 : 0) + 22;
+  g.fillStyle = 'rgba(6,10,16,.72)'; rrect(g, x - w / 2, y - 21, w, sub ? 46 : 28, 6); g.fill();
+  g.fillStyle = '#ffe9b0'; g.fillText(s, x, y); if (sub) { g.font = '600 16px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.8)'; g.fillText(sub, x, y + 19); }
+  g.restore();
+}
+/* ---- overhead: gates, arches and roofs you walk under. They fade while someone is beneath them. ---- */
+function drawOverhead(g) {
+  if (!MAP.cityW || !G) return;
+  var vz = VIEW.zoom || 1, vr = { x0: VIEW.cx - VW / 2 / vz - 150, y0: VIEW.cy - VH / 2 / vz - 150, x1: VIEW.cx + VW / 2 / vz + 150, y1: VIEW.cy + VH / 2 / vz + 150 };
+  MAP.b.forEach(function (b) {
+    if (!b.over) return; var x0 = b.x - b.w / 2, y0 = b.y - b.h / 2;
+    if (!vis(vr, x0 - 40, y0 - 40, x0 + b.w + 40, y0 + b.h + 40)) return;
+    var under = G.f.some(function (f) { return f.st !== 'dead' && visL(f) && f.x > x0 - 16 && f.x < x0 + b.w + 16 && f.y > y0 - 16 && f.y < y0 + b.h + 16; });
+    var goal = under ? (b.k === 'arcade_roof' ? 0.25 : 0.42) : 1; b._a = b._a === undefined ? goal : b._a + (goal - b._a) * 0.15;
+    g.save(); g.globalAlpha = b._a; overBlock(g, b, x0, y0, b.w, b.h); g.restore();
+  });
+}
+function overBlock(g, b, x0, y0, w, h) {
+  var k = b.k;
+  // shadow on the ground below, offset like the buildings'
+  if (k !== 'bridgearch' && k !== 'arcade_roof') { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x0 + 10, y0 + 14, w, h); }
+  if (k === 'gate_jp' || k === 'gate_roof') {
+    // a tiled gate roof on four red posts
+    var c = k === 'gate_jp' ? '#2f3236' : '#3d434b';
+    hipRoof(g, x0 - 14, y0 - 8, w + 28, h + 16, c, true);
+    if (k === 'gate_jp') { g.fillStyle = '#9a2a22'; [[x0 + 18, y0 + h / 2], [x0 + w - 18, y0 + h / 2], [b.x - 60, y0 + h / 2], [b.x + 60, y0 + h / 2]].forEach(function (p) { g.fillRect(p[0] - 7, p[1] - 7, 14, 14); }); g.fillStyle = '#c9a43a'; g.fillRect(b.x - 34, y0 + h - 4, 68, 12); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(b.x - 34, y0 + h - 4, 68, 12); }
+    else { g.fillStyle = '#5a3a24'; [[x0 + 6, y0 + h / 2], [x0 + w - 6, y0 + h / 2]].forEach(function (p) { g.fillRect(p[0] - 6, p[1] - 6, 12, 12); }); g.fillStyle = '#e9e4d3'; g.fillRect(x0 + w - 32, y0 + h - 2, 22, 10); g.fillStyle = '#2a2420'; g.font = '700 8px serif'; g.textAlign = 'center'; g.fillText('衛宮', x0 + w - 21, y0 + h + 6); }
+    return;
+  }
+  if (k === 'torii_c') {
+    // the church hill's iron lych-gate: two stone posts and a wrought arch with a cross at its crown
+    g.fillStyle = '#7d7a72'; g.fillRect(x0 - 6, y0, 22, h); g.fillRect(x0 + w - 16, y0, 22, h); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0 - 6, y0, 22, h); g.strokeRect(x0 + w - 16, y0, 22, h);
+    g.strokeStyle = '#1a1c20'; g.lineWidth = 7; g.beginPath(); g.moveTo(x0 + 5, b.y); g.quadraticCurveTo(b.x, y0 - 30, x0 + w - 5, b.y); g.stroke();
+    g.strokeStyle = '#4a4e56'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x0 + 5, b.y); g.quadraticCurveTo(b.x, y0 - 30, x0 + w - 5, b.y); g.stroke();
+    g.fillStyle = '#e9e4d3'; g.fillRect(b.x - 3, y0 - 26, 6, 22); g.fillRect(b.x - 9, y0 - 20, 18, 5); return;
+  }
+  if (k === 'castle_arch') {
+    g.fillStyle = '#8a8f98'; g.fillRect(x0, y0, w, h); g.fillStyle = 'rgba(0,0,0,.22)'; for (var mq = 0; mq < w; mq += 24) g.fillRect(x0 + mq, y0, 12, 12);
+    g.fillStyle = '#6a6f78'; g.fillRect(x0 + 40, y0 + 14, w - 80, h - 14); g.fillStyle = '#b8322a'; g.fillRect(b.x - 10, y0 + 18, 20, h - 22);
+    g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h); return;
+  }
+  if (k === 'arcade_roof') {
+    // glass and steel over the shopping street
+    g.fillStyle = 'rgba(150,190,215,.22)'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#5c6a76'; g.lineWidth = 5;
+    for (var ax = x0; ax <= x0 + w; ax += 80) { g.beginPath(); g.moveTo(ax, y0); g.lineTo(ax, y0 + h); g.stroke(); }
+    g.lineWidth = 3; g.beginPath(); g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); g.stroke(); g.strokeRect(x0, y0, w, h);
+    g.fillStyle = 'rgba(255,255,255,.08)'; for (var gx = x0 + 6; gx < x0 + w; gx += 80) g.fillRect(gx, y0 + 6, 30, h / 2 - 10); return;
+  }
+  if (k === 'bridgearch') { drawBridgeArch(g); return; }
+}
+function drawBridgeArch(g) {
+  var by = 2400, half = 110;
+    // the arch ribs, bracing and hangers; the deck rises toward the middle
+    var ax0 = 5640, ax1 = 6360, red = '#b8322a', redL = '#e05040';
+    for (var i = 0; i < 18; i++) { var u = (i + 0.5) / 18, ux = ax0 + (ax1 - ax0) * u, hg = Math.sin(Math.PI * u); if (hg < 0.35) continue; g.strokeStyle = 'rgba(184,50,42,' + (0.55 + hg * 0.4) + ')'; g.lineWidth = 6; var dx = (ax1 - ax0) / 18; g.beginPath(); g.moveTo(ux - dx / 2, by - half - 10); g.lineTo(ux + dx / 2, by + half + 10); g.moveTo(ux + dx / 2, by - half - 10); g.lineTo(ux - dx / 2, by + half + 10); g.stroke(); }
+    [-1, 1].forEach(function (sd) {
+      var ry = by + sd * (half + 10);
+      g.strokeStyle = '#5e1712'; g.lineWidth = 20; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
+      g.strokeStyle = red; g.lineWidth = 14; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
+      g.strokeStyle = redL; g.lineWidth = 4; g.beginPath(); g.moveTo(ax0 + 30, ry - sd * 3); g.lineTo(ax1 - 30, ry - sd * 3); g.stroke();
+      g.fillStyle = '#e9e4d3'; for (var hx = ax0 + 40; hx < ax1 - 20; hx += 40) { g.beginPath(); g.arc(hx, ry, 2.5, 0, 6.283); g.fill(); }
+    });
+    g.strokeStyle = red; g.lineWidth = 10; [ax0, ax1].forEach(function (ex) { g.beginPath(); g.moveTo(ex, by - half - 10); g.lineTo(ex, by + half + 10); g.stroke(); });
+}
+/* ---- the summoning: each master starts alone at their circle, speaks the chant, and the servant answers ----
+   Then speech bubbles: short lines above servants and masters when something happens near you. */
+var INTRO = null;
+var CHANT = [
+  'Silver for the circle, iron for its edge, and blood to wake the lines.',
+  'Fill and empty, five times over. Let the gate between us open.',
+  'I call upon the Throne of Heroes: lend me a hero, and I will lend you my fate.'
+], CHANT_MAD = ['Let madness cloud your sight and chain your reason.', 'Be bound by fury, and fight only at my command.'],
+  CHANT_END = 'If you would win the Grail, cross over and come to me!';
+var LINE_T = 2.1;
+function startIntro(nTeams) {
+  if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length || NET.game || NET.mirror) return false;
+  var me = G.f[MEI], m = me.def.isMaster ? me : me.partner; if (!m || !m.partner) return false;
+  var c = G.circles.filter(function (q) { return q.team === m.team; })[0]; if (!c) return false;
+  var s = m.partner, lines = CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
+  var t0 = 1.7, reveal = t0 + lines.length * LINE_T + 0.2;
+  INTRO = { t: 0, m: m, s: s, c: c, lines: lines, t0: t0, reveal: reveal, sl: reveal + 1.0, rp: reveal + 4.0, end: reveal + 6.6, shown: false, said: 0, glow: 0, n: nTeams };
+  cam.x = c.x; cam.y = c.y + 20; document.body.classList.add('intro');
+  return true;
+}
+function introReveal() {
+  var I = INTRO; if (I.shown) return; I.shown = true; var s = I.s, mad = s.def.cls === 'Berserker';
+  flashFx(mad ? '#5a0a14' : '#ffffff', 0.85, 0.8); shake = Math.max(shake, 12); FX.snd('summon', I.m);
+  vfx(1.4, function (g, p) { var a = (1 - p), r = 60 + p * 140; g.globalAlpha = a; var lg = g.createRadialGradient(I.c.x, I.c.y, 4, I.c.x, I.c.y, r); lg.addColorStop(0, mad ? 'rgba(255,90,90,.9)' : 'rgba(255,255,255,.95)'); lg.addColorStop(1, rgbaOf(I.c.col, 0)); g.fillStyle = lg; g.beginPath(); g.arc(I.c.x, I.c.y, r, 0, 6.283); g.fill(); g.globalAlpha = 1; });
+  for (var i = 0; i < 40; i++) { var a = Math.random() * 6.283, v = 80 + Math.random() * 220; parts.push({ x: I.c.x, y: I.c.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: 0.9, col: i % 3 ? I.c.col : '#ffffff' }); }
+  G.f.forEach(function (f) { if (!f.def.isMaster) { f.face = f.partner ? Math.atan2(f.partner.y - f.y, f.partner.x - f.x) : f.face; } });
+}
+function introTick(dt) {
+  var I = INTRO; I.t += dt;
+  var k = Math.floor((I.t - I.t0) / LINE_T); if (I.t >= I.t0 && k < I.lines.length && k >= I.said) { I.said = k + 1; FX.snd('chant', I.m); }
+  I.glow = I.shown ? Math.max(0, 1 - (I.t - I.reveal) / 3) : clamp((I.t - I.t0) / (I.reveal - I.t0), 0, 1);
+  if (!I.shown && I.t >= I.reveal) introReveal();
+  if (I.t >= I.sl && !I.sDone) { I.sDone = true; showBubble(I.s, pickLine(I.s, 'summon') || '...', 3.0, true); }
+  if (I.t >= I.rp && !I.rDone) { I.rDone = true; showBubble(I.m, pickLine(I.m, 'summon') || 'I am.', 2.6, true); }
+  if (I.t >= I.end) endIntro();
+}
+function endIntro() {
+  if (!INTRO) return; var n = INTRO.n; introReveal(); INTRO = null; document.body.classList.remove('intro'); last = performance.now();
+  FX.banner('The Holy Grail War', 'Fuyuki City · ' + n + ' teams');
+}
+function skipIntro() { if (!INTRO) return; if (!INTRO.shown) { INTRO.t = INTRO.reveal; introReveal(); BUB = []; } endIntro(); }
+window.addEventListener('keydown', function (e) { if (!INTRO || !running) return; var k = e.key.toLowerCase(); if (k === ' ' || k === 'enter' || k === 'escape') { e.preventDefault(); e.stopImmediatePropagation(); skipIntro(); } }, true);
+cv.addEventListener('pointerdown', function (e) { if (INTRO && INTRO.t > 0.4) { e.preventDefault(); e.stopImmediatePropagation(); skipIntro(); } }, true);
+SND.summon = function (o, out, t) { bass(o, out, t, 56, 22, 2.2, 0.9, 1.15); ringS(o, out, t, [523, 784, 1046, 1568], 2.2, 0.14); pad(o, out, t, 1.6, [261.6, 329.6, 392], 0.1, 0.02, 1.4, 'triangle', 2400, 900); noise(o, out, t, 'bandpass', 800, 5000, 1.2, 0.4, 0.02, 1.0); };
+SND.chant = function (o, out, t) { ringS(o, out, t, [880, 1320, 1760], 1.1, 0.05); tone(o, out, t, 'sine', 220, 200, 1.0, 0.06, 0.2); };
+function drawIntro() {
+  var I = INTRO, c = ctx, bar = VH * 0.11 * Math.min(1, I.t / 0.6);
+  if (I.t < 1.3) { c.fillStyle = 'rgba(0,0,0,' + (1 - I.t / 1.3) + ')'; c.fillRect(0, 0, VW, VH); }
+  c.fillStyle = '#000'; c.fillRect(0, 0, VW, bar); c.fillRect(0, VH - bar, VW, bar);
+  c.textAlign = 'left'; var ca = clamp((I.t - 0.4) / 0.8, 0, 1) * clamp((I.reveal + 0.5 - I.t) / 0.8, 0.35, 1);
+  c.globalAlpha = ca; c.fillStyle = '#e9e4d3'; c.font = '400 ' + (VW < 560 ? 20 : 26) + 'px "Marcellus SC", "Times New Roman", serif'; c.fillText(I.m.def.name, 20, bar + 38);
+  c.font = 'italic 400 ' + (VW < 560 ? 14 : 17) + 'px "Times New Roman", serif'; c.fillStyle = I.c.col; c.fillText(I.c.name, 20, bar + 62); c.globalAlpha = 1;
+  var k = Math.floor((I.t - I.t0) / LINE_T);
+  if (I.t >= I.t0 && k < I.lines.length + 1 && !I.shown) {
+    c.textAlign = 'center';
+    for (var j = Math.max(0, k - 1); j <= Math.min(k, I.lines.length - 1); j++) {
+      var lt = I.t - I.t0 - j * LINE_T, al = j === k ? clamp(lt / 0.35, 0, 1) : 0.35, fs = VW < 560 ? 16 : 22, y = VH - bar - 34 - (k - j) * (fs + 14);
+      c.globalAlpha = al; c.font = 'italic 400 ' + fs + 'px "Times New Roman", serif'; var ln = I.lines[j]; while (c.measureText(ln).width > VW - 40 && fs > 11) { fs--; c.font = 'italic 400 ' + fs + 'px "Times New Roman", serif'; }
+      c.shadowColor = I.c.col; c.shadowBlur = j === k ? 12 : 0; c.fillStyle = j === I.lines.length - 1 ? '#fff6dc' : '#e9e4d3'; c.fillText(ln, VW / 2, y); c.shadowBlur = 0;
+    }
+    c.globalAlpha = 1;
+  }
+  c.textAlign = 'right'; c.font = '600 13px "Barlow Condensed", sans-serif'; c.fillStyle = 'rgba(233,228,211,.55)'; c.fillText(('ontouchstart' in window ? 'Tap' : 'Space') + ' to skip', VW - 16, VH - bar / 2 + 4);
+}
+/* ---- speech bubbles ---- */
+var BUB = [], SAYT = {}, LASTFOE = {}, ENGT = {};
+var LINES = {
+  caerwyn: { summon: ['I ask of you, are you my Master?'], engage: ['Stand and face me.', 'I will not yield this ground.'], kill: ['Rest. You fought with honor.'], np: ['Let the light of this blade answer!'], low: ['Not yet... I am not finished.'], masterdown: ['Master...! I failed to protect you.'] },
+  richard: { summon: ['Saber, Richard of England, answers your call. Shall we ride?'], engage: ['Ha! A worthy foe at last!'], kill: ['Glory to the crown!'], np: ['Every blade I hold is a holy sword!'] },
+  leonidas: { summon: ['Lancer, King of Sparta. Point me at the enemy, and I will hold the line.'], engage: ['Come. Break yourself on my shield.'], kill: ['Sparta stands.'], low: ['A Spartan does not fall so easily!'] },
+  atalanta: { summon: ['Archer has come. Keep pace with me, Master, or be left behind.'], engage: ['Too slow.'], kill: ['The hunt is over.'] },
+  emiya: { summon: ['Archer. Try not to make me regret answering that call.'], engage: ['You picked the wrong night.'], kill: ['Stay down.'], np: ['I am the bone of my sword.'], low: ['Heh... still standing.'] },
+  heracles: { summon: ['■■■■■■■■—!!'] },
+  lancelot: { summon: ['Grrrr... ...rrrRRR!'] },
+  hassan: { summon: ['Assassin answers from the shadows. Name the one who must die.'], engage: ['Your heart is already mine.'], kill: ['Gone, like smoke.'] },
+  diarmuid: { summon: ['Lancer of the Fianna. My spears are yours, and my loyalty with them.'], engage: ['Face me with honor!'], kill: ['A fine duel.'], masterdown: ['My lord...! Forgive me.'] },
+  cu: { summon: ["Lancer's here. So you're my Master? Let's make this a good fight."], engage: ["Now this'll be fun!"], kill: ['Not bad. Not good enough.'], np: ['Your heart is mine!'] },
+  gilgamesh: { summon: ['You summoned a king, mongrel. Try to be worth my time.'], engage: ['Know your place.'], kill: ['Fitting, for trash.'], np: ['Behold my treasury!'], low: ['You dare wound me?!'] },
+  iskandar: { summon: ['I am Rider, King of Conquerors! Now, where can I find a map of this land?'], engage: ['Join my army, and I may spare you!'], kill: ['A splendid foe. To the next!'], np: ['Behold, my eternal army!'] },
+  gilles: { summon: ['Caster has arrived. Oh, what splendid horrors we shall make together!'], engage: ['Oh, how delightful!'], kill: ['Cool! Cool!'] },
+  medusa: { summon: ['Rider. I will be your shield, Master. Give your orders.'], engage: ['Stay still.'], kill: ['...'] },
+  medea: { summon: ["Caster. A circle this crude... you'll need me more than you know."], engage: ['How tiresome.'], kill: ['Fools never learn.'] },
+  kojirou: { summon: ['Assassin. A mere swordsman, but a fine night for a duel.'], engage: ['Show me your blade.'], kill: ['A pity. It was a good moon.'], np: ['Swallow Reversal.'] },
+  shirou: { summon: ['M-Master? Wait, where did you even come from?!'], engage: ["I won't let anyone get hurt!"], kill: ['...Sorry.'], servantdown: ["No... I couldn't protect you."], low: ['I can still move...!'] },
+  rin: { summon: ["Yes, I'm your Master. And you had better be the strongest one."], engage: ['Gandr, coming right up!'], kill: ['Hmph. Elegantly done.'], servantdown: ["Don't you dare disappear on me!"] },
+  kiritsugu: { summon: ['I am. Follow the plan, and this ends quickly.'], engage: ['Target acquired.'], kill: ['Clean.'], servantdown: ['...Change of plans.'] },
+  kirei: { summon: ['I am. Let us see what this war will show me.'], engage: ['How interesting.'], kill: ['May you find peace.'] },
+  kayneth: { summon: ['Naturally. Serve with distinction, as befits my house.'], engage: ['Know the difference in our standing!'], servantdown: ['Useless...!'] },
+  waver: { summon: ["Y-yes! I'm your Master! This is going to work. It IS!"], engage: ['Rider, do something!'], servantdown: ['Rider...!'] },
+  irisviel: { summon: ["I am. Let's win this together, for the ones waiting at home."], engage: ['Stay close to me.'], servantdown: ['No... not yet...'] },
+  illya: { summon: ["Mm-hm! You're mine now. Let's go crush everyone."], engage: ['Found you~'], kill: ['Bye-bye!'], servantdown: ['...Liar. You said you were the strongest.'] },
+  kariya: { summon: ['I am... For her sake, we will not lose.'], engage: ['Tokiomi... is that you?'], servantdown: ['Not like this...'] },
+  sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] }
+};
+var LINE_S = { engage: ['Face me!', 'Another challenger.', 'Here we go.'], kill: ['One less.', 'It is done.', 'Next.'], np: ['Witness my Noble Phantasm!', 'This ends now!'], low: ['Not yet...!', 'I can still fight.'], masterdown: ['Master...!', 'My Master has fallen...'], contract: ['A new pact, then. Lead well.', 'Very well. I am yours.'] };
+var LINE_M = { engage: ['Careful!', 'Enemy Master!', 'There they are!'], kill: ['Did we... win?', 'One less team.'], low: ['I need help!', 'This is bad...'], servantdown: ['No... my Servant...', 'It is over for us...'], contract: ['Then fight for me now.'] };
+var LINE_B = { engage: ['■■■■■—!!', 'RRRAAAAGH!'], kill: ['■■■■■■!!'], np: ['■■■■■■■■—!!!'], low: ['Grrrrr...'], masterdown: ['...rrr...'], contract: ['Grrr.'] };
+function pickLine(f, key) {
+  var own = LINES[f.def.id] && LINES[f.def.id][key], pool = own || (f.def.cls === 'Berserker' ? LINE_B[key] : f.def.isMaster ? LINE_M[key] : LINE_S[key]);
+  return pool && pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+}
+function showBubble(f, s, life, big) { BUB = BUB.filter(function (b) { return b.f !== f; }); BUB.push({ f: f, s: s, t0: performance.now(), life: life || 2.4, big: !!big }); }
+FX.say = function (f, key) {
+  if (!f || !G || G.mode !== 'war' || INTRO || f.st === 'dead' || !FX.near(f.x, f.y)) return;
+  var ch = { np: 0.4, engage: 0.45, kill: 0.75 }[key]; if (ch !== undefined && Math.random() > ch) return;
+  var now = performance.now() / 1000; if (SAYT[f.idx] && now - SAYT[f.idx] < 5) return;
+  var s = pickLine(f, key); if (!s) return; SAYT[f.idx] = now; showBubble(f, s, 2.0 + s.length * 0.035);
+};
+function wrapText(c, s, maxW) { var w = s.split(' '), out = [], cur = ''; w.forEach(function (x) { var t = cur ? cur + ' ' + x : x; if (c.measureText(t).width > maxW && cur) { out.push(cur); cur = x; } else cur = t; }); if (cur) out.push(cur); return out; }
+function drawBubbles(cx, cy, zoom) {
+  if (!G || G.mode !== 'war') { BUB = []; return; }
+  // a fighter that turns on a new foe close by may call out
+  if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
+  var now = performance.now(), c = ctx;
+  BUB = BUB.filter(function (b) { return (now - b.t0) / 1000 < b.life && (b.f.st !== 'dead' || INTRO); });
+  BUB.forEach(function (b) {
+    var f = b.f; if (!visL(f)) return;
+    var age = (now - b.t0) / 1000, al = Math.min(1, age / 0.15, (b.life - age) / 0.3), px = (f.x - cx) * zoom + VW / 2, py = (f.y - cy) * zoom + VH / 2 - 40 * zoom - 16;
+    var fs = b.big ? (VW < 560 ? 16 : 19) : 14; c.font = (b.big ? '600 ' : '600 ') + fs + 'px "Barlow Condensed", sans-serif';
+    var lines = wrapText(c, b.s, b.big ? 300 : 210), w = Math.max.apply(null, lines.map(function (l) { return c.measureText(l).width; })) + 20, h = lines.length * (fs + 3) + 12;
+    var bx = clamp(px - w / 2, 8, VW - w - 8), by = clamp(py - h - 8 + (1 - Math.min(1, age / 0.15)) * 8, 8, VH - h - 8);
+    c.globalAlpha = clamp(al, 0, 1); c.fillStyle = 'rgba(246,242,230,.96)'; rrect(c, bx, by, w, h, 8); c.fill(); c.strokeStyle = teamCol(f); c.lineWidth = 2; c.stroke();
+    c.beginPath(); c.moveTo(clamp(px, bx + 12, bx + w - 12) - 7, by + h - 1); c.lineTo(clamp(px, bx + 12, bx + w - 12), by + h + 9); c.lineTo(clamp(px, bx + 12, bx + w - 12) + 7, by + h - 1); c.closePath(); c.fillStyle = 'rgba(246,242,230,.96)'; c.fill();
+    c.fillStyle = '#16181c'; c.textAlign = 'center'; lines.forEach(function (l, i) { c.fillText(l, bx + w / 2, by + 6 + (i + 1) * (fs + 3) - 4); });
+    c.globalAlpha = 1;
+  });
 }
 var MINI = { id: null, c: null };
 function miniMap(mw, mh) {
@@ -4009,7 +4357,8 @@ function frame(now) {
   var dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused) {
     acc += dt * speedMul * (slowT > 0 ? 0.4 : 1); if (slowT > 0) slowT -= dt;
-    if (NET.mirror) { acc = 0; netClientFrame(dt); }
+    if (INTRO) { acc = 0; introTick(dt); }
+    else if (NET.mirror) { acc = 0; netClientFrame(dt); }
     else {
     var f = G.f[MEI], mv = readMove(); f.inp.mx = mv[0]; f.inp.my = mv[1];
     var guard = 0; while (acc >= STEP && guard++ < 6) { netApplyInputs(); simStep(STEP); acc -= STEP; }
@@ -4208,6 +4557,6 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet();
 requestAnimationFrame(frame);
-window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
 </script>

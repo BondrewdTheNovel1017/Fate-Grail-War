@@ -275,18 +275,29 @@ function audInit() {
 }
 ['pointerdown', 'keydown'].forEach(function (ev) { window.addEventListener(ev, audInit, { passive: true }); });
 var lastSnd = {};
+var HEAR = [[/^(npfire|npcast|hitNP|marble)/, 3400], [/^(godhand|kill|execute|gbreak|explode|boom)/, 1800], [/^(gun|bow|drawBow)/, 1300]];
+function hearVol(name, f) {
+  if (!f || f.x === undefined || !G || G.mode !== 'war') return 1;
+  if (f === G.f[MEI]) return 1;
+  var range = 1000; for (var i = 0; i < HEAR.length; i++) if (HEAR[i][0].test(name)) { range = HEAR[i][1]; break; }
+  var d = viewDist(f.x, f.y), v = d < 350 ? 1 : Math.max(0, 1 - (d - 350) / (range - 350));
+  if (MAP.cityW && zoneOfXY(f.x, f.y) !== viewZone()) v *= range > 2000 ? 0.35 : 0;
+  return v * v;
+}
 function playSnd(name, f, extra) {
+  if (f && f.x !== undefined) fxPos = { x: f.x, y: f.y };
   if (!AUD.on || !AUD.ac || !AUD.o) return;
+  var hv = hearVol(name, f); if (hv < 0.03) return;
   var fn = SND[name] || (name.indexOf('npfire:') === 0 ? SND.npfireG : name.indexOf('skill:') === 0 ? SND.skillG : null); if (!fn) return;
   var nowt = AUD.ac.currentTime, key = name + (f && f.idx !== undefined ? f.idx : '');
   if (lastSnd[key] && nowt - lastSnd[key] < 0.03) return; lastSnd[key] = nowt;
   var pan = f && f.x !== undefined ? clamp((f.x - cam.x) / 420, -0.7, 0.7) : 0;
-  var outN = mkOut(AUD.o, pan);
+  var outN = mkOut(AUD.o, pan); if (hv < 0.99) { var hg = AUD.ac.createGain(); hg.gain.value = hv; hg.connect(outN); outN = hg; }
   if (name === 'npcast' && f) { var sub = AUD.ac.createGain(); sub.connect(outN); AUD.npBus = AUD.npBus || {}; AUD.npBus[f.idx] = sub; outN = sub; }
   if (name === 'npLost' && f && AUD.npBus && AUD.npBus[f.idx]) { try { var sg = AUD.npBus[f.idx].gain; sg.cancelScheduledValues(nowt); sg.setValueAtTime(sg.value, nowt); sg.linearRampToValueAtTime(0, nowt + 0.12); } catch (e) {} }
   try { fn(AUD.o, outN, nowt + 0.002, { f: f, a: extra }); } catch (e) {}
-  if (name === 'hitNP' || name === 'kill' || name === 'execute' || name.indexOf('npfire') === 0) { try { var mg = AUD.o.music.gain; mg.cancelScheduledValues(nowt); mg.setValueAtTime(mg.value, nowt); mg.linearRampToValueAtTime(0.18, nowt + 0.03); mg.linearRampToValueAtTime(0.7, nowt + 1.4); } catch (e) {} }
-  if (navigator.vibrate && (name === 'hitNP' || name === 'kill' || name === 'hitH' || name === 'gbreak')) { try { navigator.vibrate(name === 'hitH' || name === 'gbreak' ? 18 : 40); } catch (e) {} }
+  if (hv > 0.5 && (name === 'hitNP' || name === 'kill' || name === 'execute' || name.indexOf('npfire') === 0)) { try { var mg = AUD.o.music.gain; mg.cancelScheduledValues(nowt); mg.setValueAtTime(mg.value, nowt); mg.linearRampToValueAtTime(0.18, nowt + 0.03); mg.linearRampToValueAtTime(0.7, nowt + 1.4); } catch (e) {} }
+  if (hv > 0.6 && navigator.vibrate && (name === 'hitNP' || name === 'kill' || name === 'hitH' || name === 'gbreak')) { try { navigator.vibrate(name === 'hitH' || name === 'gbreak' ? 18 : 40); } catch (e) {} }
 }
 function audioTest(name) {
   var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; var ac = new OAC(2, 44100 * 5, 44100), o = buildBus(ac, ac.destination);

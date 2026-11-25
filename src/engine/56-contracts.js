@@ -17,7 +17,7 @@ function formContract(a, b) {
   s.team = m.team; s.partner = m; m.partner = s; s.orphanT = 0; s.recover = false; s.lock = null; m.lock = null; s.anchor = null;
   s.isPlayerMate = !!m.isPlayerMate || m === G.f[0]; s.home = m.home;
   if (m.manaMax === undefined) initMana(m);
-  FX.text(s, 'CONTRACT FORMED'); FX.fx('seal', m.x, m.y, m); FX.fx('seal', s.x, s.y, s); FX.snd('godhand', m);
+  FX.text(s, 'CONTRACT FORMED'); FX.say(s, 'contract'); FX.fx('seal', m.x, m.y, m); FX.fx('seal', s.x, s.y, s); FX.snd('godhand', m);
   G.contracts = (G.contracts || 0) + 1;
   G.f.forEach(pickTarget);
   return true;
