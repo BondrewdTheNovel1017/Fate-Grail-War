@@ -162,6 +162,7 @@ function strikeInit(f) {
   if (f.veilT > 0 && f.A.skill.reachMul) mult *= 1.2;
   var k = a.kind;
   if (f.key === 'light' || f.key === 'heavy') { FX.snd((k === 'proj' || k === 'volley') ? 'shoot' : k === 'rain' ? 'skill:' + f.def.id : (f.key === 'heavy' ? 'swingH' : 'swingL'), f, a); if (f.key === 'heavy' && k === 'melee') FX.fx('heavySwing', f.x, f.y, f); }
+  if (f.key === 'skill' && f.def.hiddenReach) { f.revealT = G.time + 0.55; FX.fx('airRelease', f.x, f.y, f); }
   if (f.key === 'skill') { if (a.beam) FX.fx('miniBeam', f.x, f.y, f); FX.snd('skill:' + f.def.id, f, a); if (k === 'melee') FX.fx('bash', f.x, f.y, f); if (k === 'shadow') FX.fx('shadowOut', f.x, f.y, f); }
   if (f.key === 'np' && !f.def.isMaster) { if (a.breaksMarble) breakMarble(f); FX.snd('npfire:' + f.def.id, f, a); FX.fx('npfire', f.x, f.y, f); }
   if (k === 'melee') { if (a.arc) meleeCheck(f, a.lunge > 100 ? Object.assign({}, a, { reach: a.reach + a.lunge * 0.85 }) : a, mult); }

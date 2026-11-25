@@ -959,9 +959,9 @@ var SERV = {
     skill: { name: 'Stone Slam', kind: 'aoe', wind: 0.55, act: 0.1, rec: 0.6, dmg: 12, r: 150, cd: 7, cost: 14, stag: 0.55, gb: true, armor: true, desc: 'A ground slam all around him. Armored. Breaks guards.' },
     np: { name: 'Nine Lives', sub: 'Shooting the Nine Heads', kind: 'pulses', wind: 1.3, act: 1.26, rec: 1.0, dmg: 5, pulses: 9, interval: 0.14, r: 160, leap: 190, armor: true, unblock: false, aiMin: 0, aiMax: 230, desc: 'He leaps and nine blows land in a storm around him. Armored throughout.' } },
   caerwyn: { id: 'caerwyn', name: 'King Arthur', cls: 'Saber', col: '#dfeaf4', wpn: 'sword', momMul: 1.2, hiddenReach: 1.1, hp: 205, spd: 218, dmg: 1.1, guard: 0.78, combo: 3, recMul: 1,
-    brief: 'A sovereign swordswoman. Hides her blade in wind to hide its reach, then ends it with a beam of light.',
+    brief: 'A sovereign swordswoman. Her blade hides in wind, which she can release as a cutting gust, and ends it with Excalibur\'s golden light.',
     light: { reach: 108 }, heavy: { reach: 122 },
-    skill: { name: 'Invisible Air', kind: 'veil', wind: 0.25, act: 0.05, rec: 0.25, dmg: 0, cd: 10, cost: 10, dur: 7, reachMul: 1.25, desc: 'She unveils her blade. For 7 seconds it blazes with light, her melee reaches 25% farther than the warning shows and every strike hits 20% harder.' },
+    skill: { name: 'Strike Air', kind: 'proj', shape: 'wind', wind: 0.3, act: 0.14, rec: 0.35, lunge: 120, speed: 1700, range: 470, dmg: 22, rad: 26, stag: 0.6, power: 2, cd: 9, cost: 12, reach: 0, desc: 'She dashes in and releases the wind that hides her sword: a thin cone of compressed air that hits hard at range. For a moment the golden blade shows, then the wind wraps around it again.' },
     np: { name: 'Excalibur', sub: 'Sword of Promised Victory', kind: 'proj', wave: true, beam: true, wind: 1.8, act: 0.1, rec: 1.3, dmg: 72, speed: 2400, range: 1100, stag: 1.0, aiMin: 240, aiMax: 800, desc: 'A sweeping beam of light across the arena. Cannot be blocked. Dodge at the moment it fires, or hide behind a pillar.' } },
   diarmuid: { id: 'diarmuid', name: 'Diarmuid Ua Duibhne', cls: 'Lancer', col: '#4fa860', wpn: 'spear', hp: 190, spd: 236, dmg: 1.0, guard: 0.6, combo: 3, recMul: 0.95, guardPierce: 0.4,
     brief: 'Twin-spear duelist. Cursed wounds that keep bleeding and strikes that gnaw through a guard.',
@@ -1062,9 +1062,9 @@ var MASTERS = {
   rin: MD({ id: 'rin', name: 'Rin Tohsaka', type: 'Mage family', col: '#c23b46', hp: 100,
     brief: 'Heir of the Tohsaka. Gandr curses, jewel magecraft and healing for her servant.',
     light: { name: 'Gandr', kind: 'proj', speed: 950, range: 580, dmg: 6, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 12, shape: 'orb', size: 6, col: '#7a3cc8' },
-    heavy: { name: 'Gem shot', kind: 'proj', speed: 1150, range: 700, dmg: 14, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 24, shape: 'orb', size: 9, col: '#e04a5a' },
+    heavy: { name: 'Gem shot', kind: 'proj', speed: 1150, range: 700, dmg: 14, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 24, shape: 'gem', size: 9, col: '#e04a5a' },
     skill: { name: 'Healing Magecraft', kind: 'heal', amount: 40, range: 340, wind: 0.6, act: 0.05, rec: 0.4, cd: 14, cost: 18 },
-    np: { name: 'Jewel Burst', kind: 'proj', speed: 900, range: 650, dmg: 6, wind: 0.5, act: 0.05, rec: 0.5, cost: 0, shape: 'orb', size: 12, col: '#ff5a6a', explode: { r: 140, dmg: 24 }, cd: 22, aiUse: 'ranged' } }),
+    np: { name: 'Jewel Burst', kind: 'proj', speed: 900, range: 650, dmg: 6, wind: 0.5, act: 0.05, rec: 0.5, cost: 0, shape: 'gem', size: 12, col: '#ff5a6a', explode: { r: 140, dmg: 24 }, cd: 22, aiUse: 'ranged' } }),
   kiritsugu: MD({ id: 'kiritsugu', name: 'Kiritsugu Emiya', type: 'Mage killer', col: '#6a7480', hp: 110, spd: 215, guard: 0.3, combo: 4, mag: { size: 50, reload: 2.2 },
     brief: 'The Magus Killer. Calico fire, Time Alter, and the Contender’s Origin Bullets that burn a mage’s circuits.',
     light: { name: 'Calico double tap', ammo: true, kind: 'volley', count: 2, spread: 0.05, speed: 1700, range: 620, dmg: 3, wind: 0.12, rec: 0.18, reach: 0, lunge: 0, cost: 5, shape: 'tracer' },
@@ -1079,14 +1079,14 @@ var MASTERS = {
     np: { name: 'Broken Phantasm', kind: 'proj', speed: 1500, range: 850, dmg: 6, wind: 0.8, act: 0.06, rec: 0.6, cost: 0, shape: 'drill', explode: { r: 120, dmg: 22 }, cd: 24, aiUse: 'ranged' } }),
   kayneth: MD({ id: 'kayneth', name: 'Kayneth El-Melloi', type: 'Mage family', col: '#4f7ab8', hp: 100, spd: 195, guard: 0.3,
     brief: 'A Lord of the Clock Tower. Volumen Hydrargyrum, his living mercury, shields him and cuts down anyone close.',
-    light: { name: 'Mercury needles', kind: 'volley', count: 3, spread: 0.1, speed: 1100, range: 480, dmg: 3, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'blade' },
+    light: { name: 'Mercury needles', kind: 'volley', count: 3, spread: 0.1, speed: 1100, range: 480, dmg: 3, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'needle' },
     heavy: { name: 'Mercury blade', kind: 'proj', speed: 1300, range: 620, dmg: 12, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
     skill: { name: 'Volumen Hydrargyrum', kind: 'shield', hits: 3, dur: 8, wind: 0.3, act: 0.05, rec: 0.2, cd: 16, cost: 14 },
     np: { name: 'Mercury Scythe', kind: 'aoe', r: 160, dmg: 14, stag: 0.6, power: 2, wind: 0.45, act: 0.1, rec: 0.5, cost: 0, cd: 18, aiUse: 'near' } }),
   kirei: MD({ id: 'kirei', name: 'Kirei Kotomine', type: 'Church Executor', col: '#7d5aa8', hp: 125, spd: 215, guard: 0.5, ranged: false, combo: 3,
     brief: 'An Executor of the Church. He cuts with Black Keys up close, hurls a fan of them, heals himself quickly, and his bajiquan can stagger even a servant.',
     light: { name: 'Black Key slash', kind: 'melee', dmg: 7, reach: 82, arc: 0.9, wind: 0.22, act: 0.08, rec: 0.2, lunge: 40, cost: 8, stag: 0.32, power: 1 },
-    heavy: { name: 'Black Key volley', kind: 'volley', count: 6, spread: 0.55, speed: 1300, range: 560, dmg: 6, wind: 0.45, max: 0.9, rec: 0.6, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
+    heavy: { name: 'Black Key volley', kind: 'volley', count: 6, spread: 0.55, speed: 1300, range: 560, dmg: 6, wind: 0.45, max: 0.9, rec: 0.6, reach: 0, lunge: 0, cost: 22, shape: 'key' },
     skill: { name: 'Healing Sacrament', kind: 'heal', self: true, amount: 30, range: 0, wind: 0.4, act: 0.05, rec: 0.3, cd: 13, cost: 14 },
     np: { name: 'Bajiquan', kind: 'melee', reach: 70, lunge: 140, arc: 0.8, dmg: 20, stag: 1.3, power: 2, vsServant: 0.6, wind: 0.3, act: 0.08, rec: 0.6, cost: 0, cd: 16, aiUse: 'near' } }),
   waver: MD({ id: 'waver', name: 'Waver Velvet', type: 'Fledgling mage', col: '#a88a5a', hp: 85, spd: 200, guard: 0.3,
@@ -1097,26 +1097,26 @@ var MASTERS = {
     np: { name: 'Mana Transfer', kind: 'gift', mom: 25, wind: 0.4, act: 0.05, rec: 0.3, cost: 0, cd: 30, aiUse: 'ally' } }),
   irisviel: MD({ id: 'irisviel', name: 'Irisviel von Einzbern', type: 'Mage family', col: '#d8dde6', hp: 90, spd: 200, guard: 0.35,
     brief: 'An Einzbern homunculus. Silver wire familiars that strike and bind, and strong healing alchemy.',
-    light: { name: 'Wire bird', kind: 'proj', speed: 1000, range: 560, dmg: 5, wind: 0.28, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 6, col: '#e6eef3' },
+    light: { name: 'Wire bird', kind: 'proj', speed: 1000, range: 560, dmg: 5, wind: 0.28, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'bird', size: 6, col: '#e6eef3' },
     heavy: { name: 'Wire spear', kind: 'proj', speed: 1300, range: 650, dmg: 12, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
     skill: { name: 'Alchemic Healing', kind: 'heal', amount: 45, range: 360, wind: 0.6, act: 0.05, rec: 0.4, cd: 16, cost: 18 },
     np: { name: 'Wire Bind', kind: 'proj', speed: 900, range: 560, dmg: 6, root: 1.8, wind: 0.45, act: 0.05, rec: 0.4, cost: 0, shape: 'orb', size: 9, col: '#cfd8e6', cd: 18, aiUse: 'ranged' } }),
   kariya: MD({ id: 'kariya', name: 'Kariya Matou', type: 'Fledgling mage', col: '#5a4a6a', bloodMana: true, hp: 105, spd: 195, guard: 0.3,
     brief: 'A Matou who took the crest worms. He feeds his own life to his servant, and his worms swarm the ground.',
-    light: { name: 'Crest worms', kind: 'proj', speed: 700, range: 520, dmg: 6, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 7, col: '#4a3a5a' },
-    heavy: { name: 'Worm swarm', kind: 'volley', count: 3, spread: 0.18, speed: 700, range: 520, dmg: 5, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'orb', size: 6, col: '#4a3a5a' },
+    light: { name: 'Crest worms', kind: 'proj', speed: 700, range: 520, dmg: 6, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'worm', size: 7, col: '#4a3a5a' },
+    heavy: { name: 'Worm swarm', kind: 'volley', count: 3, spread: 0.18, speed: 700, range: 520, dmg: 5, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'worm', size: 6, col: '#4a3a5a' },
     skill: { name: 'Feed the Servant', kind: 'drain', selfDmg: 15, mom: 30, wind: 0.4, act: 0.05, rec: 0.3, cd: 15, cost: 10 },
     np: { name: 'Worm Pit', kind: 'rain', count: 3, spread: 80, zr: 70, delay: 0.7, dmg: 10, zshape: 'tentacle', wind: 0.5, act: 0.1, rec: 0.5, cost: 0, cd: 22, aiUse: 'ranged' } })
 };
 MASTERS.illya = MD({ id: 'illya', name: 'Illyasviel von Einzbern', type: 'Mage family', col: '#c9b8e0', hp: 85, spd: 200, guard: 0.3, grailVessel: true,
     brief: 'The Einzbern masterpiece and a living Grail vessel. Her Storch Ritter familiars hunt on their own, and her vast mana makes her servant\u2019s Noble Phantasm charge 30% faster.',
-    light: { name: 'Storch Ritter', kind: 'proj', speed: 820, range: 640, dmg: 5, home: 3, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 6, col: '#eef0f6' },
-    heavy: { name: 'Shwan Ritter', kind: 'volley', count: 3, spread: 0.4, speed: 820, range: 640, dmg: 5, home: 3, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'orb', size: 7, col: '#eef0f6' },
+    light: { name: 'Storch Ritter', kind: 'proj', speed: 820, range: 640, dmg: 5, home: 3, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'bird', size: 6, col: '#eef0f6' },
+    heavy: { name: 'Shwan Ritter', kind: 'volley', count: 3, spread: 0.4, speed: 820, range: 640, dmg: 5, home: 3, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'bird', size: 7, col: '#eef0f6' },
     skill: { name: 'Einzbern Alchemy', kind: 'heal', amount: 35, range: 380, wind: 0.5, act: 0.05, rec: 0.4, cd: 15, cost: 16 },
-    np: { name: 'Storch Ritter Swarm', kind: 'volley', count: 6, spread: 0.9, speed: 760, range: 760, dmg: 6, home: 3.5, wind: 0.6, act: 0.05, rec: 0.5, cost: 0, shape: 'orb', size: 8, col: '#f4f0ff', cd: 20, aiUse: 'ranged' } });
+    np: { name: 'Storch Ritter Swarm', kind: 'volley', count: 6, spread: 0.9, speed: 760, range: 760, dmg: 6, home: 3.5, wind: 0.6, act: 0.05, rec: 0.5, cost: 0, shape: 'bird', size: 8, col: '#f4f0ff', cd: 20, aiUse: 'ranged' } });
 MASTERS.sakura = MD({ id: 'sakura', name: 'Sakura Matou', type: 'Mage family', col: '#7a4a8a', hp: 95, spd: 200, guard: 0.35, lifesteal: 0.5,
     brief: 'The Matou heir. Her Imaginary Numbers shadow drinks what it touches: half the damage she deals heals her, and her shadow pools bind servants in place.',
-    light: { name: 'Shadow lash', kind: 'proj', speed: 950, range: 560, dmg: 6, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 7, col: '#2a1838' },
+    light: { name: 'Shadow lash', kind: 'proj', speed: 950, range: 560, dmg: 6, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'shadow', size: 7, col: '#2a1838' },
     heavy: { name: 'Shadow tendrils', kind: 'rain', count: 2, spread: 60, zr: 62, delay: 0.55, dmg: 9, zshape: 'tentacle', wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22 },
     skill: { name: 'Imaginary Drain', kind: 'siphon', r: 260, dmg: 8, wind: 0.4, act: 0.05, rec: 0.3, cd: 12, cost: 12 },
     np: { name: 'Shadow of the Grail', kind: 'rain', count: 1, spread: 0, zr: 150, delay: 0.8, dmg: 16, root: 1.5, zshape: 'tentacle', range: 620, wind: 0.6, act: 0.1, rec: 0.5, cost: 0, cd: 22, aiUse: 'ranged' } });
@@ -1770,6 +1770,7 @@ function strikeInit(f) {
   if (f.veilT > 0 && f.A.skill.reachMul) mult *= 1.2;
   var k = a.kind;
   if (f.key === 'light' || f.key === 'heavy') { FX.snd((k === 'proj' || k === 'volley') ? 'shoot' : k === 'rain' ? 'skill:' + f.def.id : (f.key === 'heavy' ? 'swingH' : 'swingL'), f, a); if (f.key === 'heavy' && k === 'melee') FX.fx('heavySwing', f.x, f.y, f); }
+  if (f.key === 'skill' && f.def.hiddenReach) { f.revealT = G.time + 0.55; FX.fx('airRelease', f.x, f.y, f); }
   if (f.key === 'skill') { if (a.beam) FX.fx('miniBeam', f.x, f.y, f); FX.snd('skill:' + f.def.id, f, a); if (k === 'melee') FX.fx('bash', f.x, f.y, f); if (k === 'shadow') FX.fx('shadowOut', f.x, f.y, f); }
   if (f.key === 'np' && !f.def.isMaster) { if (a.breaksMarble) breakMarble(f); FX.snd('npfire:' + f.def.id, f, a); FX.fx('npfire', f.x, f.y, f); }
   if (k === 'melee') { if (a.arc) meleeCheck(f, a.lunge > 100 ? Object.assign({}, a, { reach: a.reach + a.lunge * 0.85 }) : a, mult); }
@@ -3741,18 +3742,18 @@ function runeCircle(g, x, y, r, col, rot, al) {
   for (var j = 0; j < 12; j++) { var b = j * 0.5236; g.beginPath(); g.moveTo(Math.cos(b) * r * 0.82, Math.sin(b) * r * 0.82); g.lineTo(Math.cos(b) * r * 0.96, Math.sin(b) * r * 0.96); g.stroke(); }
   g.restore(); g.globalAlpha = 1;
 }
-function beamFx(f, x, y, sc, life) { var fa2 = f.face; vfx(life, function (g, p, tt) {
+function beamFx(f, x, y, sc, life) { var fa2 = f.face, gold = f.def && f.def.id === 'caerwyn', C1 = gold ? '255,170,40' : '170,200,255', C2 = gold ? '255,200,90' : '190,215,255', C3 = gold ? '255,235,170' : '230,240,255', C4 = gold ? '255,250,225' : '255,255,255'; vfx(life, function (g, p, tt) {
         var bp = null; for (var bi = 0; bi < G.proj.length; bi++) if (G.proj[bi].owner === f && G.proj[bi].a.beam) bp = G.proj[bi];
         var hx, hy; if (bp) { hx = bp.x; hy = bp.y; } else if (f.beamEnd && G.time - f.beamEnd.t < 1.5) { hx = f.beamEnd.x; hy = f.beamEnd.y; } else return;
         var sx0 = x + Math.cos(fa2) * 34, sy0 = y + Math.sin(fa2) * 34, L = Math.hypot(hx - sx0, hy - sy0), an = Math.atan2(hy - sy0, hx - sx0);
         var env = tt < 0.08 ? tt / 0.08 : tt < 0.7 ? 1 : Math.max(0, 1 - (tt - 0.7) / 0.45), wd = 96 * sc * env * (0.92 + 0.08 * Math.sin(tt * 60));
         g.save(); g.translate(sx0, sy0); g.rotate(an); g.globalCompositeOperation = 'lighter';
         var bg = g.createLinearGradient(0, -wd, 0, wd);
-        bg.addColorStop(0, 'rgba(170,200,255,0)'); bg.addColorStop(0.25, 'rgba(190,215,255,' + (0.35 * env) + ')'); bg.addColorStop(0.42, 'rgba(230,240,255,' + (0.8 * env) + ')');
-        bg.addColorStop(0.5, 'rgba(255,255,255,' + env + ')'); bg.addColorStop(0.58, 'rgba(230,240,255,' + (0.8 * env) + ')'); bg.addColorStop(0.75, 'rgba(190,215,255,' + (0.35 * env) + ')'); bg.addColorStop(1, 'rgba(170,200,255,0)');
+        bg.addColorStop(0, 'rgba(' + C1 + ',0)'); bg.addColorStop(0.25, 'rgba(' + C2 + ',' + (0.35 * env) + ')'); bg.addColorStop(0.42, 'rgba(' + C3 + ',' + (0.8 * env) + ')');
+        bg.addColorStop(0.5, 'rgba(' + C4 + ',' + env + ')'); bg.addColorStop(0.58, 'rgba(' + C3 + ',' + (0.8 * env) + ')'); bg.addColorStop(0.75, 'rgba(' + C2 + ',' + (0.35 * env) + ')'); bg.addColorStop(1, 'rgba(' + C1 + ',0)');
         g.fillStyle = bg; g.fillRect(0, -wd, L, wd * 2);
-        for (var k = 0; k < 18; k++) { var px = ((tt * 1500 + k * 131) % Math.max(60, L)), py = Math.sin(k * 7.7 + tt * 9) * wd * 0.55; g.fillStyle = 'rgba(255,255,255,' + (0.6 * env) + ')'; g.fillRect(px, py, 22, 1.6); }
-        [[L, 0.8], [0, 0.6]].forEach(function (c) { var rg = g.createRadialGradient(c[0], 0, 2, c[0], 0, wd * c[1] * 1.4); rg.addColorStop(0, 'rgba(255,255,255,' + (0.9 * env) + ')'); rg.addColorStop(1, 'rgba(200,220,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(c[0], 0, wd * c[1] * 1.4, 0, 6.283); g.fill(); });
+        for (var k = 0; k < 18; k++) { var px = ((tt * 1500 + k * 131) % Math.max(60, L)), py = Math.sin(k * 7.7 + tt * 9) * wd * 0.55; g.fillStyle = 'rgba(' + C4 + ',' + (0.6 * env) + ')'; g.fillRect(px, py, 22, 1.6); }
+        [[L, 0.8], [0, 0.6]].forEach(function (c) { var rg = g.createRadialGradient(c[0], 0, 2, c[0], 0, wd * c[1] * 1.4); rg.addColorStop(0, 'rgba(' + C4 + ',' + (0.9 * env) + ')'); rg.addColorStop(1, 'rgba(' + C2 + ',0)'); g.fillStyle = rg; g.beginPath(); g.arc(c[0], 0, wd * c[1] * 1.4, 0, 6.283); g.fill(); });
         g.restore();
         if (tt < 0.75 && Math.random() < 0.5) FX.shake(4 * sc);
       }); }
@@ -3829,7 +3830,7 @@ FX.fx = function (name, x, y, f) {
         g.globalAlpha = 0.18 + 0.3 * p; var gr = g.createRadialGradient(f.x, f.y, 4, f.x, f.y, 70); gr.addColorStop(0, f.def.col); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.arc(f.x, f.y, 70, 0, 6.283); g.fill(); g.globalAlpha = 1;
         if (id === 'leonidas') { for (var s = 0; s < 10; s++) { var sa = -G.time * 1.2 + s * 0.628; g.beginPath(); g.arc(f.x + Math.cos(sa) * 80, f.y + Math.sin(sa) * 80, 7, 0, 6.283); g.fillStyle = '#c7954a'; g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.fill(); g.stroke(); } }
         if (id === 'atalanta') { for (var q = 0; q < 6; q++) { var qa = G.time * 1.5 + q * 1.047; g.save(); g.translate(f.x + Math.cos(qa) * 56, f.y + Math.sin(qa) * 56); g.rotate(qa + Math.PI); g.strokeStyle = '#e9e4d3'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-12, 0); g.lineTo(10, 0); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.moveTo(10, -3); g.lineTo(17, 0); g.lineTo(10, 3); g.fill(); g.restore(); } }
-        if (id === 'caerwyn') { var wl = 1100, ww = 2 * (34 + 30); g.save(); g.translate(f.x, f.y); g.rotate(f.face); g.globalAlpha = 0.18 + 0.3 * p; var lg = g.createLinearGradient(0, 0, wl, 0); lg.addColorStop(0, '#dfeaf4'); lg.addColorStop(1, 'rgba(223,234,244,0)'); g.fillStyle = lg; g.fillRect(0, -ww / 2 * p, wl, ww * p); g.globalAlpha = 1; for (var rn = 0; rn < 6; rn++) { var rx = ((G.time * 260 + rn * 160) % 960); g.beginPath(); g.arc(rx, 0, 22 * p + 4, -1, 1); g.strokeStyle = 'rgba(255,255,255,' + (0.7 * (1 - rx / 960)) + ')'; g.lineWidth = 3; g.stroke(); } g.restore(); for (var cm = 0; cm < 8; cm++) { var cam = G.time * 2.2 + cm * 0.785, cr = 90 * (1 - p) + 22; g.beginPath(); g.arc(f.x + Math.cos(cam) * cr, f.y + Math.sin(cam) * cr, 3.5, 0, 6.283); g.fillStyle = '#ffffff'; g.fill(); } }
+        if (id === 'caerwyn') { var wl = 1100, ww = 2 * (34 + 30); g.save(); g.translate(f.x, f.y); g.rotate(f.face); g.globalAlpha = 0.18 + 0.3 * p; var lg = g.createLinearGradient(0, 0, wl, 0); lg.addColorStop(0, '#ffd36b'); lg.addColorStop(1, 'rgba(255,211,107,0)'); g.fillStyle = lg; g.fillRect(0, -ww / 2 * p, wl, ww * p); g.globalAlpha = 1; for (var rn = 0; rn < 6; rn++) { var rx = ((G.time * 260 + rn * 160) % 960); g.beginPath(); g.arc(rx, 0, 22 * p + 4, -1, 1); g.strokeStyle = 'rgba(255,240,190,' + (0.7 * (1 - rx / 960)) + ')'; g.lineWidth = 3; g.stroke(); } g.restore(); for (var cm = 0; cm < 8; cm++) { var cam = G.time * 2.2 + cm * 0.785, cr = 90 * (1 - p) + 22; g.beginPath(); g.arc(f.x + Math.cos(cam) * cr, f.y + Math.sin(cam) * cr, 3.5, 0, 6.283); g.fillStyle = '#ffe9a0'; g.fill(); } }
         if (id === 'hassan') { var per = 0.55 - 0.3 * p, ph = (G.time % per) / per; g.beginPath(); g.arc(fo.x, fo.y, 14 + 56 * ph, 0, 6.283); g.strokeStyle = '#c0182a'; g.globalAlpha = (1 - ph) * 0.9; g.lineWidth = 5; g.stroke(); g.globalAlpha = 1; }
         if (id === 'gilgamesh') {
           var R = f.A.np.r, gr2 = g.createRadialGradient(f.x, f.y, 4, f.x, f.y, R);
@@ -3895,7 +3896,7 @@ FX.fx = function (name, x, y, f) {
         });
         puffFx(x + Math.cos(fr0) * 140, y + Math.sin(fr0) * 140, 18, '255,140,60', 160, 18, 0.9);
       }
-      else if (id === 'caerwyn') { var fa2 = f.face; flashFx('#ffffff', 0.4, 0.25); ringFx(x, y, 14, 150, '#dfeaf4', 0.5, 10); ringFx(x, y, 8, 95, '#ffffff', 0.34, 5, 0.04); raysFx(x, y, 12, 16, 130, '#ffffff', 0.34, 3); beamFx(f, x, y, 1, 1.15); FX.shake(12); }
+      else if (id === 'caerwyn') { var fa2 = f.face; flashFx('#fff2c4', 0.4, 0.25); ringFx(x, y, 14, 150, '#ffd36b', 0.5, 10); ringFx(x, y, 8, 95, '#fff2c4', 0.34, 5, 0.04); raysFx(x, y, 12, 16, 130, '#ffe9a0', 0.34, 3); beamFx(f, x, y, 1, 1.15); FX.shake(12); }
       else if (id === 'hassan') { flashFx('#7a0f1a', 0.35, 0.3); ringFx(x + Math.cos(f.face) * 60, y + Math.sin(f.face) * 60, 6, 70, '#c0182a', 0.35, 6); }
       else npfireGen(f, x, y);
       break;
@@ -4076,7 +4077,7 @@ function putW(f, I, x, y, rot, k, flip) {
   ctx.restore();
 }
 function drawWeapon(f) {
-  var d = f.def, I = IMG[d.id].weapon, g = GRIP[d.id], a = f.act, wp = d.wpn, p = 0, q = 0, r = 0, veil = d.hiddenReach ? !(f.veilT > 0) : false, shine = f.veilT > 0 && !!d.hiddenReach;
+  var d = f.def, I = IMG[d.id].weapon, g = GRIP[d.id], a = f.act, wp = d.wpn, p = 0, q = 0, r = 0, shown = !!d.hiddenReach && (f.revealT > G.time || (f.key === 'np' && (f.st === 'wind' || f.st === 'act'))), veil = d.hiddenReach ? !shown : false, shine = shown;
   if (f.st === 'wind' && a) p = clamp(f.t / (f.windTotal || f.curWind || 0.3), 0, 1);
   if (f.st === 'act' && a) q = clamp(f.t / Math.max(a.act, 0.05), 0, 1);
   if (f.st === 'rec' && a) r = clamp(f.t / Math.max(f.recDur || 0.3, 0.05), 0, 1);
@@ -4091,7 +4092,7 @@ function drawWeapon(f) {
   var sweeps = a && (a.kind === 'melee' || a.kind === 'aoe' || a.kind === 'grab' || a.kind === 'pulses' || a.kind === 'charge' || a.wave);
   if (wp === 'gate') { drawGates(f, p, q, r); return; }
   if (veil) ctx.globalAlpha = 0.22;
-  if (shine) { ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 22 + 6 * Math.sin(G.time * 12); }
+  if (shine) { ctx.shadowColor = '#ffd36b'; ctx.shadowBlur = 22 + 6 * Math.sin(G.time * 12); }
   if (wp === 'sword' || wp === 'club') {
     var rest = 0.2, rot = rest;
     if (f.guarding || f.st === 'counter') rot = -0.9;
@@ -4101,7 +4102,7 @@ function drawWeapon(f) {
     if (sweeps && a.kind !== 'charge' && (f.st === 'act' || (f.st === 'rec' && r < 0.35))) {
       var tr = (a.reach || 110) * 0.92, aCur = f.st === 'act' ? 1.5 - 3.1 * q : -1.6, tal = f.st === 'act' ? 0.55 : 0.55 * (1 - r / 0.35);
       ctx.save(); ctx.globalAlpha = tal; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.arc(f.x, f.y, tr, f.face + aCur, f.face + 1.5); ctx.strokeStyle = shine ? 'rgba(255,255,255,.9)' : rgbaOf(d.col, 0.55); ctx.lineWidth = 14; ctx.stroke();
+      ctx.beginPath(); ctx.arc(f.x, f.y, tr, f.face + aCur, f.face + 1.5); ctx.strokeStyle = shine ? 'rgba(255,224,140,.9)' : rgbaOf(d.col, 0.55); ctx.lineWidth = 14; ctx.stroke();
       ctx.beginPath(); ctx.arc(f.x, f.y, tr, f.face + aCur, f.face + Math.min(1.5, aCur + 0.9)); ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 4; ctx.stroke();
       ctx.restore(); ctx.globalAlpha = veil ? 0.22 : 1;
     }
@@ -4418,18 +4419,24 @@ function drawWorld() {
   ghosts.forEach(function (gh) { var I = IMG[gh.id].body; if (!weaponOK(I)) return; g.save(); g.globalAlpha = 0.4 * (1 - gh.t / gh.life); g.translate(gh.x, gh.y); g.rotate(gh.face); g.drawImage(I.im, I.x, I.y, I.w, I.h); g.restore(); });
   puffs.forEach(function (p) { var pp = p.t / p.life; g.beginPath(); g.arc(p.x, p.y, p.r * (1 + 1.8 * pp), 0, 6.283); g.fillStyle = 'rgba(' + p.rgb + ',' + (0.45 * (1 - pp)) + ')'; g.fill(); });
   drawCivs(g); drawMobs(g); drawShadow(g); G.f.forEach(function (f) { if (visL(f)) drawRampAura(g, f); });
+  drawGroundFx(g);
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawField(f, i, ar); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawTelegraph(f, i, ar); });
   // a fighter frozen by their own hit-stop shudders in place when they are the one hit
-  G.f.forEach(function (f, i, ar) { if (!visL(f)) return; var sh = f.hs > 0 && f.hit > 0; if (sh) { ctx.save(); ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6); } drawFighter(f, i, ar); if (sh) ctx.restore(); });
-  G.proj.forEach(function (p) { if (!visL(p.owner)) return; var a = Math.atan2(p.vy, p.vx); if (p.a.beam) { g.save(); g.translate(p.x, p.y); g.rotate(a); var bl = g.createLinearGradient(-170, 0, 0, 0); bl.addColorStop(0, 'rgba(255,255,255,0)'); bl.addColorStop(1, 'rgba(255,255,255,.95)'); var bs = p.a.bw || 1; g.fillStyle = bl; g.fillRect(-170 * bs, -26 * bs, 170 * bs, 52 * bs); g.restore(); return; }
+  G.f.forEach(function (f, i, ar) {
+    if (!visL(f)) return; var sh = f.hs > 0 && f.hit > 0, X = fighterXform(f);
+    ctx.save(); ctx.translate(f.x + X.ox + (sh ? (Math.random() - 0.5) * 6 : 0), f.y + X.oy + (sh ? (Math.random() - 0.5) * 6 : 0));
+    ctx.rotate(X.ax); ctx.scale(X.sx, X.sy); ctx.rotate(-X.ax + X.rot); ctx.translate(-f.x, -f.y);
+    drawFighter(f, i, ar); drawFighterFx(ctx, f); ctx.restore();
+  });
+  G.proj.forEach(function (p) { if (!visL(p.owner)) return; var a = Math.atan2(p.vy, p.vx); if (drawProjX(g, p, a)) return; var gld = p.owner.def.id === 'caerwyn' && p.a.key === 'np'; if (p.a.beam) { g.save(); g.translate(p.x, p.y); g.rotate(a); var bl = g.createLinearGradient(-170, 0, 0, 0); bl.addColorStop(0, gld ? 'rgba(255,200,80,0)' : 'rgba(255,255,255,0)'); bl.addColorStop(1, gld ? 'rgba(255,236,170,.95)' : 'rgba(255,255,255,.95)'); var bs = p.a.bw || 1; g.fillStyle = bl; g.fillRect(-170 * bs, -26 * bs, 170 * bs, 52 * bs); g.restore(); return; }
     if (p.a.shape === 'spear') { g.save(); g.translate(p.x, p.y); g.rotate(a); var sg = g.createLinearGradient(-160, 0, 0, 0); sg.addColorStop(0, 'rgba(220,40,50,0)'); sg.addColorStop(1, 'rgba(220,40,50,.7)'); g.fillStyle = sg; g.fillRect(-160, -7, 160, 14); g.shadowColor = '#ff3040'; g.shadowBlur = 16; g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.fillStyle = '#7a1a1a'; g.fillRect(-70, -2.5, 72, 5); g.strokeRect(-70, -2.5, 72, 5); g.fillStyle = '#c33a30'; g.beginPath(); g.moveTo(2, -6); g.lineTo(26, 0); g.lineTo(2, 6); g.lineTo(8, 0); g.closePath(); g.fill(); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'drill') { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var dk = 0; dk < 6; dk++) { g.beginPath(); g.arc(-18 - dk * 16, Math.sin(G.time * 40 + dk) * 5, 5 - dk * 0.6, 0, 6.283); g.fillStyle = 'rgba(160,210,255,' + (0.5 - dk * 0.07) + ')'; g.fill(); } g.shadowColor = '#9fd4ff'; g.shadowBlur = 18; g.fillStyle = '#e6f4ff'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(22, 0); g.lineTo(-14, -6); g.lineTo(-8, 0); g.lineTo(-14, 6); g.closePath(); g.fill(); g.stroke(); g.strokeStyle = 'rgba(90,140,200,.8)'; g.beginPath(); g.moveTo(16, -1); g.lineTo(-6, 3); g.moveTo(8, -3); g.lineTo(-10, 1); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'tracer') { g.save(); g.translate(p.x, p.y); g.rotate(a); g.shadowColor = '#ffd36b'; g.shadowBlur = 8; g.strokeStyle = '#ffe08a'; g.lineWidth = 2.8; g.lineCap = 'round'; g.beginPath(); g.moveTo(-18, 0); g.lineTo(2, 0); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-8, 0); g.lineTo(2, 0); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'rondel') { chainLine(p.owner.x, p.owner.y, p.x, p.y); g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#0b121a'; g.lineWidth = 1.8; g.fillStyle = '#8c95a0'; g.beginPath(); g.arc(-6, 0, 6, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#f4f7fa'; g.beginPath(); g.moveTo(-2, -3); g.lineTo(30, 0); g.lineTo(-2, 3); g.closePath(); g.fill(); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'orb') { g.save(); g.translate(p.x, p.y); var oc = p.a.col || p.owner.def.col, os = p.a.size || 8; g.globalAlpha = 0.35; g.beginPath(); g.arc(-os * 1.7, 0, os * 1.1, 0, 6.283); g.fillStyle = oc; g.fill(); g.globalAlpha = 1; g.beginPath(); g.arc(0, 0, os, 0, 6.283); g.fillStyle = oc; g.shadowColor = oc; g.shadowBlur = 14 + os; g.fill(); g.shadowBlur = 0; g.beginPath(); g.arc(0, 0, os * 0.42, 0, 6.283); g.fillStyle = '#ffffff'; g.fill(); g.restore(); return; }
     if (p.a.shape === 'blade') { g.save(); g.translate(p.x, p.y); g.rotate(a); g.shadowColor = p.owner.def.col; g.shadowBlur = 10; g.fillStyle = '#f3f8fb'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(16, 0); g.lineTo(-8, -4); g.lineTo(-12, 0); g.lineTo(-8, 4); g.closePath(); g.fill(); g.stroke(); g.shadowBlur = 0; g.fillStyle = p.owner.def.col; g.fillRect(-14, -6, 4, 12); g.globalAlpha = 0.3; g.fillStyle = p.owner.def.col; g.fillRect(-46, -2, 34, 4); g.restore(); return; }
-    if (p.a.wave) { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var tr = 3; tr >= 0; tr--) { g.globalAlpha = 0.16 * (4 - tr); g.beginPath(); g.arc(-26 - tr * 30, 0, 42, -0.95, 0.95); g.strokeStyle = '#dfeaf4'; g.lineWidth = 12 - tr * 2; g.lineCap = 'round'; g.stroke(); } g.globalAlpha = 0.55; g.beginPath(); g.arc(-8, 0, 44, -1.05, 1.05); g.strokeStyle = '#dfeaf4'; g.lineWidth = 20; g.stroke(); g.globalAlpha = 1; g.beginPath(); g.arc(-8, 0, 44, -1.0, 1.0); g.strokeStyle = '#ffffff'; g.lineWidth = 7; g.stroke(); g.restore(); return; } g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.beginPath(); g.moveTo(-22, 0); g.lineTo(6, 0); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.moveTo(6, -4); g.lineTo(14, 0); g.lineTo(6, 4); g.fill(); g.restore(); });
+    if (p.a.wave) { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var tr = 3; tr >= 0; tr--) { g.globalAlpha = 0.16 * (4 - tr); g.beginPath(); g.arc(-26 - tr * 30, 0, 42, -0.95, 0.95); g.strokeStyle = gld ? '#ffd36b' : '#dfeaf4'; g.lineWidth = 12 - tr * 2; g.lineCap = 'round'; g.stroke(); } g.globalAlpha = 0.55; g.beginPath(); g.arc(-8, 0, 44, -1.05, 1.05); g.strokeStyle = gld ? '#ffd36b' : '#dfeaf4'; g.lineWidth = 20; g.stroke(); g.globalAlpha = 1; g.beginPath(); g.arc(-8, 0, 44, -1.0, 1.0); g.strokeStyle = gld ? '#fff2c4' : '#ffffff'; g.lineWidth = 7; g.stroke(); g.restore(); return; } g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.beginPath(); g.moveTo(-22, 0); g.lineTo(6, 0); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.moveTo(6, -4); g.lineTo(14, 0); g.lineTo(6, 4); g.fill(); g.restore(); });
   drawOverhead(g); drawEventsOver(g);
   V.forEach(function (v) { g.save(); v.draw(g, clamp(v.t / v.life, 0, 1), v.t); g.restore(); });
   parts.forEach(function (p) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.col; g.fillRect(p.x - 2, p.y - 2, 4, 4); }); g.globalAlpha = 1;
@@ -5114,6 +5121,7 @@ function drawNight(cx, cy, zoom) {
     (MAP.doors || []).forEach(function (d) { hole(d.out.x + d.out.nx * 20, d.out.y + d.out.ny * 20, 170, 0.7); });
   }
   G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || f === me) return; var ally = f.team === me.team; if (ally) hole(f.x, f.y, 300, 0.6); else if (f.key === 'np' && (f.st === 'wind' || f.st === 'act')) hole(f.x, f.y, 380, 0.85); else if (f.hit > 0 || f.st === 'act') hole(f.x, f.y, 140, 0.5); });
+  G.proj.forEach(function (p) { if (visL(p.owner)) hole(p.x, p.y, p.a.beam ? 260 : p.a.key === 'np' ? 200 : 110, p.a.beam || p.a.key === 'np' ? 0.85 : 0.5); });
   if (G.marble) hole(G.marble.cx, G.marble.cy, G.marble.R || 900, 0.9);
   ctx.drawImage(c, 0, 0, VW, VH);
 }
@@ -5476,6 +5484,97 @@ function event2Hud(E) {
   if (E.kind === 'shadow') return 'THE SHADOW WALKS · UNTIL DAWN';
   return null;
 }
+/* ---- the animation pass: every fighter walks, leans, winds up, recoils, staggers and falls; servants dissolve
+   into motes of light when they die. Signature looks: Illya's wire birds, Sakura's shadow, Rin's jewels,
+   Kirei's Black Keys, Kariya's worms, Kiritsugu's muzzle flash, Arthur's Strike Air and golden Excalibur. ---- */
+var ANIM = {};
+function animOf(f) { return ANIM[f.idx] || (ANIM[f.idx] = { px: f.x, py: f.y, spd: 0, ph: f.idx * 1.3, mx: 0, my: 0, lt: performance.now(), dustT: 0 }); }
+function fighterXform(f) {
+  var A = animOf(f), now = performance.now(), dt = Math.min(0.1, Math.max(0.001, (now - A.lt) / 1000)); A.lt = now;
+  var dx = f.x - A.px, dy = f.y - A.py, inst = Math.hypot(dx, dy) / dt; A.px = f.x; A.py = f.y;
+  if (inst > 2000) inst = 0; // a door or a teleport
+  A.spd += (inst - A.spd) * Math.min(1, dt * 10); if (inst > 5) { A.mx = dx / (Math.hypot(dx, dy) || 1); A.my = dy / (Math.hypot(dx, dy) || 1); }
+  var X = { ox: 0, oy: 0, rot: 0, sx: 1, sy: 1, ax: f.face };
+  if (f.st === 'dead') {
+    var dt2 = f.t || 0;
+    if (f.def.isMaster) { X.rot = Math.min(1, dt2 / 0.45) * 1.1; X.sx = X.sy = 1 - Math.min(1, dt2 / 0.45) * 0.08; }
+    else { var k = Math.min(1, dt2 / 1.1); X.sx = X.sy = 1 - 0.45 * k; if (dt2 < 1.1 && Math.random() < 0.9 && FX.near(f.x, f.y)) for (var m = 0; m < 2; m++) parts.push({ x: f.x + (Math.random() - 0.5) * 40, y: f.y + (Math.random() - 0.5) * 40, vx: (Math.random() - 0.5) * 30, vy: -60 - Math.random() * 90, t: 0, life: 0.9, col: Math.random() < 0.6 ? '#ffe9a0' : rgbStr(f.def.col) }); }
+    return X;
+  }
+  var mv = Math.min(1, A.spd / 220), spirit = f.spirit === 2;
+  // walking: a rhythm of sway and bob, and a lean into the direction of travel
+  if (A.spd > 30 && !spirit) { A.ph += dt * A.spd * 0.034; X.rot += Math.sin(A.ph) * 0.07 * mv; X.sx += Math.abs(Math.sin(A.ph)) * 0.035 * mv; X.ox += A.mx * 2.5 * mv; X.oy += A.my * 2.5 * mv; }
+  if (spirit) { X.oy += Math.sin(now / 300 + f.idx) * 3; }
+  // footfalls kick up a little dust when running hard
+  if (A.spd > 190 && !spirit && f.st !== 'dodge') { A.dustT -= dt; if (A.dustT <= 0 && FX.near(f.x, f.y)) { A.dustT = 0.22; puffs.push({ x: f.x - A.mx * 14, y: f.y - A.my * 14 + 6, vx: -A.mx * 20, vy: -A.my * 20, r: 6 + Math.random() * 3, t: 0, life: 0.45, rgb: '150,140,120', a: 0.25 }); } }
+  var a = f.act, c = Math.cos(f.face), s = Math.sin(f.face);
+  // attacks: draw back on the wind-up, lunge and stretch on the strike, settle on recovery
+  if (f.st === 'wind' && a) { var p = clamp(f.t / (f.windTotal || f.curWind || 0.3), 0, 1); X.ox -= c * 5 * p; X.oy -= s * 5 * p; X.sy *= 1 + 0.04 * p; X.sx *= 1 - 0.03 * p; if (f.key === 'np') X.rot += Math.sin(now / 40) * 0.03 * p; }
+  else if (f.st === 'act' && a) { var q = clamp(f.t / Math.max(a.act, 0.05), 0, 1); X.ox += c * 7 * (1 - q); X.oy += s * 7 * (1 - q); X.sx *= 1 + 0.09 * (1 - q); X.sy *= 1 - 0.05 * (1 - q); }
+  else if (f.st === 'rec' && a) { var r = clamp(f.t / Math.max(f.recDur || 0.3, 0.05), 0, 1); X.ox += c * 3 * (1 - r); X.oy += s * 3 * (1 - r); }
+  // dodges stretch along the roll
+  if (f.st === 'dodge') { X.ax = Math.atan2(A.my, A.mx); X.sx *= 1.14; X.sy *= 0.88; }
+  // hit: knocked back from the blow; staggered: a groggy wobble
+  if (f.hit > 0) { var by = f.lastHit && f.lastHit.by, ha = by ? Math.atan2(f.y - by.y, f.x - by.x) : f.face + Math.PI, hk = Math.min(1, f.hit / 0.15); X.ox += Math.cos(ha) * 6 * hk; X.oy += Math.sin(ha) * 6 * hk; X.sx *= 1 - 0.06 * hk; }
+  if (f.st === 'stag') X.rot += Math.sin(now / 45) * 0.09;
+  if (f.st === 'counter') X.sx *= 1.04;
+  return X;
+}
+function rgbStr(h) { return h; }
+// ground effects under the fighters: Noble Phantasm circles, Sakura's shadow
+function drawGroundFx(g) {
+  var t = G.time;
+  G.f.forEach(function (f) {
+    if (f.st === 'dead' || !visL(f)) return;
+    if (f.def.id === 'sakura' && f.spirit !== 2) { g.save(); g.globalAlpha = 0.55; g.fillStyle = '#140818'; g.beginPath(); for (var i = 0; i <= 18; i++) { var an = i / 18 * 6.283, rr = 34 + 5 * Math.sin(t * 3 + i * 1.9); if (i === 0) g.moveTo(f.x + Math.cos(an) * rr, f.y + 8 + Math.sin(an) * rr * 0.6); else g.lineTo(f.x + Math.cos(an) * rr, f.y + 8 + Math.sin(an) * rr * 0.6); } g.closePath(); g.fill(); g.strokeStyle = 'rgba(200,40,70,.5)'; g.lineWidth = 1.5; g.stroke(); g.restore(); }
+    if (f.key === 'np' && f.st === 'wind' && f.act) {
+      var p = clamp(f.t / (f.windTotal || f.curWind || 1), 0, 1), col = f.def.id === 'caerwyn' ? '#ffd36b' : f.def.col;
+      runeCircle(g, f.x, f.y, (f.def.isMaster ? 45 : 70) + 40 * p, col, t * (2 + 4 * p), 0.35 + 0.5 * p);
+      if (Math.random() < 0.6) { var ra = Math.random() * 6.283, rr2 = 60 + Math.random() * 50; parts.push({ x: f.x + Math.cos(ra) * rr2, y: f.y + Math.sin(ra) * rr2, vx: -Math.cos(ra) * 60, vy: -Math.sin(ra) * 60 - 30, t: 0, life: 0.6, col: col }); }
+    }
+  });
+}
+// overlays drawn with each fighter: Illya's birds circling her, the wind wrapping back around Arthur's blade
+function drawFighterFx(g, f) {
+  if (f.st === 'dead') return; var t = G.time;
+  if (f.def.id === 'illya' && f.spirit !== 2) for (var b = 0; b < 2; b++) { var ba = t * 2.2 + b * Math.PI, bx = f.x + Math.cos(ba) * 36, by = f.y + Math.sin(ba) * 30 - 6; drawBird(g, bx, by, ba + Math.PI / 2, 0.6, '#eef0f6', t * 18 + b); }
+  if (f.def.hiddenReach && f.revealT && G.time > f.revealT && G.time < f.revealT + 0.45) {
+    var k = (G.time - f.revealT) / 0.45, gp = locOf(f, 40, 8);
+    g.save(); g.globalAlpha = 0.7 * (1 - k); g.strokeStyle = '#eef4f8'; g.lineWidth = 2.5; g.lineCap = 'round';
+    for (var w = 0; w < 4; w++) { var st = w * 1.57 + k * 9; g.beginPath(); g.ellipse(gp.x, gp.y, 34 * (1 - k * 0.6), 12, f.face, st, st + 2.2); g.stroke(); }
+    g.restore();
+  }
+}
+function drawBird(g, x, y, ang, sc, col, ph) {
+  g.save(); g.translate(x, y); g.rotate(ang); g.scale(sc, sc);
+  var fl = Math.sin(ph) * 0.8; g.strokeStyle = col; g.lineWidth = 2.4; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(-6, -10 - fl * 6, -14, -14 - fl * 10); g.moveTo(0, 0); g.quadraticCurveTo(-6, 10 + fl * 6, -14, 14 + fl * 10); g.stroke();
+  g.fillStyle = col; g.beginPath(); g.ellipse(0, 0, 9, 3.5, 0, 0, 6.283); g.fill(); g.beginPath(); g.moveTo(9, 0); g.lineTo(14, -2); g.lineTo(14, 2); g.closePath(); g.fill();
+  g.restore();
+}
+// projectile looks; returns true when it drew the projectile
+function drawProjX(g, p, a) {
+  var sh = p.a.shape, t = G.time, col = p.a.col || p.owner.def.col;
+  if (sh === 'tracer' && !p._mz) { p._mz = true; var o = p.owner, mz = { x: o.x + Math.cos(o.face) * 34, y: o.y + Math.sin(o.face) * 34 }, fa = o.face; if (FX.near(o.x, o.y)) { vfx(0.07, function (gg, q) { gg.save(); gg.translate(mz.x, mz.y); gg.rotate(fa); gg.globalAlpha = 1 - q; gg.fillStyle = '#fff2a8'; gg.beginPath(); gg.moveTo(0, -6); gg.lineTo(22, 0); gg.lineTo(0, 6); gg.lineTo(6, 0); gg.closePath(); gg.fill(); gg.restore(); }); parts.push({ x: o.x + Math.cos(fa + 1.6) * 10, y: o.y + Math.sin(fa + 1.6) * 10, vx: Math.cos(fa + 1.6) * 120, vy: Math.sin(fa + 1.6) * 120, t: 0, life: 0.35, col: '#d9a73a' }); } return false; }
+  if (sh === 'wind') {
+    // Strike Air: a thin cone of compressed wind
+    var L = Math.min(170, p.trav + 40), w = p.a.rad || 26;
+    g.save(); g.translate(p.x, p.y); g.rotate(a);
+    var cg = g.createLinearGradient(-L, 0, 10, 0); cg.addColorStop(0, 'rgba(238,244,248,0)'); cg.addColorStop(1, 'rgba(238,244,248,.55)');
+    g.fillStyle = cg; g.beginPath(); g.moveTo(-L, 0); g.lineTo(8, -w); g.quadraticCurveTo(18, 0, 8, w); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.6; for (var i = 0; i < 4; i++) { var yy = (i - 1.5) * w * 0.45, off = ((t * 900 + i * 37) % L); g.beginPath(); g.moveTo(-off, yy * (1 - off / L)); g.lineTo(-off + 26, yy * (1 - (off - 26) / L)); g.stroke(); }
+    g.restore(); return true;
+  }
+  if (sh === 'bird') { drawBird(g, p.x, p.y, a, 1.0, col, t * 25 + p.x * 0.01); g.save(); g.globalAlpha = 0.35; g.fillStyle = col; for (var tr = 1; tr <= 3; tr++) { g.beginPath(); g.arc(p.x - Math.cos(a) * tr * 10, p.y - Math.sin(a) * tr * 10, 2.2, 0, 6.283); g.fill(); } g.restore(); return true; }
+  if (sh === 'worm') { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var s = 0; s < 6; s++) { var wy = Math.sin(t * 22 - s * 0.9) * 4; g.fillStyle = s ? '#4a3a5a' : '#6a4a6a'; g.beginPath(); g.arc(-s * 6, wy, 5 - s * 0.5, 0, 6.283); g.fill(); } g.fillStyle = '#d04a6a'; g.beginPath(); g.arc(3, Math.sin(t * 22) * 4, 1.6, 0, 6.283); g.fill(); g.restore(); return true; }
+  if (sh === 'shadow') { g.save(); g.lineCap = 'round'; for (var k = 0; k < 2; k++) { g.strokeStyle = k ? 'rgba(200,40,70,.6)' : 'rgba(20,6,24,.9)'; g.lineWidth = k ? 2 : 9; g.beginPath(); for (var j = 0; j <= 8; j++) { var px = p.x - Math.cos(a) * j * 7 + Math.cos(a + 1.57) * Math.sin(t * 16 + j) * 5, py = p.y - Math.sin(a) * j * 7 + Math.sin(a + 1.57) * Math.sin(t * 16 + j) * 5; if (j === 0) g.moveTo(px, py); else g.lineTo(px, py); } g.stroke(); } g.restore(); return true; }
+  if (sh === 'gem') { var sz = p.a.size || 8; g.save(); g.translate(p.x, p.y); g.rotate(t * 10); g.fillStyle = col; g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(0, -sz); g.lineTo(sz * 0.8, 0); g.lineTo(0, sz); g.lineTo(-sz * 0.8, 0); g.closePath(); g.fill(); g.stroke(); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.moveTo(0, -sz); g.lineTo(sz * 0.3, -sz * 0.2); g.lineTo(-sz * 0.3, -sz * 0.2); g.closePath(); g.fill(); g.restore(); if (Math.random() < 0.5) parts.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40, t: 0, life: 0.3, col: col }); return true; }
+  if (sh === 'key') { g.save(); g.translate(p.x, p.y); g.rotate(a); g.fillStyle = '#dfe6ea'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-26, -1.8); g.lineTo(12, -1.2); g.lineTo(18, 0); g.lineTo(12, 1.2); g.lineTo(-26, 1.8); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#16181c'; g.fillRect(-30, -5, 4, 10); g.fillRect(-36, -2, 8, 4); g.restore(); return true; }
+  if (sh === 'needle') { g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#d8dde2'; g.lineWidth = 2; g.beginPath(); g.moveTo(-18, 0); g.lineTo(8, 0); g.stroke(); g.fillStyle = '#eef2f6'; g.beginPath(); g.arc(-18, 0, 3, 0, 6.283); g.fill(); g.restore(); return true; }
+  return false;
+}
+// Strike Air leaves Arthur in a burst of pale wind
+(function () { var fx0 = fxExtra; fxExtra = function (n, x, y, f) { if (n === 'airRelease') { var fa = f.face, L = 470; vfx(0.32, function (g, q) { g.save(); g.translate(x, y); g.rotate(fa); var cg = g.createLinearGradient(0, 0, L, 0); cg.addColorStop(0, 'rgba(238,244,248,' + (0.55 * (1 - q)) + ')'); cg.addColorStop(1, 'rgba(238,244,248,0)'); g.fillStyle = cg; g.beginPath(); g.moveTo(20, -6); g.lineTo(L * (0.4 + 0.6 * q), -30); g.lineTo(L * (0.4 + 0.6 * q), 30); g.lineTo(20, 6); g.closePath(); g.fill(); g.strokeStyle = 'rgba(255,255,255,' + (0.7 * (1 - q)) + ')'; g.lineWidth = 1.5; for (var i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(30, i * 4); g.lineTo(L * (0.3 + 0.7 * q), i * 22); g.stroke(); } g.restore(); }); ringFx(x, y, 10, 130, '#eef4f8', 0.35, 4); ringFx(x, y, 6, 80, '#ffffff', 0.25, 3, 0.05); puffFx(x, y, 14, '232,240,246', 170, 10, 0.5); return true; } return fx0 ? fx0(n, x, y, f) : false; }; })();
 /* ---- multiplayer test: host-authoritative, relayed through the claude.ai room (WebRTC is blocked in artifacts) ---- */
 var NET = { ns: null, R: null, role: null, code: '', me: null, game: null, mirror: false, snapAt: 0, sentAt: 0, lastHost: null, seq: 0, ev: [], lastSeq: 0, prev: {}, cnt: {}, g: 0, h: 0, so: null, lk: -1, msg: '' };
 var NST = ['idle', 'wind', 'act', 'rec', 'stag', 'dodge', 'counter', 'dead'], NKEY = ['light', 'heavy', 'skill', 'np', 'counter', 'dodge'];

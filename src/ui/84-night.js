@@ -51,6 +51,7 @@ function drawNight(cx, cy, zoom) {
     (MAP.doors || []).forEach(function (d) { hole(d.out.x + d.out.nx * 20, d.out.y + d.out.ny * 20, 170, 0.7); });
   }
   G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || f === me) return; var ally = f.team === me.team; if (ally) hole(f.x, f.y, 300, 0.6); else if (f.key === 'np' && (f.st === 'wind' || f.st === 'act')) hole(f.x, f.y, 380, 0.85); else if (f.hit > 0 || f.st === 'act') hole(f.x, f.y, 140, 0.5); });
+  G.proj.forEach(function (p) { if (visL(p.owner)) hole(p.x, p.y, p.a.beam ? 260 : p.a.key === 'np' ? 200 : 110, p.a.beam || p.a.key === 'np' ? 0.85 : 0.5); });
   if (G.marble) hole(G.marble.cx, G.marble.cy, G.marble.R || 900, 0.9);
   ctx.drawImage(c, 0, 0, VW, VH);
 }

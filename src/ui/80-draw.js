@@ -65,7 +65,7 @@ function putW(f, I, x, y, rot, k, flip) {
   ctx.restore();
 }
 function drawWeapon(f) {
-  var d = f.def, I = IMG[d.id].weapon, g = GRIP[d.id], a = f.act, wp = d.wpn, p = 0, q = 0, r = 0, veil = d.hiddenReach ? !(f.veilT > 0) : false, shine = f.veilT > 0 && !!d.hiddenReach;
+  var d = f.def, I = IMG[d.id].weapon, g = GRIP[d.id], a = f.act, wp = d.wpn, p = 0, q = 0, r = 0, shown = !!d.hiddenReach && (f.revealT > G.time || (f.key === 'np' && (f.st === 'wind' || f.st === 'act'))), veil = d.hiddenReach ? !shown : false, shine = shown;
   if (f.st === 'wind' && a) p = clamp(f.t / (f.windTotal || f.curWind || 0.3), 0, 1);
   if (f.st === 'act' && a) q = clamp(f.t / Math.max(a.act, 0.05), 0, 1);
   if (f.st === 'rec' && a) r = clamp(f.t / Math.max(f.recDur || 0.3, 0.05), 0, 1);
@@ -80,7 +80,7 @@ function drawWeapon(f) {
   var sweeps = a && (a.kind === 'melee' || a.kind === 'aoe' || a.kind === 'grab' || a.kind === 'pulses' || a.kind === 'charge' || a.wave);
   if (wp === 'gate') { drawGates(f, p, q, r); return; }
   if (veil) ctx.globalAlpha = 0.22;
-  if (shine) { ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 22 + 6 * Math.sin(G.time * 12); }
+  if (shine) { ctx.shadowColor = '#ffd36b'; ctx.shadowBlur = 22 + 6 * Math.sin(G.time * 12); }
   if (wp === 'sword' || wp === 'club') {
     var rest = 0.2, rot = rest;
     if (f.guarding || f.st === 'counter') rot = -0.9;
@@ -90,7 +90,7 @@ function drawWeapon(f) {
     if (sweeps && a.kind !== 'charge' && (f.st === 'act' || (f.st === 'rec' && r < 0.35))) {
       var tr = (a.reach || 110) * 0.92, aCur = f.st === 'act' ? 1.5 - 3.1 * q : -1.6, tal = f.st === 'act' ? 0.55 : 0.55 * (1 - r / 0.35);
       ctx.save(); ctx.globalAlpha = tal; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.arc(f.x, f.y, tr, f.face + aCur, f.face + 1.5); ctx.strokeStyle = shine ? 'rgba(255,255,255,.9)' : rgbaOf(d.col, 0.55); ctx.lineWidth = 14; ctx.stroke();
+      ctx.beginPath(); ctx.arc(f.x, f.y, tr, f.face + aCur, f.face + 1.5); ctx.strokeStyle = shine ? 'rgba(255,224,140,.9)' : rgbaOf(d.col, 0.55); ctx.lineWidth = 14; ctx.stroke();
       ctx.beginPath(); ctx.arc(f.x, f.y, tr, f.face + aCur, f.face + Math.min(1.5, aCur + 0.9)); ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 4; ctx.stroke();
       ctx.restore(); ctx.globalAlpha = veil ? 0.22 : 1;
     }
@@ -407,18 +407,24 @@ function drawWorld() {
   ghosts.forEach(function (gh) { var I = IMG[gh.id].body; if (!weaponOK(I)) return; g.save(); g.globalAlpha = 0.4 * (1 - gh.t / gh.life); g.translate(gh.x, gh.y); g.rotate(gh.face); g.drawImage(I.im, I.x, I.y, I.w, I.h); g.restore(); });
   puffs.forEach(function (p) { var pp = p.t / p.life; g.beginPath(); g.arc(p.x, p.y, p.r * (1 + 1.8 * pp), 0, 6.283); g.fillStyle = 'rgba(' + p.rgb + ',' + (0.45 * (1 - pp)) + ')'; g.fill(); });
   drawCivs(g); drawMobs(g); drawShadow(g); G.f.forEach(function (f) { if (visL(f)) drawRampAura(g, f); });
+  drawGroundFx(g);
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawField(f, i, ar); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawTelegraph(f, i, ar); });
   // a fighter frozen by their own hit-stop shudders in place when they are the one hit
-  G.f.forEach(function (f, i, ar) { if (!visL(f)) return; var sh = f.hs > 0 && f.hit > 0; if (sh) { ctx.save(); ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6); } drawFighter(f, i, ar); if (sh) ctx.restore(); });
-  G.proj.forEach(function (p) { if (!visL(p.owner)) return; var a = Math.atan2(p.vy, p.vx); if (p.a.beam) { g.save(); g.translate(p.x, p.y); g.rotate(a); var bl = g.createLinearGradient(-170, 0, 0, 0); bl.addColorStop(0, 'rgba(255,255,255,0)'); bl.addColorStop(1, 'rgba(255,255,255,.95)'); var bs = p.a.bw || 1; g.fillStyle = bl; g.fillRect(-170 * bs, -26 * bs, 170 * bs, 52 * bs); g.restore(); return; }
+  G.f.forEach(function (f, i, ar) {
+    if (!visL(f)) return; var sh = f.hs > 0 && f.hit > 0, X = fighterXform(f);
+    ctx.save(); ctx.translate(f.x + X.ox + (sh ? (Math.random() - 0.5) * 6 : 0), f.y + X.oy + (sh ? (Math.random() - 0.5) * 6 : 0));
+    ctx.rotate(X.ax); ctx.scale(X.sx, X.sy); ctx.rotate(-X.ax + X.rot); ctx.translate(-f.x, -f.y);
+    drawFighter(f, i, ar); drawFighterFx(ctx, f); ctx.restore();
+  });
+  G.proj.forEach(function (p) { if (!visL(p.owner)) return; var a = Math.atan2(p.vy, p.vx); if (drawProjX(g, p, a)) return; var gld = p.owner.def.id === 'caerwyn' && p.a.key === 'np'; if (p.a.beam) { g.save(); g.translate(p.x, p.y); g.rotate(a); var bl = g.createLinearGradient(-170, 0, 0, 0); bl.addColorStop(0, gld ? 'rgba(255,200,80,0)' : 'rgba(255,255,255,0)'); bl.addColorStop(1, gld ? 'rgba(255,236,170,.95)' : 'rgba(255,255,255,.95)'); var bs = p.a.bw || 1; g.fillStyle = bl; g.fillRect(-170 * bs, -26 * bs, 170 * bs, 52 * bs); g.restore(); return; }
     if (p.a.shape === 'spear') { g.save(); g.translate(p.x, p.y); g.rotate(a); var sg = g.createLinearGradient(-160, 0, 0, 0); sg.addColorStop(0, 'rgba(220,40,50,0)'); sg.addColorStop(1, 'rgba(220,40,50,.7)'); g.fillStyle = sg; g.fillRect(-160, -7, 160, 14); g.shadowColor = '#ff3040'; g.shadowBlur = 16; g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.fillStyle = '#7a1a1a'; g.fillRect(-70, -2.5, 72, 5); g.strokeRect(-70, -2.5, 72, 5); g.fillStyle = '#c33a30'; g.beginPath(); g.moveTo(2, -6); g.lineTo(26, 0); g.lineTo(2, 6); g.lineTo(8, 0); g.closePath(); g.fill(); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'drill') { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var dk = 0; dk < 6; dk++) { g.beginPath(); g.arc(-18 - dk * 16, Math.sin(G.time * 40 + dk) * 5, 5 - dk * 0.6, 0, 6.283); g.fillStyle = 'rgba(160,210,255,' + (0.5 - dk * 0.07) + ')'; g.fill(); } g.shadowColor = '#9fd4ff'; g.shadowBlur = 18; g.fillStyle = '#e6f4ff'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(22, 0); g.lineTo(-14, -6); g.lineTo(-8, 0); g.lineTo(-14, 6); g.closePath(); g.fill(); g.stroke(); g.strokeStyle = 'rgba(90,140,200,.8)'; g.beginPath(); g.moveTo(16, -1); g.lineTo(-6, 3); g.moveTo(8, -3); g.lineTo(-10, 1); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'tracer') { g.save(); g.translate(p.x, p.y); g.rotate(a); g.shadowColor = '#ffd36b'; g.shadowBlur = 8; g.strokeStyle = '#ffe08a'; g.lineWidth = 2.8; g.lineCap = 'round'; g.beginPath(); g.moveTo(-18, 0); g.lineTo(2, 0); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-8, 0); g.lineTo(2, 0); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'rondel') { chainLine(p.owner.x, p.owner.y, p.x, p.y); g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#0b121a'; g.lineWidth = 1.8; g.fillStyle = '#8c95a0'; g.beginPath(); g.arc(-6, 0, 6, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#f4f7fa'; g.beginPath(); g.moveTo(-2, -3); g.lineTo(30, 0); g.lineTo(-2, 3); g.closePath(); g.fill(); g.stroke(); g.restore(); return; }
     if (p.a.shape === 'orb') { g.save(); g.translate(p.x, p.y); var oc = p.a.col || p.owner.def.col, os = p.a.size || 8; g.globalAlpha = 0.35; g.beginPath(); g.arc(-os * 1.7, 0, os * 1.1, 0, 6.283); g.fillStyle = oc; g.fill(); g.globalAlpha = 1; g.beginPath(); g.arc(0, 0, os, 0, 6.283); g.fillStyle = oc; g.shadowColor = oc; g.shadowBlur = 14 + os; g.fill(); g.shadowBlur = 0; g.beginPath(); g.arc(0, 0, os * 0.42, 0, 6.283); g.fillStyle = '#ffffff'; g.fill(); g.restore(); return; }
     if (p.a.shape === 'blade') { g.save(); g.translate(p.x, p.y); g.rotate(a); g.shadowColor = p.owner.def.col; g.shadowBlur = 10; g.fillStyle = '#f3f8fb'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(16, 0); g.lineTo(-8, -4); g.lineTo(-12, 0); g.lineTo(-8, 4); g.closePath(); g.fill(); g.stroke(); g.shadowBlur = 0; g.fillStyle = p.owner.def.col; g.fillRect(-14, -6, 4, 12); g.globalAlpha = 0.3; g.fillStyle = p.owner.def.col; g.fillRect(-46, -2, 34, 4); g.restore(); return; }
-    if (p.a.wave) { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var tr = 3; tr >= 0; tr--) { g.globalAlpha = 0.16 * (4 - tr); g.beginPath(); g.arc(-26 - tr * 30, 0, 42, -0.95, 0.95); g.strokeStyle = '#dfeaf4'; g.lineWidth = 12 - tr * 2; g.lineCap = 'round'; g.stroke(); } g.globalAlpha = 0.55; g.beginPath(); g.arc(-8, 0, 44, -1.05, 1.05); g.strokeStyle = '#dfeaf4'; g.lineWidth = 20; g.stroke(); g.globalAlpha = 1; g.beginPath(); g.arc(-8, 0, 44, -1.0, 1.0); g.strokeStyle = '#ffffff'; g.lineWidth = 7; g.stroke(); g.restore(); return; } g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.beginPath(); g.moveTo(-22, 0); g.lineTo(6, 0); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.moveTo(6, -4); g.lineTo(14, 0); g.lineTo(6, 4); g.fill(); g.restore(); });
+    if (p.a.wave) { g.save(); g.translate(p.x, p.y); g.rotate(a); for (var tr = 3; tr >= 0; tr--) { g.globalAlpha = 0.16 * (4 - tr); g.beginPath(); g.arc(-26 - tr * 30, 0, 42, -0.95, 0.95); g.strokeStyle = gld ? '#ffd36b' : '#dfeaf4'; g.lineWidth = 12 - tr * 2; g.lineCap = 'round'; g.stroke(); } g.globalAlpha = 0.55; g.beginPath(); g.arc(-8, 0, 44, -1.05, 1.05); g.strokeStyle = gld ? '#ffd36b' : '#dfeaf4'; g.lineWidth = 20; g.stroke(); g.globalAlpha = 1; g.beginPath(); g.arc(-8, 0, 44, -1.0, 1.0); g.strokeStyle = gld ? '#fff2c4' : '#ffffff'; g.lineWidth = 7; g.stroke(); g.restore(); return; } g.save(); g.translate(p.x, p.y); g.rotate(a); g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.beginPath(); g.moveTo(-22, 0); g.lineTo(6, 0); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.moveTo(6, -4); g.lineTo(14, 0); g.lineTo(6, 4); g.fill(); g.restore(); });
   drawOverhead(g); drawEventsOver(g);
   V.forEach(function (v) { g.save(); v.draw(g, clamp(v.t / v.life, 0, 1), v.t); g.restore(); });
   parts.forEach(function (p) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.col; g.fillRect(p.x - 2, p.y - 2, 4, 4); }); g.globalAlpha = 1;
