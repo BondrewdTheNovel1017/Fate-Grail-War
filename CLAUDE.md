@@ -7,4 +7,4 @@
 - Balance: use `npm run sim` (many AI wars) and change numbers from its report, not by feel alone. The owner cares most that the game is fun.
 - Canon servants and masters are drawn as original top-down sprites. King Arthur's effects stay white/pale, never a gold beam.
 - After changing the game, rebuild and commit `dist/fuyuki-war.html` too, so the repo always holds a playable build.
-- `arena/servant-duel.html` is the frozen duel arena (future Arena mode); leave it alone unless asked.
+- Arena mode lives in the main game (`src/ui/25-arena.js`): duel/ffa/teams/master duels use `newGame()` with `SERV_DUEL` (duel-length stats); master-and-servant pairs use `newWar({ map, quick: true })`. `arena/servant-duel.html` is the old standalone arena, kept for reference only.

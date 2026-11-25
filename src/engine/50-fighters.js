@@ -34,8 +34,8 @@ function pickTarget(f) {
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
 function newWar(teamsIn, opts) {
   var spawnOrder = opts && opts.spawnOrder;
-  opts = opts || {}; setMap('fuyuki');
-  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null };
+  opts = opts || {}; setMap(opts.map || 'fuyuki');
+  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick };
   teamsIn.forEach(function (t, ti) {
     var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
     sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
@@ -79,7 +79,7 @@ function setStag(f, dur) {
 }
 function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x, f.field.y, f); if (msg) FX.text(f, msg); f.field = null; f.stillT = 0; }
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
-function gainMom(f, v) { if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (!noRevive && f.def.godHand && !f.gh) {
     f.gh = true; f.hp = f.def.hp * 0.2; f.ghT = 1.2; f.st = 'stag'; f.t = 0; f.dur = 0.5; f.act = null; f.combo = 0; f.guarding = false; f.sta = Math.max(f.sta, 60); f.exh = 0;

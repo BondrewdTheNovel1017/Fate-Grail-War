@@ -1,9 +1,10 @@
-<title>Fuyuki War Sandbox</title>
+<title>Fate Grail War</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=Marcellus+SC&display=swap" rel="stylesheet">
 <style>
+[hidden] { display: none !important; }
 /* Layout: setup screen (servant, opponent, difficulty, speed), then the duel screen: HUD bars, arena canvas, touch pad (stick + six buttons), end overlay. */
 :root {
   --ink: #0d1620; --panel: #142230; --panel2: #1b2e40; --line: #2a4157; --bone: #e9e4d3; --mute: #8fa3b5;
@@ -70,10 +71,12 @@ kbd { background: var(--panel2); border: 1px solid var(--line); border-radius: 4
 .rt[aria-pressed="true"] { border-color: var(--amber); border-top-color: var(--amber); background: var(--panel2); box-shadow: inset 0 0 0 1px var(--amber); }
 .rt.rnd { place-content: center; text-align: center; min-height: 96px; }
 .rt.rnd b { font-family: var(--f-disp); font-size: 18px; font-weight: 400; }
-#detail { margin-top: 10px; }
-#detail .dhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
-#detail .dhead b { font-family: var(--f-disp); font-weight: 400; font-size: 22px; }
-#detail .dhead span { font-family: var(--f-hud); letter-spacing: .14em; text-transform: uppercase; font-size: 12px; color: var(--mute); }
+.detail { margin-top: 10px; }
+#gameMode { margin: 4px 0 16px; }
+#gameMode .mode b { font-size: 20px; }
+.detail .dhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
+.detail .dhead b { font-family: var(--f-disp); font-weight: 400; font-size: 22px; }
+.detail .dhead span { font-family: var(--f-hud); letter-spacing: .14em; text-transform: uppercase; font-size: 12px; color: var(--mute); }
 .maps { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .mapc { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; cursor: pointer; display: grid; gap: 4px; min-width: 0; align-content: start; }
 .mapc canvas { width: 100%; height: auto; border-radius: 4px; display: block; background: #0b141d; }
@@ -227,11 +230,13 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
 
 <main class="wrap">
 <section id="setup">
-  <header class="mhead"><span class="mtag">Milestone 1 sandbox</span><h1>Fuyuki War Sandbox</h1>
-  <p class="sub">A first slice of the Holy Grail War: up to seven master and servant teams, one for every class, across the whole of Fuyuki. Spirit form, orders, target lock, three Command Seals and a signature spell for every master. Kill a master and their servant fades.</p></header>
+  <header class="mhead"><span class="mtag">Milestone 2 build</span><h1>Fate Grail War</h1>
+  <p class="sub">The Holy Grail War as a top-down battle game. Fight the full war across Fuyuki with up to seven master and servant teams, or jump into a quick Arena fight.</p></header>
+  <div class="modes" id="gameMode"></div>
+  <div id="warSetup">
   <div class="step"><div class="stepn">1</div><div><div class="lbl">Play as</div><div class="modes" id="playas"></div></div></div>
-  <div class="step"><div class="stepn">2</div><div><div class="lbl">Your servant</div><div class="roster" id="roster"></div></div></div>
-  <div class="step"><div class="stepn">3</div><div><div class="lbl">Your master</div><div class="modes" id="masters"></div></div></div>
+  <div class="step"><div class="stepn">2</div><div><div class="lbl">Your servant</div><div class="roster" id="roster"></div><div class="detail" id="sdetail"></div></div></div>
+  <div class="step"><div class="stepn">3</div><div><div class="lbl">Your master</div><div class="roster" id="masters"></div><div class="detail" id="mdetail"></div></div></div>
   <div class="step"><div class="stepn">4</div><div><div class="lbl">Teams</div><div class="chips" id="rivals"></div><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div></div>
   <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
     <p class="note" style="margin:0 0 8px">Up to 4 players. One person hosts and runs the war; the others pick their servant and master above, then join with the room code. AI fills the remaining classes.</p>
@@ -254,6 +259,22 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
   </div>
   <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract.</p>
   </details>
+  </div>
+  <div id="arenaSetup" hidden>
+  <div class="step"><div class="stepn">1</div><div><div class="lbl">Match type</div><div class="modes" id="amodes"></div><div class="chips" id="acount" style="margin-top:8px"></div></div></div>
+  <div class="step"><div class="stepn">2</div><div><div class="lbl">Fighters</div><p class="tip">Tap a slot to choose who fills it, then pick from the roster.</p><div class="slots" id="aslots"></div><div class="roster" id="aroster"></div><div class="detail" id="adetail"></div></div></div>
+  <div class="step"><div class="stepn">3</div><div><div class="lbl">Battlefield</div><div class="maps" id="amaps"></div></div></div>
+  <div class="step"><div class="stepn">4</div><div><div class="lbl">Opponent skill</div><div class="chips" id="adiff"></div><div class="lbl">Game speed</div><div class="chips" id="aspd"></div></div></div>
+  <details class="how"><summary>How the fight works</summary>
+  <div class="rules" style="margin-top:10px">
+    <div class="rule"><b>Light</b>Fast chain. Hitting a charging heavy knocks it out. Blocked by Block.</div>
+    <div class="rule"><b>Heavy</b>Hold to charge, release to swing. Breaks a block. A well-timed dodge beats it and leaves the attacker open.</div>
+    <div class="rule"><b>Block and parry</b>Hold to block, which drains stamina. Tap right before a hit lands to parry and stagger the attacker.</div>
+    <div class="rule"><b>Purple warnings</b>Cannot be blocked or parried. Dodge them.</div>
+    <div class="rule"><b>Noble Phantasm</b>Momentum fills as you fight. At full, the NP is ready. If you are hit while it winds up, it is lost. Masters use a signature spell on a cooldown instead.</div>
+    <div class="rule"><b>Arena pace</b>Arena fights use duel-length health and normal Noble Phantasm charging, so a match takes a few minutes. In Master and servant matches the war rules apply: mana, Command Seals and a fading servant if its master falls.</div>
+  </div></details>
+  </div>
   <div class="startbar"><div id="summary"></div><button type="button" class="btn" id="go">Begin the war</button></div>
 </section>
 
@@ -453,7 +474,7 @@ function build(def) {
   A.skill = Object.assign({ wind: 0.3, act: 0.1, rec: 0.4, dmg: 0, cost: 12, stag: 0.5, power: 1, arc: 1, reach: 100 }, def.skill, { key: 'skill' });
   A.np = Object.assign({ wind: 1.2, act: 0.2, rec: 0.9, dmg: 40, cost: 0, stag: 0.9, power: 3, unblock: true, arc: 1 }, def.np, { key: 'np' });
   if (A.np.kind === 'ubw') A.np.sword = Object.assign({ kind: 'proj', key: 'np', power: 1, stag: 0.15, cost: 0, arc: 0 }, def.np.sword);
-  if (A.np.kind === 'barrage') A.np.bullet = Object.assign({}, A.np, { kind: 'proj', unblock: false, power: 1, key: 'np' });
+  ['light', 'heavy', 'np'].forEach(function (k) { if (A[k].kind === 'barrage') A[k].bullet = Object.assign({}, A[k], { kind: 'proj', unblock: false, power: 1, key: k }); });
   if (def.arms) A.arms = def.arms.map(function (m) { return { id: m.id, name: m.name, wpn: m.wpn, light: Object.assign({}, BASE.light, m.light, { key: 'light' }), heavy: Object.assign({}, BASE.heavy, m.heavy, { key: 'heavy' }) }; });
   return A;
 }
@@ -588,14 +609,14 @@ var MASTERS = {
     np: { name: 'Jewel Burst', kind: 'proj', speed: 900, range: 650, dmg: 6, wind: 0.5, act: 0.05, rec: 0.5, cost: 0, shape: 'orb', size: 12, col: '#ff5a6a', explode: { r: 140, dmg: 24 }, cd: 22, aiUse: 'ranged' } }),
   kiritsugu: MD({ id: 'kiritsugu', name: 'Kiritsugu Emiya', type: 'Mage killer', col: '#6a7480', hp: 110, spd: 215, guard: 0.3, combo: 4,
     brief: 'The Magus Killer. Calico fire, Time Alter, and the Contender’s Origin Bullets that burn a mage’s circuits.',
-    light: { name: 'Calico', kind: 'proj', speed: 1700, range: 600, dmg: 3, wind: 0.1, rec: 0.08, reach: 0, lunge: 0, cost: 4, shape: 'tracer' },
-    heavy: { name: 'Calico burst', kind: 'volley', count: 4, spread: 0.06, speed: 1700, range: 600, dmg: 3, wind: 0.35, max: 0.8, rec: 0.45, reach: 0, lunge: 0, cost: 16, shape: 'tracer' },
+    light: { name: 'Calico double tap', kind: 'volley', count: 2, spread: 0.05, speed: 1700, range: 620, dmg: 3, wind: 0.12, rec: 0.18, reach: 0, lunge: 0, cost: 5, shape: 'tracer' },
+    heavy: { name: 'Calico long burst', kind: 'barrage', max: 0, gb: false, stag: 0.05, wind: 0.3, act: 1.3, rec: 0.5, dmg: 1.8, speed: 1700, range: 640, rate: 0.065, spread: 0.09, track: 2.2, power: 1, noStag: true, reach: 0, lunge: 0, cost: 26, shape: 'tracer' },
     skill: { name: 'Time Alter: Double Accel', kind: 'haste', dur: 3, wind: 0.15, act: 0.05, rec: 0.15, cd: 12, cost: 12 },
     np: { name: 'Origin Bullet', kind: 'proj', speed: 2600, range: 950, dmg: 18, rad: 5, silence: 10, vsServant: 0.9, wind: 0.55, act: 0.05, rec: 0.7, cost: 0, shape: 'tracer', cd: 32, aiUse: 'origin' } }),
-  shirou: MD({ id: 'shirou', name: 'Shirou Emiya', type: 'Fledgling mage', col: '#d9783a', hp: 115, spd: 212, guard: 0.5, trace: true, vsServant: 0.6,
-    brief: 'A fledgling who can stand in a servant\u2019s fight. Fighting fills his Trace: at 40 he learns Trace On (homing blades, Kanshou and Bakuya), at 100 he can open Unlimited Blade Works once.',
-    light: { name: 'Traced blades', kind: 'volley', count: 2, spread: 0.2, speed: 1100, range: 480, dmg: 4, wind: 0.28, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'blade' },
-    heavy: { name: 'Reinforced arrow', kind: 'proj', speed: 1500, range: 850, dmg: 13, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
+  shirou: MD({ id: 'shirou', name: 'Shirou Emiya', type: 'Fledgling mage', col: '#d9783a', hp: 115, spd: 212, guard: 0.5, trace: true, vsServant: 0.6, ranged: false, combo: 3,
+    brief: 'A fledgling who gets up close with a reinforced blade and stands in a servant\u2019s fight. Fighting fills his Trace: at 40 he learns Trace On (Kanshou and Bakuya, Overedge), at 100 he can open Unlimited Blade Works once.',
+    light: { name: 'Reinforced blade', kind: 'melee', dmg: 5, reach: 78, arc: 0.95, wind: 0.24, act: 0.08, rec: 0.22, lunge: 30, cost: 8, stag: 0.3, power: 1 },
+    heavy: { name: 'Reinforced cleave', kind: 'melee', dmg: 13, reach: 90, arc: 1.0, wind: 0.42, max: 0.9, act: 0.12, rec: 0.6, lunge: 60, cost: 20, stag: 0.6, power: 2, gb: true },
     skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.3, act: 0.05, rec: 0.2, cd: 14, cost: 12 },
     np: { name: 'Broken Phantasm', kind: 'proj', speed: 1500, range: 850, dmg: 6, wind: 0.8, act: 0.06, rec: 0.6, cost: 0, shape: 'drill', explode: { r: 120, dmg: 22 }, cd: 24, aiUse: 'ranged' } }),
   kayneth: MD({ id: 'kayneth', name: 'Kayneth El-Melloi', type: 'Mage family', col: '#4f7ab8', hp: 100, spd: 195, guard: 0.3,
@@ -604,10 +625,10 @@ var MASTERS = {
     heavy: { name: 'Mercury blade', kind: 'proj', speed: 1300, range: 620, dmg: 12, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
     skill: { name: 'Volumen Hydrargyrum', kind: 'shield', hits: 3, dur: 8, wind: 0.3, act: 0.05, rec: 0.2, cd: 16, cost: 14 },
     np: { name: 'Mercury Scythe', kind: 'aoe', r: 160, dmg: 14, stag: 0.6, power: 2, wind: 0.45, act: 0.1, rec: 0.5, cost: 0, cd: 18, aiUse: 'near' } }),
-  kirei: MD({ id: 'kirei', name: 'Kirei Kotomine', type: 'Church Executor', col: '#7d5aa8', hp: 125, spd: 215, guard: 0.5,
-    brief: 'An Executor of the Church. Black Keys, quick self-healing, and bajiquan that can stagger even a servant.',
-    light: { name: 'Black Key', kind: 'proj', speed: 1300, range: 520, dmg: 7, wind: 0.26, rec: 0.28, reach: 0, lunge: 0, cost: 10, shape: 'blade' },
-    heavy: { name: 'Three Keys', kind: 'volley', count: 3, spread: 0.14, speed: 1300, range: 520, dmg: 7, wind: 0.5, max: 1.0, rec: 0.6, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
+  kirei: MD({ id: 'kirei', name: 'Kirei Kotomine', type: 'Church Executor', col: '#7d5aa8', hp: 125, spd: 215, guard: 0.5, ranged: false, combo: 3,
+    brief: 'An Executor of the Church. He cuts with Black Keys up close, hurls a fan of them, heals himself quickly, and his bajiquan can stagger even a servant.',
+    light: { name: 'Black Key slash', kind: 'melee', dmg: 7, reach: 82, arc: 0.9, wind: 0.22, act: 0.08, rec: 0.2, lunge: 40, cost: 8, stag: 0.32, power: 1 },
+    heavy: { name: 'Black Key volley', kind: 'volley', count: 6, spread: 0.55, speed: 1300, range: 560, dmg: 6, wind: 0.45, max: 0.9, rec: 0.6, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
     skill: { name: 'Healing Sacrament', kind: 'heal', self: true, amount: 30, range: 0, wind: 0.4, act: 0.05, rec: 0.3, cd: 13, cost: 14 },
     np: { name: 'Bajiquan', kind: 'melee', reach: 70, lunge: 140, arc: 0.8, dmg: 20, stag: 1.3, power: 2, vsServant: 0.6, wind: 0.3, act: 0.08, rec: 0.6, cost: 0, cd: 16, aiUse: 'near' } }),
   waver: MD({ id: 'waver', name: 'Waver Velvet', type: 'Fledgling mage', col: '#a88a5a', hp: 85, spd: 200, guard: 0.3,
@@ -643,6 +664,8 @@ MASTERS.sakura = MD({ id: 'sakura', name: 'Sakura Matou', type: 'Mage family', c
     np: { name: 'Shadow of the Grail', kind: 'rain', count: 1, spread: 0, zr: 150, delay: 0.8, dmg: 16, root: 1.5, zshape: 'tentacle', range: 620, wind: 0.6, act: 0.1, rec: 0.5, cost: 0, cd: 22, aiUse: 'ranged' } });
 MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura);
 var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura'];
+/* Arena mode keeps the duel-length numbers: copies taken before the war scaling below */
+var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });
 /* war balance from tools/sim.js reports: multipliers on top of the duel values */
 var WAR_TUNE = { gilgamesh: { hp: 0.82 }, richard: { dmg: 1.07 }, heracles: { hp: 1.35 }, leonidas: { spd: 1.08 }, lancelot: { hp: 1.06 }, hassan: { dmg: 1.08 }, kojirou: { dmg: 1.08 } };
@@ -650,8 +673,8 @@ var WAR_MELEE_RANGED_TAKEN = 0.8, ARCHER_INDEPENDENT = 75, ORPHAN_TIME = 20;
 Object.keys(WAR_TUNE).forEach(function (k) { var t = WAR_TUNE[k], d = SERV[k]; if (t.hp) d.hp = Math.round(d.hp * t.hp); if (t.dmg) d.dmg = Math.round(d.dmg * t.dmg * 100) / 100; if (t.spd) d.spd = Math.round(d.spd * t.spd); });
 Object.keys(MASTERS).forEach(function (k) { MASTERS[k].A = build(MASTERS[k]); });
 (function () { var sh = MASTERS.shirou, t1 = Object.assign({}, sh, {
-  light: { name: 'Traced blades', kind: 'volley', count: 3, spread: 0.3, speed: 1000, range: 620, dmg: 4, home: 3.2, wind: 0.26, rec: 0.28, reach: 0, lunge: 0, cost: 10, shape: 'blade' },
-  heavy: { name: 'Kanshou & Bakuya', kind: 'volley', count: 2, spread: 0.6, speed: 1050, range: 760, dmg: 11, home: 4, wind: 0.45, max: 1.0, rec: 0.6, reach: 0, lunge: 0, cost: 22, shape: 'blade', vsServant: 0.7 } });
+  light: { name: 'Kanshou & Bakuya', kind: 'melee', dmg: 6, reach: 84, arc: 1.0, wind: 0.2, act: 0.08, rec: 0.18, lunge: 36, cost: 7, stag: 0.32, power: 1 },
+  heavy: { name: 'Overedge', kind: 'melee', dmg: 17, reach: 108, arc: 1.15, wind: 0.45, max: 1.0, act: 0.14, rec: 0.6, lunge: 80, cost: 22, stag: 0.7, power: 2, gb: true, vsServant: 0.7 } });
   sh.A1 = build(t1);
   sh.A2 = build(Object.assign({}, t1, { np: { name: 'Unlimited Blade Works', short: 'UBW', kind: 'ubw', wind: 1.4, act: 0.2, rec: 0.6, dmg: 0, cost: 0, dur: 11, ubwRate: 0.6, rain: 2, rainDmg: 8, cd: 30, aiUse: 'ubw', sword: { speed: 1000, dmg: 6, shape: 'blade', rad: 6, home: 3.5, vsServant: 0.8 } } }));
 })();
@@ -703,8 +726,8 @@ function pickTarget(f) {
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
 function newWar(teamsIn, opts) {
   var spawnOrder = opts && opts.spawnOrder;
-  opts = opts || {}; setMap('fuyuki');
-  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null };
+  opts = opts || {}; setMap(opts.map || 'fuyuki');
+  G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick };
   teamsIn.forEach(function (t, ti) {
     var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
     sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
@@ -748,7 +771,7 @@ function setStag(f, dur) {
 }
 function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x, f.field.y, f); if (msg) FX.text(f, msg); f.field = null; f.stillT = 0; }
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
-function gainMom(f, v) { if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (!noRevive && f.def.godHand && !f.gh) {
     f.gh = true; f.hp = f.def.hp * 0.2; f.ghT = 1.2; f.st = 'stag'; f.t = 0; f.dur = 0.5; f.act = null; f.combo = 0; f.guarding = false; f.sta = Math.max(f.sta, 60); f.exh = 0;
@@ -834,7 +857,7 @@ function hurt(att, def, a, mult, src) {
   if (def.wallT > 0 && a.key === 'np' && !a.strip) { FX.text(def, 'NP BLOCKED'); FX.fx('wallBlock', def.x, def.y, def); FX.snd('block', def, a); def.stat.blocks++; return 'block'; }
   var dmg = a.dmg * (att ? att.def.dmg : 1) * (mult || 1);
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
-  if (G.mode === 'war' && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
+  if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
   if (att && starved(att)) dmg *= MANA.starveDmg;
@@ -1422,7 +1445,7 @@ function aiWar(ai, dt) {
   f.lock = null;
   if (!near || nd > 1400) {
     var tgt = near || f.foe; if (m && dist(f, m) > 500) { moveTo(f, m.x, m.y); return; }
-    if (G.time < 100 && !f.inM) { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
+    if (G.time < 100 && !f.inM && MAP.id === 'fuyuki') { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
     if (tgt) { moveTo(f, tgt.x, tgt.y, 0.85); return; } }
   aiTick(ai, dt);
 }
@@ -1440,7 +1463,8 @@ function aiMaster(ai, dt) {
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && Math.random() < 0.0008) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
-    moveTo(f, 1100, 2480, 1); if (!f.toldChurch) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, { x: 1100, y: 2480 }) < 120) { inp.mx = 0; inp.my = 0; } return; }
+    var haven = MAP.id === 'fuyuki' ? { x: 1100, y: 2480 } : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
+    moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.id === 'fuyuki') { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
@@ -1453,6 +1477,11 @@ function aiMaster(ai, dt) {
     moveTo(f, gx, gy);
     if (thr.st === 'wind' && thr.foe === f && td < 220 && f.dodges > 0 && Math.random() < 0.08 + 0.2 * cfg.skill) aiPressDodge(ai);
     return;
+  }
+  // close-quarters masters (Shirou, Kirei) duel enemy masters when no enemy servant is guarding them
+  if (A.light.kind === 'melee') {
+    var em = null, ed = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) { var d4 = dist(f, e); if (d4 < ed) { ed = d4; em = e; } } });
+    if (em && ed < 650 && f.hp > f.def.hp * 0.35) { var guarded = em.partner && em.partner.st !== 'dead' && dist(em.partner, em) < 260 && !(dist(s, em) < 300); if (!guarded) { f.lock = em; f.foe = em; aiTick(ai, dt); return; } }
   }
   var sf = s.foe, bx = s.x, by = s.y;
   if (sf) { var ba = angTo(sf, s); bx = s.x + Math.cos(ba) * 150; by = s.y + Math.sin(ba) * 150; }
@@ -1479,9 +1508,9 @@ function simStep(dt) {
 
 /* ================= UI / RENDER ================= */
 var $ = function (s) { return document.querySelector(s); };
-var CFG = { servant: 'richard', master: 'rin', playAs: 'servant', teams: 7, diff: 'knight', speed: 1 };
+var CFG = { game: 'war', servant: 'richard', master: 'rin', playAs: 'servant', teams: 7, diff: 'knight', speed: 1, arena: null };
 try { var sv = JSON.parse(localStorage.getItem('war2.cfg') || 'null'); if (sv) Object.keys(CFG).forEach(function (k) { if (sv[k] !== undefined) CFG[k] = sv[k]; }); } catch (e) {}
-if (!SERV[CFG.servant]) CFG.servant = 'richard'; if (!MASTERS[CFG.master]) CFG.master = 'rin'; if ([3, 4, 7].indexOf(CFG.teams) < 0) CFG.teams = 7;
+if (!SERV[CFG.servant]) CFG.servant = 'richard'; if (!MASTERS[CFG.master]) CFG.master = 'rin'; if ([3, 4, 7].indexOf(CFG.teams) < 0) CFG.teams = 7; if (CFG.game !== 'arena') CFG.game = 'war';
 var FFA_COL = ['#3fb3c4', '#cf4a52', '#e0b04a', '#a77be0'];
 function slotCol(i) { return CFG.mode === 'teams' ? (CFG.slots[i].team === CFG.slots[0].team ? '#3fb3c4' : '#cf4a52') : CFG.mode === 'duel' ? (i ? '#cf4a52' : '#3fb3c4') : FFA_COL.at(i); }
 var WAR_COL = ['#e2515c', '#f0a93b', '#a77ae6', '#5bc47a', '#e07ab8', '#d8c9a0'];
@@ -1767,7 +1796,7 @@ function thumb(id, w) {
   var s = SPR[id], g = GRIP[id], wp = s.weapon(), inner = s.body();
   if (g.twin) inner += '<g transform="translate(' + g.x + ',' + (-g.y) + ') scale(' + g.k + ',' + (-g.k) + ')">' + (SPR_EXTRA[id + '_white'] ? SPR_EXTRA[id + '_white'].weapon() : wp) + '</g><g transform="translate(' + g.x + ',' + g.y + ') scale(' + g.k + ')">' + wp + '</g>';
   else inner += '<g transform="translate(' + g.x + ',' + g.y + ') scale(' + g.k + ')">' + wp + '</g>';
-  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -50 200 100" width="' + w + '" height="' + (w / 2) + '">' + inner + '</svg>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + (s.cls === 'Master' ? '-50 -32 128 64' : '-48 -50 200 100') + '" width="' + w + '" height="' + (w / 2) + '">' + inner + '</svg>';
 }
 var IMG = {};
 function mkImg(markup, vb) {
@@ -1935,7 +1964,7 @@ var SPELLTXT = {
 function detailHTML(d) {
   var t = INFO(d), sk = d.A.skill, np = d.A.np, c = d.col;
   var reach = d.ranged ? 5 : d.A.light.reach / 150 * 5;
-  var h = '<div class="det"><div class="stats5" style="--c:' + c + '">' + [['Health', d.hp / 215 * 4.4], ['Speed', d.spd / 290 * 5], ['Guard', d.guard * 5.2], [d.ranged ? 'Range' : 'Reach', reach], ['Chain', d.combo]].map(function (r) { return '<div class="pp"><span>' + r[0] + '</span>' + pips(r[1]) + '</div>'; }).join('') + '</div>';
+  var h = '<div class="det"><div class="stats5" style="--c:' + c + '">' + [['Health', (SERV_DUEL[d.id] || d).hp / 215 * 4.4], ['Speed', d.spd / 290 * 5], ['Guard', d.guard * 5.2], [d.ranged ? 'Range' : 'Reach', reach], ['Chain', d.combo]].map(function (r) { return '<div class="pp"><span>' + r[0] + '</span>' + pips(r[1]) + '</div>'; }).join('') + '</div>';
   var cl = CLS[d.cls];
   h += '<div class="dgrid"><div class="dbox" style="--bc:var(--unb)"><h4>Class passive: ' + esc(cl.pname) + '<span>' + d.cls + '</span></h4><p>' + esc(cl.desc) + '</p></div><div class="dbox" style="--bc:var(--ok)"><h4>Servant passive: ' + esc(t.pname) + '</h4><p>' + esc(t.pdesc) + '</p></div></div>';
   if (d.A.lightSeq) h += '<div class="dbox" style="--bc:' + c + '"><h4>Spell chain<span>tap Light to cast in order</span></h4><ul>' + d.A.lightSeq.map(function (q, i) { return '<li><b>' + (i + 1) + '. ' + esc(q.name) + '</b>: ' + esc(SPELLTXT[q.name]) + '</li>'; }).join('') + '<li><b>Heavy, ' + esc(d.A.heavy.name) + '</b>: ' + esc(SPELLTXT[d.A.heavy.name]) + '</li></ul></div>';
@@ -1950,16 +1979,23 @@ function cardHTML(d, kind) {
 }
 function shortName(n) { return n.split(/ of |, /)[0]; }
 function renderSetup() {
+  $('#gameMode').innerHTML = [['war', 'Holy Grail War', 'Seven master and servant teams across all of Fuyuki. Mana, Command Seals, contracts.'], ['arena', 'Arena', 'Quick fights on themed maps: duels, free-for-all, teams, master duels and master and servant pairs.']].map(function (m) { return '<button type="button" class="mode" data-game="' + m[0] + '" aria-pressed="' + (CFG.game === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
+  $('#warSetup').hidden = CFG.game !== 'war'; $('#arenaSetup').hidden = CFG.game !== 'arena';
+  $('#go').textContent = CFG.game === 'arena' ? 'Start the battle' : 'Begin the war';
   $('#playas').innerHTML = [['servant', 'Servant', 'Fight directly. Your master follows and supports you with magecraft.'], ['master', 'Master', 'Fight as the human. Give your servant orders and spend Command Seals.']].map(function (m) { return '<button type="button" class="mode" data-playas="' + m[0] + '" aria-pressed="' + (CFG.playAs === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
-  $('#roster').innerHTML = ORDER.map(function (id) { var d = SERV[id]; return '<button type="button" class="rt" data-pick="' + id + '" aria-pressed="' + (CFG.servant === id) + '" style="--c:' + d.col + '"><span class="th">' + thumb(id, 110) + '</span><b>' + esc(shortName(d.name)) + '</b><small>' + d.cls + '</small></button>'; }).join('');
-  $('#masters').innerHTML = MASTER_ORDER.map(function (id) { var m = MASTERS[id]; return '<button type="button" class="mode" data-master="' + id + '" aria-pressed="' + (CFG.master === id) + '"><b>' + m.name + '</b><span class="mtag">' + m.type + '</span><small>' + esc(m.brief) + ' Health ' + m.hp + '. Mana ' + (MANA_POOL[id] || [80, 1.6])[0] + ' (+' + (MANA_POOL[id] || [80, 1.6])[1] + '/s). Skill: ' + esc(m.A.skill.name) + '. Signature: ' + esc(m.A.np.name) + '.</small></button>'; }).join('');
+  $('#roster').innerHTML = entityRosterHTML('s', CFG.servant, 'data-pick', false);
+  $('#sdetail').innerHTML = entityDetailHTML('s', CFG.servant, 'your servant');
+  $('#mdetail').innerHTML = entityDetailHTML('m', CFG.master, 'your master');
+  $('#masters').innerHTML = entityRosterHTML('m', CFG.master, 'data-master', false);
   $('#rivals').innerHTML = [[7, 'Full war: 7 teams, every class'], [4, '4 teams'], [3, '3 teams']].map(function (n) { return '<button type="button" class="chip" data-teams="' + n[0] + '" aria-pressed="' + (CFG.teams === n[0]) + '">' + n[1] + '</button>'; }).join('');
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
   $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams';
+  if (CFG.game === 'arena') renderArena();
 }
 document.addEventListener('click', function (e) {
   var t = e.target, el;
+  if ((el = t.closest('[data-game]'))) { CFG.game = el.dataset.game; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-playas]'))) { CFG.playAs = el.dataset.playas; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-pick]'))) { CFG.servant = el.dataset.pick; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-master]'))) { CFG.master = el.dataset.master; saveCfg(); renderSetup(); return; }
@@ -1977,6 +2013,143 @@ function renderStances() {
   el.innerHTML = STANCES.map(function (q, i) { return '<button type="button" class="chip" data-stance="' + q[0] + '" aria-pressed="' + (my.partner.stance === q[0]) + '">' + (i + 1) + ' ' + q[1] + '</button>'; }).join('');
 }
 
+/* ---- master detail panels: stats and what every attack does, in the same format as the servants ---- */
+var MASTER_INFO = {
+  rin: { style: 'A ranged gem magus. She keeps her distance, curses with Gandr and patches her servant up between fights.', passive: ['Tohsaka Jewels', 'A deep, steady mana pool: she can afford both her own spells and her servant’s Noble Phantasm.'],
+    light: 'A Gandr curse orb. Quick to cast, light damage.', heavy: 'Hold to charge, release: a jewel shot that hits hard at long range.',
+    skill: 'Heals her servant for 40 if it is within 340 of her.', np: 'Throws a stored jewel that bursts in a wide blast (140) for heavy damage.' },
+  kiritsugu: { style: 'The Magus Killer. Fast, fragile and deadly at range: he hunts enemy masters while his servant holds the line.', passive: ['Mage Killer', 'His Origin Bullet shatters Kayneth’s mercury shield for double damage, and every master it hits loses their magecraft.'],
+    light: 'Draws the Calico and fires a quick double tap.', heavy: 'Holds the trigger: a long Calico burst of about twenty rounds that tracks the target. He can barely move while firing.',
+    skill: 'Time Alter: Double Accel. Moves almost twice as fast for 3 seconds: escape or close in.', np: 'The Contender’s Origin Bullet. Hits a master for heavy damage and burns their circuits: no skill or signature spell for 10 seconds.' },
+  shirou: { style: 'A fledgling who fights up close with reinforced swords and grows as he fights. Weak at first, frightening by the end.', passive: ['Trace', 'Fighting fills his Trace gauge. At 40: Trace On, swapping his blade for Kanshou and Bakuya and his heavy for Overedge. At 100: Unlimited Blade Works, once per match.'],
+    light: 'A reinforced blade: a quick three-hit chain. After Trace On, the faster twin blades Kanshou and Bakuya.', heavy: 'Hold to charge, release: a guard-breaking cleave. After Trace On, Overedge: a wide, lunging slash.',
+    skill: 'Reinforcement. Takes 40% less damage for 5 seconds.', np: 'Broken Phantasm: a traced arrow that explodes (120). With a full Trace, Unlimited Blade Works instead: a reality marble with homing swords for 11 seconds.' },
+  kayneth: { style: 'A Clock Tower lord who trusts his living mercury to protect him. Strong up close, slow on his feet.', passive: ['Volumen Hydrargyrum', 'His shield absorbs whole hits; only an Origin Bullet breaks it outright.'],
+    light: 'Three mercury needles in a narrow fan.', heavy: 'Hold to charge, release: a mercury blade at range.',
+    skill: 'Volumen Hydrargyrum. A mercury shield absorbs the next 3 hits within 8 seconds.', np: 'Mercury Scythe: the mercury whips around him (160) and staggers everyone close.' },
+  kirei: { style: 'An Executor and a martial artist. He walks into close range and stays there.', passive: ['Executor', 'The toughest master: more health and a strong guard. His bajiquan can stagger a servant.'],
+    light: 'Slashes with Black Keys held between his fingers: a fast three-hit chain.', heavy: 'Hold to charge, release: hurls a wide fan of six Black Keys.',
+    skill: 'Healing Sacrament. Heals himself for 30.', np: 'Bajiquan: a lunging strike that staggers whatever it hits, servants included.' },
+  waver: { style: 'A student with little power of his own, but a sharp tactician. He wins by making his servant better.', passive: ['Strategist', 'Weak alone. Everything he has goes into his servant.'],
+    light: 'A small Gandr curse.', heavy: 'Hold to charge, release: a stronger Gandr.',
+    skill: 'Strategist. His servant deals 15% more damage and moves 10% faster for 8 seconds.', np: 'Mana Transfer: refills his servant’s stamina and adds 25 Noble Phantasm charge.' },
+  irisviel: { style: 'An Einzbern homunculus who heals and binds from behind her servant.', passive: ['Alchemy', 'The strongest heal of any master.'],
+    light: 'A silver wire bird.', heavy: 'Hold to charge, release: a wire spear at range.',
+    skill: 'Alchemic Healing. Heals her servant for 45 within 360.', np: 'Wire Bind: a wire snare that roots its target in place for 1.8 seconds.' },
+  kariya: { style: 'A Matou who burns his own body to power his servant.', passive: ['Crest Worms', 'When his mana runs short he pays the rest with his own health, so his servant never goes without, at a cost.'],
+    light: 'Spits crest worms at an enemy.', heavy: 'Hold to charge, release: a swarm of three worms.',
+    skill: 'Feed the Servant. Costs him 15 health for 30 Noble Phantasm charge on his servant.', np: 'Worm Pit: three patches of worms erupt under the enemy after a short delay.' },
+  illya: { style: 'The Einzbern masterpiece. Her familiars hunt on their own and her mana is nearly endless.', passive: ['Grail Vessel', 'Her servant’s Noble Phantasm charges 30% faster, and her mana pool is the deepest in the war.'],
+    light: 'A Storch Ritter bird that homes in on its target.', heavy: 'Hold to charge, release: three homing birds.',
+    skill: 'Einzbern Alchemy. Heals her servant for 35 within 380.', np: 'Storch Ritter Swarm: six homing birds at once.' },
+  sakura: { style: 'The Matou heir. Her shadow drinks what it touches and binds servants in place.', passive: ['Imaginary Numbers', 'Half of the damage she deals heals her.'],
+    light: 'A lash of shadow.', heavy: 'Hold to charge, release: two shadow tendrils rise under the enemy.',
+    skill: 'Imaginary Drain. Damages everyone within 260 and heals her for each one hit.', np: 'Shadow of the Grail: a wide pool of shadow erupts under the enemy and roots whoever it catches.' }
+};
+function masterDetailHTML(m) {
+  var I = MASTER_INFO[m.id] || {}, A = m.A, c = m.col, pool = MANA_POOL[m.id] || [80, 1.6];
+  var h = '<div class="det"><div class="stats5" style="--c:' + c + '">' + [['Health', m.hp / 125 * 4.5], ['Mana', pool[0] / 160 * 5], ['Regen', pool[1] / 3.2 * 5], ['Speed', m.spd / 230 * 5], ['Guard', m.guard * 7]].map(function (r) { return '<div class="pp"><span>' + r[0] + '</span>' + pips(Math.min(5, r[1])) + '</div>'; }).join('') + '</div>';
+  h += '<div class="dgrid"><div class="dbox" style="--bc:var(--unb)"><h4>' + esc(m.type) + '<span>' + m.hp + ' health &middot; ' + pool[0] + ' mana, +' + pool[1] + '/s</span></h4><p>' + esc(I.style || m.brief) + '</p></div>' +
+    '<div class="dbox" style="--bc:var(--ok)"><h4>Passive: ' + esc((I.passive || ['', ''])[0]) + '</h4><p>' + esc((I.passive || ['', ''])[1]) + '</p></div></div>';
+  h += '<div class="dbox" style="--bc:' + c + '"><h4>Attacks</h4><ul><li><b>Light, ' + esc(A.light.name) + '</b>: ' + esc(I.light || '') + '</li><li><b>Heavy, ' + esc(A.heavy.name) + '</b>: ' + esc(I.heavy || '') + '</li></ul></div>';
+  h += '<div class="dgrid"><div class="dbox" style="--bc:var(--unb)"><h4>Skill: ' + esc(A.skill.name) + '<span>' + A.skill.cd + 's cooldown &middot; ' + MANA.skillCost + ' mana</span></h4><p>' + esc(I.skill || '') + '</p></div>' +
+    '<div class="dbox" style="--bc:var(--gold)"><h4>Signature: ' + esc(A.np.name) + '<span>' + A.np.cd + 's cooldown &middot; ' + MANA.sigCost + ' mana</span></h4><p>' + esc(I.np || '') + '</p></div></div>';
+  h += '<p class="note" style="margin:0">In the war, a master’s mana also pays for their servant’s Noble Phantasm. Masters deal half damage to servants.</p></div>';
+  return h;
+}
+function entityRosterHTML(kind, cur, attr, withRandom) {
+  var ids = kind === 'm' ? MASTER_ORDER : ORDER, T = kind === 'm' ? MASTERS : SERV;
+  return (withRandom ? '<button type="button" class="rt rnd" ' + attr + '="random" aria-pressed="' + (cur === 'random') + '"><b>Random</b><small>Any ' + (kind === 'm' ? 'master' : 'servant') + '</small></button>' : '') +
+    ids.map(function (id) { var d = T[id]; return '<button type="button" class="rt" ' + attr + '="' + id + '" aria-pressed="' + (cur === id) + '" style="--c:' + d.col + '"><span class="th">' + thumb(id, 110) + '</span><b>' + esc(shortName(d.name)) + '</b><small>' + (kind === 'm' ? esc(d.type) : d.cls) + '</small></button>'; }).join('');
+}
+function entityDetailHTML(kind, id, role) {
+  var d = kind === 'm' ? MASTERS[id] : SERV[id];
+  if (!d) return '<p class="sub">A random ' + (kind === 'm' ? 'master' : 'servant') + ' will be drawn when the battle starts.</p>';
+  return '<div class="dhead"><b>' + esc(d.name) + '</b><span>' + (kind === 'm' ? esc(d.type) : d.cls) + (role ? ' &middot; ' + role : '') + '</span></div><p class="sub" style="margin:0 0 8px">' + esc(d.brief) + '</p>' + (kind === 'm' ? masterDetailHTML(d) : detailHTML(d));
+}
+/* ---- Arena mode: quick fights on the themed Fuyuki maps ---- */
+var ARENA_MODES = [
+  ['duel', 'Duel', 'Servant against servant, one on one.'],
+  ['ffa', 'Free-for-all', 'Three or four servants, everyone for themselves.'],
+  ['teams', 'Teams', 'Two servants against two. Pick a team for each slot.'],
+  ['masters', 'Master duel', 'Master against master: magecraft, Black Keys and bullets.'],
+  ['pairs', 'Master and servant', 'Your master and servant against another pair, with Command Seals and mana.']
+];
+var AR_DEF = {
+  duel: [{ k: 's', id: 'richard' }, { k: 's', id: 'random' }],
+  ffa: [{ k: 's', id: 'richard' }, { k: 's', id: 'random' }, { k: 's', id: 'random' }, { k: 's', id: 'random' }],
+  teams: [{ k: 's', id: 'richard', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 's', id: 'random', team: 0 }, { k: 's', id: 'random', team: 1 }],
+  masters: [{ k: 'm', id: 'kirei' }, { k: 'm', id: 'random' }],
+  pairs: [{ k: 's', id: 'richard', team: 0 }, { k: 'm', id: 'rin', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 'm', id: 'random', team: 1 }]
+};
+function arenaCfg() {
+  var A = CFG.arena;
+  if (!A || typeof A !== 'object') A = CFG.arena = {};
+  if (!ARENA_MODES.some(function (m) { return m[0] === A.mode; })) A.mode = 'duel';
+  if (!A.slots || typeof A.slots !== 'object') A.slots = {};
+  Object.keys(AR_DEF).forEach(function (k) { var s = A.slots[k]; if (!Array.isArray(s) || s.length !== AR_DEF[k].length) A.slots[k] = JSON.parse(JSON.stringify(AR_DEF[k])); A.slots[k].forEach(function (sl, i) { sl.k = AR_DEF[k][i].k; var T = sl.k === 'm' ? MASTERS : SERV; if (sl.id !== 'random' && !T[sl.id]) sl.id = AR_DEF[k][i].id; }); });
+  if (A.count !== 3) A.count = 4; if (!(A.active >= 0)) A.active = 0; if (A.map !== 'random' && !MAPS[A.map]) A.map = 'bridge'; if (A.playAs !== 'master') A.playAs = 'servant';
+  return A;
+}
+function arenaN(A) { return A.mode === 'ffa' ? A.count : AR_DEF[A.mode].length; }
+function arenaSlotCol(A, i) {
+  var sl = A.slots[A.mode][i];
+  if (A.mode === 'teams' || A.mode === 'pairs') return sl.team === A.slots[A.mode][0].team ? '#3fb3c4' : '#cf4a52';
+  return A.mode === 'ffa' ? FFA_COL.at(i) : (i ? '#cf4a52' : '#3fb3c4');
+}
+function arenaRole(A, i) {
+  if (A.mode === 'pairs') return (i < 2 ? 'Your ' : 'Rival ') + (i % 2 ? 'master' : 'servant') + (i < 2 && ((i === 0) === (A.playAs === 'servant')) ? ' (you)' : '');
+  return i === 0 ? 'You' : 'CPU ' + i;
+}
+function renderArena() {
+  var A = arenaCfg(), n = arenaN(A), S = A.slots[A.mode]; if (A.active >= n) A.active = 0;
+  $('#amodes').innerHTML = ARENA_MODES.map(function (m) { return '<button type="button" class="mode" data-amode="' + m[0] + '" aria-pressed="' + (A.mode === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
+  $('#acount').innerHTML = A.mode === 'ffa' ? [3, 4].map(function (c) { return '<button type="button" class="chip" data-acount="' + c + '" aria-pressed="' + (n === c) + '">' + c + ' fighters</button>'; }).join('') :
+    A.mode === 'pairs' ? [['servant', 'Play as the servant'], ['master', 'Play as the master']].map(function (q) { return '<button type="button" class="chip" data-aplay="' + q[0] + '" aria-pressed="' + (A.playAs === q[0]) + '">' + q[1] + '</button>'; }).join('') : '';
+  var h = '';
+  for (var i = 0; i < n; i++) {
+    var sl = S[i], T = sl.k === 'm' ? MASTERS : SERV, d = T[sl.id];
+    h += '<div class="slot" role="button" tabindex="0" data-aslot="' + i + '" aria-pressed="' + (A.active === i) + '" style="--tc:' + arenaSlotCol(A, i) + '"><span class="th">' + (d ? thumb(d.id, 96) : '<svg viewBox="0 0 96 48" width="96" height="48"><text x="48" y="31" text-anchor="middle" font-size="22" fill="#8fa3b5" font-family="serif">?</text></svg>') + '</span>' +
+      '<span class="role">' + arenaRole(A, i) + '</span><b>' + (d ? esc(shortName(d.name)) : 'Random ' + (sl.k === 'm' ? 'master' : 'servant')) + '</b>' +
+      (A.mode === 'teams' ? '<button type="button" class="tbtn" data-ateam="' + i + '">' + (sl.team === 0 ? 'Blue team' : 'Red team') + '</button>' : '<small>' + (d ? (sl.k === 'm' ? esc(d.type) : d.cls) : 'Any') + '</small>') + '</div>';
+  }
+  $('#aslots').innerHTML = h;
+  var cur = S[A.active];
+  $('#aroster').innerHTML = entityRosterHTML(cur.k, cur.id, 'data-apick', A.active > 0);
+  $('#adetail').innerHTML = entityDetailHTML(cur.k, cur.id, arenaRole(A, A.active).toLowerCase());
+  $('#amaps').innerHTML = MAP_ORDER.map(function (id) { var m = MAPS[id]; return '<button type="button" class="mapc" data-amap="' + id + '" aria-pressed="' + (A.map === id) + '"><canvas width="240" height="' + Math.round(240 * m.h / m.w) + '" data-prev="' + id + '"></canvas><span class="pl">' + esc(m.place) + '</span><b>' + esc(m.name) + '</b><small>' + esc(m.blurb) + '</small></button>'; }).join('') +
+    '<button type="button" class="mapc" data-amap="random" aria-pressed="' + (A.map === 'random') + '"><span class="pl">Any location</span><b>Random battlefield</b><small>One of the arena maps, drawn when the battle starts.</small></button>';
+  document.querySelectorAll('canvas[data-prev]').forEach(function (c) { drawMapPreview(c, MAPS[c.dataset.prev]); });
+  $('#adiff').innerHTML = $('#diff').innerHTML; $('#aspd').innerHTML = $('#spd').innerHTML;
+  var names = []; for (var k = 0; k < n; k++) { var s2 = S[k], d2 = (s2.k === 'm' ? MASTERS : SERV)[s2.id]; names.push(d2 ? shortName(d2.name) : 'Random'); }
+  var vs = A.mode === 'teams' ? (function () { var X = [], Y = []; for (var q = 0; q < 4; q++) (S[q].team === S[0].team ? X : Y).push(names[q]); return X.join(' + ') + ' vs ' + Y.join(' + '); })() : A.mode === 'pairs' ? names[0] + ' + ' + names[1] + ' vs ' + names[2] + ' + ' + names[3] : names.join(' vs ');
+  $('#summary').innerHTML = '<b>Arena &middot; ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1] + '</b> &middot; ' + esc(vs) + ' &middot; ' + esc(A.map === 'random' ? 'Random battlefield' : MAPS[A.map].name);
+}
+document.addEventListener('click', function (e) {
+  var t = e.target, el, A = CFG.arena; if (!t.closest || !A) return;
+  if ((el = t.closest('[data-ateam]'))) { var ti = +el.dataset.ateam; A.slots.teams[ti].team = 1 - A.slots.teams[ti].team; A.active = ti; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-amode]'))) { A.mode = el.dataset.amode; A.active = 0; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-acount]'))) { A.count = +el.dataset.acount; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-aplay]'))) { A.playAs = el.dataset.aplay; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-aslot]'))) { A.active = +el.dataset.aslot; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-apick]'))) { A.slots[A.mode][A.active].id = el.dataset.apick; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-amap]'))) { A.map = el.dataset.amap; saveCfg(); renderSetup(); return; }
+});
+document.addEventListener('keydown', function (e) { var el = e.target.closest && e.target.closest('[data-aslot]'); if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); CFG.arena.active = +el.dataset.aslot; saveCfg(); renderSetup(); } });
+function pickRandom(kind, taken) { var ids = (kind === 'm' ? MASTER_ORDER : ORDER).filter(function (id) { return taken.indexOf(id) < 0; }); if (!ids.length) ids = kind === 'm' ? MASTER_ORDER : ORDER; return ids[Math.floor(Math.random() * ids.length)]; }
+function startArena() {
+  var A = arenaCfg(), n = arenaN(A), S = A.slots[A.mode].slice(0, n), map = A.map === 'random' ? MAP_ORDER.filter(function (m) { return m !== 'arena'; })[Math.floor(Math.random() * (MAP_ORDER.length - 1))] : A.map;
+  var taken = [], ids = S.map(function (sl) { var id = sl.id === 'random' ? pickRandom(sl.k, taken) : sl.id; taken.push(id); return id; });
+  MEI = 0; NET.mirror = false;
+  if (A.mode === 'pairs') {
+    newWar([{ servant: SERV_DUEL[ids[0]], master: MASTERS[ids[1]] }, { servant: SERV_DUEL[ids[2]], master: MASTERS[ids[3]] }], { map: map, quick: true, playAs: A.playAs });
+  } else {
+    var defs = ids.map(function (id, i) { return S[i].k === 'm' ? MASTERS[id] : SERV_DUEL[id]; });
+    newGame(defs, { map: map, mode: A.mode === 'masters' ? 'duel' : A.mode, teams: A.mode === 'teams' ? S.map(function (sl) { return sl.team; }) : null });
+  }
+  for (var k = 0; k < G.f.length; k++) if (k !== MEI) G.ai[k] = mkAI(G.f[k], DIFF[CFG.diff]);
+  enterGame(0, 'Arena', MAP.name + ' · ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1]);
+}
 var MEI = 0;
 var cv = $('#cv'), ctx = cv.getContext('2d'), VW = 1120, VH = 700, VIEW = { cx: 0, cy: 0, zoom: 1 };
 cv.addEventListener('pointerdown', function (e) { if (!running || !G) return; var r = cv.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * VW, sy = (e.clientY - r.top) / r.height * VH, wx = (sx - VW / 2) / VIEW.zoom + VIEW.cx, wy = (sy - VH / 2) / VIEW.zoom + VIEW.cy, f = G.f[MEI], best = null, bd = 80; enemiesOf(f).forEach(function (en) { var d = Math.hypot(en.x - wx, en.y - wy); if (d < bd) { bd = d; best = en; } }); if (NET.mirror) NET.lk = best ? G.f.indexOf(best) : -1; else f.lock = best; });
@@ -2491,7 +2664,9 @@ var HUD = [];
 function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
 var hudTarget = null, hudPartner = null;
 function buildHud() {
-  var me0 = G.f[MEI], tg = me0.foe, list = [[me0, 'You'], [me0.partner, me0.def.isMaster ? 'Servant' : 'Master']]; if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']);
+  var me0 = G.f[MEI], tg = me0.foe, list;
+  if (G.mode === 'war') { list = [[me0, 'You']]; if (me0.partner) list.push([me0.partner, me0.def.isMaster ? 'Servant' : 'Master']); if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']); }
+  else list = G.f.map(function (f, i) { return [f, i === MEI ? 'You' : (f.team === me0.team ? 'Ally' : 'CPU ' + i)]; });
   hudTarget = tg; hudPartner = me0.partner; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
   el.innerHTML = list.map(function (q) { return hudCard(q[0], q[1]); }).join('');
   el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]'), bma: c.querySelector('[data-h=bma]') }); });
@@ -2509,21 +2684,23 @@ function startMatch() {
   }
   enterGame(teams.length);
 }
-function enterGame(nTeams) {
+function enterGame(nTeams, title, sub) {
   var me0 = G.f[MEI];
   parts = []; texts = []; V = []; puffs = []; ghosts = []; flashes = []; cracks = []; band.t = 0; slowT = 0; audInit(); shake = 0; endShown = false; speedMul = CFG.speed; acc = 0;
   buildHud(); renderStances(); $('#skl').textContent = me0.A.skill.name.split(': ').pop().split(' ').slice(0, 2).join(' ');
-  document.querySelector('.b[data-b="spirit"]').hidden = !!me0.def.isMaster;
+  document.querySelector('.b[data-b="spirit"]').hidden = !!me0.def.isMaster || G.mode !== 'war';
   document.querySelectorAll('.b.seal').forEach(function (el) { el.classList.remove('used'); });
-  $('#ordBtn').hidden = $('#sealBtn').hidden = !me0.def.isMaster; closePops();
+  $('#ordBtn').hidden = $('#sealBtn').hidden = !me0.def.isMaster || !me0.partner; closePops();
   $('#setup').style.display = 'none'; $('#duel').style.display = 'block'; document.body.classList.add('ingame'); $('#end').classList.remove('on'); $('#pz').classList.remove('on');
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
+  if (title) { FX.banner(title, sub); return; }
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }
 function endMatch(toSetup) { running = false; if (NET.role === 'host' && NET.game) { NET.game = null; NET.R.presence({ game: null, s: null }).catch(function () {}); } if (NET.mirror) { NET.mirror = false; MEI = 0; if (NET.R) NET.R.presence({ ing: null, inp: null }).catch(function () {}); } renderNet(); document.body.classList.remove('ingame'); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} $('#duel').style.display = 'none'; $('#setup').style.display = 'block'; $('#end').classList.remove('on'); $('#pz').classList.remove('on'); }
-$('#go').addEventListener('click', startMatch);
-$('#again').addEventListener('click', function () { if (NET.role === 'client') { netSay('Waiting for the host to start again.'); endMatch(); return; } startMatch(); });
+function startCurrent() { if (CFG.game === 'arena') startArena(); else startMatch(); }
+$('#go').addEventListener('click', startCurrent);
+$('#again').addEventListener('click', function () { if (NET.role === 'client') { netSay('Waiting for the host to start again.'); endMatch(); return; } startCurrent(); });
 $('#menu').addEventListener('click', endMatch); $('#menu2').addEventListener('click', endMatch); $('#quit').addEventListener('click', endMatch);
 $('#pause').addEventListener('click', function () { paused = true; $('#pz').classList.add('on'); });
 $('#resume').addEventListener('click', function () { paused = false; last = performance.now(); $('#pz').classList.remove('on'); });
@@ -3088,9 +3265,9 @@ function hud() {
 }
 function showEnd() {
   endShown = true; var a = G.f[MEI], w = G.winner || a, win = w.team === a.team;
-  if (G.mode === 'war') { $('#endT').textContent = win ? 'The Grail is yours' : 'Defeated'; $('#endT').className = win ? 'win' : 'lose'; $('#endS').textContent = win ? 'Every rival team has fallen in Fuyuki.' : shortName(w.def.name) + '\'s team survives the war.'; var s0 = a.stat; $('#endStats').innerHTML = [['Time', G.time.toFixed(0) + 's'], ['Damage dealt', Math.round(s0.dealt)], ['Damage taken', Math.round(s0.taken)], ['Command Seals left', a.def.isMaster ? sealsLeft(a) : (a.partner ? sealsLeft(a.partner) : 0)]].map(function (r) { return '<span>' + r[0] + '</span><b>' + r[1] + '</b>'; }).join(''); $('#end').classList.add('on'); return; }
+  if (G.mode === 'war' && !G.quick) { $('#endT').textContent = win ? 'The Grail is yours' : 'Defeated'; $('#endT').className = win ? 'win' : 'lose'; $('#endS').textContent = win ? 'Every rival team has fallen in Fuyuki.' : shortName(w.def.name) + '\'s team survives the war.'; var s0 = a.stat; $('#endStats').innerHTML = [['Time', G.time.toFixed(0) + 's'], ['Damage dealt', Math.round(s0.dealt)], ['Damage taken', Math.round(s0.taken)], ['Command Seals left', a.def.isMaster ? sealsLeft(a) : (a.partner ? sealsLeft(a.partner) : 0)]].map(function (r) { return '<span>' + r[0] + '</span><b>' + r[1] + '</b>'; }).join(''); $('#end').classList.add('on'); return; }
   $('#endT').textContent = win ? 'Victory' : 'Defeated'; $('#endT').className = win ? 'win' : 'lose';
-  $('#endS').textContent = win ? (G.mode === 'teams' ? 'Your team holds ' + MAP.name + '.' : a.def.name + ' is the last one standing on ' + MAP.name + '.') : w.def.name + (G.mode === 'teams' ? '\'s team prevails.' : ' prevails.');
+  $('#endS').textContent = win ? (G.mode === 'teams' || G.quick ? 'Your team holds ' + MAP.name + '.' : a.def.name + ' is the last one standing on ' + MAP.name + '.') : w.def.name + (G.mode === 'teams' || G.quick ? '\'s team prevails.' : ' prevails.');
   var s = a.stat;
   $('#endStats').innerHTML = [['Time', G.time.toFixed(1) + 's'], ['Damage dealt', Math.round(s.dealt)], ['Damage taken', Math.round(s.taken)], ['Parries', s.parry], ['Dodges', s.dodge], ['Guard breaks suffered', s.gbreak], ['NP interrupted', s.intr]].map(function (r) { return '<span>' + r[0] + '</span><b>' + r[1] + '</b>'; }).join('');
   $('#end').classList.add('on');

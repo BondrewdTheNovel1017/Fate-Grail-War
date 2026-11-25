@@ -1,4 +1,4 @@
-<title>Fuyuki War Sandbox</title>
+<title>Fate Grail War</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -9,11 +9,13 @@
 
 <main class="wrap">
 <section id="setup">
-  <header class="mhead"><span class="mtag">Milestone 1 sandbox</span><h1>Fuyuki War Sandbox</h1>
-  <p class="sub">A first slice of the Holy Grail War: up to seven master and servant teams, one for every class, across the whole of Fuyuki. Spirit form, orders, target lock, three Command Seals and a signature spell for every master. Kill a master and their servant fades.</p></header>
+  <header class="mhead"><span class="mtag">Milestone 2 build</span><h1>Fate Grail War</h1>
+  <p class="sub">The Holy Grail War as a top-down battle game. Fight the full war across Fuyuki with up to seven master and servant teams, or jump into a quick Arena fight.</p></header>
+  <div class="modes" id="gameMode"></div>
+  <div id="warSetup">
   <div class="step"><div class="stepn">1</div><div><div class="lbl">Play as</div><div class="modes" id="playas"></div></div></div>
-  <div class="step"><div class="stepn">2</div><div><div class="lbl">Your servant</div><div class="roster" id="roster"></div></div></div>
-  <div class="step"><div class="stepn">3</div><div><div class="lbl">Your master</div><div class="modes" id="masters"></div></div></div>
+  <div class="step"><div class="stepn">2</div><div><div class="lbl">Your servant</div><div class="roster" id="roster"></div><div class="detail" id="sdetail"></div></div></div>
+  <div class="step"><div class="stepn">3</div><div><div class="lbl">Your master</div><div class="roster" id="masters"></div><div class="detail" id="mdetail"></div></div></div>
   <div class="step"><div class="stepn">4</div><div><div class="lbl">Teams</div><div class="chips" id="rivals"></div><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div></div>
   <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
     <p class="note" style="margin:0 0 8px">Up to 4 players. One person hosts and runs the war; the others pick their servant and master above, then join with the room code. AI fills the remaining classes.</p>
@@ -36,6 +38,22 @@
   </div>
   <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract.</p>
   </details>
+  </div>
+  <div id="arenaSetup" hidden>
+  <div class="step"><div class="stepn">1</div><div><div class="lbl">Match type</div><div class="modes" id="amodes"></div><div class="chips" id="acount" style="margin-top:8px"></div></div></div>
+  <div class="step"><div class="stepn">2</div><div><div class="lbl">Fighters</div><p class="tip">Tap a slot to choose who fills it, then pick from the roster.</p><div class="slots" id="aslots"></div><div class="roster" id="aroster"></div><div class="detail" id="adetail"></div></div></div>
+  <div class="step"><div class="stepn">3</div><div><div class="lbl">Battlefield</div><div class="maps" id="amaps"></div></div></div>
+  <div class="step"><div class="stepn">4</div><div><div class="lbl">Opponent skill</div><div class="chips" id="adiff"></div><div class="lbl">Game speed</div><div class="chips" id="aspd"></div></div></div>
+  <details class="how"><summary>How the fight works</summary>
+  <div class="rules" style="margin-top:10px">
+    <div class="rule"><b>Light</b>Fast chain. Hitting a charging heavy knocks it out. Blocked by Block.</div>
+    <div class="rule"><b>Heavy</b>Hold to charge, release to swing. Breaks a block. A well-timed dodge beats it and leaves the attacker open.</div>
+    <div class="rule"><b>Block and parry</b>Hold to block, which drains stamina. Tap right before a hit lands to parry and stagger the attacker.</div>
+    <div class="rule"><b>Purple warnings</b>Cannot be blocked or parried. Dodge them.</div>
+    <div class="rule"><b>Noble Phantasm</b>Momentum fills as you fight. At full, the NP is ready. If you are hit while it winds up, it is lost. Masters use a signature spell on a cooldown instead.</div>
+    <div class="rule"><b>Arena pace</b>Arena fights use duel-length health and normal Noble Phantasm charging, so a match takes a few minutes. In Master and servant matches the war rules apply: mana, Command Seals and a fading servant if its master falls.</div>
+  </div></details>
+  </div>
   <div class="startbar"><div id="summary"></div><button type="button" class="btn" id="go">Begin the war</button></div>
 </section>
 

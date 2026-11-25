@@ -1,9 +1,9 @@
 
 /* ================= UI / RENDER ================= */
 var $ = function (s) { return document.querySelector(s); };
-var CFG = { servant: 'richard', master: 'rin', playAs: 'servant', teams: 7, diff: 'knight', speed: 1 };
+var CFG = { game: 'war', servant: 'richard', master: 'rin', playAs: 'servant', teams: 7, diff: 'knight', speed: 1, arena: null };
 try { var sv = JSON.parse(localStorage.getItem('war2.cfg') || 'null'); if (sv) Object.keys(CFG).forEach(function (k) { if (sv[k] !== undefined) CFG[k] = sv[k]; }); } catch (e) {}
-if (!SERV[CFG.servant]) CFG.servant = 'richard'; if (!MASTERS[CFG.master]) CFG.master = 'rin'; if ([3, 4, 7].indexOf(CFG.teams) < 0) CFG.teams = 7;
+if (!SERV[CFG.servant]) CFG.servant = 'richard'; if (!MASTERS[CFG.master]) CFG.master = 'rin'; if ([3, 4, 7].indexOf(CFG.teams) < 0) CFG.teams = 7; if (CFG.game !== 'arena') CFG.game = 'war';
 var FFA_COL = ['#3fb3c4', '#cf4a52', '#e0b04a', '#a77be0'];
 function slotCol(i) { return CFG.mode === 'teams' ? (CFG.slots[i].team === CFG.slots[0].team ? '#3fb3c4' : '#cf4a52') : CFG.mode === 'duel' ? (i ? '#cf4a52' : '#3fb3c4') : FFA_COL.at(i); }
 var WAR_COL = ['#e2515c', '#f0a93b', '#a77ae6', '#5bc47a', '#e07ab8', '#d8c9a0'];

@@ -223,7 +223,7 @@ function aiWar(ai, dt) {
   f.lock = null;
   if (!near || nd > 1400) {
     var tgt = near || f.foe; if (m && dist(f, m) > 500) { moveTo(f, m.x, m.y); return; }
-    if (G.time < 100 && !f.inM) { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
+    if (G.time < 100 && !f.inM && MAP.id === 'fuyuki') { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
     if (tgt) { moveTo(f, tgt.x, tgt.y, 0.85); return; } }
   aiTick(ai, dt);
 }
@@ -241,7 +241,8 @@ function aiMaster(ai, dt) {
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && Math.random() < 0.0008) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
-    moveTo(f, 1100, 2480, 1); if (!f.toldChurch) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, { x: 1100, y: 2480 }) < 120) { inp.mx = 0; inp.my = 0; } return; }
+    var haven = MAP.id === 'fuyuki' ? { x: 1100, y: 2480 } : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
+    moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.id === 'fuyuki') { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
@@ -254,6 +255,11 @@ function aiMaster(ai, dt) {
     moveTo(f, gx, gy);
     if (thr.st === 'wind' && thr.foe === f && td < 220 && f.dodges > 0 && Math.random() < 0.08 + 0.2 * cfg.skill) aiPressDodge(ai);
     return;
+  }
+  // close-quarters masters (Shirou, Kirei) duel enemy masters when no enemy servant is guarding them
+  if (A.light.kind === 'melee') {
+    var em = null, ed = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) { var d4 = dist(f, e); if (d4 < ed) { ed = d4; em = e; } } });
+    if (em && ed < 650 && f.hp > f.def.hp * 0.35) { var guarded = em.partner && em.partner.st !== 'dead' && dist(em.partner, em) < 260 && !(dist(s, em) < 300); if (!guarded) { f.lock = em; f.foe = em; aiTick(ai, dt); return; } }
   }
   var sf = s.foe, bx = s.x, by = s.y;
   if (sf) { var ba = angTo(sf, s); bx = s.x + Math.cos(ba) * 150; by = s.y + Math.sin(ba) * 150; }

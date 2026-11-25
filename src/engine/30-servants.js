@@ -11,7 +11,7 @@ function build(def) {
   A.skill = Object.assign({ wind: 0.3, act: 0.1, rec: 0.4, dmg: 0, cost: 12, stag: 0.5, power: 1, arc: 1, reach: 100 }, def.skill, { key: 'skill' });
   A.np = Object.assign({ wind: 1.2, act: 0.2, rec: 0.9, dmg: 40, cost: 0, stag: 0.9, power: 3, unblock: true, arc: 1 }, def.np, { key: 'np' });
   if (A.np.kind === 'ubw') A.np.sword = Object.assign({ kind: 'proj', key: 'np', power: 1, stag: 0.15, cost: 0, arc: 0 }, def.np.sword);
-  if (A.np.kind === 'barrage') A.np.bullet = Object.assign({}, A.np, { kind: 'proj', unblock: false, power: 1, key: 'np' });
+  ['light', 'heavy', 'np'].forEach(function (k) { if (A[k].kind === 'barrage') A[k].bullet = Object.assign({}, A[k], { kind: 'proj', unblock: false, power: 1, key: k }); });
   if (def.arms) A.arms = def.arms.map(function (m) { return { id: m.id, name: m.name, wpn: m.wpn, light: Object.assign({}, BASE.light, m.light, { key: 'light' }), heavy: Object.assign({}, BASE.heavy, m.heavy, { key: 'heavy' }) }; });
   return A;
 }

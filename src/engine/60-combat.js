@@ -9,7 +9,7 @@ function hurt(att, def, a, mult, src) {
   if (def.wallT > 0 && a.key === 'np' && !a.strip) { FX.text(def, 'NP BLOCKED'); FX.fx('wallBlock', def.x, def.y, def); FX.snd('block', def, a); def.stat.blocks++; return 'block'; }
   var dmg = a.dmg * (att ? att.def.dmg : 1) * (mult || 1);
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
-  if (G.mode === 'war' && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
+  if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
   if (att && starved(att)) dmg *= MANA.starveDmg;

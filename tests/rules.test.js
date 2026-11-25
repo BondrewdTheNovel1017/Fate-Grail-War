@@ -75,7 +75,7 @@ test('Shirou learns Trace On at 40 and Unlimited Blade Works at 100', () => {
   const E = loadEngine();
   const G = pairWar(E, 'richard', 'shirou', 'cu', 'kirei');
   const sh = G.f[1];
-  sh.mom = 45; run(E, 0.05); assert.strictEqual(sh.traceTier, 1); assert.strictEqual(sh.A.heavy.name, 'Kanshou & Bakuya');
+  sh.mom = 45; run(E, 0.05); assert.strictEqual(sh.traceTier, 1); assert.strictEqual(sh.A.light.name, 'Kanshou & Bakuya'); assert.strictEqual(sh.A.heavy.name, 'Overedge');
   sh.mom = 100; run(E, 0.05); assert.strictEqual(sh.A.np.kind, 'ubw');
 });
 
@@ -140,4 +140,30 @@ test('Form Contract: AI orphans and free masters find each other', () => {
   E.kill(rin); E.kill(rich);
   run(E, 15);
   assert.strictEqual(cu.partner, kirei, 'they formed a contract');
+});
+
+test('master kits: Shirou and Kirei fight up close, Kiritsugu fires a long Calico burst', () => {
+  const E = loadEngine();
+  assert.strictEqual(E.MASTERS.shirou.A.light.kind, 'melee');
+  assert.strictEqual(E.MASTERS.kirei.A.light.kind, 'melee');
+  assert.ok(E.MASTERS.kirei.A.heavy.count >= 5, 'Kirei throws a fan of Black Keys');
+  const k = E.MASTERS.kiritsugu.A;
+  assert.strictEqual(k.light.count, 2);
+  assert.strictEqual(k.heavy.kind, 'barrage'); assert.ok(k.heavy.bullet && k.heavy.act / k.heavy.rate > 15, 'a long burst');
+});
+
+test('arena keeps duel-length health; the war doubles it', () => {
+  const E = loadEngine();
+  for (const id of E.ORDER) assert.ok(E.SERV[id].hp > E.SERV_DUEL[id].hp * 1.5, id);
+});
+
+function arenaRun(E, G, secs) { G.f.forEach((f, i) => { G.ai[i] = E.mkAI(f, E.DIFF.knight); }); run(E, secs); return G; }
+test('arena modes: duel, free-for-all, teams, masters and pairs all finish', () => {
+  const E = loadEngine(), S = E.SERV_DUEL, M = E.MASTERS;
+  let G = arenaRun(E, E.newGame(S.richard, S.cu, { map: 'temple' }), 300); assert.ok(G.over, 'duel');
+  G = arenaRun(E, E.newGame([S.richard, S.cu, S.medusa, S.hassan], { map: 'harbor', mode: 'ffa' }), 400); assert.ok(G.over, 'ffa');
+  G = arenaRun(E, E.newGame([S.richard, S.cu, S.medusa, S.hassan], { map: 'forest', mode: 'teams', teams: [0, 1, 0, 1] }), 400); assert.ok(G.over, 'teams');
+  G = arenaRun(E, E.newGame(M.kirei, M.kiritsugu, { map: 'church', mode: 'duel' }), 300); assert.ok(G.over, 'masters');
+  G = E.newWar([{ servant: S.cu, master: M.rin }, { servant: S.richard, master: M.shirou }], { map: 'bridge', quick: true });
+  arenaRun(E, G, 500); assert.ok(G.over, 'pairs');
 });

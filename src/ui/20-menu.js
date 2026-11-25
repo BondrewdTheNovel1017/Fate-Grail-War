@@ -154,7 +154,7 @@ var SPELLTXT = {
 function detailHTML(d) {
   var t = INFO(d), sk = d.A.skill, np = d.A.np, c = d.col;
   var reach = d.ranged ? 5 : d.A.light.reach / 150 * 5;
-  var h = '<div class="det"><div class="stats5" style="--c:' + c + '">' + [['Health', d.hp / 215 * 4.4], ['Speed', d.spd / 290 * 5], ['Guard', d.guard * 5.2], [d.ranged ? 'Range' : 'Reach', reach], ['Chain', d.combo]].map(function (r) { return '<div class="pp"><span>' + r[0] + '</span>' + pips(r[1]) + '</div>'; }).join('') + '</div>';
+  var h = '<div class="det"><div class="stats5" style="--c:' + c + '">' + [['Health', (SERV_DUEL[d.id] || d).hp / 215 * 4.4], ['Speed', d.spd / 290 * 5], ['Guard', d.guard * 5.2], [d.ranged ? 'Range' : 'Reach', reach], ['Chain', d.combo]].map(function (r) { return '<div class="pp"><span>' + r[0] + '</span>' + pips(r[1]) + '</div>'; }).join('') + '</div>';
   var cl = CLS[d.cls];
   h += '<div class="dgrid"><div class="dbox" style="--bc:var(--unb)"><h4>Class passive: ' + esc(cl.pname) + '<span>' + d.cls + '</span></h4><p>' + esc(cl.desc) + '</p></div><div class="dbox" style="--bc:var(--ok)"><h4>Servant passive: ' + esc(t.pname) + '</h4><p>' + esc(t.pdesc) + '</p></div></div>';
   if (d.A.lightSeq) h += '<div class="dbox" style="--bc:' + c + '"><h4>Spell chain<span>tap Light to cast in order</span></h4><ul>' + d.A.lightSeq.map(function (q, i) { return '<li><b>' + (i + 1) + '. ' + esc(q.name) + '</b>: ' + esc(SPELLTXT[q.name]) + '</li>'; }).join('') + '<li><b>Heavy, ' + esc(d.A.heavy.name) + '</b>: ' + esc(SPELLTXT[d.A.heavy.name]) + '</li></ul></div>';
@@ -169,16 +169,23 @@ function cardHTML(d, kind) {
 }
 function shortName(n) { return n.split(/ of |, /)[0]; }
 function renderSetup() {
+  $('#gameMode').innerHTML = [['war', 'Holy Grail War', 'Seven master and servant teams across all of Fuyuki. Mana, Command Seals, contracts.'], ['arena', 'Arena', 'Quick fights on themed maps: duels, free-for-all, teams, master duels and master and servant pairs.']].map(function (m) { return '<button type="button" class="mode" data-game="' + m[0] + '" aria-pressed="' + (CFG.game === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
+  $('#warSetup').hidden = CFG.game !== 'war'; $('#arenaSetup').hidden = CFG.game !== 'arena';
+  $('#go').textContent = CFG.game === 'arena' ? 'Start the battle' : 'Begin the war';
   $('#playas').innerHTML = [['servant', 'Servant', 'Fight directly. Your master follows and supports you with magecraft.'], ['master', 'Master', 'Fight as the human. Give your servant orders and spend Command Seals.']].map(function (m) { return '<button type="button" class="mode" data-playas="' + m[0] + '" aria-pressed="' + (CFG.playAs === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
-  $('#roster').innerHTML = ORDER.map(function (id) { var d = SERV[id]; return '<button type="button" class="rt" data-pick="' + id + '" aria-pressed="' + (CFG.servant === id) + '" style="--c:' + d.col + '"><span class="th">' + thumb(id, 110) + '</span><b>' + esc(shortName(d.name)) + '</b><small>' + d.cls + '</small></button>'; }).join('');
-  $('#masters').innerHTML = MASTER_ORDER.map(function (id) { var m = MASTERS[id]; return '<button type="button" class="mode" data-master="' + id + '" aria-pressed="' + (CFG.master === id) + '"><b>' + m.name + '</b><span class="mtag">' + m.type + '</span><small>' + esc(m.brief) + ' Health ' + m.hp + '. Mana ' + (MANA_POOL[id] || [80, 1.6])[0] + ' (+' + (MANA_POOL[id] || [80, 1.6])[1] + '/s). Skill: ' + esc(m.A.skill.name) + '. Signature: ' + esc(m.A.np.name) + '.</small></button>'; }).join('');
+  $('#roster').innerHTML = entityRosterHTML('s', CFG.servant, 'data-pick', false);
+  $('#sdetail').innerHTML = entityDetailHTML('s', CFG.servant, 'your servant');
+  $('#mdetail').innerHTML = entityDetailHTML('m', CFG.master, 'your master');
+  $('#masters').innerHTML = entityRosterHTML('m', CFG.master, 'data-master', false);
   $('#rivals').innerHTML = [[7, 'Full war: 7 teams, every class'], [4, '4 teams'], [3, '3 teams']].map(function (n) { return '<button type="button" class="chip" data-teams="' + n[0] + '" aria-pressed="' + (CFG.teams === n[0]) + '">' + n[1] + '</button>'; }).join('');
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
   $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams';
+  if (CFG.game === 'arena') renderArena();
 }
 document.addEventListener('click', function (e) {
   var t = e.target, el;
+  if ((el = t.closest('[data-game]'))) { CFG.game = el.dataset.game; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-playas]'))) { CFG.playAs = el.dataset.playas; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-pick]'))) { CFG.servant = el.dataset.pick; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-master]'))) { CFG.master = el.dataset.master; saveCfg(); renderSetup(); return; }

@@ -277,7 +277,7 @@ function thumb(id, w) {
   var s = SPR[id], g = GRIP[id], wp = s.weapon(), inner = s.body();
   if (g.twin) inner += '<g transform="translate(' + g.x + ',' + (-g.y) + ') scale(' + g.k + ',' + (-g.k) + ')">' + (SPR_EXTRA[id + '_white'] ? SPR_EXTRA[id + '_white'].weapon() : wp) + '</g><g transform="translate(' + g.x + ',' + g.y + ') scale(' + g.k + ')">' + wp + '</g>';
   else inner += '<g transform="translate(' + g.x + ',' + g.y + ') scale(' + g.k + ')">' + wp + '</g>';
-  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-48 -50 200 100" width="' + w + '" height="' + (w / 2) + '">' + inner + '</svg>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + (s.cls === 'Master' ? '-50 -32 128 64' : '-48 -50 200 100') + '" width="' + w + '" height="' + (w / 2) + '">' + inner + '</svg>';
 }
 var IMG = {};
 function mkImg(markup, vb) {

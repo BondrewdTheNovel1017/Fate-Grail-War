@@ -14,6 +14,11 @@ The design is in the game design document (a Claude doc). This repository holds 
 
 ## Playing
 
+Two ways to play from the start screen:
+
+- **Holy Grail War**: up to seven master and servant teams across all of Fuyuki, with mana, Command Seals, spirit form and contracts.
+- **Arena**: quick fights on seven themed maps: servant duels, free-for-all (3–4), 2v2 teams, master duels, and master-and-servant pairs.
+
 The game is a single web page. Open `dist/fuyuki-war.html` in a browser, or play the published build on claude.ai.
 
 Keyboard: WASD move, J light, K heavy (hold to charge), L block, Space dodge, I skill, O Noble Phantasm (masters: signature spell), U spirit form, Tab target, 1–6 orders, 7–9 Command Seals. On touch screens, use the stick and buttons.
@@ -35,7 +40,7 @@ npm run sim     # balance report from simulated wars
 | `src/page/` | The HTML template and stylesheet. |
 | `tools/` | Build script and the balance simulator. |
 | `tests/` | Automated tests (`node --test`). |
-| `arena/` | The original duel arena, kept as Arena mode. |
+| `arena/` | The original standalone duel arena page, kept for reference. Arena mode now lives in the main game. |
 | `dist/` | The built page. |
 
 Files in each source folder are joined in name order into one script, so a file can use anything defined in a file before it.
