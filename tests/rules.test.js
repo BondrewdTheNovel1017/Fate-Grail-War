@@ -88,3 +88,56 @@ test('AI wars finish without errors', () => {
     for (const f of G.f) assert.ok(Number.isFinite(f.x) && Number.isFinite(f.hp), 'finite state');
   }
 });
+
+test('mana link: a Noble Phantasm costs the master mana', () => {
+  const E = loadEngine();
+  const G = pairWar(E, 'cu', 'rin', 'richard', 'kirei');
+  const s = G.f[0], m = G.f[1], cost = E.npManaCost(s);
+  m.mana = cost - 1; s.mom = 100;
+  assert.ok(!E.canNP(s), 'not enough mana: no NP');
+  m.mana = cost + 10; assert.ok(E.canNP(s));
+  E.press(s, 'np'); run(E, 0.1);
+  assert.strictEqual(s.key, 'np'); assert.ok(Math.abs(m.mana - 10) < 1, 'cost paid');
+});
+
+test('mana link: the NP Command Seal pays for the Noble Phantasm', () => {
+  const E = loadEngine();
+  const G = pairWar(E, 'cu', 'rin', 'richard', 'kirei');
+  const s = G.f[0], m = G.f[1];
+  m.mana = 0; E.useSeal(m, 'np');
+  assert.ok(E.canNP(s));
+});
+
+test('mana link: Kariya pays in blood, orphans pay with their own time', () => {
+  const E = loadEngine();
+  let G = pairWar(E, 'lancelot', 'kariya', 'richard', 'kirei');
+  const s = G.f[0], m = G.f[1];
+  m.mana = 0; s.mom = 100; assert.ok(E.canNP(s));
+  const hp0 = m.hp; E.press(s, 'np'); run(E, 0.1); assert.ok(m.hp < hp0, 'Kariya bled for it');
+  G = pairWar(E, 'cu', 'rin', 'richard', 'kirei');
+  E.kill(G.f[1]); run(E, 0.5); const o = G.f[0], t0 = o.orphanT; o.mom = 100; E.press(o, 'np'); run(E, 0.2);
+  assert.ok(o.orphanT < t0 - 5, 'orphan NP shortens its remaining time');
+});
+
+test('Form Contract: an orphaned servant and a servantless master join up', () => {
+  const E = loadEngine();
+  const G = pairWar(E, 'cu', 'rin', 'richard', 'kirei');
+  const cu = G.f[0], rin = G.f[1], rich = G.f[2], kirei = G.f[3];
+  E.kill(rin); E.kill(rich);
+  assert.ok(!E.enemiesOf(cu).includes(kirei), 'would-be partners do not fight');
+  cu.x = kirei.x + 100; cu.y = kirei.y;
+  assert.strictEqual(E.contractCandidate(kirei, 200), cu);
+  assert.ok(E.formContract(kirei, cu));
+  assert.strictEqual(cu.team, kirei.team); assert.strictEqual(cu.partner, kirei); assert.strictEqual(cu.orphanT, 0);
+});
+
+test('Form Contract: AI orphans and free masters find each other', () => {
+  const E = loadEngine();
+  const G = aiWar(E, [{ servant: E.SERV.cu, master: E.MASTERS.rin }, { servant: E.SERV.richard, master: E.MASTERS.kirei }, { servant: E.SERV.heracles, master: E.MASTERS.illya }]);
+  const cu = G.f[0], rin = G.f[1], rich = G.f[2], kirei = G.f[3];
+  G.f[4].x = 8800; G.f[4].y = 300; G.f[5].x = 8700; G.f[5].y = 350; // keep Heracles' team far away
+  cu.x = 2000; cu.y = 3000; kirei.x = 2600; kirei.y = 3000;
+  E.kill(rin); E.kill(rich);
+  run(E, 15);
+  assert.strictEqual(cu.partner, kirei, 'they formed a contract');
+});

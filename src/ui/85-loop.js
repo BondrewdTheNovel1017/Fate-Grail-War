@@ -10,14 +10,15 @@ function miniMap(mw, mh) {
 }
 function hud() {
   var a = G.f[MEI];
-  if (a.foe !== hudTarget) buildHud();
+  if (a.foe !== hudTarget || a.partner !== hudPartner) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';
-    h.bm.classList.toggle('full', f.mom >= 100); h.hp.textContent = Math.max(0, Math.ceil(f.hp)); h.c.classList.toggle('dead', f.st === 'dead'); });
+    h.bm.classList.toggle('full', f.mom >= 100); h.hp.textContent = Math.max(0, Math.ceil(f.hp)); h.c.classList.toggle('dead', f.st === 'dead'); if (h.bma && f.manaMax) { h.bma.style.transform = 'scaleX(' + clamp(f.mana / f.manaMax, 0, 1) + ')'; h.bma.parentNode.classList.toggle('low', f.mana < MANA.npCost); } if (!f.def.isMaster) h.bm.classList.toggle('nomana', f.mom >= 100 && !canNP(f)); });
   var dh = ''; for (var di = 0; di < a.dodgeMax; di++) dh += di < a.dodges ? '\u25CF ' : (di === a.dodges ? (a.dodgeRe > 1.8 ? '\u25D1 ' : '\u25CB ') : '\u25CB '); $('#dpips').textContent = dh;
   document.querySelector('.b[data-b="dodge"]').classList.toggle('off', a.dodges === 0);
-  var np = document.querySelector('.b[data-b="np"]'), npReady = a.def.isMaster ? (a.sigCd <= 0 && !(a.silenceT > 0)) : a.mom >= 100; np.classList.toggle('rdy', npReady); np.classList.toggle('off', !npReady); np.firstChild.textContent = a.def.isMaster ? (a.silenceT > 0 ? 'Burned ' + Math.ceil(a.silenceT) : a.sigCd > 0 ? (a.A.np.short || a.A.np.name.split(' ')[0]) + ' ' + Math.ceil(a.sigCd) : (a.A.np.short || a.A.np.name.split(' ')[0])) : 'NP';
+  var np = document.querySelector('.b[data-b="np"]'), npReady = a.def.isMaster ? (a.sigCd <= 0 && !(a.silenceT > 0) && canPay(a, MANA.sigCost)) : (a.mom >= 100 && canNP(a)); np.classList.toggle('rdy', npReady); np.classList.toggle('off', !npReady); np.firstChild.textContent = a.def.isMaster ? (a.silenceT > 0 ? 'Burned ' + Math.ceil(a.silenceT) : a.sigCd > 0 ? (a.A.np.short || a.A.np.name.split(' ')[0]) + ' ' + Math.ceil(a.sigCd) : (a.A.np.short || a.A.np.name.split(' ')[0])) : (a.mom >= 100 && !canNP(a) ? 'No mana' : 'NP');
   if (a.def.isMaster) { document.querySelectorAll('.b.seal[data-b]').forEach(function (el) { el.classList.toggle('used', !!a.sealUsed[el.dataset.b.slice(5)] || !a.partner || a.partner.st === 'dead'); }); var sl = sealsLeft(a); $('#sealL').textContent = sl; $('#sealBtn').classList.toggle('used', sl === 0); }
+  var ctb = document.querySelector('.b[data-b="contract"]'), cand = contractCandidate(a, CONTRACT_RANGE + 40); ctb.hidden = !cand; if (cand) ctb.lastChild.textContent = cand.def.isMaster ? shortName(cand.def.name) : shortName(cand.def.name);
   $('#spl').textContent = a.spirit === 2 ? 'unseen' : a.spirit ? '...' : ''; $('#tgl').textContent = a.lock ? 'locked' : 'auto'; document.querySelector('.b[data-b="target"]').classList.toggle('locked', !!a.lock);
   var sk = document.querySelector('.b[data-b="skill"]'); sk.classList.toggle('off', a.cd > 0 || (a.def.isMaster && a.silenceT > 0));
   var ls = a.A.lightSeq, lt = $('#lightSp'), ht = $('#heavySp');

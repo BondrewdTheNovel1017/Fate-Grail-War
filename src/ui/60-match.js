@@ -1,11 +1,11 @@
 var HUD = [];
-function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div></div>'; }
-var hudTarget = null;
+function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
+var hudTarget = null, hudPartner = null;
 function buildHud() {
   var me0 = G.f[MEI], tg = me0.foe, list = [[me0, 'You'], [me0.partner, me0.def.isMaster ? 'Servant' : 'Master']]; if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']);
-  hudTarget = tg; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
+  hudTarget = tg; hudPartner = me0.partner; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
   el.innerHTML = list.map(function (q) { return hudCard(q[0], q[1]); }).join('');
-  el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]') }); });
+  el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]'), bma: c.querySelector('[data-h=bma]') }); });
 }
 function startMatch() {
   if (NET.role === 'client') return;

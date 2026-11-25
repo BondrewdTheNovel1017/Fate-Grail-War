@@ -197,6 +197,7 @@ function aiWar(ai, dt) {
   if (f.recover && (f.hp > f.def.hp * 0.85 || (near && nd < 300))) f.recover = false;
   if (f.recover && st === 'charge' && !f.isPlayerMate) st = 'spirit';
   if (f.sealOrder > 0 && st !== 'charge') st = 'charge';
+  if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
     if (f.spirit === 0 && f.st === 'idle' && nd > 160) press(f, 'spirit');
     var hh = f.home || MAP.spawns.at(f.team), home = m || { x: hh[0], y: hh[1] };
@@ -231,22 +232,25 @@ function aiMaster(ai, dt) {
   ai.cool -= dt; inp.guard = false; if (inp.heavy && G.time >= ai.relAt) inp.heavy = false;
   var thr = null, td = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) return; var d = dist(f, e); if (d < td) { td = d; thr = e; } });
   var silenced = f.silenceT > 0, sk = A.skill.kind, np = A.np;
+  // keep enough mana for the servant's Noble Phantasm once it is close to ready
+  var reserve = (s && s.mom > 55 && !s.sealFree) ? npManaCost(s) : 0, sigOk = canPay(f, MANA.sigCost + reserve), skOk = canPay(f, MANA.skillCost + reserve) || (sk === 'heal' && s && s.hp < s.def.hp * 0.4 && canPay(f, MANA.skillCost));
   // Command Seals
   if (s && sealsLeft(f) > 0) {
     if (!f.sealUsed.heal && s.hp < s.def.hp * 0.3 && s.foe && dist(s, s.foe) < 500) useSeal(f, 'heal');
     else if (!f.sealUsed.warp && thr && td < 260 && dist(f, s) > 600) useSeal(f, 'warp');
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && Math.random() < 0.0008) useSeal(f, 'np');
   }
-  if (!s) { moveTo(f, 1100, 2480, 1); if (!f.toldChurch) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, { x: 1100, y: 2480 }) < 120) { inp.mx = 0; inp.my = 0; } return; }
+  if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
+    moveTo(f, 1100, 2480, 1); if (!f.toldChurch) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, { x: 1100, y: 2480 }) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // skills
-  if (!silenced && f.cd <= 0 && f.st === 'idle') {
+  if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.5 && s.foe && dist(s, s.foe) < 600);
     if (want) { press(f, 'skill'); return; }
   }
   if (thr && td < 330) {
     var aw = angTo(thr, f), gx = f.x + Math.cos(aw) * 260, gy = f.y + Math.sin(aw) * 260;
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }
-    if (!silenced && f.sigCd <= 0 && np.aiUse === 'near' && td < (np.r || np.reach + np.lunge * 0.6) + FR && f.st === 'idle') { press(f, 'np'); return; }
+    if (!silenced && sigOk && f.sigCd <= 0 && np.aiUse === 'near' && td < (np.r || np.reach + np.lunge * 0.6) + FR && f.st === 'idle') { press(f, 'np'); return; }
     moveTo(f, gx, gy);
     if (thr.st === 'wind' && thr.foe === f && td < 220 && f.dodges > 0 && Math.random() < 0.08 + 0.2 * cfg.skill) aiPressDodge(ai);
     return;
@@ -256,7 +260,7 @@ function aiMaster(ai, dt) {
   if (dist(f, { x: bx, y: by }) > 70) moveTo(f, bx, by, 0.9); else { inp.mx = 0; inp.my = 0; }
   var tg = sf || f.foe;
   if (np.aiUse === 'origin') { var em = null, ed = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) { var d3 = dist(f, e); if (d3 < ed) { ed = d3; em = e; } } }); if (em && ed < 850 && losClear(f, em)) tg = em; }
-  if (!silenced && f.sigCd <= 0 && f.st === 'idle' && tg) {
+  if (!silenced && sigOk && f.sigCd <= 0 && f.st === 'idle' && tg) {
     var dT = dist(f, tg);
     if ((np.aiUse === 'ranged' || np.aiUse === 'origin') && dT < (np.range || 600) * 0.85 && losClear(f, tg)) { f.lock = tg; press(f, 'np'); return; }
     if (np.aiUse === 'ally' && sf && dist(s, sf) < 420) { press(f, 'np'); return; }

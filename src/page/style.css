@@ -120,6 +120,9 @@ details.how .rules { margin-top: 10px; }
 .bar.sta { height: 6px; } .bar.sta i { background: var(--ok); }
 .bar.mom { height: 6px; } .bar.mom i { background: var(--amber); }
 .bar.mom.full i { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+.bar.mom.nomana i { background: #6a5a3a; box-shadow: none; }
+.bar.mana { height: 5px; } .bar.mana i { background: #5aa0ff; } .bar.mana.low i { background: #3a5a8a; }
+.b.contract { border-color: #9fe6b0; color: #c8f5d4; box-shadow: 0 0 10px rgba(159, 230, 176, .45); }
 .stage { position: relative; }
 body.ingame .wrap { max-width: 1500px; }
 /* in-game: the battlefield fills the whole window; HUD and controls sit in fixed, non-overlapping zones */

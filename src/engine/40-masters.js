@@ -43,7 +43,7 @@ var MASTERS = {
     heavy: { name: 'Wire spear', kind: 'proj', speed: 1300, range: 650, dmg: 12, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
     skill: { name: 'Alchemic Healing', kind: 'heal', amount: 45, range: 360, wind: 0.6, act: 0.05, rec: 0.4, cd: 16, cost: 18 },
     np: { name: 'Wire Bind', kind: 'proj', speed: 900, range: 560, dmg: 6, root: 1.8, wind: 0.45, act: 0.05, rec: 0.4, cost: 0, shape: 'orb', size: 9, col: '#cfd8e6', cd: 18, aiUse: 'ranged' } }),
-  kariya: MD({ id: 'kariya', name: 'Kariya Matou', type: 'Fledgling mage', col: '#5a4a6a', hp: 90, spd: 195, guard: 0.3,
+  kariya: MD({ id: 'kariya', name: 'Kariya Matou', type: 'Fledgling mage', col: '#5a4a6a', bloodMana: true, hp: 90, spd: 195, guard: 0.3,
     brief: 'A Matou who took the crest worms. He feeds his own life to his servant, and his worms swarm the ground.',
     light: { name: 'Crest worms', kind: 'proj', speed: 700, range: 520, dmg: 6, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 7, col: '#4a3a5a' },
     heavy: { name: 'Worm swarm', kind: 'volley', count: 3, spread: 0.18, speed: 700, range: 520, dmg: 5, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'orb', size: 6, col: '#4a3a5a' },

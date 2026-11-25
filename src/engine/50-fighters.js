@@ -23,7 +23,7 @@ function newGame(dA, dB, opts) {
 }
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
-function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM) r.push(e); } return r; }
+function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2)) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
@@ -37,7 +37,7 @@ function newWar(teamsIn, opts) {
   opts = opts || {}; setMap('fuyuki');
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null };
   teamsIn.forEach(function (t, ti) {
-    var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp;
+    var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
     sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
@@ -59,7 +59,7 @@ function sealsLeft(f) { return f.sealUsed ? ['np', 'heal', 'warp'].filter(functi
 function useSeal(f, kind) {
   var sv = f.partner; if (!f.def.isMaster || f.st === 'dead' || !sv || sv.st === 'dead' || f.sealUsed[kind]) return false;
   f.sealUsed[kind] = true; f.seals = sealsLeft(f);
-  if (kind === 'np') { sv.mom = 100; sv.sealOrder = 6; FX.text(sv, 'BY MY COMMAND SEAL: RELEASE IT'); }
+  if (kind === 'np') { sv.mom = 100; sv.sealOrder = 6; sv.sealFree = true; FX.text(sv, 'BY MY COMMAND SEAL: RELEASE IT'); }
   else if (kind === 'heal') { sv.hp = Math.min(sv.def.hp, sv.hp + sv.def.hp * 0.5); sv.bleedT = 0; FX.text(sv, 'BY MY COMMAND SEAL: ENDURE'); }
   else if (kind === 'warp') { var a0 = Math.random() * 6.283; sv.x = clamp(f.x + Math.cos(a0) * 60, FR, W - FR); sv.y = clamp(f.y + Math.sin(a0) * 60, FR, H - FR); sv.kx = sv.ky = 0; sv.spirit = 0; sv.inM = f.inM; if (sv.st !== 'stag') { sv.st = 'idle'; sv.act = null; } FX.text(sv, 'BY MY COMMAND SEAL: COME TO ME'); }
   FX.text(f, 'COMMAND SEAL'); FX.fx('seal', f.x, f.y, f); FX.fx('seal', sv.x, sv.y, sv); FX.snd('godhand', f);
@@ -87,6 +87,7 @@ function kill(f, noRevive) {
     return;
   }
   f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0;
+  f.cause = f.cause || (f.lastHit ? (f.lastHit.key === 'np' && !f.lastHit.by.def.isMaster ? 'np' : f.lastHit.by.def.isMaster ? 'master' : 'combat') : 'other'); f.killer = f.lastHit ? f.lastHit.by : null;
   if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? 120 : 20; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
   var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }

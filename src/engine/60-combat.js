@@ -12,6 +12,8 @@ function hurt(att, def, a, mult, src) {
   if (G.mode === 'war' && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
+  if (att && starved(att)) dmg *= MANA.starveDmg;
+  if (att) def.lastHit = { by: att, key: a.key };
   if (def.reinfT > 0) dmg *= 0.6;
   if (a.silence && def.shieldT > 0) { def.shieldT = 0; def.shieldN = 0; dmg *= 2; FX.text(def, 'MERCURY SHATTERED'); }
   else if (def.shieldT > 0 && def.shieldN > 0 && !a.unblock) { def.shieldN--; if (def.shieldN <= 0) def.shieldT = 0; FX.text(def, 'MERCURY WALL'); FX.spark(def.x, def.y, '#d8dde2', 10); FX.snd('block', def, a); if (src) src.dead = true; return 'block'; }
@@ -95,8 +97,9 @@ function startAct(f, key) {
   if (a.max && f.ai) { /* AI sets goal */ }
   if (key === 'skill') { f.cd = a.cd || 5; if (a.momGain) gainMom(f, a.momGain); if (a.beam) FX.snd('beamCharge', f, a); if (a.shape === 'drill') FX.snd('drawBow', f, a); }
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
+  if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -217,10 +220,11 @@ function stepF(f, dt) {
     if (f.spirit === 1) { f.spT -= dt; if (f.spT <= 0) f.spirit = 2; }
     else if (f.spirit === 3) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 0; FX.text(f, 'MATERIALIZED'); } }
     else if (f.spirit === 2) { f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
-    if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; kill(f, true); } }
+    if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; f.cause = 'fade'; kill(f, true); } }
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
+    if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);
     if (f.sigCd > 0) f.sigCd -= dt; if (f.silenceT > 0) f.silenceT -= dt; if (f.shieldT > 0) f.shieldT -= dt; if (f.rootT > 0) f.rootT -= dt; if (f.buffT > 0) f.buffT -= dt; if (f.reinfT > 0) f.reinfT -= dt;
   }
   if (f.brokenT > 0) { f.brokenT -= dt; if (f.brokenT <= 0) { FX.text(f, 'REFORGED'); FX.snd('charge', f); } }
@@ -245,8 +249,8 @@ function stepF(f, dt) {
     if (n && f.exh <= 0) {
       var ok = false;
       if (n === 'dodge') { startDodge(f); ok = true; }
-      else if (n === 'skill') { if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
-      else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0)) : f.mom >= 100) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
+      else if (n === 'skill') { if (f.def.isMaster && G.mode === 'war' && f.cd <= 0 && !(f.silenceT > 0) && !canPay(f, MANA.skillCost)) FX.text(f, 'NO MANA'); else if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
+      else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0) && (G.mode !== 'war' || canPay(f, MANA.sigCost))) : (f.mom >= 100 && canNP(f))) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); else if (f.def.isMaster ? f.sigCd <= 0 : f.mom >= 100) FX.text(f.def.isMaster ? f : (livingMaster(f) || f), 'NO MANA'); }
       else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
       else if (n === 'heavy') { f.combo = 0; ok = startAct(f, 'heavy'); }
       else if (n === 'light') { f.combo = 0; ok = startAct(f, 'light'); }

@@ -3,7 +3,7 @@
 const { engineSource } = require('../tools/build.js');
 
 const EXPORTS = ['SERV', 'ORDER', 'CLASSES', 'MASTERS', 'MASTER_ORDER', 'DIFF', 'MAPS', 'STEP', 'FR',
-  'newWar', 'warTeams', 'mkAI', 'simStep', 'press', 'hurt', 'kill', 'useSeal', 'sealsLeft', 'setMarble', 'breakMarble', 'enemiesOf', 'gainMom', 'dist'];
+  'newWar', 'warTeams', 'formContract', 'contractCandidate', 'canNP', 'npManaCost', 'MANA', 'initMana', 'mkAI', 'simStep', 'press', 'hurt', 'kill', 'useSeal', 'sealsLeft', 'setMarble', 'breakMarble', 'enemiesOf', 'gainMom', 'dist'];
 
 function loadEngine() {
   const body = engineSource() + '\nreturn { ' + EXPORTS.map((n) => n + ': ' + n).join(', ') +

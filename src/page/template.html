@@ -25,6 +25,8 @@
     <div class="rule"><b>Spirit form</b>Servants dematerialize in 1.5 seconds (1 to return). Unseen, untouchable and faster, but cannot attack. A hit while changing form cancels it.</div>
     <div class="rule"><b>Orders</b>Playing as the master, you order your servant: Protect, Charge, Hold, Don't attack, Retreat or Spirit form.</div>
     <div class="rule"><b>Command Seals</b>Three seals, each used once: <b>NP</b> charges your servant's Noble Phantasm at once, <b>Heal</b> restores half its health, <b>Recall</b> brings it to your side from anywhere.</div>
+    <div class="rule"><b>Mana link</b>Every master has a mana pool that refills over time. A Noble Phantasm costs the master 40 mana (55 for a reality marble), and the master's own skill and signature spell cost some too. A materialized servant slowly drains its master, faster when they are far apart; spirit form costs nothing. A servant whose master runs dry deals less damage. Kariya pays any shortfall with his own blood, and the NP Command Seal pays the full cost.</div>
+    <div class="rule"><b>Form Contract</b>A servant who loses their master and a master who loses their servant can bind themselves anew: walk up to them and press Contract (F). Until then they won't fight each other. The new pair fights for the master's team and keeps the master's remaining Command Seals. A masterless servant can still release its Noble Phantasm, but it burns 6 seconds of the time it has left.</div>
     <div class="rule"><b>Master magecraft</b>Every master has a skill and a signature spell on the NP button with its own cooldown. Masters are fragile and deal half damage to servants. Kiritsugu's Origin Bullet burns a master's circuits: no skill or signature for 10 seconds.</div>
     <div class="rule"><b>Reality marbles</b>Unlimited Blade Works and Ionioi Hetairoi pull everyone within range into a sealed world for 25 seconds, keeping where they stood. Outsiders can't see in or reach them. Spirit form escapes the pull, a Command Seal recall pulls a servant out, and Enuma Elish shatters it.</div>
     <div class="rule"><b>Shirou's Trace</b>Fighting fills his gauge. At 40 he learns Trace On: homing blades and Kanshou and Bakuya. At 100 he can open Unlimited Blade Works once, with homing swords that last longer than EMIYA's.</div>
@@ -32,7 +34,7 @@
     <div class="rule"><b>Target lock</b>Tap or click an enemy to lock on, or press Target to cycle. Tap empty ground to clear.</div>
     <div class="rule"><b>The city</b>The Mion River splits Miyama from Shinto; cross at Fuyuki Bridge or the south bridge. Ryuudou Temple and Mount Enzou, the Tohsaka and Matou houses, the church, Homurahara Academy, the Emiya house and the shopping street sit in Miyama; the Center Building, Hyatt, Verde, the station, Central Park, Semina Apartments, the harbor and the Einzbern forest in Shinto. Buildings block sight and shots.</div>
   </div>
-  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall.</p>
+  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract.</p>
   </details>
   <div class="startbar"><div id="summary"></div><button type="button" class="btn" id="go">Begin the war</button></div>
 </section>
@@ -56,6 +58,7 @@
   <div class="minis">
     <button type="button" class="b" data-b="spirit">Spirit<small id="spl"></small></button>
     <button type="button" class="b" data-b="target">Target<small id="tgl"></small></button>
+    <button type="button" class="b contract" data-b="contract" hidden>Contract<small></small></button>
     <button type="button" class="b ui" id="ordBtn" aria-expanded="false" aria-controls="ordPop">Orders<small id="ordL"></small></button>
     <button type="button" class="b ui seal" id="sealBtn" aria-expanded="false" aria-controls="sealPop">Seals<small id="sealL"></small></button>
   </div>

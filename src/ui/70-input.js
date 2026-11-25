@@ -9,6 +9,7 @@ function btnDown(b) {
 }
 function doButton(f, b) {
   if (b === 'target') { cycleTarget(f); return; }
+  if (b === 'contract') { var cc = contractCandidate(f, CONTRACT_RANGE + 40); if (!cc || !formContract(f, cc)) FX.text(f, 'NOBODY TO CONTRACT WITH'); return; }
   if (b.indexOf('seal_') === 0) { if (f.def.isMaster) { if (!useSeal(f, b.slice(5))) FX.text(f, f.sealUsed[b.slice(5)] ? 'SEAL ALREADY USED' : 'NO SERVANT'); } return; }
   if (b === 'block') f.inp.guard = true;
   else if (b === 'heavy') { f.inp.heavy = true; press(f, 'heavy'); }
@@ -33,7 +34,7 @@ stick.addEventListener('pointerdown', function (e) { e.preventDefault(); stickId
 stick.addEventListener('pointermove', function (e) { if (e.pointerId === stickId) stickMove(e); });
 var stickUp = function (e) { if (e.pointerId !== stickId) return; stickId = null; knob.style.transform = ''; held.mx = 0; held.my = 0; };
 stick.addEventListener('pointerup', stickUp); stick.addEventListener('pointercancel', stickUp); stick.addEventListener('lostpointercapture', stickUp);
-var KM = { '7': 'seal_np', '8': 'seal_heal', '9': 'seal_warp', u: 'spirit', tab: 'target', j: 'light', z: 'light', k: 'heavy', x: 'heavy', l: 'block', c: 'block', shift: 'block', ' ': 'dodge', i: 'skill', v: 'skill', o: 'np', b: 'np' };
+var KM = { f: 'contract', '7': 'seal_np', '8': 'seal_heal', '9': 'seal_warp', u: 'spirit', tab: 'target', j: 'light', z: 'light', k: 'heavy', x: 'heavy', l: 'block', c: 'block', shift: 'block', ' ': 'dodge', i: 'skill', v: 'skill', o: 'np', b: 'np' };
 window.addEventListener('keydown', function (e) {
   if (!running) return; var k = e.key.toLowerCase();
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab'].indexOf(k) >= 0) e.preventDefault();

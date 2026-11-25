@@ -126,6 +126,9 @@ details.how .rules { margin-top: 10px; }
 .bar.sta { height: 6px; } .bar.sta i { background: var(--ok); }
 .bar.mom { height: 6px; } .bar.mom i { background: var(--amber); }
 .bar.mom.full i { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+.bar.mom.nomana i { background: #6a5a3a; box-shadow: none; }
+.bar.mana { height: 5px; } .bar.mana i { background: #5aa0ff; } .bar.mana.low i { background: #3a5a8a; }
+.b.contract { border-color: #9fe6b0; color: #c8f5d4; box-shadow: 0 0 10px rgba(159, 230, 176, .45); }
 .stage { position: relative; }
 body.ingame .wrap { max-width: 1500px; }
 /* in-game: the battlefield fills the whole window; HUD and controls sit in fixed, non-overlapping zones */
@@ -240,6 +243,8 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
     <div class="rule"><b>Spirit form</b>Servants dematerialize in 1.5 seconds (1 to return). Unseen, untouchable and faster, but cannot attack. A hit while changing form cancels it.</div>
     <div class="rule"><b>Orders</b>Playing as the master, you order your servant: Protect, Charge, Hold, Don't attack, Retreat or Spirit form.</div>
     <div class="rule"><b>Command Seals</b>Three seals, each used once: <b>NP</b> charges your servant's Noble Phantasm at once, <b>Heal</b> restores half its health, <b>Recall</b> brings it to your side from anywhere.</div>
+    <div class="rule"><b>Mana link</b>Every master has a mana pool that refills over time. A Noble Phantasm costs the master 40 mana (55 for a reality marble), and the master's own skill and signature spell cost some too. A materialized servant slowly drains its master, faster when they are far apart; spirit form costs nothing. A servant whose master runs dry deals less damage. Kariya pays any shortfall with his own blood, and the NP Command Seal pays the full cost.</div>
+    <div class="rule"><b>Form Contract</b>A servant who loses their master and a master who loses their servant can bind themselves anew: walk up to them and press Contract (F). Until then they won't fight each other. The new pair fights for the master's team and keeps the master's remaining Command Seals. A masterless servant can still release its Noble Phantasm, but it burns 6 seconds of the time it has left.</div>
     <div class="rule"><b>Master magecraft</b>Every master has a skill and a signature spell on the NP button with its own cooldown. Masters are fragile and deal half damage to servants. Kiritsugu's Origin Bullet burns a master's circuits: no skill or signature for 10 seconds.</div>
     <div class="rule"><b>Reality marbles</b>Unlimited Blade Works and Ionioi Hetairoi pull everyone within range into a sealed world for 25 seconds, keeping where they stood. Outsiders can't see in or reach them. Spirit form escapes the pull, a Command Seal recall pulls a servant out, and Enuma Elish shatters it.</div>
     <div class="rule"><b>Shirou's Trace</b>Fighting fills his gauge. At 40 he learns Trace On: homing blades and Kanshou and Bakuya. At 100 he can open Unlimited Blade Works once, with homing swords that last longer than EMIYA's.</div>
@@ -247,7 +252,7 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
     <div class="rule"><b>Target lock</b>Tap or click an enemy to lock on, or press Target to cycle. Tap empty ground to clear.</div>
     <div class="rule"><b>The city</b>The Mion River splits Miyama from Shinto; cross at Fuyuki Bridge or the south bridge. Ryuudou Temple and Mount Enzou, the Tohsaka and Matou houses, the church, Homurahara Academy, the Emiya house and the shopping street sit in Miyama; the Center Building, Hyatt, Verde, the station, Central Park, Semina Apartments, the harbor and the Einzbern forest in Shinto. Buildings block sight and shots.</div>
   </div>
-  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall.</p>
+  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract.</p>
   </details>
   <div class="startbar"><div id="summary"></div><button type="button" class="btn" id="go">Begin the war</button></div>
 </section>
@@ -271,6 +276,7 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
   <div class="minis">
     <button type="button" class="b" data-b="spirit">Spirit<small id="spl"></small></button>
     <button type="button" class="b" data-b="target">Target<small id="tgl"></small></button>
+    <button type="button" class="b contract" data-b="contract" hidden>Contract<small></small></button>
     <button type="button" class="b ui" id="ordBtn" aria-expanded="false" aria-controls="ordPop">Orders<small id="ordL"></small></button>
     <button type="button" class="b ui seal" id="sealBtn" aria-expanded="false" aria-controls="sealPop">Seals<small id="sealL"></small></button>
   </div>
@@ -616,7 +622,7 @@ var MASTERS = {
     heavy: { name: 'Wire spear', kind: 'proj', speed: 1300, range: 650, dmg: 12, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'blade' },
     skill: { name: 'Alchemic Healing', kind: 'heal', amount: 45, range: 360, wind: 0.6, act: 0.05, rec: 0.4, cd: 16, cost: 18 },
     np: { name: 'Wire Bind', kind: 'proj', speed: 900, range: 560, dmg: 6, root: 1.8, wind: 0.45, act: 0.05, rec: 0.4, cost: 0, shape: 'orb', size: 9, col: '#cfd8e6', cd: 18, aiUse: 'ranged' } }),
-  kariya: MD({ id: 'kariya', name: 'Kariya Matou', type: 'Fledgling mage', col: '#5a4a6a', hp: 90, spd: 195, guard: 0.3,
+  kariya: MD({ id: 'kariya', name: 'Kariya Matou', type: 'Fledgling mage', col: '#5a4a6a', bloodMana: true, hp: 90, spd: 195, guard: 0.3,
     brief: 'A Matou who took the crest worms. He feeds his own life to his servant, and his worms swarm the ground.',
     light: { name: 'Crest worms', kind: 'proj', speed: 700, range: 520, dmg: 6, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 7, col: '#4a3a5a' },
     heavy: { name: 'Worm swarm', kind: 'volley', count: 3, spread: 0.18, speed: 700, range: 520, dmg: 5, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'orb', size: 6, col: '#4a3a5a' },
@@ -682,7 +688,7 @@ function newGame(dA, dB, opts) {
 }
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
-function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM) r.push(e); } return r; }
+function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2)) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
@@ -696,7 +702,7 @@ function newWar(teamsIn, opts) {
   opts = opts || {}; setMap('fuyuki');
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null };
   teamsIn.forEach(function (t, ti) {
-    var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp;
+    var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
     sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
@@ -718,7 +724,7 @@ function sealsLeft(f) { return f.sealUsed ? ['np', 'heal', 'warp'].filter(functi
 function useSeal(f, kind) {
   var sv = f.partner; if (!f.def.isMaster || f.st === 'dead' || !sv || sv.st === 'dead' || f.sealUsed[kind]) return false;
   f.sealUsed[kind] = true; f.seals = sealsLeft(f);
-  if (kind === 'np') { sv.mom = 100; sv.sealOrder = 6; FX.text(sv, 'BY MY COMMAND SEAL: RELEASE IT'); }
+  if (kind === 'np') { sv.mom = 100; sv.sealOrder = 6; sv.sealFree = true; FX.text(sv, 'BY MY COMMAND SEAL: RELEASE IT'); }
   else if (kind === 'heal') { sv.hp = Math.min(sv.def.hp, sv.hp + sv.def.hp * 0.5); sv.bleedT = 0; FX.text(sv, 'BY MY COMMAND SEAL: ENDURE'); }
   else if (kind === 'warp') { var a0 = Math.random() * 6.283; sv.x = clamp(f.x + Math.cos(a0) * 60, FR, W - FR); sv.y = clamp(f.y + Math.sin(a0) * 60, FR, H - FR); sv.kx = sv.ky = 0; sv.spirit = 0; sv.inM = f.inM; if (sv.st !== 'stag') { sv.st = 'idle'; sv.act = null; } FX.text(sv, 'BY MY COMMAND SEAL: COME TO ME'); }
   FX.text(f, 'COMMAND SEAL'); FX.fx('seal', f.x, f.y, f); FX.fx('seal', sv.x, sv.y, sv); FX.snd('godhand', f);
@@ -746,11 +752,73 @@ function kill(f, noRevive) {
     return;
   }
   f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0;
+  f.cause = f.cause || (f.lastHit ? (f.lastHit.key === 'np' && !f.lastHit.by.def.isMaster ? 'np' : f.lastHit.by.def.isMaster ? 'master' : 'combat') : 'other'); f.killer = f.lastHit ? f.lastHit.by : null;
   if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? 120 : 20; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
   var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
   else { G.f.forEach(pickTarget); } G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); FX.slow(1.1);
 }
+/* ---- mana link: a master's mana feeds their servant ----
+   Masters regenerate mana; a materialized servant drains a little upkeep (more when far from its master).
+   Noble Phantasms cost the master mana, as do the master's own skill and signature spell.
+   A servant whose master runs dry fights weaker. A masterless servant pays for its NP with its own remaining time. */
+var MANA = { upkeep: 0.25, farDist: 1800, farDrain: 0.8, npCost: 40, marbleCost: 55, sigCost: 12, skillCost: 6, starved: 5, starveDmg: 0.85, orphanNp: 6 };
+// [pool, regen per second]
+var MANA_POOL = { rin: [100, 2.0], kiritsugu: [70, 1.4], shirou: [45, 0.8], kayneth: [110, 2.2], kirei: [80, 1.6], waver: [60, 1.2], irisviel: [100, 2.0], kariya: [50, 0.8], illya: [160, 3.2], sakura: [130, 2.6] };
+function initMana(m) { var p = MANA_POOL[m.def.id] || [80, 1.6]; m.manaMax = p[0]; m.manaRegen = p[1]; m.mana = p[0] * 0.75; }
+function livingMaster(s) { var m = s.partner; return m && m.def.isMaster && m.st !== 'dead' ? m : null; }
+function npManaCost(s) { var a = s.A.np; return a.manaCost || ((a.marble || a.kind === 'ubw') ? MANA.marbleCost : MANA.npCost); }
+// can master m pay `cost`? Kariya pays any shortfall in blood
+function canPay(m, cost) { return m.mana >= cost || !!(m.def.bloodMana && m.hp > cost - m.mana + 5); }
+function payMana(m, cost) {
+  if (m.mana >= cost) { m.mana -= cost; return true; }
+  if (m.def.bloodMana) { var need = cost - m.mana; if (m.hp > need + 5) { m.mana = 0; m.hp -= need; m.stat.taken += need; FX.text(m, 'CREST WORMS -' + Math.round(need)); return true; } }
+  return false;
+}
+function canNP(s) { if (G.mode !== 'war' || s.sealFree) return true; var m = livingMaster(s); return !m || canPay(m, npManaCost(s)); }
+function spendNP(s) {
+  if (G.mode !== 'war') return;
+  if (s.sealFree) { s.sealFree = false; return; }
+  var m = livingMaster(s);
+  if (m) payMana(m, npManaCost(s));
+  else if (s.orphanT > 0) { s.orphanT = Math.max(2, s.orphanT - MANA.orphanNp); FX.text(s, 'BURNING ITS OWN EXISTENCE'); }
+}
+function masterCost(key) { return key === 'np' ? MANA.sigCost : key === 'skill' ? MANA.skillCost : 0; }
+function starved(s) { var m = livingMaster(s); return !!(G.mode === 'war' && !s.def.isMaster && m && m.mana < MANA.starved); }
+function manaTick(m, dt) {
+  if (m.manaMax === undefined) initMana(m);
+  m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * dt);
+  var s = m.partner; if (!s || s.st === 'dead' || s.def.isMaster) return;
+  var drain = s.spirit === 2 ? 0 : MANA.upkeep; if (dist(m, s) > MANA.farDist) drain += MANA.farDrain;
+  m.mana = Math.max(0, m.mana - drain * dt);
+}
+/* ---- Form Contract: a masterless servant and a servantless master may bind themselves anew ----
+   While a contract is possible the two ignore each other in combat. The new pair fights for the master's team
+   and keeps whatever Command Seals the master has left. */
+var CONTRACT_RANGE = 170;
+function isOrphan(s) { return !s.def.isMaster && s.st !== 'dead' && s.orphanT > 0; }
+function isFreeMaster(m) { return !!m.def.isMaster && m.st !== 'dead' && (!m.partner || m.partner.st === 'dead'); }
+function contractable(a, b) { return a !== b && ((isOrphan(a) && isFreeMaster(b)) || (isFreeMaster(a) && isOrphan(b))); }
+function contractCandidate(f, range) {
+  if (G.mode !== 'war' || !(isOrphan(f) || isFreeMaster(f))) return null;
+  var best = null, bd = range || 1e9;
+  for (var i = 0; i < G.f.length; i++) { var o = G.f[i]; if (contractable(f, o) && !!o.inM === !!f.inM && o.spirit !== 2) { var d = dist(f, o); if (d <= bd) { bd = d; best = o; } } }
+  return best;
+}
+function formContract(a, b) {
+  if (!contractable(a, b) || dist(a, b) > CONTRACT_RANGE + 40) return false;
+  var m = a.def.isMaster ? a : b, s = a.def.isMaster ? b : a;
+  s.team = m.team; s.partner = m; m.partner = s; s.orphanT = 0; s.recover = false; s.lock = null; m.lock = null; s.anchor = null;
+  s.isPlayerMate = !!m.isPlayerMate || m === G.f[0]; s.home = m.home;
+  if (m.manaMax === undefined) initMana(m);
+  FX.text(s, 'CONTRACT FORMED'); FX.fx('seal', m.x, m.y, m); FX.fx('seal', s.x, s.y, s); FX.snd('godhand', m);
+  G.contracts = (G.contracts || 0) + 1;
+  G.f.forEach(pickTarget);
+  return true;
+}
+// AI on both sides closes the deal by itself; a human decides with the Contract button
+function aiWantsContract(f) { var c = contractCandidate(f); return c; }
+function autoContract(f, c) { if (G.ai[f.idx] && G.ai[c.idx] && dist(f, c) <= CONTRACT_RANGE) formContract(f, c); }
 /* source: attacker fighter (for facing checks) or projectile. returns outcome string */
 function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
@@ -765,6 +833,8 @@ function hurt(att, def, a, mult, src) {
   if (G.mode === 'war' && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
+  if (att && starved(att)) dmg *= MANA.starveDmg;
+  if (att) def.lastHit = { by: att, key: a.key };
   if (def.reinfT > 0) dmg *= 0.6;
   if (a.silence && def.shieldT > 0) { def.shieldT = 0; def.shieldN = 0; dmg *= 2; FX.text(def, 'MERCURY SHATTERED'); }
   else if (def.shieldT > 0 && def.shieldN > 0 && !a.unblock) { def.shieldN--; if (def.shieldN <= 0) def.shieldT = 0; FX.text(def, 'MERCURY WALL'); FX.spark(def.x, def.y, '#d8dde2', 10); FX.snd('block', def, a); if (src) src.dead = true; return 'block'; }
@@ -848,8 +918,9 @@ function startAct(f, key) {
   if (a.max && f.ai) { /* AI sets goal */ }
   if (key === 'skill') { f.cd = a.cd || 5; if (a.momGain) gainMom(f, a.momGain); if (a.beam) FX.snd('beamCharge', f, a); if (a.shape === 'drill') FX.snd('drawBow', f, a); }
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
+  if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -970,10 +1041,11 @@ function stepF(f, dt) {
     if (f.spirit === 1) { f.spT -= dt; if (f.spT <= 0) f.spirit = 2; }
     else if (f.spirit === 3) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 0; FX.text(f, 'MATERIALIZED'); } }
     else if (f.spirit === 2) { f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
-    if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; kill(f, true); } }
+    if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; f.cause = 'fade'; kill(f, true); } }
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
+    if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);
     if (f.sigCd > 0) f.sigCd -= dt; if (f.silenceT > 0) f.silenceT -= dt; if (f.shieldT > 0) f.shieldT -= dt; if (f.rootT > 0) f.rootT -= dt; if (f.buffT > 0) f.buffT -= dt; if (f.reinfT > 0) f.reinfT -= dt;
   }
   if (f.brokenT > 0) { f.brokenT -= dt; if (f.brokenT <= 0) { FX.text(f, 'REFORGED'); FX.snd('charge', f); } }
@@ -998,8 +1070,8 @@ function stepF(f, dt) {
     if (n && f.exh <= 0) {
       var ok = false;
       if (n === 'dodge') { startDodge(f); ok = true; }
-      else if (n === 'skill') { if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
-      else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0)) : f.mom >= 100) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
+      else if (n === 'skill') { if (f.def.isMaster && G.mode === 'war' && f.cd <= 0 && !(f.silenceT > 0) && !canPay(f, MANA.skillCost)) FX.text(f, 'NO MANA'); else if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
+      else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0) && (G.mode !== 'war' || canPay(f, MANA.sigCost))) : (f.mom >= 100 && canNP(f))) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); else if (f.def.isMaster ? f.sigCd <= 0 : f.mom >= 100) FX.text(f.def.isMaster ? f : (livingMaster(f) || f), 'NO MANA'); }
       else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
       else if (n === 'heavy') { f.combo = 0; ok = startAct(f, 'heavy'); }
       else if (n === 'light') { f.combo = 0; ok = startAct(f, 'light'); }
@@ -1319,6 +1391,7 @@ function aiWar(ai, dt) {
   if (f.recover && (f.hp > f.def.hp * 0.85 || (near && nd < 300))) f.recover = false;
   if (f.recover && st === 'charge' && !f.isPlayerMate) st = 'spirit';
   if (f.sealOrder > 0 && st !== 'charge') st = 'charge';
+  if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
     if (f.spirit === 0 && f.st === 'idle' && nd > 160) press(f, 'spirit');
     var hh = f.home || MAP.spawns.at(f.team), home = m || { x: hh[0], y: hh[1] };
@@ -1353,22 +1426,25 @@ function aiMaster(ai, dt) {
   ai.cool -= dt; inp.guard = false; if (inp.heavy && G.time >= ai.relAt) inp.heavy = false;
   var thr = null, td = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) return; var d = dist(f, e); if (d < td) { td = d; thr = e; } });
   var silenced = f.silenceT > 0, sk = A.skill.kind, np = A.np;
+  // keep enough mana for the servant's Noble Phantasm once it is close to ready
+  var reserve = (s && s.mom > 55 && !s.sealFree) ? npManaCost(s) : 0, sigOk = canPay(f, MANA.sigCost + reserve), skOk = canPay(f, MANA.skillCost + reserve) || (sk === 'heal' && s && s.hp < s.def.hp * 0.4 && canPay(f, MANA.skillCost));
   // Command Seals
   if (s && sealsLeft(f) > 0) {
     if (!f.sealUsed.heal && s.hp < s.def.hp * 0.3 && s.foe && dist(s, s.foe) < 500) useSeal(f, 'heal');
     else if (!f.sealUsed.warp && thr && td < 260 && dist(f, s) > 600) useSeal(f, 'warp');
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && Math.random() < 0.0008) useSeal(f, 'np');
   }
-  if (!s) { moveTo(f, 1100, 2480, 1); if (!f.toldChurch) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, { x: 1100, y: 2480 }) < 120) { inp.mx = 0; inp.my = 0; } return; }
+  if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
+    moveTo(f, 1100, 2480, 1); if (!f.toldChurch) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, { x: 1100, y: 2480 }) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // skills
-  if (!silenced && f.cd <= 0 && f.st === 'idle') {
+  if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.5 && s.foe && dist(s, s.foe) < 600);
     if (want) { press(f, 'skill'); return; }
   }
   if (thr && td < 330) {
     var aw = angTo(thr, f), gx = f.x + Math.cos(aw) * 260, gy = f.y + Math.sin(aw) * 260;
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }
-    if (!silenced && f.sigCd <= 0 && np.aiUse === 'near' && td < (np.r || np.reach + np.lunge * 0.6) + FR && f.st === 'idle') { press(f, 'np'); return; }
+    if (!silenced && sigOk && f.sigCd <= 0 && np.aiUse === 'near' && td < (np.r || np.reach + np.lunge * 0.6) + FR && f.st === 'idle') { press(f, 'np'); return; }
     moveTo(f, gx, gy);
     if (thr.st === 'wind' && thr.foe === f && td < 220 && f.dodges > 0 && Math.random() < 0.08 + 0.2 * cfg.skill) aiPressDodge(ai);
     return;
@@ -1378,7 +1454,7 @@ function aiMaster(ai, dt) {
   if (dist(f, { x: bx, y: by }) > 70) moveTo(f, bx, by, 0.9); else { inp.mx = 0; inp.my = 0; }
   var tg = sf || f.foe;
   if (np.aiUse === 'origin') { var em = null, ed = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) { var d3 = dist(f, e); if (d3 < ed) { ed = d3; em = e; } } }); if (em && ed < 850 && losClear(f, em)) tg = em; }
-  if (!silenced && f.sigCd <= 0 && f.st === 'idle' && tg) {
+  if (!silenced && sigOk && f.sigCd <= 0 && f.st === 'idle' && tg) {
     var dT = dist(f, tg);
     if ((np.aiUse === 'ranged' || np.aiUse === 'origin') && dT < (np.range || 600) * 0.85 && losClear(f, tg)) { f.lock = tg; press(f, 'np'); return; }
     if (np.aiUse === 'ally' && sf && dist(s, sf) < 420) { press(f, 'np'); return; }
@@ -1871,7 +1947,7 @@ function shortName(n) { return n.split(/ of |, /)[0]; }
 function renderSetup() {
   $('#playas').innerHTML = [['servant', 'Servant', 'Fight directly. Your master follows and supports you with magecraft.'], ['master', 'Master', 'Fight as the human. Give your servant orders and spend Command Seals.']].map(function (m) { return '<button type="button" class="mode" data-playas="' + m[0] + '" aria-pressed="' + (CFG.playAs === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
   $('#roster').innerHTML = ORDER.map(function (id) { var d = SERV[id]; return '<button type="button" class="rt" data-pick="' + id + '" aria-pressed="' + (CFG.servant === id) + '" style="--c:' + d.col + '"><span class="th">' + thumb(id, 110) + '</span><b>' + esc(shortName(d.name)) + '</b><small>' + d.cls + '</small></button>'; }).join('');
-  $('#masters').innerHTML = MASTER_ORDER.map(function (id) { var m = MASTERS[id]; return '<button type="button" class="mode" data-master="' + id + '" aria-pressed="' + (CFG.master === id) + '"><b>' + m.name + '</b><span class="mtag">' + m.type + '</span><small>' + esc(m.brief) + ' Health ' + m.hp + '. Skill: ' + esc(m.A.skill.name) + '. Signature: ' + esc(m.A.np.name) + '.</small></button>'; }).join('');
+  $('#masters').innerHTML = MASTER_ORDER.map(function (id) { var m = MASTERS[id]; return '<button type="button" class="mode" data-master="' + id + '" aria-pressed="' + (CFG.master === id) + '"><b>' + m.name + '</b><span class="mtag">' + m.type + '</span><small>' + esc(m.brief) + ' Health ' + m.hp + '. Mana ' + (MANA_POOL[id] || [80, 1.6])[0] + ' (+' + (MANA_POOL[id] || [80, 1.6])[1] + '/s). Skill: ' + esc(m.A.skill.name) + '. Signature: ' + esc(m.A.np.name) + '.</small></button>'; }).join('');
   $('#rivals').innerHTML = [[7, 'Full war: 7 teams, every class'], [4, '4 teams'], [3, '3 teams']].map(function (n) { return '<button type="button" class="chip" data-teams="' + n[0] + '" aria-pressed="' + (CFG.teams === n[0]) + '">' + n[1] + '</button>'; }).join('');
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
@@ -2407,13 +2483,13 @@ FX.fx = function (name, x, y, f) {
 FX.spark = function (x, y, col, n) { for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, s = 80 + Math.random() * 220; parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: 0.25 + Math.random() * 0.25, col: col }); } };
 
 var HUD = [];
-function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div></div>'; }
-var hudTarget = null;
+function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
+var hudTarget = null, hudPartner = null;
 function buildHud() {
   var me0 = G.f[MEI], tg = me0.foe, list = [[me0, 'You'], [me0.partner, me0.def.isMaster ? 'Servant' : 'Master']]; if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']);
-  hudTarget = tg; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
+  hudTarget = tg; hudPartner = me0.partner; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
   el.innerHTML = list.map(function (q) { return hudCard(q[0], q[1]); }).join('');
-  el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]') }); });
+  el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]'), bma: c.querySelector('[data-h=bma]') }); });
 }
 function startMatch() {
   if (NET.role === 'client') return;
@@ -2459,6 +2535,7 @@ function btnDown(b) {
 }
 function doButton(f, b) {
   if (b === 'target') { cycleTarget(f); return; }
+  if (b === 'contract') { var cc = contractCandidate(f, CONTRACT_RANGE + 40); if (!cc || !formContract(f, cc)) FX.text(f, 'NOBODY TO CONTRACT WITH'); return; }
   if (b.indexOf('seal_') === 0) { if (f.def.isMaster) { if (!useSeal(f, b.slice(5))) FX.text(f, f.sealUsed[b.slice(5)] ? 'SEAL ALREADY USED' : 'NO SERVANT'); } return; }
   if (b === 'block') f.inp.guard = true;
   else if (b === 'heavy') { f.inp.heavy = true; press(f, 'heavy'); }
@@ -2483,7 +2560,7 @@ stick.addEventListener('pointerdown', function (e) { e.preventDefault(); stickId
 stick.addEventListener('pointermove', function (e) { if (e.pointerId === stickId) stickMove(e); });
 var stickUp = function (e) { if (e.pointerId !== stickId) return; stickId = null; knob.style.transform = ''; held.mx = 0; held.my = 0; };
 stick.addEventListener('pointerup', stickUp); stick.addEventListener('pointercancel', stickUp); stick.addEventListener('lostpointercapture', stickUp);
-var KM = { '7': 'seal_np', '8': 'seal_heal', '9': 'seal_warp', u: 'spirit', tab: 'target', j: 'light', z: 'light', k: 'heavy', x: 'heavy', l: 'block', c: 'block', shift: 'block', ' ': 'dodge', i: 'skill', v: 'skill', o: 'np', b: 'np' };
+var KM = { f: 'contract', '7': 'seal_np', '8': 'seal_heal', '9': 'seal_warp', u: 'spirit', tab: 'target', j: 'light', z: 'light', k: 'heavy', x: 'heavy', l: 'block', c: 'block', shift: 'block', ' ': 'dodge', i: 'skill', v: 'skill', o: 'np', b: 'np' };
 window.addEventListener('keydown', function (e) {
   if (!running) return; var k = e.key.toLowerCase();
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab'].indexOf(k) >= 0) e.preventDefault();
@@ -2723,6 +2800,7 @@ function drawFighter(f) {
   if (f.ripo > 0) { ctx.beginPath(); ctx.arc(f.x, f.y, FR + 8, 0, 6.283); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.setLineDash([4, 5]); ctx.stroke(); ctx.setLineDash([]); }
   if (f.ubwT > 0) { for (var ui = 0; ui < 6; ui++) { var ua = G.time * 1.6 + ui * 1.047, ux = f.x + Math.cos(ua) * 52, uy = f.y + Math.sin(ua) * 52, ut = f.foe ? Math.atan2(f.foe.y - uy, f.foe.x - ux) : ua; ctx.save(); ctx.translate(ux, uy); ctx.rotate(ut); ctx.shadowColor = '#ffb347'; ctx.shadowBlur = 10; ctx.fillStyle = '#e8edf2'; ctx.strokeStyle = '#0b121a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-8, -3); ctx.lineTo(-8, 3); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#7a1f2a'; ctx.fillRect(-12, -6, 4, 12); ctx.restore(); } }
   if (f === G.f[MEI] && f.lock && f.lock.st !== 'dead') { ctx.save(); ctx.strokeStyle = '#ffd36b'; ctx.lineWidth = 2.5; ctx.setLineDash([8, 6]); ctx.lineDashOffset = -G.time * 20; ctx.beginPath(); ctx.arc(f.lock.x, f.lock.y, FR + 16, 0, 6.283); ctx.stroke(); ctx.restore(); }
+  if (G.mode === 'war' && f !== G.f[MEI] && G.f[MEI] && contractable(G.f[MEI], f)) { ctx.fillStyle = '#9fe6b0'; ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f.def.isMaster ? 'NEEDS A SERVANT \u00B7 CONTRACT (F)' : 'NEEDS A MASTER \u00B7 CONTRACT (F)', f.x, f.y - 58); }
   if (f.orphanT > 0) { ctx.fillStyle = '#ffd36b'; ctx.font = '600 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FADING ' + Math.ceil(f.orphanT), f.x, f.y - 44); }
   if (f.humanTag && f.st !== 'dead') { ctx.fillStyle = f === G.f[MEI] ? '#7fe3f0' : '#ffd36b'; ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(f === G.f[MEI] ? 'YOU' : f.humanTag, f.x, f.y - FR - 22); }
   if (f.def.isMaster) { ctx.fillStyle = 'rgba(233,228,211,.7)'; ctx.font = '600 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MASTER', f.x, f.y + FR + 32); }
@@ -2988,14 +3066,15 @@ function miniMap(mw, mh) {
 }
 function hud() {
   var a = G.f[MEI];
-  if (a.foe !== hudTarget) buildHud();
+  if (a.foe !== hudTarget || a.partner !== hudPartner) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';
-    h.bm.classList.toggle('full', f.mom >= 100); h.hp.textContent = Math.max(0, Math.ceil(f.hp)); h.c.classList.toggle('dead', f.st === 'dead'); });
+    h.bm.classList.toggle('full', f.mom >= 100); h.hp.textContent = Math.max(0, Math.ceil(f.hp)); h.c.classList.toggle('dead', f.st === 'dead'); if (h.bma && f.manaMax) { h.bma.style.transform = 'scaleX(' + clamp(f.mana / f.manaMax, 0, 1) + ')'; h.bma.parentNode.classList.toggle('low', f.mana < MANA.npCost); } if (!f.def.isMaster) h.bm.classList.toggle('nomana', f.mom >= 100 && !canNP(f)); });
   var dh = ''; for (var di = 0; di < a.dodgeMax; di++) dh += di < a.dodges ? '\u25CF ' : (di === a.dodges ? (a.dodgeRe > 1.8 ? '\u25D1 ' : '\u25CB ') : '\u25CB '); $('#dpips').textContent = dh;
   document.querySelector('.b[data-b="dodge"]').classList.toggle('off', a.dodges === 0);
-  var np = document.querySelector('.b[data-b="np"]'), npReady = a.def.isMaster ? (a.sigCd <= 0 && !(a.silenceT > 0)) : a.mom >= 100; np.classList.toggle('rdy', npReady); np.classList.toggle('off', !npReady); np.firstChild.textContent = a.def.isMaster ? (a.silenceT > 0 ? 'Burned ' + Math.ceil(a.silenceT) : a.sigCd > 0 ? (a.A.np.short || a.A.np.name.split(' ')[0]) + ' ' + Math.ceil(a.sigCd) : (a.A.np.short || a.A.np.name.split(' ')[0])) : 'NP';
+  var np = document.querySelector('.b[data-b="np"]'), npReady = a.def.isMaster ? (a.sigCd <= 0 && !(a.silenceT > 0) && canPay(a, MANA.sigCost)) : (a.mom >= 100 && canNP(a)); np.classList.toggle('rdy', npReady); np.classList.toggle('off', !npReady); np.firstChild.textContent = a.def.isMaster ? (a.silenceT > 0 ? 'Burned ' + Math.ceil(a.silenceT) : a.sigCd > 0 ? (a.A.np.short || a.A.np.name.split(' ')[0]) + ' ' + Math.ceil(a.sigCd) : (a.A.np.short || a.A.np.name.split(' ')[0])) : (a.mom >= 100 && !canNP(a) ? 'No mana' : 'NP');
   if (a.def.isMaster) { document.querySelectorAll('.b.seal[data-b]').forEach(function (el) { el.classList.toggle('used', !!a.sealUsed[el.dataset.b.slice(5)] || !a.partner || a.partner.st === 'dead'); }); var sl = sealsLeft(a); $('#sealL').textContent = sl; $('#sealBtn').classList.toggle('used', sl === 0); }
+  var ctb = document.querySelector('.b[data-b="contract"]'), cand = contractCandidate(a, CONTRACT_RANGE + 40); ctb.hidden = !cand; if (cand) ctb.lastChild.textContent = cand.def.isMaster ? shortName(cand.def.name) : shortName(cand.def.name);
   $('#spl').textContent = a.spirit === 2 ? 'unseen' : a.spirit ? '...' : ''; $('#tgl').textContent = a.lock ? 'locked' : 'auto'; document.querySelector('.b[data-b="target"]').classList.toggle('locked', !!a.lock);
   var sk = document.querySelector('.b[data-b="skill"]'); sk.classList.toggle('off', a.cd > 0 || (a.def.isMaster && a.silenceT > 0));
   var ls = a.A.lightSeq, lt = $('#lightSp'), ht = $('#heavySp');
