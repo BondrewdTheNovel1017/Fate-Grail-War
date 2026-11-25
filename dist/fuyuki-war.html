@@ -1490,6 +1490,7 @@ function initFields() {
     G.seenBy[t] = {}; G.tn[t] = {};
   });
   G.f.forEach(function (f) { if (!f.def.isMaster) G.tn[f.team][f.def.id] = true; });
+  if (G.clock) newPhaseEvents();
 }
 function fieldR(F) { return FIELD.baseR + FIELD.perLvl * F.lvl; }
 function fieldAlive(F) { return G.f.some(function (f) { return f.team === F.team && f.st !== 'dead' && (f.def.isMaster || f.def.cls === 'Caster'); }); }
@@ -1992,12 +1993,12 @@ function separate() {
    Berserker Unchained. Days (about 60%): the Sealed School, the King's Banquet, the Overseer's Summons.
    The final night: the Grail descends on one of Fuyuki's three ley lines, pure or corrupted. ---- */
 var EVT = {
-  nightAt: 45, dayAt: 35, dayChance: 0.6,
+  nightAt: 45, dayAt: 35, dayChance: 0.6, quietChance: 0.35,
   challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.45 },
-  school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 9, mobEvery: 5.5 },
+  school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 7, mobEvery: 7, mobHp: 24, contest: 95 },
   banquet: { x: 11000, y: 1820, r: 320, need: 20 },
   summons: { x: 1450, y: 3220, r: 280, need: 20 },
-  horror: { hp: 1800, r: 110, path: [[6000, 4300], [6000, 2620]], spd: 70, slamEvery: 2.1, slamR: 125, slamDmg: 16, truceR: 1100 },
+  horror: { hp: 1400, r: 110, path: [[6000, 4300], [6000, 2620]], spd: 70, slamEvery: 2.1, slamR: 125, slamDmg: 16, truceR: 1100 },
   berserk: { dur: 90, dmg: 1.3, drain: 0.01, floor: 0.25 },
   grail: { at: 60, r0: 4200, r1: 750, shrink: 330, dmg: 3, dmgC: 5, heal: 2, poolEvery: 3.5 }
 };
@@ -2040,7 +2041,12 @@ function newPhaseEvents() {
   var c = G.clock; if (!c) return; if (!G.deck) buildDecks();
   if (G.event && G.event.kind !== 'grail') { if (G.event.kind === 'horror') horrorDawn(G.event); endEvent(null); }
   c.evDone = false; c.pending = null;
-  if (c.phase === 'night') { if (c.final) { c.pending = 'grail'; return; } c.pending = draw('night'); return; }
+  if (c.phase === 'night') {
+    if (c.final) { c.pending = 'grail'; return; }
+    // a long war may have one still night in the middle: a breather before the next storm
+    if (c.nights >= 5 && c.n >= 2 && !c.hadQuiet && rnd() < EVT.quietChance) { c.hadQuiet = true; c.evDone = true; FX.event('quiet', {}); return; }
+    c.pending = draw('night'); return;
+  }
   if (rnd() < EVT.dayChance || G.forceSchool) {
     var k = draw('day'); if (!k) return;
     if (k === 'school') c.pending = 'school';
@@ -2170,14 +2176,14 @@ function schoolTick(E, dt) {
   if (E.culprit >= 0) { var cm = G.f.filter(function (f) { return f.team === E.culprit && f.def.isMaster && f.st !== 'dead'; })[0]; if (cm && cm.manaMax) cm.mana = Math.min(cm.manaMax, cm.mana + 1.5 * dt); }
   // familiars rise from the circles that still stand
   E.mobT -= dt; var up = E.circles.filter(function (c) { return c.up; });
-  if (E.mobT <= 0 && up.length) { E.mobT = EVT.school.mobEvery; var live = G.mobs.filter(function (m) { return !m.dead; }).length; for (var n = 0; n < up.length && live < EVT.school.mobMax; n++, live++) { var c = up[n]; G.mobs.push({ x: c.x + (rnd() - 0.5) * 80, y: c.y + (rnd() - 0.5) * 80, hp: 34, atkT: 1, t: 0, dead: false, vx: 0, vy: 0 }); } }
+  if (E.mobT <= 0 && up.length) { E.mobT = EVT.school.mobEvery; var live = G.mobs.filter(function (m) { return !m.dead; }).length; for (var n = 0; n < up.length && live < EVT.school.mobMax; n++, live++) { var c = up[n]; G.mobs.push({ x: c.x + (rnd() - 0.5) * 80, y: c.y + (rnd() - 0.5) * 80, hp: EVT.school.mobHp, atkT: 1, t: 0, dead: false, vx: 0, vy: 0 }); } }
   mobsTick(E, dt);
   // breaking the circles: stand in one, uncontested by familiars, until it shatters; a hit sets you back a little
   E.circles.forEach(function (c) {
     if (!c.up) return;
     G.f.forEach(function (f) {
       if (f.st === 'dead' || f.team === E.culprit || f.spirit === 2 || Math.hypot(f.x - c.x, f.y - c.y) > c.r) return;
-      if (G.mobs.some(function (m) { return !m.dead && Math.hypot(m.x - c.x, m.y - c.y) < 140; })) return;
+      if (G.mobs.some(function (m) { return !m.dead && Math.hypot(m.x - c.x, m.y - c.y) < EVT.school.contest; })) return;
       if (G.time - (f.lastHitT || -99) < 0.6) return;
       c.prog[f.team] = (c.prog[f.team] || 0) + dt;
       if (c.prog[f.team] >= EVT.school.need) { c.up = false; c.by = f.team; FX.event('circle', { team: f.team, c: c, left: E.circles.filter(function (q) { return q.up; }).length }); var m = G.f.filter(function (q) { return q.team === f.team && q.def.isMaster && q.st !== 'dead'; })[0]; if (m) { m.mana = m.manaMax; } G.expo[f.team] = Math.max(0, (G.expo[f.team] || 0) - 30); }
@@ -2204,7 +2210,7 @@ function mobsTick(E, dt) {
   G.mobs = G.mobs.filter(function (m) { return !m.dead; });
 }
 // fighters' blows and shots also strike familiars
-function hitMobsArc(f, a, mult) { if (!G.mobs || !G.mobs.length) return; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) <= (a.reach || 60) + 20) mobHurt(m, a.dmg * (mult || 1) * f.def.dmg, f.team); }); }
+function hitMobsArc(f, a, mult) { if (!G.mobs || !G.mobs.length) return; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) <= (a.reach || 60) + 20) mobHurt(m, a.dmg * (mult || 1) * f.def.dmg * (f.def.isMaster ? 2 : 1), f.team); }); }
 function hitMobsAt(x, y, r, dmg, team) { if (!G.mobs || !G.mobs.length) return false; var hit = false; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - x, m.y - y) <= r + (m.r || 16)) { mobHurt(m, dmg, team); hit = true; } }); return hit; }
 function mobHurt(m, d, team) { if (m.team !== undefined && m.team === team) return; d = Math.max(4, d); m.hp -= d; if (team !== undefined) { m.dmgBy = m.dmgBy || {}; m.dmgBy[team] = (m.dmgBy[team] || 0) + d; } FX.spark(m.x, m.y, m.boss ? '#7a3a8a' : '#e8e2d0', 5); if (m.hp <= 0) { m.dead = true; FX.fx(m.boss ? 'bossDie' : 'mobDie', m.x, m.y, null); } }
 /* ---- truce: the sealed school (and a moment after), the horror in the river, the banquet table, the Church's summons ---- */
@@ -2474,6 +2480,7 @@ function aiWar(ai, dt) {
   if (f.sealOrder > 0 && st !== 'charge') st = 'charge';
   if (m && m.fleeing && !f.isPlayerMate && !(f.sealOrder > 0) && st === 'charge') st = 'protect';
   if (f.rampT > G.time && !G.ai[f.idx] === false) { var rt = rampTarget(f); if (f.spirit === 2) press(f, 'spirit'); if (rt) { f.lock = rt; f.foe = rt; if (dist(f, rt) > 380) { moveTo(f, rt.x, rt.y, 1); return; } aiTick(ai, dt); return; } }
+  var EH = G.event; if (EH && EH.kind === 'horror' && !EH.boss.dead && f.team !== EH.culprit && !f.isPlayerMate && f.hp > f.def.hp * 0.45 && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) < 3200 && !(near && nd < 300 && !inTruce(f, near))) { if (f.spirit === 2) press(f, 'spirit'); var bx = clamp(EH.boss.x, 5720, 6280), by = EH.boss.y < 3300 ? 2440 : 5560; if (Math.hypot(f.x - bx, f.y - by) > 60) moveTo(f, bx, by, 1); else { f.inp.mx = 0; f.inp.my = 0; } if (f.st === 'idle' && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) - EH.boss.r < (f.A.light.reach || 80) + 20) press(f, 'light'); return; }
   var gps = grailPull(f); if (gps && !f.isPlayerMate && Math.hypot(f.x - gps.x, f.y - gps.y) > gps.r - 200 && !(near && nd < 300)) { if (f.spirit === 2) press(f, 'spirit'); moveTo(f, gps.x, gps.y, 1); return; }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
   if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * 0.35 && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
@@ -5157,6 +5164,7 @@ FX.event = function (kind, d, msg) {
   else if (kind === 'banquet') FX.banner('The King’s Banquet', knownName(d.f) + ' sets a table at the Einzbern castle. No fighting there. Sit, and learn every guest’s true name, as they learn yours.');
   else if (kind === 'summons') FX.banner('The Overseer’s Summons', 'Every master is called to Fuyuki Church under truce. Those who come leave with a clean name and a secret.');
   else if (kind === 'grail') { var gk = G.grailKnown && G.grailKnown[my]; FX.banner(d.corrupt ? 'The Grail Descends, Black' : 'The Grail Descends', 'On ' + d.name + '. ' + (d.corrupt ? 'Mud wells up inside its ring, and the servants near its heart go mad.' : 'Its light closes in; at its heart, wounds close.') + ' Outside it, you wither.'); FX.snd('bell'); }
+  else if (kind === 'quiet') note('A still night. No word from the Church, no cry from the docks.', '#b8c8f0');
   else if (kind === 'end' && msg) note(msg);
 };
 var EV_COL = { challenge: '#7fc4ee', school: '#e04a5a', bounty: '#f0a85a', grail: '#fff2c4', horror: '#b06ad0', falsedeath: '#9aa7b3', berserk: '#ff4a4a' };

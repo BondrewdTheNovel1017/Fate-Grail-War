@@ -5,7 +5,7 @@
    Berserker Unchained. Days (about 60%): the Sealed School, the King's Banquet, the Overseer's Summons.
    The final night: the Grail descends on one of Fuyuki's three ley lines, pure or corrupted. ---- */
 var EVT = {
-  nightAt: 45, dayAt: 35, dayChance: 0.6,
+  nightAt: 45, dayAt: 35, dayChance: 0.6, quietChance: 0.35,
   challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.45 },
   school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 7, mobEvery: 7, mobHp: 24, contest: 95 },
   banquet: { x: 11000, y: 1820, r: 320, need: 20 },
@@ -53,7 +53,12 @@ function newPhaseEvents() {
   var c = G.clock; if (!c) return; if (!G.deck) buildDecks();
   if (G.event && G.event.kind !== 'grail') { if (G.event.kind === 'horror') horrorDawn(G.event); endEvent(null); }
   c.evDone = false; c.pending = null;
-  if (c.phase === 'night') { if (c.final) { c.pending = 'grail'; return; } c.pending = draw('night'); return; }
+  if (c.phase === 'night') {
+    if (c.final) { c.pending = 'grail'; return; }
+    // a long war may have one still night in the middle: a breather before the next storm
+    if (c.nights >= 5 && c.n >= 2 && !c.hadQuiet && rnd() < EVT.quietChance) { c.hadQuiet = true; c.evDone = true; FX.event('quiet', {}); return; }
+    c.pending = draw('night'); return;
+  }
   if (rnd() < EVT.dayChance || G.forceSchool) {
     var k = draw('day'); if (!k) return;
     if (k === 'school') c.pending = 'school';

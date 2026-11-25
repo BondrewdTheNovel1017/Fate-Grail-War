@@ -18,6 +18,7 @@ FX.event = function (kind, d, msg) {
   else if (kind === 'banquet') FX.banner('The King’s Banquet', knownName(d.f) + ' sets a table at the Einzbern castle. No fighting there. Sit, and learn every guest’s true name, as they learn yours.');
   else if (kind === 'summons') FX.banner('The Overseer’s Summons', 'Every master is called to Fuyuki Church under truce. Those who come leave with a clean name and a secret.');
   else if (kind === 'grail') { var gk = G.grailKnown && G.grailKnown[my]; FX.banner(d.corrupt ? 'The Grail Descends, Black' : 'The Grail Descends', 'On ' + d.name + '. ' + (d.corrupt ? 'Mud wells up inside its ring, and the servants near its heart go mad.' : 'Its light closes in; at its heart, wounds close.') + ' Outside it, you wither.'); FX.snd('bell'); }
+  else if (kind === 'quiet') note('A still night. No word from the Church, no cry from the docks.', '#b8c8f0');
   else if (kind === 'end' && msg) note(msg);
 };
 var EV_COL = { challenge: '#7fc4ee', school: '#e04a5a', bounty: '#f0a85a', grail: '#fff2c4', horror: '#b06ad0', falsedeath: '#9aa7b3', berserk: '#ff4a4a' };

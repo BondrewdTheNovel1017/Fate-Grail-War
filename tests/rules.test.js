@@ -406,3 +406,15 @@ test('the final night: the Grail descends on one of three ley lines, pure or cor
   const names = new Set([...seen].map((s) => s.replace('*', '')));
   assert.strictEqual(names.size, 3, [...seen].join(', ')); assert.ok([...seen].some((s) => s.endsWith('*')) && [...seen].some((s) => !s.endsWith('*')), 'both natures appear');
 });
+
+test('regular nights always have an event in a 3-night war; a 5-night war may have one still night', () => {
+  const E = loadEngine();
+  let quiet3 = 0, quiet5 = 0, multi = 0;
+  for (let n = 0; n < 40; n++) {
+    const G3 = E.newWar(E.warTeams('richard', 'rin', 7), { nights: 3 }); G3.clock.phase = 'night'; G3.clock.n = 2; E.newPhaseEvents(); if (!G3.clock.pending) quiet3++;
+    const G5 = E.newWar(E.warTeams('richard', 'rin', 7), { nights: 5 }); let q = 0;
+    for (const k of [2, 3, 4]) { G5.event = null; G5.clock.phase = 'night'; G5.clock.n = k; E.newPhaseEvents(); if (!G5.clock.pending) q++; }
+    if (q) quiet5++; if (q > 1) multi++;
+  }
+  assert.strictEqual(quiet3, 0); assert.ok(quiet5 > 0, 'still nights happen in long wars'); assert.strictEqual(multi, 0, 'at most one per war');
+});
