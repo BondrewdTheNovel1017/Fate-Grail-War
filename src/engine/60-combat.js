@@ -13,6 +13,7 @@ function hurt(att, def, a, mult, src) {
   if (att && att.def.isMaster && !def.def.isMaster) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
   if (att && starved(att)) dmg *= MANA.starveDmg;
+  if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
   if (att) def.lastHit = { by: att, key: a.key };
   if (def.reinfT > 0) dmg *= 0.6;
   if (a.silence && def.shieldT > 0) { def.shieldT = 0; def.shieldN = 0; dmg *= 2; FX.text(def, 'MERCURY SHATTERED'); }

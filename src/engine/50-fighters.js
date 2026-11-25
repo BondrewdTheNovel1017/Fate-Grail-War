@@ -46,7 +46,7 @@ function newWar(teamsIn, opts) {
   return G;
 }
 function traceTick(f, dt) {
-  if (!f.ubwUsed) { var foeNear = enemiesOf(f).some(function (e) { return !e.def.isMaster && dist(f, e) < 520; }); if (foeNear) f.mom = Math.min(100, f.mom + 0.75 * dt); }
+  if (!f.ubwUsed) { var foeNear = enemiesOf(f).some(function (e) { return !e.def.isMaster && dist(f, e) < 520; }); if (foeNear) f.mom = Math.min(100, f.mom + 0.6 * dt); }
   var tier = f.ubwUsed ? 1 : f.mom >= 100 ? 2 : f.mom >= 40 ? 1 : 0;
   if (tier > (f.traceTier || 0) || (f.ubwUsed && f.traceTier === 2 && f.st !== 'act' && f.st !== 'wind' && !(f.ubwT > 0))) {
     if (tier === 1 && !f.ubwUsed) { FX.text(f, 'TRACE ON'); FX.fx('heal', f.x, f.y, f); FX.snd('drawBow', f, {}); }
@@ -88,7 +88,7 @@ function kill(f, noRevive) {
   }
   f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0;
   f.cause = f.cause || (f.lastHit ? (f.lastHit.key === 'np' && !f.lastHit.by.def.isMaster ? 'np' : f.lastHit.by.def.isMaster ? 'master' : 'combat') : 'other'); f.killer = f.lastHit ? f.lastHit.by : null;
-  if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? 120 : 20; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
+  if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? ARCHER_INDEPENDENT : ORPHAN_TIME; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
   var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
   else { G.f.forEach(pickTarget); } G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); FX.slow(1.1);

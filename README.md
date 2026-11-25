@@ -5,7 +5,7 @@ A top-down Holy Grail War in the style of *Fate/Zero* and *Fate/stay night*: sev
 The design is in the game design document (a Claude doc). This repository holds the code, built in milestones:
 
 1. Big-map sandbox — done
-2. Masters and contracts — in progress
+2. Masters and contracts — mana link, Form Contract and the balance report are in; ready for playtest
 3. Fuyuki and the living city
 4. Bases, fog of war and intel
 5. Master creation and social play

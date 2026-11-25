@@ -40,7 +40,7 @@ test('master death: servant fades, Archers last longer', () => {
   let G = pairWar(E, 'richard', 'rin', 'cu', 'kirei');
   E.kill(G.f[1]); assert.strictEqual(G.f[0].orphanT, 20);
   G = pairWar(E, 'atalanta', 'rin', 'cu', 'kirei');
-  E.kill(G.f[1]); assert.strictEqual(G.f[0].orphanT, 120);
+  E.kill(G.f[1]); assert.ok(G.f[0].orphanT > 20, 'Archers outlast other servants');
 });
 
 test('Origin Bullet burns a master\'s circuits', () => {

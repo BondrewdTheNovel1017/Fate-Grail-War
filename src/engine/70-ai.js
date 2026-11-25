@@ -244,7 +244,7 @@ function aiMaster(ai, dt) {
     moveTo(f, 1100, 2480, 1); if (!f.toldChurch) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, { x: 1100, y: 2480 }) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
-    var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.5 && s.foe && dist(s, s.foe) < 600);
+    var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
     if (want) { press(f, 'skill'); return; }
   }
   if (thr && td < 330) {
