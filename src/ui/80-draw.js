@@ -237,6 +237,7 @@ var THEME = {
 function mapNoise(m, n, seed) { if (m['_n' + seed]) return m['_n' + seed]; var v = seed >>> 0, out = []; for (var i = 0; i < n; i++) { v = (v * 1664525 + 1013904223) >>> 0; var a = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; var b = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; out.push([a * m.w, b * m.h, v / 4294967296]); } m['_n' + seed] = out; return out; }
 var VIEWR = null;
 function drawFloor(g, m) {
+  if (m.theme === 'city') { drawCity(g, m); return; }
   var th = m.theme, w = m.w, h = m.h;
   g.fillStyle = THEME[th].floor; g.fillRect(0, 0, w, h);
   if (th === 'fuyuki') {
@@ -290,7 +291,8 @@ function drawFloor(g, m) {
   else if (th === 'school') { g.fillStyle = '#4f4231'; g.fillRect(0, 0, w, 300); g.beginPath(); g.ellipse(950, 780, 560, 330, 0, 0, 6.283); g.fillStyle = '#6e5a42'; g.fill(); g.beginPath(); g.ellipse(950, 780, 450, 230, 0, 0, 6.283); g.fillStyle = '#3d5a36'; g.fill();
     g.strokeStyle = 'rgba(240,240,240,.55)'; g.lineWidth = 3; [560, 520, 480].forEach(function (rx, k) { g.beginPath(); g.ellipse(950, 780, rx, 330 - k * 40, 0, 0, 6.283); g.stroke(); }); g.beginPath(); g.moveTo(950, 560); g.lineTo(950, 1000); g.stroke(); g.beginPath(); g.arc(950, 780, 70, 0, 6.283); g.stroke(); }
 }
-function drawBlock(g, b, i) {
+function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
+function drawBlock0(g, b, i) {
   var x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, k = b.k;
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, b.w, b.h);
   if (k === 'water') return;
@@ -317,6 +319,10 @@ function drawObs(g, p) {
   if (p.h) return;
   var k = p.k || 'pillar';
   g.beginPath(); g.arc(p.x + 4, p.y + 7, p.r, 0, 6.283); g.fillStyle = 'rgba(0,0,0,.35)'; g.fill();
+  if (k === 'street') { g.beginPath(); g.arc(p.x, p.y, p.r + 6, 0, 6.283); g.fillStyle = '#2a4a2e'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); g.beginPath(); g.arc(p.x - 4, p.y - 4, p.r * 0.6, 0, 6.283); g.fillStyle = '#3a6a40'; g.fill(); return; }
+  if (k === 'fountain') { g.beginPath(); g.arc(p.x, p.y, p.r * 2.4, 0, 6.283); g.fillStyle = '#8a8f98'; g.fill(); g.beginPath(); g.arc(p.x, p.y, p.r * 2, 0, 6.283); g.fillStyle = '#2a5a80'; g.fill(); g.beginPath(); g.arc(p.x, p.y, p.r * 0.6, 0, 6.283); g.fillStyle = '#c8ccd4'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); return; }
+  if (k === 'column') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = '#b8b2a6'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.45, 0, 6.283); g.fillStyle = 'rgba(255,255,255,.2)'; g.fill(); return; }
+  if (k === 'chair') { g.fillStyle = '#5a3e28'; g.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); return; }
   if (k === 'tree' || k === 'pine') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = k === 'pine' ? '#1f3d2a' : '#24432a'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.25, p.y - p.r * 0.25, p.r * 0.6, 0, 6.283); g.fillStyle = k === 'pine' ? '#2c5238' : '#335e39'; g.fill(); g.beginPath(); g.arc(p.x - p.r * 0.35, p.y - p.r * 0.38, p.r * 0.25, 0, 6.283); g.fillStyle = 'rgba(160,210,140,.18)'; g.fill(); return; }
   if (k === 'lantern') { g.save(); g.translate(p.x, p.y); g.rotate(0.785); g.fillStyle = '#8a867a'; g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.fillRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.strokeRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.restore(); g.beginPath(); g.arc(p.x, p.y, 6, 0, 6.283); g.fillStyle = 'rgba(255,200,110,.85)'; g.fill(); return; }
   if (k === 'lamp') { var lg = g.createRadialGradient(p.x, p.y, 2, p.x, p.y, 120); lg.addColorStop(0, 'rgba(255,220,140,.22)'); lg.addColorStop(1, 'rgba(255,220,140,0)'); g.fillStyle = lg; g.beginPath(); g.arc(p.x, p.y, 120, 0, 6.283); g.fill(); }
@@ -330,7 +336,7 @@ function drawObs(g, p) {
 }
 function drawMapPreview(c, m) {
   var g = c.getContext('2d'), k = c.width / m.w; g.save(); g.scale(k, k);
-  drawFloor(g, m); var obs = m.o; m.b.forEach(function (b, i) { drawBlock(g, b, i); }); obs.forEach(function (p) { drawObs(g, p); });
+  drawFloor(g, m); var obs = m.o; m.b.forEach(function (b, i) { drawBlock(g, b, i, m); }); obs.forEach(function (p) { drawObs(g, p); });
   g.fillStyle = '#ffffff'; m.spawns.forEach(function (sp, i) { g.beginPath(); g.arc(sp[0], sp[1], 26, 0, 6.283); g.fillStyle = FFA_COL.at(i); g.fill(); });
   g.restore();
 }
@@ -354,7 +360,7 @@ function drawMarble(g, kind, al) {
   g.restore();
 }
 var MOX = 0, MOY = 0;
-function visL(o) { return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
+function visL(o) { if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
 function drawWorld() {
   var g = ctx, mb = G.marble, mal = mb ? Math.min(1, mb.t / 0.9) : 0;
   var vz = VIEW.zoom || 1, vr = { x0: VIEW.cx - VW / 2 / vz - 150, y0: VIEW.cy - VH / 2 / vz - 150, x1: VIEW.cx + VW / 2 / vz + 150, y1: VIEW.cy + VH / 2 / vz + 150 }; VIEWR = vr;
@@ -362,7 +368,7 @@ function drawWorld() {
   if (warM) {
     if (!pin || mal < 1) { mb = null; drawFloor(g, MAP); if (!mb) { MAP.b.forEach(function (b, i) { if (b.x + b.w / 2 > vr.x0 && b.x - b.w / 2 < vr.x1 && b.y + b.h / 2 > vr.y0 && b.y - b.h / 2 < vr.y1) drawBlock(g, b, i); }); PILLARS.forEach(function (p) { if (!p.h && p.x + p.r > vr.x0 && p.x - p.r < vr.x1 && p.y + p.r > vr.y0 && p.y - p.r < vr.y1) drawObs(g, p); }); }
       mb = G.marble; }
-    VIEWR = null;
+    zoneMask(g); VIEWR = null;
     if (pin) {
       g.save(); g.globalAlpha = mal; g.fillStyle = '#05070a'; g.fillRect(vr.x0 - 400, vr.y0 - 400, vr.x1 - vr.x0 + 800, vr.y1 - vr.y0 + 800); g.globalAlpha = 1;
       g.beginPath(); g.arc(mb.cx, mb.cy, mb.R, 0, 6.283); g.clip();
@@ -378,7 +384,7 @@ function drawWorld() {
     }
   } else {
   if (!mb || mal < 1) { drawFloor(g, MAP); if (!mb) { MAP.b.forEach(function (b, i) { if (b.x + b.w / 2 > vr.x0 && b.x - b.w / 2 < vr.x1 && b.y + b.h / 2 > vr.y0 && b.y - b.h / 2 < vr.y1) drawBlock(g, b, i); }); PILLARS.forEach(function (p) { if (!p.h && p.x + p.r > vr.x0 && p.x - p.r < vr.x1 && p.y + p.r > vr.y0 && p.y - p.r < vr.y1) drawObs(g, p); }); } }
-  VIEWR = null;
+  zoneMask(g); VIEWR = null;
   if (mb) drawMarble(g, mb.kind, mal);
   }
   g.strokeStyle = '#5a7388'; g.lineWidth = 8; g.strokeRect(0, 0, W, H);
@@ -464,11 +470,13 @@ function draw() {
     var ang = Math.atan2(f1.y - f0.y, f1.x - f0.x), px = clamp(sxp, 24, VW - 24), py = clamp(syp, SAFE.top + 16, Math.max(SAFE.top + 40, VH - SAFE.bottom - 16));
     ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.fillStyle = '#e2515c'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.fill(); ctx.restore();
   }
-  // minimap
-  var my0 = SAFE.topR, mw = Math.max(70, Math.min(clamp(VW * 0.18, VW < 560 ? 112 : 120, 240), (VH - SAFE.bottom - my0 - 10) * W / H)), mh = mw * H / W, mx0 = VW - mw - 10;
+  // minimap (the city only, never the interiors strip)
+  var MW = MAP.cityW || W;
+  var my0 = SAFE.topR, mw = Math.max(70, Math.min(clamp(VW * 0.18, VW < 560 ? 112 : 120, 240), (VH - SAFE.bottom - my0 - 10) * MW / H)), mh = mw * H / MW, mx0 = VW - mw - 10;
   ctx.fillStyle = 'rgba(8,14,20,.7)'; ctx.fillRect(mx0, my0, mw, mh); ctx.strokeStyle = '#2a4157'; ctx.lineWidth = 1; ctx.strokeRect(mx0, my0, mw, mh);
   if (!G.marble || (G.mode === 'war' && !G.f[MEI].inM)) { var mm = miniMap(mw, mh); ctx.drawImage(mm, mx0, my0, mw, mh); }
-  if (G.marble && G.mode === 'war') { ctx.beginPath(); ctx.arc(mx0 + G.marble.cx / W * mw, my0 + G.marble.cy / H * mh, (G.f[MEI].inM ? G.marble.R : MARBLE_PULL) / W * mw, 0, 6.283); ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 1.5; ctx.stroke(); }
-  ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + (cx - VW / 2 / zoom) / W * mw, my0 + (cy - VH / 2 / zoom) / H * mh, VW / zoom / W * mw, VH / zoom / H * mh);
-  G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / W * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
+  if (G.marble && G.mode === 'war') { ctx.beginPath(); ctx.arc(mx0 + G.marble.cx / MW * mw, my0 + G.marble.cy / H * mh, (G.f[MEI].inM ? G.marble.R : MARBLE_PULL) / MW * mw, 0, 6.283); ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + (cx - VW / 2 / zoom) / MW * mw, my0 + (cy - VH / 2 / zoom) / H * mh, VW / zoom / MW * mw, VH / zoom / H * mh);
+  if (G.homes) G.homes.forEach(function (hm) { var tf = G.f.find(function (f) { return f.team === hm.team; }); ctx.fillStyle = tf ? teamCol(tf) : '#fff'; ctx.globalAlpha = 0.85; ctx.fillRect(mx0 + hm.x / MW * mw - 3, my0 + hm.y / H * mh - 3, 6, 6); ctx.globalAlpha = 1; ctx.strokeStyle = '#0b121a'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + hm.x / MW * mw - 3, my0 + hm.y / H * mh - 3, 6, 6); });
+  G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || (MAP.cityW && f.x > MAP.cityW)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / MW * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
 }

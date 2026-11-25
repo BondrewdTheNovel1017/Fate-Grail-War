@@ -11,7 +11,7 @@ function setMarble(kind, f) {
     return true;
   }
   G.marble = { kind: kind, owner: f, t: 0, prev: G.marble ? G.marble.kind : null };
-  PILLARS = []; buildGrid(); FX.fx('marbleOn', f.x, f.y, f); FX.snd('marble:' + kind, f); FX.shake(10);
+  PILLARS = []; RECTS = []; buildGrid(); FX.fx('marbleOn', f.x, f.y, f); FX.snd('marble:' + kind, f); FX.shake(10);
   return true;
 }
 function endMarble(by, quiet) {

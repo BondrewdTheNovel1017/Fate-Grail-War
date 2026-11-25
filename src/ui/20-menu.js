@@ -180,7 +180,7 @@ function renderSetup() {
   $('#rivals').innerHTML = [[7, 'Full war: 7 teams, every class'], [4, '4 teams'], [3, '3 teams']].map(function (n) { return '<button type="button" class="chip" data-teams="' + n[0] + '" aria-pressed="' + (CFG.teams === n[0]) + '">' + n[1] + '</button>'; }).join('');
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
-  $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams';
+  $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams &middot; starting at ' + (MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : 'a safehouse');
   if (CFG.game === 'arena') renderArena();
 }
 document.addEventListener('click', function (e) {

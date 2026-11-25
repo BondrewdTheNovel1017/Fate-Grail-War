@@ -5,8 +5,8 @@ A top-down Holy Grail War in the style of *Fate/Zero* and *Fate/stay night*: sev
 The design is in the game design document (a Claude doc). This repository holds the code, built in milestones:
 
 1. Big-map sandbox — done
-2. Masters and contracts — mana link, Form Contract and the balance report are in; ready for playtest
-3. Fuyuki and the living city
+2. Masters and contracts — done
+3. Fuyuki and the living city — 3a, the city rebuild, is in; 3b (day/night, civilians, Exposure) next
 4. Bases, fog of war and intel
 5. Master creation and social play
 6. Online multiplayer
@@ -16,8 +16,8 @@ The design is in the game design document (a Claude doc). This repository holds 
 
 Two ways to play from the start screen:
 
-- **Holy Grail War**: up to seven master and servant teams across all of Fuyuki, with mana, Command Seals, spirit form and contracts.
-- **Arena**: quick fights on seven themed maps: servant duels, free-for-all (3–4), 2v2 teams, master duels, and master-and-servant pairs.
+- **Holy Grail War**: up to seven master and servant teams across all of Fuyuki City (12,000 × 8,000, with walk-in interiors), with mana, Command Seals, spirit form and contracts. Masters start at their lore homes.
+- **Arena**: quick fights on seven themed maps: servant duels, free-for-all (3–4), 2v2 teams, master duels, master-and-servant pairs, and a Quick Grail War (seven teams on the compact Fuyuki map in about three minutes).
 
 The game is a single web page. Open `dist/fuyuki-war.html` in a browser, or play the published build on claude.ai.
 

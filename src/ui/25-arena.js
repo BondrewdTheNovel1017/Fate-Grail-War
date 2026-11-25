@@ -4,14 +4,16 @@ var ARENA_MODES = [
   ['ffa', 'Free-for-all', 'Three or four servants, everyone for themselves.'],
   ['teams', 'Teams', 'Two servants against two. Pick a team for each slot.'],
   ['masters', 'Master duel', 'Master against master: magecraft, Black Keys and bullets.'],
-  ['pairs', 'Master and servant', 'Your master and servant against another pair, with Command Seals and mana.']
+  ['pairs', 'Master and servant', 'Your master and servant against another pair, with Command Seals and mana.'],
+  ['quickwar', 'Quick Grail War', 'A full seven-team war on the compact Fuyuki map, wrapped up in a few minutes.']
 ];
 var AR_DEF = {
   duel: [{ k: 's', id: 'richard' }, { k: 's', id: 'random' }],
   ffa: [{ k: 's', id: 'richard' }, { k: 's', id: 'random' }, { k: 's', id: 'random' }, { k: 's', id: 'random' }],
   teams: [{ k: 's', id: 'richard', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 's', id: 'random', team: 0 }, { k: 's', id: 'random', team: 1 }],
   masters: [{ k: 'm', id: 'kirei' }, { k: 'm', id: 'random' }],
-  pairs: [{ k: 's', id: 'richard', team: 0 }, { k: 'm', id: 'rin', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 'm', id: 'random', team: 1 }]
+  pairs: [{ k: 's', id: 'richard', team: 0 }, { k: 'm', id: 'rin', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 'm', id: 'random', team: 1 }],
+  quickwar: [{ k: 's', id: 'richard', team: 0 }, { k: 'm', id: 'rin', team: 0 }]
 };
 function arenaCfg() {
   var A = CFG.arena;
@@ -29,14 +31,14 @@ function arenaSlotCol(A, i) {
   return A.mode === 'ffa' ? FFA_COL.at(i) : (i ? '#cf4a52' : '#3fb3c4');
 }
 function arenaRole(A, i) {
-  if (A.mode === 'pairs') return (i < 2 ? 'Your ' : 'Rival ') + (i % 2 ? 'master' : 'servant') + (i < 2 && ((i === 0) === (A.playAs === 'servant')) ? ' (you)' : '');
+  if (A.mode === 'pairs' || A.mode === 'quickwar') return (i < 2 ? 'Your ' : 'Rival ') + (i % 2 ? 'master' : 'servant') + (i < 2 && ((i === 0) === (A.playAs === 'servant')) ? ' (you)' : '');
   return i === 0 ? 'You' : 'CPU ' + i;
 }
 function renderArena() {
   var A = arenaCfg(), n = arenaN(A), S = A.slots[A.mode]; if (A.active >= n) A.active = 0;
   $('#amodes').innerHTML = ARENA_MODES.map(function (m) { return '<button type="button" class="mode" data-amode="' + m[0] + '" aria-pressed="' + (A.mode === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
   $('#acount').innerHTML = A.mode === 'ffa' ? [3, 4].map(function (c) { return '<button type="button" class="chip" data-acount="' + c + '" aria-pressed="' + (n === c) + '">' + c + ' fighters</button>'; }).join('') :
-    A.mode === 'pairs' ? [['servant', 'Play as the servant'], ['master', 'Play as the master']].map(function (q) { return '<button type="button" class="chip" data-aplay="' + q[0] + '" aria-pressed="' + (A.playAs === q[0]) + '">' + q[1] + '</button>'; }).join('') : '';
+    A.mode === 'pairs' || A.mode === 'quickwar' ? [['servant', 'Play as the servant'], ['master', 'Play as the master']].map(function (q) { return '<button type="button" class="chip" data-aplay="' + q[0] + '" aria-pressed="' + (A.playAs === q[0]) + '">' + q[1] + '</button>'; }).join('') : '';
   var h = '';
   for (var i = 0; i < n; i++) {
     var sl = S[i], T = sl.k === 'm' ? MASTERS : SERV, d = T[sl.id];
@@ -48,13 +50,14 @@ function renderArena() {
   var cur = S[A.active];
   $('#aroster').innerHTML = entityRosterHTML(cur.k, cur.id, 'data-apick', A.active > 0);
   $('#adetail').innerHTML = entityDetailHTML(cur.k, cur.id, arenaRole(A, A.active).toLowerCase());
+  $('#amaps').closest('.step').hidden = A.mode === 'quickwar';
   $('#amaps').innerHTML = MAP_ORDER.map(function (id) { var m = MAPS[id]; return '<button type="button" class="mapc" data-amap="' + id + '" aria-pressed="' + (A.map === id) + '"><canvas width="240" height="' + Math.round(240 * m.h / m.w) + '" data-prev="' + id + '"></canvas><span class="pl">' + esc(m.place) + '</span><b>' + esc(m.name) + '</b><small>' + esc(m.blurb) + '</small></button>'; }).join('') +
     '<button type="button" class="mapc" data-amap="random" aria-pressed="' + (A.map === 'random') + '"><span class="pl">Any location</span><b>Random battlefield</b><small>One of the arena maps, drawn when the battle starts.</small></button>';
   document.querySelectorAll('canvas[data-prev]').forEach(function (c) { drawMapPreview(c, MAPS[c.dataset.prev]); });
   $('#adiff').innerHTML = $('#diff').innerHTML; $('#aspd').innerHTML = $('#spd').innerHTML;
   var names = []; for (var k = 0; k < n; k++) { var s2 = S[k], d2 = (s2.k === 'm' ? MASTERS : SERV)[s2.id]; names.push(d2 ? shortName(d2.name) : 'Random'); }
-  var vs = A.mode === 'teams' ? (function () { var X = [], Y = []; for (var q = 0; q < 4; q++) (S[q].team === S[0].team ? X : Y).push(names[q]); return X.join(' + ') + ' vs ' + Y.join(' + '); })() : A.mode === 'pairs' ? names[0] + ' + ' + names[1] + ' vs ' + names[2] + ' + ' + names[3] : names.join(' vs ');
-  $('#summary').innerHTML = '<b>Arena &middot; ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1] + '</b> &middot; ' + esc(vs) + ' &middot; ' + esc(A.map === 'random' ? 'Random battlefield' : MAPS[A.map].name);
+  var vs = A.mode === 'quickwar' ? names[0] + ' + ' + names[1] + ' against six rival teams' : A.mode === 'teams' ? (function () { var X = [], Y = []; for (var q = 0; q < 4; q++) (S[q].team === S[0].team ? X : Y).push(names[q]); return X.join(' + ') + ' vs ' + Y.join(' + '); })() : A.mode === 'pairs' ? names[0] + ' + ' + names[1] + ' vs ' + names[2] + ' + ' + names[3] : names.join(' vs ');
+  $('#summary').innerHTML = '<b>Arena &middot; ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1] + '</b> &middot; ' + esc(vs) + ' &middot; ' + esc(A.mode === 'quickwar' ? 'Compact Fuyuki' : A.map === 'random' ? 'Random battlefield' : MAPS[A.map].name);
 }
 document.addEventListener('click', function (e) {
   var t = e.target, el, A = CFG.arena; if (!t.closest || !A) return;
@@ -72,12 +75,15 @@ function startArena() {
   var A = arenaCfg(), n = arenaN(A), S = A.slots[A.mode].slice(0, n), map = A.map === 'random' ? MAP_ORDER.filter(function (m) { return m !== 'arena'; })[Math.floor(Math.random() * (MAP_ORDER.length - 1))] : A.map;
   var taken = [], ids = S.map(function (sl) { var id = sl.id === 'random' ? pickRandom(sl.k, taken) : sl.id; taken.push(id); return id; });
   MEI = 0; NET.mirror = false;
-  if (A.mode === 'pairs') {
+  if (A.mode === 'quickwar') {
+    var qt = warTeams(ids[0], ids[1], 7).map(function (t) { return { servant: SERV_DUEL[t.servant.id], master: t.master }; });
+    newWar(qt, { map: 'fuyuki', quick: true, playAs: A.playAs, spawnOrder: [0].concat(shuffled([1, 2, 3, 4, 5, 6])) });
+  } else if (A.mode === 'pairs') {
     newWar([{ servant: SERV_DUEL[ids[0]], master: MASTERS[ids[1]] }, { servant: SERV_DUEL[ids[2]], master: MASTERS[ids[3]] }], { map: map, quick: true, playAs: A.playAs });
   } else {
     var defs = ids.map(function (id, i) { return S[i].k === 'm' ? MASTERS[id] : SERV_DUEL[id]; });
     newGame(defs, { map: map, mode: A.mode === 'masters' ? 'duel' : A.mode, teams: A.mode === 'teams' ? S.map(function (sl) { return sl.team; }) : null });
   }
   for (var k = 0; k < G.f.length; k++) if (k !== MEI) G.ai[k] = mkAI(G.f[k], DIFF[CFG.diff]);
-  enterGame(0, 'Arena', MAP.name + ' · ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1]);
+  enterGame(0, A.mode === 'quickwar' ? 'Quick Grail War' : 'Arena', MAP.name + ' · ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1]);
 }

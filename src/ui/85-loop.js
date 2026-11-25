@@ -1,7 +1,17 @@
 var MINI = { id: null, c: null };
 function miniMap(mw, mh) {
   var key = MAP.id + ':' + mw; if (MINI.id === key) return MINI.c;
-  var c = document.createElement('canvas'), sc = 2; c.width = Math.round(mw * sc); c.height = Math.round(mh * sc); var g = c.getContext('2d'), k = c.width / W;
+  var c = document.createElement('canvas'), sc = 2; c.width = Math.round(mw * sc); c.height = Math.round(mh * sc); var g = c.getContext('2d'), k = c.width / (MAP.cityW || W);
+  if (MAP.theme === 'city') {
+    g.scale(k, k); g.fillStyle = CITY_PAL.miyama; g.fillRect(0, 0, MAP.cityW, H); g.fillStyle = CITY_PAL.shinto; g.fillRect(6300, 0, MAP.cityW - 6300, H);
+    MAP.zones.forEach(function (z) { if (z.kind === 'railbridge') return; g.fillStyle = z.kind === 'water' || z.kind === 'pond' ? '#25507a' : (CITY_PAL[z.kind] || '#333'); g.fillRect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0); });
+    MAP.roads.forEach(function (r) { g.fillStyle = r.kind === 'avenue' ? '#8a8e94' : r.kind === 'rail' ? '#6a5a4a' : r.kind === 'path' || r.kind === 'stairs' ? '#6e6a5a' : '#6a6e74'; var hw = Math.max(r.w, 90) / 2; if (r.h) g.fillRect(r.x0, r.y0 - hw, r.x1 - r.x0, hw * 2); else g.fillRect(r.x0 - hw, r.y0, hw * 2, r.y1 - r.y0); });
+    g.fillStyle = '#c0392b'; g.fillRect(5620, 2270, 760, 260);
+    MAP.b.forEach(function (bk) { if (bk.hide || bk.x > MAP.cityW || bk.k === 'fence') return; g.fillStyle = bk.name ? '#c9c3b0' : '#4a5058'; g.fillRect(bk.x - bk.w / 2, bk.y - bk.h / 2, bk.w, bk.h); });
+    g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(233,228,211,.6)'; g.font = '600 ' + Math.round(9 * sc) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center';
+    [['TEMPLE', 1500, 200], ['TOHSAKA', 3550, 250], ['MATOU', 5000, 250], ['CHURCH', 1100, 2600], ['ACADEMY', 4050, 2560], ['EMIYA', 2060, 4800], ['BRIDGE', 6000, 2200], ['STATION', 7700, 3400], ['CENTER', 8525, 1450], ['PARK', 10400, 4780], ['HARBOR', 9300, 6830], ['CASTLE', 11000, 540]].forEach(function (lb) { g.fillText(lb[0], lb[1] * k, lb[2] * k); });
+    MINI.id = key; MINI.c = c; return c;
+  }
   g.scale(k, k); if (MAP.theme === 'fuyuki') { g.fillStyle = '#2d3830'; g.fillRect(0, 0, 4300, H); g.fillStyle = '#30363e'; g.fillRect(4700, 0, W - 4700, H); g.fillStyle = '#25507a'; g.fillRect(4300, 0, 400, 5760); g.fillRect(0, 5760, W, H - 5760); g.fillStyle = '#3c424b'; g.fillRect(4270, 1590, 460, 220); g.fillRect(4270, 4190, 460, 220); }
   MAP.b.forEach(function (bk) { if (bk.k === 'water') return; g.fillStyle = bk.k === 'pond' ? '#25507a' : '#6a7a8a'; g.fillRect(bk.x - bk.w / 2, bk.y - bk.h / 2, bk.w, bk.h); });
   g.fillStyle = '#2f5a33'; MAP.o.forEach(function (p) { g.beginPath(); g.arc(p.x, p.y, Math.max(p.r, 30), 0, 6.283); g.fill(); });

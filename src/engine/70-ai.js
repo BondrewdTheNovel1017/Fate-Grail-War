@@ -7,6 +7,7 @@ var DIFF = {
 function mkAI(f, cfg) { return { f: f, cfg: cfg, cool: 0.6 + Math.random() * 0.4, orbit: 1, orbitT: 1.5, seen: -1, plan: null, guardUntil: 0, relAt: 0, comboLeft: 0, t: 0, lastX: f.x, lastY: f.y, stuckT: 0 }; }
 function losClear(a, b) {
   if (a.inM) return true;
+  if (RECTS.length && !rectLos(a.x, a.y, b.x, b.y)) return false;
   var PL = pillarsIn(a.x, a.y, b.x, b.y);
   for (var i = 0; i < PL.length; i++) {
     var p = PL[i]; if (p.nb) continue; var dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1;
@@ -16,6 +17,7 @@ function losClear(a, b) {
   return true;
 }
 function navTarget(f, tx, ty) {
+  if (MAP.nav && !f.inM) return cityNav(f, tx, ty);
   var rv = MAP.river; if (!rv || f.inM) return [tx, ty];
   var sf = f.x < rv.x ? -1 : 1, st = tx < rv.x ? -1 : 1, onBridge = Math.abs(f.x - rv.x) < rv.half + 40 && rv.bridges.some(function (by) { return Math.abs(f.y - by) < 80; });
   if (sf === st || onBridge) return [tx, ty];
@@ -33,6 +35,7 @@ function steer(f, tx, ty) {
     var perp = px * (-oy) + py * ox, need = p.r + FR + 22;
     if (Math.abs(perp) < need) { var s = perp > 0 ? 1 : -1, k = 1.6 * (1.2 - Math.abs(perp) / need); dx += oy * s * k; dy += -ox * s * k; }
   }
+  if (RECTS.length && !f.inM) { var RL = rectsIn(f.x - 200, f.y - 200, f.x + 200, f.y + 200); for (var ri = 0; ri < RL.length; ri++) { var rq = RL[ri]; if (!segRect(f.x, f.y, f.x + ox * Math.min(L, 160), f.y + oy * Math.min(L, 160), rq, FR + 8)) continue; var rcx = (rq.x0 + rq.x1) / 2 - f.x, rcy = (rq.y0 + rq.y1) / 2 - f.y, side = (rcx * (-oy) + rcy * ox) > 0 ? 1 : -1; dx += oy * side * 1.1; dy += -ox * side * 1.1; } }
   if (f.x < 90) dx += 0.8; if (f.x > W - 90) dx -= 0.8; if (f.y < 90) dy += 0.8; if (f.y > H - 90) dy -= 0.8;
   var m = Math.hypot(dx, dy) || 1; return [dx / m, dy / m];
 }
@@ -223,7 +226,7 @@ function aiWar(ai, dt) {
   f.lock = null;
   if (!near || nd > 1400) {
     var tgt = near || f.foe; if (m && dist(f, m) > 500) { moveTo(f, m.x, m.y); return; }
-    if (G.time < 100 && !f.inM && MAP.id === 'fuyuki') { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
+    if (G.time < 100 && !f.inM && MAP.haven && !G.quick) { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
     if (tgt) { moveTo(f, tgt.x, tgt.y, 0.85); return; } }
   aiTick(ai, dt);
 }
@@ -241,8 +244,8 @@ function aiMaster(ai, dt) {
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && Math.random() < 0.0008) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
-    var haven = MAP.id === 'fuyuki' ? { x: 1100, y: 2480 } : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
-    moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.id === 'fuyuki') { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
+    var haven = MAP.haven ? MAP.haven : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
+    moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.haven) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);

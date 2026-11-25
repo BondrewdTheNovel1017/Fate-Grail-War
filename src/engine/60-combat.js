@@ -227,6 +227,7 @@ function stepF(f, dt) {
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
     if (f.def.mag) ammoTick(f, dt);
+    if (MAP.doors) doorTick(f, dt);
     if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);
     if (f.sigCd > 0) f.sigCd -= dt; if (f.silenceT > 0) f.silenceT -= dt; if (f.shieldT > 0) f.shieldT -= dt; if (f.rootT > 0) f.rootT -= dt; if (f.buffT > 0) f.buffT -= dt; if (f.reinfT > 0) f.reinfT -= dt;
   }
@@ -338,6 +339,7 @@ function stepProj(dt) {
     p.x += ox; p.y += oy; p.trav += Math.hypot(ox, oy);
     var es = enemiesOf(p.owner), tgt = p.owner.foe;
     if (p.trav > p.range || p.x < 0 || p.y < 0 || p.x > W || p.y > H) p.dead = true;
+    if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
     var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
     for (var wi = 0; wi < es.length && !p.dead; wi++) { var we = es[wi]; if ((!p.a.wave || p.a.beam || p.a.key === 'np') && !p.a.strip && we.wallT > 0 && dist(p, we) < 190) { p.dead = true; FX.spark(p.x, p.y, '#ffd36b', 8); if (p.a.key === 'np') { FX.text(we, 'NP BLOCKED'); FX.fx('wallBlock', p.x, p.y, we); } } }
     for (var ti = 0; ti < es.length && !p.dead; ti++) {
@@ -370,6 +372,7 @@ function separate() {
   }
   G.f.forEach(function (f) {
     if (f.inM && G.marble) { var mdx = f.x - G.marble.cx, mdy = f.y - G.marble.cy, md = Math.hypot(mdx, mdy), mr = G.marble.R - FR; if (md > mr) { f.x = G.marble.cx + mdx / md * mr; f.y = G.marble.cy + mdy / md * mr; } f.x = clamp(f.x, FR, W - FR); f.y = clamp(f.y, FR, H - FR); return; }
+    if (RECTS.length) rectsIn(f.x - 60, f.y - 60, f.x + 60, f.y + 60).forEach(function (r) { pushOutRect(f, r, FR); });
     pillarsIn(f.x - 60, f.y - 60, f.x + 60, f.y + 60).forEach(function (p) { var dx = f.x - p.x, dy = f.y - p.y, dd = Math.hypot(dx, dy), m = p.r + FR; if (dd < m) { if (dd < 0.001) { dx = 1; dy = 0; dd = 1; } f.x = p.x + dx / dd * m; f.y = p.y + dy / dd * m; } });
     f.x = clamp(f.x, FR, W - FR); f.y = clamp(f.y, FR, H - FR);
   });

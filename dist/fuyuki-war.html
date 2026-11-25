@@ -255,7 +255,8 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
     <div class="rule"><b>Shirou's Trace</b>Fighting fills his gauge. At 40 he learns Trace On: homing blades and Kanshou and Bakuya. At 100 he can open Unlimited Blade Works once, with homing swords that last longer than EMIYA's.</div>
     <div class="rule"><b>Long fights</b>Servants are much tougher here and Noble Phantasms charge slowly, but hit harder when they land.</div>
     <div class="rule"><b>Target lock</b>Tap or click an enemy to lock on, or press Target to cycle. Tap empty ground to clear.</div>
-    <div class="rule"><b>The city</b>The Mion River splits Miyama from Shinto; cross at Fuyuki Bridge or the south bridge. Ryuudou Temple and Mount Enzou, the Tohsaka and Matou houses, the church, Homurahara Academy, the Emiya house and the shopping street sit in Miyama; the Center Building, Hyatt, Verde, the station, Central Park, Semina Apartments, the harbor and the Einzbern forest in Shinto. Buildings block sight and shots.</div>
+    <div class="rule"><b>Fuyuki City</b>The Mion River splits Miyama from Shinto, crossed by the red arch of Fuyuki Bridge, the Mion Bridge to the south and the railway bridge. Miyama has Ryuudou Temple on Mount Enzou, the Tohsaka and Matou houses on the hill, the church, Homurahara Academy, the Emiya residence and the shopping street; Shinto has the Hyatt, the Center Building, Verde, the station, Central Park, the harbor and the Einzbern forest. Buildings block movement, sight and shots.</div>
+    <div class="rule"><b>Homes and interiors</b>Every master starts at their lore home: Rin at the Tohsaka mansion, Sakura and Kariya at the Matou house, Illya and Irisviel at Einzbern Castle, Kirei at the church, Kayneth at the Hyatt, Waver at the Mackenzie house, Shirou at the Emiya residence, Kiritsugu at a safehouse. A second member of the same family gets a new estate somewhere in the city. Walk into the doors of Einzbern Castle, the Tohsaka mansion, the Matou house, the church or the Emiya residence to fight inside.</div>
   </div>
   <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract.</p>
   </details>
@@ -412,7 +413,7 @@ MAPS.fuyuki = (function () {
   // ---- Einzbern Forest and Castle (east suburbs)
   B(8350, 1450, 460, 360, 'castle', 'Einzbern Castle');
   for (var fx = 7700; fx < 8950; fx += 170) for (var fy = 200; fy < 3050; fy += 160) { var x3 = fx + (rnd2() - 0.5) * 90, y3 = fy + (rnd2() - 0.5) * 80; if (Math.hypot(x3 - 8250, y3 - 1500) < 520) continue; if (Math.abs(y3 - 1500) < 90) continue; T(Math.round(x3), Math.round(y3), 26 + Math.round(rnd2() * 16)); }
-  return { id: 'fuyuki', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The war map.', w: 9000, h: 6000, theme: 'fuyuki', river: { x: 4500, half: 200, bridges: [1700, 4300] },
+  return { id: 'fuyuki', name: 'Compact Fuyuki', place: 'Miyama and Shinto across the Mion River', blurb: 'The compact city used for Quick Grail Wars.', haven: { x: 1100, y: 2480, name: 'Fuyuki Church' }, w: 9000, h: 6000, theme: 'fuyuki', river: { x: 4500, half: 200, bridges: [1700, 4300] },
     o: o, b: b, spawns: [[1250, 4020], [2650, 900], [1100, 860], [7950, 1500], [5300, 1500], [6300, 4870], [5600, 4220]],
     labels: [['RYUUDOU TEMPLE', 1100, 300], ['MOUNT ENZOU', 1100, 1500], ['TOHSAKA MANSION', 2650, 470], ['MATOU RESIDENCE', 3650, 430], ['FUYUKI CHURCH', 1100, 2050], ['FOREIGN CEMETERY', 1100, 3080], ['HOMURAHARA ACADEMY', 2900, 2060], ['EMIYA RESIDENCE', 1250, 4110], ['MIYAMA', 1500, 3350], ['MOUNT MIYAMA SHOPPING STREET', 3450, 3560], ['MION RIVER', 4500, 3000], ['FUYUKI BRIDGE', 4500, 1520], ['SHINTO', 6200, 1820], ['CENTER BUILDING', 6200, 1080], ['HYATT HOTEL', 5300, 900], ['VERDE', 6800, 2370], ['FUYUKI STATION', 5900, 2990], ['CENTRAL PARK', 7450, 3420], ['SEMINA APARTMENTS', 5600, 3620], ['HARBOR', 6800, 5480], ['FUYUKI BEACH', 1900, 5600], ['EINZBERN FOREST', 8300, 300], ['EINZBERN CASTLE', 8350, 1220]] };
 })();
@@ -422,8 +423,419 @@ function blockCircles(b) { var r = Math.min(b.w, b.h) / 2, L = Math.max(b.w, b.h
 var PGRID = null, PCELL = 320;
 function buildGrid() { PGRID = {}; PILLARS.forEach(function (p) { for (var gx = Math.floor((p.x - p.r) / PCELL); gx <= Math.floor((p.x + p.r) / PCELL); gx++) for (var gy = Math.floor((p.y - p.r) / PCELL); gy <= Math.floor((p.y + p.r) / PCELL); gy++) { var k = gx + ',' + gy; (PGRID[k] || (PGRID[k] = [])).push(p); } }); }
 function pillarsIn(x0, y0, x1, y1) { if (!PGRID) return PILLARS; var out = [], seen = new Set(); for (var gx = Math.floor(Math.min(x0, x1) / PCELL); gx <= Math.floor(Math.max(x0, x1) / PCELL); gx++) for (var gy = Math.floor(Math.min(y0, y1) / PCELL); gy <= Math.floor(Math.max(y0, y1) / PCELL); gy++) { var c = PGRID[gx + ',' + gy]; if (c) for (var i = 0; i < c.length; i++) if (!seen.has(c[i])) { seen.add(c[i]); out.push(c[i]); } } return out; }
-function setMap(id) { MAP = MAPS[id] || MAPS.arena; W = MAP.w; H = MAP.h; PILLARS = MAP.o.slice(); MAP.b.forEach(function (b) { PILLARS = PILLARS.concat(blockCircles(b)); }); buildGrid(); }
+function setMap(id) {
+  MAP = MAPS[id] || MAPS.arena; W = MAP.w; H = MAP.h; PILLARS = MAP.o.slice(); RECTS = [];
+  if (MAP.rects) MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); });
+  else MAP.b.forEach(function (b) { PILLARS = PILLARS.concat(blockCircles(b)); });
+  buildGrid(); buildRectGrid(); if (MAP.roads && !MAP.nav) buildNav(MAP);
+}
+/* ---- rectangle colliders (city buildings, walls and water) ---- */
+var RECTS = [], RGRID = null;
+function buildRectGrid() { RGRID = {}; RECTS.forEach(function (r) { for (var gx = Math.floor(r.x0 / PCELL); gx <= Math.floor(r.x1 / PCELL); gx++) for (var gy = Math.floor(r.y0 / PCELL); gy <= Math.floor(r.y1 / PCELL); gy++) { var k = gx + ',' + gy; (RGRID[k] || (RGRID[k] = [])).push(r); } }); }
+function rectsIn(x0, y0, x1, y1) { if (!RECTS.length) return RECTS; var out = [], seen = new Set(); for (var gx = Math.floor(Math.min(x0, x1) / PCELL); gx <= Math.floor(Math.max(x0, x1) / PCELL); gx++) for (var gy = Math.floor(Math.min(y0, y1) / PCELL); gy <= Math.floor(Math.max(y0, y1) / PCELL); gy++) { var c = RGRID[gx + ',' + gy]; if (c) for (var i = 0; i < c.length; i++) if (!seen.has(c[i])) { seen.add(c[i]); out.push(c[i]); } } return out; }
+function inRect(r, x, y, pad) { pad = pad || 0; return x > r.x0 - pad && x < r.x1 + pad && y > r.y0 - pad && y < r.y1 + pad; }
+// does segment a-b cross rect r (grown by pad)? slab test
+function segRect(ax, ay, bx, by, r, pad) {
+  pad = pad || 0; var x0 = r.x0 - pad, y0 = r.y0 - pad, x1 = r.x1 + pad, y1 = r.y1 + pad, dx = bx - ax, dy = by - ay, t0 = 0, t1 = 1;
+  var p = [-dx, dx, -dy, dy], q = [ax - x0, x1 - ax, ay - y0, y1 - ay];
+  for (var i = 0; i < 4; i++) { if (p[i] === 0) { if (q[i] < 0) return false; } else { var t = q[i] / p[i]; if (p[i] < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } } }
+  return true;
+}
+function pushOutRect(f, r, rad) {
+  var cx = clamp(f.x, r.x0, r.x1), cy = clamp(f.y, r.y0, r.y1), dx = f.x - cx, dy = f.y - cy, d = Math.hypot(dx, dy);
+  if (d >= rad) return;
+  if (d > 0.001) { f.x = cx + dx / d * rad; f.y = cy + dy / d * rad; return; }
+  var l = f.x - r.x0, rr = r.x1 - f.x, t = f.y - r.y0, bt = r.y1 - f.y, m = Math.min(l, rr, t, bt);
+  if (m === l) f.x = r.x0 - rad; else if (m === rr) f.x = r.x1 + rad; else if (m === t) f.y = r.y0 - rad; else f.y = r.y1 + rad;
+}
 setMap('arena');
+/* ---- Fuyuki City: the full war map ----
+   Built from data: roads (axis-aligned, with kinds), ground zones, landmark buildings, procedurally filled
+   city blocks, trees, estate plots for masters, and walk-in interiors placed in a strip east of the city
+   (x > cityW) and reached through doors. Buildings collide as rectangles (MAP.rects); trees and posts as circles. */
+MAPS.city = (function () {
+  var CW = 12000, CH = 8000, IX = 12400;                 // city size; interiors live at x >= IX
+  var v = 20241125; function R() { v = (v * 1664525 + 1013904223) >>> 0; return v / 4294967296; }
+  var roads = [], zones = [], b = [], o = [], labels = [], doors = [], rooms = [], reserved = [], lamps = [];
+  function road(kind, x0, y0, x1, y1, w, name) { roads.push({ kind: kind, x0: Math.min(x0, x1), y0: Math.min(y0, y1), x1: Math.max(x0, x1), y1: Math.max(y0, y1), w: w, h: y0 === y1, name: name }); }
+  function zone(kind, x0, y0, x1, y1) { zones.push({ kind: kind, x0: x0, y0: y0, x1: x1, y1: y1 }); }
+  function B(x, y, w, h, k, o2) { var q = { x: x, y: y, w: w, h: h, k: k }; if (o2) for (var key in o2) q[key] = o2[key]; b.push(q); return q; }
+  function T(x, y, r, k) { o.push({ x: Math.round(x), y: Math.round(y), r: Math.round(r), k: k || 'tree' }); }
+  function reserve(x0, y0, x1, y1) { reserved.push([x0, y0, x1, y1]); }
+  function roadRect(r) { var hw = r.w / 2; return r.h ? [r.x0, r.y0 - hw, r.x1, r.y0 + hw] : [r.x0 - hw, r.y0, r.x0 + hw, r.y1]; }
+  function hits(x0, y0, x1, y1, pad) {
+    pad = pad || 0;
+    for (var i = 0; i < reserved.length; i++) { var q = reserved[i]; if (x1 + pad > q[0] && x0 - pad < q[2] && y1 + pad > q[1] && y0 - pad < q[3]) return true; }
+    for (var j = 0; j < roads.length; j++) { var rr = roadRect(roads[j]), sp = roads[j].kind === 'path' || roads[j].kind === 'stairs' ? 10 : 34; if (x1 + pad > rr[0] - sp && x0 - pad < rr[2] + sp && y1 + pad > rr[1] - sp && y0 - pad < rr[3] + sp) return true; }
+    return false;
+  }
+
+  /* ---------- water: the Mion River and the bay ---------- */
+  var RX0 = 5700, RX1 = 6300, SEA = 7300;
+  zone('water', RX0, 0, RX1, SEA); zone('water', 0, SEA, CW, CH);
+  [[0, 2270], [2530, 3930], [4070, 5490], [5710, SEA]].forEach(function (s) { B(6000, (s[0] + s[1]) / 2, RX1 - RX0, s[1] - s[0], 'water', { nb: true, hide: true }); });
+  B(CW / 2, (SEA + CH) / 2 + 40, CW, CH - SEA - 80, 'water', { nb: true, hide: true });
+
+  /* ---------- roads ---------- */
+  // avenues
+  road('avenue', 200, 2400, 9800, 2400, 220, 'Fuyuki Bridge');
+  road('avenue', 200, 5600, 9800, 5600, 190, 'Mion Bridge');
+  road('avenue', 3000, 900, 3000, 6900, 190);
+  road('avenue', 8100, 300, 8100, 6600, 210);
+  road('avenue', 6400, 6650, 11800, 6650, 170);
+  // Miyama streets
+  road('street', 2600, 1250, 5400, 1250, 120);
+  road('street', 200, 3600, 5500, 3600, 130);
+  road('street', 200, 4700, 5500, 4700, 130);
+  road('street', 200, 6450, 5500, 6450, 130);
+  road('street', 1300, 2400, 1300, 6900, 130);
+  road('street', 4400, 1250, 4400, 6900, 130);
+  // Shinto streets
+  road('street', 6550, 300, 6550, 6650, 120);
+  road('street', 7300, 300, 7300, 6650, 150);
+  road('street', 8950, 300, 8950, 6650, 150);
+  road('street', 9800, 300, 9800, 6650, 160);
+  road('street', 6550, 1300, 9800, 1300, 140);
+  road('street', 6550, 3300, 9800, 3300, 140);
+  road('street', 6550, 4600, 9800, 4600, 140);
+  // paths, stairs and the railway (all walkable)
+  road('stairs', 1500, 1480, 1500, 2400, 110, 'Ryuudou stairs');
+  road('path', 1500, 1060, 1500, 1480, 90);
+  road('path', 1100, 2400, 1100, 2760, 90);
+  road('path', 5350, 2400, 5350, 6950, 80);
+  road('path', 3550, 830, 3550, 1250, 70);
+  road('path', 5000, 830, 5000, 1250, 70);
+  road('path', 2700, 1800, 3000, 1800, 60);
+  road('path', 2050, 4700, 2050, 4920, 70);
+  road('path', 9800, 2400, 11000, 2400, 110, 'Einzbern forest road');
+  road('path', 11000, 1760, 11000, 2400, 110);
+  road('path', 9800, 5250, 11700, 5250, 80);
+  road('path', 10750, 4600, 10750, 6650, 80);
+  road('rail', 4300, 4050, 11800, 4050, 120, 'Railway');
+  zone('railbridge', RX0 - 40, 3990, RX1 + 40, 4110);
+
+  /* ---------- ground zones (drawn under everything) ---------- */
+  zone('forest', 0, 0, 2450, 2290);              // Mount Enzou
+  zone('temple', 700, 250, 2300, 1460);          // Ryuudou Temple grounds
+  zone('hill', 2450, 0, RX0, 2290);              // foreigners' district on the hill
+  zone('churchyard', 250, 2510, 2900, 3530);     // church hill and cemetery
+  zone('schoolyard', 3100, 2510, 5000, 3530);    // Homurahara Academy
+  zone('park', 5000, 2510, RX0, 6950);           // riverside park (west bank)
+  zone('sand', 0, 6960, RX0, SEA);               // Fuyuki beach
+  zone('plaza', 6650, 3700, 8900, 3970);         // station plaza
+  zone('park', 9050, 4700, 11800, 6560);         // Central Park
+  zone('forest', 9900, 0, CW, 3980);             // Einzbern forest
+  zone('castle', 10300, 600, 11700, 1760);       // castle courtyard
+  zone('harbor', 6400, 6760, CW, SEA);           // cargo harbor apron
+  zone('emiya', 1500, 4850, 2600, 5450);         // Emiya residence yard
+  zone('garden', 3150, 330, 3950, 1110);         // Tohsaka garden
+  zone('garden', 4600, 330, 5400, 1110);         // Matou grounds
+
+  /* ---------- landmarks ---------- */
+  // Ryuudou Temple
+  B(1500, 650, 760, 260, 'temple', { name: 'Ryuudou Temple' }); B(950, 900, 200, 160, 'temple2'); B(2050, 900, 200, 160, 'temple2'); B(1080, 1220, 120, 120, 'belltower');
+  B(1500, 1470, 360, 30, 'gate_jp'); reserve(700, 250, 2300, 1500);
+  [[1180, 1350], [1820, 1350], [1180, 1100], [1820, 1100]].forEach(function (p) { T(p[0], p[1], 14, 'lantern'); });
+  T(1950, 1250, 46, 'pine'); T(1060, 450, 44, 'pine'); T(2120, 450, 40, 'pine');
+  // Foreigners' district
+  B(3550, 650, 460, 320, 'mansion_w', { name: 'Tohsaka Mansion', home: 'tohsaka' }); reserve(3150, 330, 3950, 1110);
+  B(3550, 335, 800, 18, 'fence'); B(3150, 720, 18, 780, 'fence'); B(3950, 720, 18, 780, 'fence'); B(3300, 1105, 300, 18, 'fence'); B(3800, 1105, 300, 18, 'fence');
+  B(5000, 650, 420, 320, 'mansion_d', { name: 'Matou Residence', home: 'matou' }); reserve(4600, 330, 5400, 1110);
+  B(5000, 335, 800, 18, 'fence'); B(4600, 720, 18, 780, 'fence'); B(5400, 720, 18, 780, 'fence'); B(4750, 1105, 300, 18, 'fence'); B(5250, 1105, 300, 18, 'fence');
+  B(2600, 1800, 220, 170, 'house_w', { name: 'Mackenzie House', home: 'mackenzie' }); reserve(2440, 1680, 2760, 1930);
+  [[3250, 450], [3850, 450], [3250, 1000], [3850, 1000], [4700, 450], [5300, 450]].forEach(function (p) { T(p[0], p[1], 36); });
+  // Fuyuki Church and the foreign cemetery
+  B(1100, 2960, 420, 360, 'church', { name: 'Fuyuki Church', home: 'church' }); reserve(820, 2740, 1380, 3180);
+  for (var gx = 0; gx < 7; gx++) for (var gy = 0; gy < 3; gy++) B(1650 + gx * 150, 2760 + gy * 140, 50, 26, 'grave');
+  reserve(1600, 2720, 2700, 3110);
+  [[500, 2700], [500, 3300], [1700, 3350], [2300, 3350], [2800, 2700]].forEach(function (p) { T(p[0], p[1], 40); });
+  // Homurahara Academy
+  B(4050, 2700, 1300, 220, 'school', { name: 'Homurahara Academy' }); B(4850, 3250, 300, 260, 'gym'); B(3400, 3300, 260, 120, 'dojo_s');
+  reserve(3100, 2510, 5000, 3530);
+  // Emiya residence (walled compound)
+  B(1900, 5060, 560, 230, 'house_jpL', { name: 'Emiya Residence', home: 'emiya' }); B(2380, 5280, 300, 200, 'dojo'); B(1640, 5350, 170, 120, 'storehouse');
+  B(1530, 5150, 20, 620, 'wall'); B(2620, 5150, 20, 620, 'wall'); B(2060, 5440, 1100, 20, 'wall'); B(1765, 4850, 490, 20, 'wall'); B(2370, 4850, 520, 20, 'wall');
+  reserve(1500, 4830, 2650, 5470); T(1700, 4950, 32); T(2500, 4980, 30);
+  // Mount Miyama shopping street (covered arcade along H5)
+  for (var sx = 3170; sx <= 4250; sx += 135) { B(sx, 4580, 120, 110, 'shop'); B(sx, 4820, 120, 110, 'shop'); }
+  zone('arcade', 3100, 4630, 4300, 4770);
+  reserve(3100, 4520, 4300, 4880);
+  // Shinto: Hyatt hotel, Center Building, Verde, station
+  B(7700, 850, 560, 460, 'hotel', { name: 'Hyatt Hotel', home: 'hyatt' }); reserve(7400, 600, 8000, 1220);
+  B(8525, 1850, 620, 620, 'center', { name: 'Center Building' }); reserve(8200, 1450, 8850, 2270);
+  B(8525, 2850, 640, 380, 'mall', { name: 'Verde' }); reserve(8200, 2530, 8850, 3200);
+  B(7700, 3550, 1000, 230, 'station', { name: 'Fuyuki Station' }); reserve(6650, 3400, 8900, 3990);
+  B(4880, 3880, 300, 120, 'station_s', { name: 'Miyama Station' }); reserve(4700, 3800, 5100, 3970);
+  // Central Park and the civic hall
+  zone('pond', 10150, 5650, 10600, 6050);
+  B(10380, 5850, 520, 340, 'water', { nb: true, hide: true });
+  B(10150, 4880, 460, 260, 'civic', { name: 'Fuyuki Civic Hall' }); reserve(9050, 4700, 11800, 6560);
+  // Einzbern Castle
+  B(11000, 1150, 980, 620, 'castle', { name: 'Einzbern Castle', home: 'einzbern' });
+  B(10560, 980, 220, 220, 'castletower'); B(11440, 980, 220, 220, 'castletower');
+  B(11000, 610, 1400, 26, 'castlewall'); B(10300, 1180, 26, 1160, 'castlewall'); B(11700, 1180, 26, 1160, 'castlewall');
+  B(10600, 1760, 600, 26, 'castlewall'); B(11400, 1760, 600, 26, 'castlewall');
+  reserve(10280, 590, 11720, 1780);
+  [[10600, 1550], [11400, 1550]].forEach(function (p) { T(p[0], p[1], 18, 'fountain'); });
+  // harbor: warehouses, containers, cranes
+  for (var wx = 6700; wx <= 9500; wx += 700) B(wx, 7000, 560, 260, 'warehouse');
+  for (var cx = 9900; cx <= 11600; cx += 260) { B(cx, 6880, 220, 80, ['box1', 'box2', 'box3'][Math.floor(R() * 3)]); B(cx, 7050, 220, 80, ['box2', 'box3', 'box1'][Math.floor(R() * 3)]); }
+  [7050, 7750, 8450, 9150, 9850, 10550, 11250].forEach(function (x) { T(x, 7230, 26, 'crane'); });
+  reserve(6400, 6760, CW, SEA);
+  // beach
+  T(4700, 7150, 30, 'lighthouse'); reserve(0, 6960, RX0, SEA);
+  // riverside park and beach trees
+  for (var py = 2600; py < 6900; py += 230) { if (Math.abs(py - 4050) < 120 || Math.abs(py - 5600) < 140 || Math.abs(py - 3600) < 90 || Math.abs(py - 4700) < 90 || Math.abs(py - 6450) < 90) continue; T(5120 + R() * 60, py, 30 + R() * 10); T(5580 + R() * 40, py + 100, 28 + R() * 10); }
+  reserve(5000, 2510, RX0, 6960);
+
+  /* ---------- estate plots: where duplicate family houses and safehouses can appear ---------- */
+  var plots = [[2700, 600], [4000, 1800], [4950, 1820], [700, 4150], [3700, 6050], [7700, 5100], [9380, 2850], [10450, 3300], [6950, 2850], [700, 6050]];
+  plots.forEach(function (p) { reserve(p[0] - 260, p[1] - 190, p[0] + 260, p[1] + 190); });
+
+  /* ---------- fill city blocks with buildings ---------- */
+  function fill(x0, y0, x1, y1, style, lotW, lotH, gap) {
+    for (var x = x0; x + 60 < x1; x += lotW + gap) for (var y = y0; y + 60 < y1; y += lotH + gap) {
+      var lw = Math.min(lotW, x1 - x), lh = Math.min(lotH, y1 - y); if (lw < lotW * 0.55 || lh < lotH * 0.55) continue;
+      var w = Math.round(lw * (0.72 + R() * 0.22)), h = Math.round(lh * (0.7 + R() * 0.24)), bx = x + lw / 2, by = y + lh / 2;
+      if (hits(bx - w / 2, by - h / 2, bx + w / 2, by + h / 2, 6)) continue;
+      var st = typeof style === 'function' ? style() : style; B(Math.round(bx), Math.round(by), w, h, st);
+      if (st === 'house_jp' && R() < 0.35) T(bx + (R() < 0.5 ? -1 : 1) * (w / 2 + 22), by + (R() - 0.5) * h * 0.5, 20 + R() * 8);
+    }
+  }
+  var jp = function () { var q = R(); return q < 0.78 ? 'house_jp' : q < 0.9 ? 'house_w' : 'apt_s'; };
+  var biz = function () { var q = R(); return q < 0.55 ? 'tower' : q < 0.8 ? 'office' : 'shop_big'; };
+  var mid = function () { var q = R(); return q < 0.5 ? 'apt' : q < 0.75 ? 'shop_big' : 'office'; };
+  // Miyama residential
+  fill(300, 3700, 1200, 4600, jp, 230, 190, 40); fill(1400, 3700, 2900, 4600, jp, 230, 190, 40); fill(3100, 3700, 4300, 4470, jp, 230, 190, 40);
+  fill(300, 4800, 1200, 5480, jp, 230, 190, 40); fill(1400, 4800, 2900, 5480, jp, 230, 190, 40); fill(3100, 4920, 4300, 5480, jp, 230, 190, 40);
+  fill(300, 5720, 1200, 6340, jp, 230, 190, 40); fill(1400, 5720, 2900, 6340, jp, 230, 190, 40); fill(3100, 5720, 4300, 6340, jp, 230, 190, 40);
+  fill(300, 6560, 1200, 6900, jp, 230, 160, 40); fill(1400, 6560, 2900, 6900, jp, 230, 160, 40); fill(3100, 6560, 4300, 6900, jp, 230, 160, 40);
+  fill(4500, 3700, 5000, 6900, jp, 210, 190, 40);
+  fill(2500, 2510, 2900, 3530, 'house_w', 200, 200, 50);
+  // the hill: a few western houses
+  fill(2500, 1350, 4300, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70); fill(4500, 1350, 5600, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70);
+  fill(2500, 120, 3050, 800, 'house_w', 260, 230, 60);
+  // Shinto business district
+  fill(6650, 400, 7200, 3200, biz, 260, 330, 50); fill(7400, 400, 8000, 3200, biz, 280, 320, 50);
+  fill(8220, 400, 8850, 3200, biz, 300, 320, 50); fill(9050, 400, 9700, 3200, biz, 280, 320, 50);
+  // Shinto south: apartments, shops (Semina Apartments among them)
+  fill(6650, 4150, 7200, 6540, mid, 240, 280, 50); fill(7400, 4150, 8000, 6540, mid, 260, 280, 50); fill(8220, 4150, 8850, 6540, mid, 260, 280, 50);
+  B(7700, 4850, 300, 300, 'apt', { name: 'Semina Apartments' });
+  // forests
+  function forest(x0, y0, x1, y1, step, keepOut) {
+    for (var fx = x0; fx < x1; fx += step) for (var fy = y0; fy < y1; fy += step * 0.92) {
+      var tx = fx + (R() - 0.5) * step * 0.6, ty = fy + (R() - 0.5) * step * 0.6, tr = 26 + R() * 18;
+      if (hits(tx - tr, ty - tr, tx + tr, ty + tr, 8)) continue;
+      if (keepOut && keepOut(tx, ty)) continue;
+      T(tx, ty, tr, R() < 0.5 ? 'pine' : 'tree');
+    }
+  }
+  forest(60, 60, 2450, 2290, 170);
+  forest(9950, 60, CW - 60, 3950, 160, function (x, y) { return Math.abs(y - 2400) < 120 && x < 11060 || Math.abs(x - 11000) < 110 && y > 1700 && y < 2450; });
+  // street trees along the avenues
+  [[3000, 2600, 6800, 'v'], [8100, 500, 6500, 'v']].forEach(function (s) { for (var t = s[1]; t < s[2]; t += 300) { [-1, 1].forEach(function (side) { var x = s[0] + side * 128, y = t; if (!hits(x - 14, y - 14, x + 14, y + 14, -40)) T(x, y, 16, 'street'); }); } });
+
+  /* ---------- labels ---------- */
+  labels.push(['MOUNT ENZOU', 900, 2000], ['RYUUDOU TEMPLE', 1500, 220], ['TOHSAKA MANSION', 3550, 280], ['MATOU RESIDENCE', 5000, 280], ['FUYUKI CHURCH', 1100, 2600],
+    ['HOMURAHARA ACADEMY', 4050, 2560], ['MIYAMA', 2200, 4250], ['EMIYA RESIDENCE', 2060, 4800], ['MOUNT MIYAMA SHOPPING STREET', 3700, 4480], ['FUYUKI BRIDGE', 6000, 2180],
+    ['MION RIVER', 6000, 3300], ['SHINTO', 7300, 2050], ['HYATT HOTEL', 7700, 560], ['CENTER BUILDING', 8525, 1490], ['VERDE', 8525, 2620], ['FUYUKI STATION', 7700, 3400],
+    ['CENTRAL PARK', 10400, 4780], ['SEMINA APARTMENTS', 7700, 4660], ['HARBOR', 9300, 6830], ['FUYUKI BEACH', 2500, 7150], ['EINZBERN FOREST', 10800, 3500], ['EINZBERN CASTLE', 11000, 560], ['MION BRIDGE', 6000, 5420]);
+
+  /* ---------- interiors (east of the city) and the doors that lead to them ---------- */
+  function room(id, name, x0, y0, w, h, floor) { var r = { id: id, name: name, x0: x0, y0: y0, x1: x0 + w, y1: y0 + h, floor: floor, parts: [] }; rooms.push(r);
+    B(x0 + w / 2, y0 + 12, w, 24, 'iwall'); B(x0 + w / 2, y0 + h - 12, w, 24, 'iwall'); B(x0 + 12, y0 + h / 2, 24, h, 'iwall'); B(x0 + w - 12, y0 + h / 2, 24, h, 'iwall'); return r; }
+  function iw(x, y, w, h) { B(x, y, w, h, 'iwall'); }
+  function part(r, kind, x0, y0, x1, y1) { r.parts.push({ kind: kind, x0: x0, y0: y0, x1: x1, y1: y1 }); }
+  function door(id, room, ox, oy, onx, ony, ix, iy, inx, iny) { doors.push({ id: id, room: room, out: { x: ox, y: oy, nx: onx, ny: ony }, in: { x: ix, y: iy, nx: inx, ny: iny } }); }
+  // Einzbern Castle: entrance hall, grand staircase, banquet hall, library, chapel
+  var c = room('einzbern', 'Einzbern Castle', IX + 200, 200, 2600, 1900, 'marble');
+  var cx0 = c.x0, cy0 = c.y0;
+  iw(cx0 + 900, cy0 + 600, 24, 1000); iw(cx0 + 1700, cy0 + 600, 24, 1000);            // hall side walls (north part)
+  iw(cx0 + 450, cy0 + 1110, 900, 24); iw(cx0 + 2150, cy0 + 1110, 900, 24);           // wings
+  iw(cx0 + 900, cy0 + 1560, 24, 420); iw(cx0 + 1700, cy0 + 1560, 24, 420);
+  iw(cx0 + 900, cy0 + 1300, 24, 120); iw(cx0 + 1700, cy0 + 1300, 24, 120);
+  part(c, 'carpet', cx0 + 1180, cy0 + 300, cx0 + 1420, cy0 + 1880); part(c, 'stairs', cx0 + 1050, cy0 + 120, cx0 + 1550, cy0 + 330);
+  part(c, 'wood', cx0 + 30, cy0 + 30, cx0 + 890, cy0 + 1100); part(c, 'wood', cx0 + 1710, cy0 + 30, cx0 + 2570, cy0 + 1100);
+  part(c, 'stone', cx0 + 30, cy0 + 1120, cx0 + 890, cy0 + 1870); part(c, 'stone', cx0 + 1710, cy0 + 1120, cx0 + 2570, cy0 + 1870);
+  B(cx0 + 460, cy0 + 560, 520, 90, 'table'); for (var ch = 0; ch < 6; ch++) { T(cx0 + 240 + ch * 90, cy0 + 480, 12, 'chair'); T(cx0 + 240 + ch * 90, cy0 + 640, 12, 'chair'); }
+  for (var bs = 0; bs < 4; bs++) B(cx0 + 1900 + bs * 170, cy0 + 300, 110, 330, 'shelf'); B(cx0 + 2150, cy0 + 820, 360, 60, 'table');
+  for (var pw = 0; pw < 4; pw++) { B(cx0 + 330, cy0 + 1300 + pw * 130, 380, 40, 'pew'); } B(cx0 + 330, cy0 + 1800, 200, 50, 'altar');
+  for (var ar = 0; ar < 3; ar++) B(cx0 + 2140, cy0 + 1300 + ar * 200, 500, 60, 'armory');
+  [[cx0 + 1080, cy0 + 600], [cx0 + 1520, cy0 + 600], [cx0 + 1080, cy0 + 1000], [cx0 + 1520, cy0 + 1000], [cx0 + 1080, cy0 + 1400], [cx0 + 1520, cy0 + 1400]].forEach(function (p) { T(p[0], p[1], 30, 'column'); });
+  door('einzbern', 'einzbern', 11000, 1485, 0, 1, cx0 + 1300, cy0 + 1820, 0, 1);
+  // Tohsaka Mansion: foyer, parlor, workshop
+  var t = room('tohsaka', 'Tohsaka Mansion', IX + 200, 2400, 1500, 1050, 'wood');
+  iw(t.x0 + 540, t.y0 + 360, 24, 640); iw(t.x0 + 960, t.y0 + 360, 24, 640); iw(t.x0 + 270, t.y0 + 680, 520, 24); iw(t.x0 + 1230, t.y0 + 680, 520, 24);
+  iw(t.x0 + 540, t.y0 + 900, 24, 200); iw(t.x0 + 960, t.y0 + 900, 24, 200);
+  part(t, 'carpet', t.x0 + 560, t.y0 + 30, t.x0 + 940, t.y0 + 1020); part(t, 'workshop', t.x0 + 980, t.y0 + 700, t.x0 + 1470, t.y0 + 1020);
+  B(t.x0 + 270, t.y0 + 300, 260, 110, 'sofa'); B(t.x0 + 270, t.y0 + 470, 160, 90, 'table'); for (var ts = 0; ts < 3; ts++) B(t.x0 + 1060 + ts * 140, t.y0 + 140, 100, 200, 'shelf');
+  part(t, 'circle', t.x0 + 1165, t.y0 + 810, t.x0 + 1285, t.y0 + 930); B(t.x0 + 1380, t.y0 + 760, 120, 60, 'table');
+  door('tohsaka', 'tohsaka', 3550, 835, 0, 1, t.x0 + 750, t.y0 + 975, 0, 1);
+  // Matou Residence: dark halls and the worm pit cellar
+  var m = room('matou', 'Matou Residence', IX + 1900, 2400, 1500, 1050, 'darkwood');
+  iw(m.x0 + 750, m.y0 + 520, 24, 700); iw(m.x0 + 375, m.y0 + 520, 700, 24); iw(m.x0 + 1125, m.y0 + 520, 700, 24); iw(m.x0 + 750, m.y0 + 960, 24, 140);
+  part(m, 'pit', m.x0 + 780, m.y0 + 30, m.x0 + 1470, m.y0 + 510); part(m, 'wormpit', m.x0 + 1005, m.y0 + 150, m.x0 + 1245, m.y0 + 390);
+  B(m.x0 + 300, m.y0 + 250, 220, 90, 'table'); B(m.x0 + 380, m.y0 + 800, 300, 60, 'shelf');
+  door('matou', 'matou', 5000, 835, 0, 1, m.x0 + 560, m.y0 + 975, 0, 1);
+  // Fuyuki Church: nave, altar, confessional
+  var k = room('church', 'Fuyuki Church', IX + 200, 3700, 1100, 1300, 'stone');
+  part(k, 'carpet', k.x0 + 470, k.y0 + 30, k.x0 + 630, k.y0 + 1270);
+  for (var pr = 0; pr < 6; pr++) { B(k.x0 + 260, k.y0 + 480 + pr * 120, 330, 40, 'pew'); B(k.x0 + 840, k.y0 + 480 + pr * 120, 330, 40, 'pew'); }
+  B(k.x0 + 550, k.y0 + 180, 260, 70, 'altar'); B(k.x0 + 980, k.y0 + 230, 120, 160, 'confessional');
+  [[k.x0 + 180, k.y0 + 300], [k.x0 + 920, k.y0 + 300]].forEach(function (p) { T(p[0], p[1], 24, 'column'); });
+  door('church', 'church', 1100, 2755, 0, -1, k.x0 + 550, k.y0 + 1225, 0, 1);
+  // Emiya Residence: rooms, the dojo, the storehouse where Saber was summoned
+  var e = room('emiya', 'Emiya Residence', IX + 1500, 3700, 1600, 1000, 'tatami');
+  iw(e.x0 + 600, e.y0 + 280, 24, 520); iw(e.x0 + 1050, e.y0 + 500, 24, 980); iw(e.x0 + 300, e.y0 + 560, 560, 24);
+  part(e, 'wood', e.x0 + 1070, e.y0 + 30, e.x0 + 1570, e.y0 + 970); part(e, 'stone', e.x0 + 30, e.y0 + 580, e.x0 + 590, e.y0 + 970);
+  B(e.x0 + 300, e.y0 + 250, 220, 120, 'kotatsu'); part(e, 'circle', e.x0 + 230, e.y0 + 730, e.x0 + 370, e.y0 + 870); B(e.x0 + 1320, e.y0 + 90, 380, 30, 'rack');
+  door('emiya', 'emiya', 1900, 5200, 0, 1, e.x0 + 820, e.y0 + 925, 0, 1);
+  // the gap between city and interiors is solid
+  B(CW + 200, CH / 2, 400, CH, 'void', { hide: true });
+
+  /* ---------- homes: where each master's team starts ---------- */
+  var homes = {
+    tohsaka: { name: 'Tohsaka Mansion', x: 3550, y: 1180, style: 'mansion_w' }, matou: { name: 'Matou Residence', x: 5000, y: 1180, style: 'mansion_d' },
+    einzbern: { name: 'Einzbern Castle', x: 11000, y: 1950, style: 'villa_e' }, church: { name: 'Fuyuki Church', x: 1100, y: 2500, style: 'church' },
+    hyatt: { name: 'Hyatt Hotel', x: 7700, y: 1220, style: 'hotel' }, mackenzie: { name: 'Mackenzie House', x: 2850, y: 1800, style: 'house_w' },
+    emiya: { name: 'Emiya Residence', x: 2050, y: 4620, style: 'house_jpL' }
+  };
+  return {
+    id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + 3200, h: CH, cityW: CW, rects: true,
+    o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1100, y: 2500, name: 'Fuyuki Church' },
+    river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1100, 2500], [7700, 1220], [2850, 1800], [5000, 1180]]
+  };
+})();
+/* ---- city navigation, doors, zones and homes ----
+   AI routes along a road graph (intersections, junctions, door approaches and interior waypoints) with A*.
+   Doors join the city to the walk-in interiors east of it; walking into a doorway steps through. */
+function rectLos(ax, ay, bx, by, pad) {
+  var L = rectsIn(ax, ay, bx, by);
+  for (var i = 0; i < L.length; i++) { var r = L[i]; if (r.nb && pad === undefined) continue; if (segRect(ax, ay, bx, by, r, pad || 0)) return false; }
+  return true;
+}
+function roomAt(x, y) { if (!MAP.rooms || x < MAP.cityW) return null; for (var i = 0; i < MAP.rooms.length; i++) { var r = MAP.rooms[i]; if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) return r; } return null; }
+function zoneOf(f) { if (!MAP.cityW || f.x < MAP.cityW) return 'city'; var r = roomAt(f.x, f.y); return r ? r.id : 'void'; }
+function sameZone(a, b) { return !MAP.cityW || zoneOf(a) === zoneOf(b); }
+
+function buildNav(M) {
+  var nodes = [];
+  function node(x, y, tag) { for (var i = 0; i < nodes.length; i++) if (Math.abs(nodes[i].x - x) < 24 && Math.abs(nodes[i].y - y) < 24) return nodes[i]; var n = { id: nodes.length, x: x, y: y, adj: [], tag: tag }; nodes.push(n); return n; }
+  function link(a, b, cost, door) { if (a === b) return; if (a.adj.some(function (e) { return e.to === b.id; })) return; a.adj.push({ to: b.id, cost: cost || Math.hypot(a.x - b.x, a.y - b.y), door: door }); b.adj.push({ to: a.id, cost: cost || Math.hypot(a.x - b.x, a.y - b.y), door: door }); }
+  var roads = M.roads; roads.forEach(function (r) { r.pts = []; });
+  for (var i = 0; i < roads.length; i++) for (var j = 0; j < roads.length; j++) {
+    var h = roads[i], v = roads[j]; if (!h.h || v.h) continue;
+    var ix = v.x0, iy = h.y0; if (ix >= h.x0 - 1 && ix <= h.x1 + 1 && iy >= v.y0 - 1 && iy <= v.y1 + 1) { var n = node(ix, iy, 'x'); h.pts.push(n); v.pts.push(n); }
+  }
+  roads.forEach(function (r) {
+    r.pts.push(node(r.x0, r.y0, 'end')); r.pts.push(node(r.h ? r.x1 : r.x0, r.h ? r.y0 : r.y1, 'end'));
+    var len = r.h ? r.x1 - r.x0 : r.y1 - r.y0; for (var t = 700; t < len - 300; t += 700) r.pts.push(node(r.h ? r.x0 + t : r.x0, r.h ? r.y0 : r.y0 + t, 'mid'));
+    r.pts.sort(function (a, b) { return r.h ? a.x - b.x : a.y - b.y; });
+    for (var k = 1; k < r.pts.length; k++) link(r.pts[k - 1], r.pts[k]);
+  });
+  var roadNodes = nodes.slice();
+  function nearestReach(x, y, pool, maxD) {
+    var c = pool.map(function (n) { return [n, Math.hypot(n.x - x, n.y - y)]; }).filter(function (q) { return q[1] < (maxD || 1e9); }).sort(function (a, b) { return a[1] - b[1]; });
+    var out = []; for (var i2 = 0; i2 < c.length && out.length < 2; i2++) if (rectLos(x, y, c[i2][0].x, c[i2][0].y, 16)) out.push(c[i2][0]);
+    if (!out.length && c.length) out.push(c[0][0]); return out;
+  }
+  // interiors: a loose grid of waypoints in each room, linked where the way is clear
+  (M.rooms || []).forEach(function (rm) {
+    var pts = [];
+    for (var x = rm.x0 + 120; x < rm.x1 - 60; x += 260) for (var y = rm.y0 + 120; y < rm.y1 - 60; y += 260) {
+      if (rectsIn(x - 30, y - 30, x + 30, y + 30).some(function (r) { return inRect(r, x, y, 30); })) continue;
+      pts.push(node(x, y, rm.id));
+    }
+    rm.nodes = pts;
+    for (var a = 0; a < pts.length; a++) for (var b2 = a + 1; b2 < pts.length; b2++) { var d = Math.hypot(pts[a].x - pts[b2].x, pts[a].y - pts[b2].y); if (d < 400 && rectLos(pts[a].x, pts[a].y, pts[b2].x, pts[b2].y, 18)) link(pts[a], pts[b2], d); }
+  });
+  (M.doors || []).forEach(function (d) {
+    var o = node(d.out.x + d.out.nx * 70, d.out.y + d.out.ny * 70, 'door'), inn = node(d.in.x - d.in.nx * 70, d.in.y - d.in.ny * 70, 'door');
+    d.outNode = o.id; d.inNode = inn.id;
+    nearestReach(o.x, o.y, roadNodes, 900).forEach(function (n) { link(o, n); });
+    var rm = (M.rooms || []).find(function (r) { return r.id === d.room; });
+    nearestReach(inn.x, inn.y, rm ? rm.nodes : [], 600).forEach(function (n) { link(inn, n); });
+    link(o, inn, 80, d);
+  });
+  M.nav = { nodes: nodes, roadNodes: roadNodes };
+}
+function navAttach(x, y) {
+  var N = MAP.nav, rm = roomAt(x, y), pool = rm ? rm.nodes.concat(N.nodes.filter(function (n) { return n.tag === 'door' && Math.hypot(n.x - x, n.y - y) < 600; })) : N.roadNodes.concat(N.nodes.filter(function (n) { return n.tag === 'door' && n.x < MAP.cityW; }));
+  var best = null, bd = 1e9, cands = [];
+  pool.forEach(function (n) { var d = Math.hypot(n.x - x, n.y - y); cands.push([n, d]); });
+  cands.sort(function (a, b) { return a[1] - b[1]; });
+  for (var i = 0; i < Math.min(6, cands.length); i++) if (rectLos(x, y, cands[i][0].x, cands[i][0].y, 14)) return cands[i][0];
+  return cands.length ? cands[0][0] : null;
+}
+function navPath(sx, sy, tx, ty) {
+  var N = MAP.nav; if (!N) return null;
+  var a = navAttach(sx, sy), z = navAttach(tx, ty); if (!a || !z) return null;
+  var open = [a.id], g = {}, f = {}, from = {}, closed = {}; g[a.id] = 0; f[a.id] = Math.hypot(a.x - z.x, a.y - z.y);
+  var guard = 0;
+  while (open.length && guard++ < 4000) {
+    var bi = 0; for (var i = 1; i < open.length; i++) if (f[open[i]] < f[open[bi]]) bi = i;
+    var cur = open.splice(bi, 1)[0]; if (cur === z.id) break; closed[cur] = true;
+    var cn = N.nodes[cur];
+    for (var k = 0; k < cn.adj.length; k++) {
+      var e = cn.adj[k]; if (closed[e.to]) continue; var ng = g[cur] + e.cost;
+      if (g[e.to] === undefined || ng < g[e.to]) { g[e.to] = ng; from[e.to] = { n: cur, door: e.door }; var tn = N.nodes[e.to]; f[e.to] = ng + Math.hypot(tn.x - z.x, tn.y - z.y); if (open.indexOf(e.to) < 0) open.push(e.to); }
+    }
+  }
+  if (g[z.id] === undefined) return null;
+  var path = [], c = z.id;
+  while (c !== a.id) { var st = from[c], n2 = N.nodes[c]; if (st.door) { var dd = st.door, goingIn = c === dd.inNode; path.unshift({ x: n2.x, y: n2.y }); path.unshift(goingIn ? { x: dd.out.x - dd.out.nx * 40, y: dd.out.y - dd.out.ny * 40, door: dd } : { x: dd.in.x + dd.in.nx * 40, y: dd.in.y + dd.in.ny * 40, door: dd }); } else path.unshift({ x: n2.x, y: n2.y }); c = st.n; }
+  path.unshift({ x: a.x, y: a.y });
+  return path;
+}
+// where should f head next on its way to (tx, ty)?
+function cityNav(f, tx, ty) {
+  var tz = (!MAP.cityW || tx < MAP.cityW) ? 'city' : ((roomAt(tx, ty) || {}).id || 'void'), fz = zoneOf(f);
+  if (fz === tz && rectLos(f.x, f.y, tx, ty, FR - 4)) { f.nav = null; return [tx, ty]; }
+  var N = f.nav;
+  if (!N || Math.hypot(N.gx - tx, N.gy - ty) > 280 || G.time > N.t || N.zone !== fz) { N = f.nav = { gx: tx, gy: ty, t: G.time + 3, zone: fz, path: navPath(f.x, f.y, tx, ty), i: 0 }; }
+  var P = N.path; if (!P || !P.length) return [tx, ty];
+  while (N.i < P.length - 1) {
+    var p = P[N.i]; if (p.door) break;
+    var nx = P[N.i + 1];
+    if (Math.hypot(p.x - f.x, p.y - f.y) < 90 || (!nx.door && rectLos(f.x, f.y, nx.x, nx.y, FR))) N.i++; else break;
+  }
+  var w = P[N.i]; if (N.i >= P.length - 1 && Math.hypot(w.x - f.x, w.y - f.y) < 90) return [tx, ty];
+  return [w.x, w.y];
+}
+/* ---- doors: walking into a doorway steps through it ---- */
+function doorTick(f, dt) {
+  if (!MAP.doors || f.st === 'dead' || f.inM || f.spirit === 1 || f.spirit === 3) return;
+  if (f.doorT > 0) { f.doorT -= dt; return; }
+  var mx = f.inp.mx, my = f.inp.my; if (Math.hypot(mx, my) < 0.2) return;
+  for (var i = 0; i < MAP.doors.length; i++) {
+    var d = MAP.doors[i];
+    if (f.x < MAP.cityW) { if (Math.hypot(f.x - d.out.x, f.y - d.out.y) < 52 && (mx * -d.out.nx + my * -d.out.ny) > 0.3) { stepDoor(f, d.in.x - d.in.nx * 60, d.in.y - d.in.ny * 60, d, true); return; } }
+    else if (Math.hypot(f.x - d.in.x, f.y - d.in.y) < 52 && (mx * d.in.nx + my * d.in.ny) > 0.3) { stepDoor(f, d.out.x + d.out.nx * 60, d.out.y + d.out.ny * 60, d, false); return; }
+  }
+}
+function stepDoor(f, x, y, d, entering) {
+  f.x = x; f.y = y; f.kx = f.ky = 0; f.doorT = 0.9; f.nav = null;
+  FX.fx('door', x, y, f); FX.snd('whiff', f);
+  if (f === G.f[0] || entering) FX.text(f, entering ? d.room === 'einzbern' ? 'EINZBERN CASTLE' : (MAP.rooms.find(function (r) { return r.id === d.room; }) || {}).name.toUpperCase() : 'OUTSIDE');
+  G.f.forEach(function (o) { if (o.foe === f || o.lock === f) o.nav = null; });
+}
+/* ---- homes: each master starts at their family seat; a second member of the same family gets a new estate ---- */
+var MASTER_HOME = { rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null };
+var ESTATE_STYLE = { tohsaka: ['mansion_w', 'Tohsaka villa'], matou: ['mansion_d', 'Matou house'], einzbern: ['villa_e', 'Einzbern villa'], church: ['chapel', 'Church annex'], hyatt: ['hotel_s', 'Hotel suite'], mackenzie: ['house_w', 'Rented house'], emiya: ['house_jpL', 'Emiya house'], safe: ['safehouse', 'Safehouse'] };
+function assignHomes(teams, rnd) {
+  rnd = rnd || Math.random;
+  MAP.b = MAP.b.filter(function (q) { return !q.gen; });
+  var used = {}, freePlots = shuffled(MAP.plots.map(function (p, i) { return i; }), rnd), out = [];
+  teams.forEach(function (t, ti) {
+    var key = MASTER_HOME[t.master.id], H0 = key && MAP.homes[key];
+    if (H0 && !used[key]) { used[key] = true; out.push({ team: ti, key: key, name: H0.name, x: H0.x, y: H0.y, canon: true }); return; }
+    var pi = freePlots.shift(), p = MAP.plots[pi === undefined ? 0 : pi], st = ESTATE_STYLE[key || 'safe'];
+    MAP.b.push({ x: p[0], y: p[1] - 30, w: 300, h: 210, k: st[0], gen: true, name: st[1] });
+    out.push({ team: ti, key: key || 'safe', name: st[1], x: p[0], y: p[1] + 120, canon: false });
+  });
+  RECTS = []; MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); }); buildRectGrid();
+  return out;
+}
 /* ---- reality marbles: replace the battlefield until another marble overwrites it or Enuma Elish breaks it ---- */
 var MARBLE_PULL = 900, MARBLE_R = 1150, MARBLE_LIFE = 25;
 function setMarble(kind, f) {
@@ -437,7 +849,7 @@ function setMarble(kind, f) {
     return true;
   }
   G.marble = { kind: kind, owner: f, t: 0, prev: G.marble ? G.marble.kind : null };
-  PILLARS = []; buildGrid(); FX.fx('marbleOn', f.x, f.y, f); FX.snd('marble:' + kind, f); FX.shake(10);
+  PILLARS = []; RECTS = []; buildGrid(); FX.fx('marbleOn', f.x, f.y, f); FX.snd('marble:' + kind, f); FX.shake(10);
   return true;
 }
 function endMarble(by, quiet) {
@@ -726,14 +1138,16 @@ function pickTarget(f) {
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
 function newWar(teamsIn, opts) {
   var spawnOrder = opts && opts.spawnOrder;
-  opts = opts || {}; setMap(opts.map || 'fuyuki');
+  opts = opts || {}; setMap(opts.map || 'city');
+  var homes = MAP.homes ? assignHomes(teamsIn) : null;
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick };
   teamsIn.forEach(function (t, ti) {
-    var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
+    var sp = homes ? [homes[ti].x, homes[ti].y] : MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
     sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
+  G.homes = homes;
   G.f.forEach(pickTarget);
   return G;
 }
@@ -1091,6 +1505,7 @@ function stepF(f, dt) {
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
     if (f.def.mag) ammoTick(f, dt);
+    if (MAP.doors) doorTick(f, dt);
     if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);
     if (f.sigCd > 0) f.sigCd -= dt; if (f.silenceT > 0) f.silenceT -= dt; if (f.shieldT > 0) f.shieldT -= dt; if (f.rootT > 0) f.rootT -= dt; if (f.buffT > 0) f.buffT -= dt; if (f.reinfT > 0) f.reinfT -= dt;
   }
@@ -1202,6 +1617,7 @@ function stepProj(dt) {
     p.x += ox; p.y += oy; p.trav += Math.hypot(ox, oy);
     var es = enemiesOf(p.owner), tgt = p.owner.foe;
     if (p.trav > p.range || p.x < 0 || p.y < 0 || p.x > W || p.y > H) p.dead = true;
+    if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
     var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
     for (var wi = 0; wi < es.length && !p.dead; wi++) { var we = es[wi]; if ((!p.a.wave || p.a.beam || p.a.key === 'np') && !p.a.strip && we.wallT > 0 && dist(p, we) < 190) { p.dead = true; FX.spark(p.x, p.y, '#ffd36b', 8); if (p.a.key === 'np') { FX.text(we, 'NP BLOCKED'); FX.fx('wallBlock', p.x, p.y, we); } } }
     for (var ti = 0; ti < es.length && !p.dead; ti++) {
@@ -1234,6 +1650,7 @@ function separate() {
   }
   G.f.forEach(function (f) {
     if (f.inM && G.marble) { var mdx = f.x - G.marble.cx, mdy = f.y - G.marble.cy, md = Math.hypot(mdx, mdy), mr = G.marble.R - FR; if (md > mr) { f.x = G.marble.cx + mdx / md * mr; f.y = G.marble.cy + mdy / md * mr; } f.x = clamp(f.x, FR, W - FR); f.y = clamp(f.y, FR, H - FR); return; }
+    if (RECTS.length) rectsIn(f.x - 60, f.y - 60, f.x + 60, f.y + 60).forEach(function (r) { pushOutRect(f, r, FR); });
     pillarsIn(f.x - 60, f.y - 60, f.x + 60, f.y + 60).forEach(function (p) { var dx = f.x - p.x, dy = f.y - p.y, dd = Math.hypot(dx, dy), m = p.r + FR; if (dd < m) { if (dd < 0.001) { dx = 1; dy = 0; dd = 1; } f.x = p.x + dx / dd * m; f.y = p.y + dy / dd * m; } });
     f.x = clamp(f.x, FR, W - FR); f.y = clamp(f.y, FR, H - FR);
   });
@@ -1248,6 +1665,7 @@ var DIFF = {
 function mkAI(f, cfg) { return { f: f, cfg: cfg, cool: 0.6 + Math.random() * 0.4, orbit: 1, orbitT: 1.5, seen: -1, plan: null, guardUntil: 0, relAt: 0, comboLeft: 0, t: 0, lastX: f.x, lastY: f.y, stuckT: 0 }; }
 function losClear(a, b) {
   if (a.inM) return true;
+  if (RECTS.length && !rectLos(a.x, a.y, b.x, b.y)) return false;
   var PL = pillarsIn(a.x, a.y, b.x, b.y);
   for (var i = 0; i < PL.length; i++) {
     var p = PL[i]; if (p.nb) continue; var dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1;
@@ -1257,6 +1675,7 @@ function losClear(a, b) {
   return true;
 }
 function navTarget(f, tx, ty) {
+  if (MAP.nav && !f.inM) return cityNav(f, tx, ty);
   var rv = MAP.river; if (!rv || f.inM) return [tx, ty];
   var sf = f.x < rv.x ? -1 : 1, st = tx < rv.x ? -1 : 1, onBridge = Math.abs(f.x - rv.x) < rv.half + 40 && rv.bridges.some(function (by) { return Math.abs(f.y - by) < 80; });
   if (sf === st || onBridge) return [tx, ty];
@@ -1274,6 +1693,7 @@ function steer(f, tx, ty) {
     var perp = px * (-oy) + py * ox, need = p.r + FR + 22;
     if (Math.abs(perp) < need) { var s = perp > 0 ? 1 : -1, k = 1.6 * (1.2 - Math.abs(perp) / need); dx += oy * s * k; dy += -ox * s * k; }
   }
+  if (RECTS.length && !f.inM) { var RL = rectsIn(f.x - 200, f.y - 200, f.x + 200, f.y + 200); for (var ri = 0; ri < RL.length; ri++) { var rq = RL[ri]; if (!segRect(f.x, f.y, f.x + ox * Math.min(L, 160), f.y + oy * Math.min(L, 160), rq, FR + 8)) continue; var rcx = (rq.x0 + rq.x1) / 2 - f.x, rcy = (rq.y0 + rq.y1) / 2 - f.y, side = (rcx * (-oy) + rcy * ox) > 0 ? 1 : -1; dx += oy * side * 1.1; dy += -ox * side * 1.1; } }
   if (f.x < 90) dx += 0.8; if (f.x > W - 90) dx -= 0.8; if (f.y < 90) dy += 0.8; if (f.y > H - 90) dy -= 0.8;
   var m = Math.hypot(dx, dy) || 1; return [dx / m, dy / m];
 }
@@ -1464,7 +1884,7 @@ function aiWar(ai, dt) {
   f.lock = null;
   if (!near || nd > 1400) {
     var tgt = near || f.foe; if (m && dist(f, m) > 500) { moveTo(f, m.x, m.y); return; }
-    if (G.time < 100 && !f.inM && MAP.id === 'fuyuki') { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
+    if (G.time < 100 && !f.inM && MAP.haven && !G.quick) { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
     if (tgt) { moveTo(f, tgt.x, tgt.y, 0.85); return; } }
   aiTick(ai, dt);
 }
@@ -1482,8 +1902,8 @@ function aiMaster(ai, dt) {
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && Math.random() < 0.0008) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
-    var haven = MAP.id === 'fuyuki' ? { x: 1100, y: 2480 } : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
-    moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.id === 'fuyuki') { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
+    var haven = MAP.haven ? MAP.haven : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
+    moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.haven) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
@@ -2009,7 +2429,7 @@ function renderSetup() {
   $('#rivals').innerHTML = [[7, 'Full war: 7 teams, every class'], [4, '4 teams'], [3, '3 teams']].map(function (n) { return '<button type="button" class="chip" data-teams="' + n[0] + '" aria-pressed="' + (CFG.teams === n[0]) + '">' + n[1] + '</button>'; }).join('');
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
-  $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams';
+  $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams &middot; starting at ' + (MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : 'a safehouse');
   if (CFG.game === 'arena') renderArena();
 }
 document.addEventListener('click', function (e) {
@@ -2093,14 +2513,16 @@ var ARENA_MODES = [
   ['ffa', 'Free-for-all', 'Three or four servants, everyone for themselves.'],
   ['teams', 'Teams', 'Two servants against two. Pick a team for each slot.'],
   ['masters', 'Master duel', 'Master against master: magecraft, Black Keys and bullets.'],
-  ['pairs', 'Master and servant', 'Your master and servant against another pair, with Command Seals and mana.']
+  ['pairs', 'Master and servant', 'Your master and servant against another pair, with Command Seals and mana.'],
+  ['quickwar', 'Quick Grail War', 'A full seven-team war on the compact Fuyuki map, wrapped up in a few minutes.']
 ];
 var AR_DEF = {
   duel: [{ k: 's', id: 'richard' }, { k: 's', id: 'random' }],
   ffa: [{ k: 's', id: 'richard' }, { k: 's', id: 'random' }, { k: 's', id: 'random' }, { k: 's', id: 'random' }],
   teams: [{ k: 's', id: 'richard', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 's', id: 'random', team: 0 }, { k: 's', id: 'random', team: 1 }],
   masters: [{ k: 'm', id: 'kirei' }, { k: 'm', id: 'random' }],
-  pairs: [{ k: 's', id: 'richard', team: 0 }, { k: 'm', id: 'rin', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 'm', id: 'random', team: 1 }]
+  pairs: [{ k: 's', id: 'richard', team: 0 }, { k: 'm', id: 'rin', team: 0 }, { k: 's', id: 'random', team: 1 }, { k: 'm', id: 'random', team: 1 }],
+  quickwar: [{ k: 's', id: 'richard', team: 0 }, { k: 'm', id: 'rin', team: 0 }]
 };
 function arenaCfg() {
   var A = CFG.arena;
@@ -2118,14 +2540,14 @@ function arenaSlotCol(A, i) {
   return A.mode === 'ffa' ? FFA_COL.at(i) : (i ? '#cf4a52' : '#3fb3c4');
 }
 function arenaRole(A, i) {
-  if (A.mode === 'pairs') return (i < 2 ? 'Your ' : 'Rival ') + (i % 2 ? 'master' : 'servant') + (i < 2 && ((i === 0) === (A.playAs === 'servant')) ? ' (you)' : '');
+  if (A.mode === 'pairs' || A.mode === 'quickwar') return (i < 2 ? 'Your ' : 'Rival ') + (i % 2 ? 'master' : 'servant') + (i < 2 && ((i === 0) === (A.playAs === 'servant')) ? ' (you)' : '');
   return i === 0 ? 'You' : 'CPU ' + i;
 }
 function renderArena() {
   var A = arenaCfg(), n = arenaN(A), S = A.slots[A.mode]; if (A.active >= n) A.active = 0;
   $('#amodes').innerHTML = ARENA_MODES.map(function (m) { return '<button type="button" class="mode" data-amode="' + m[0] + '" aria-pressed="' + (A.mode === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
   $('#acount').innerHTML = A.mode === 'ffa' ? [3, 4].map(function (c) { return '<button type="button" class="chip" data-acount="' + c + '" aria-pressed="' + (n === c) + '">' + c + ' fighters</button>'; }).join('') :
-    A.mode === 'pairs' ? [['servant', 'Play as the servant'], ['master', 'Play as the master']].map(function (q) { return '<button type="button" class="chip" data-aplay="' + q[0] + '" aria-pressed="' + (A.playAs === q[0]) + '">' + q[1] + '</button>'; }).join('') : '';
+    A.mode === 'pairs' || A.mode === 'quickwar' ? [['servant', 'Play as the servant'], ['master', 'Play as the master']].map(function (q) { return '<button type="button" class="chip" data-aplay="' + q[0] + '" aria-pressed="' + (A.playAs === q[0]) + '">' + q[1] + '</button>'; }).join('') : '';
   var h = '';
   for (var i = 0; i < n; i++) {
     var sl = S[i], T = sl.k === 'm' ? MASTERS : SERV, d = T[sl.id];
@@ -2137,13 +2559,14 @@ function renderArena() {
   var cur = S[A.active];
   $('#aroster').innerHTML = entityRosterHTML(cur.k, cur.id, 'data-apick', A.active > 0);
   $('#adetail').innerHTML = entityDetailHTML(cur.k, cur.id, arenaRole(A, A.active).toLowerCase());
+  $('#amaps').closest('.step').hidden = A.mode === 'quickwar';
   $('#amaps').innerHTML = MAP_ORDER.map(function (id) { var m = MAPS[id]; return '<button type="button" class="mapc" data-amap="' + id + '" aria-pressed="' + (A.map === id) + '"><canvas width="240" height="' + Math.round(240 * m.h / m.w) + '" data-prev="' + id + '"></canvas><span class="pl">' + esc(m.place) + '</span><b>' + esc(m.name) + '</b><small>' + esc(m.blurb) + '</small></button>'; }).join('') +
     '<button type="button" class="mapc" data-amap="random" aria-pressed="' + (A.map === 'random') + '"><span class="pl">Any location</span><b>Random battlefield</b><small>One of the arena maps, drawn when the battle starts.</small></button>';
   document.querySelectorAll('canvas[data-prev]').forEach(function (c) { drawMapPreview(c, MAPS[c.dataset.prev]); });
   $('#adiff').innerHTML = $('#diff').innerHTML; $('#aspd').innerHTML = $('#spd').innerHTML;
   var names = []; for (var k = 0; k < n; k++) { var s2 = S[k], d2 = (s2.k === 'm' ? MASTERS : SERV)[s2.id]; names.push(d2 ? shortName(d2.name) : 'Random'); }
-  var vs = A.mode === 'teams' ? (function () { var X = [], Y = []; for (var q = 0; q < 4; q++) (S[q].team === S[0].team ? X : Y).push(names[q]); return X.join(' + ') + ' vs ' + Y.join(' + '); })() : A.mode === 'pairs' ? names[0] + ' + ' + names[1] + ' vs ' + names[2] + ' + ' + names[3] : names.join(' vs ');
-  $('#summary').innerHTML = '<b>Arena &middot; ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1] + '</b> &middot; ' + esc(vs) + ' &middot; ' + esc(A.map === 'random' ? 'Random battlefield' : MAPS[A.map].name);
+  var vs = A.mode === 'quickwar' ? names[0] + ' + ' + names[1] + ' against six rival teams' : A.mode === 'teams' ? (function () { var X = [], Y = []; for (var q = 0; q < 4; q++) (S[q].team === S[0].team ? X : Y).push(names[q]); return X.join(' + ') + ' vs ' + Y.join(' + '); })() : A.mode === 'pairs' ? names[0] + ' + ' + names[1] + ' vs ' + names[2] + ' + ' + names[3] : names.join(' vs ');
+  $('#summary').innerHTML = '<b>Arena &middot; ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1] + '</b> &middot; ' + esc(vs) + ' &middot; ' + esc(A.mode === 'quickwar' ? 'Compact Fuyuki' : A.map === 'random' ? 'Random battlefield' : MAPS[A.map].name);
 }
 document.addEventListener('click', function (e) {
   var t = e.target, el, A = CFG.arena; if (!t.closest || !A) return;
@@ -2161,14 +2584,17 @@ function startArena() {
   var A = arenaCfg(), n = arenaN(A), S = A.slots[A.mode].slice(0, n), map = A.map === 'random' ? MAP_ORDER.filter(function (m) { return m !== 'arena'; })[Math.floor(Math.random() * (MAP_ORDER.length - 1))] : A.map;
   var taken = [], ids = S.map(function (sl) { var id = sl.id === 'random' ? pickRandom(sl.k, taken) : sl.id; taken.push(id); return id; });
   MEI = 0; NET.mirror = false;
-  if (A.mode === 'pairs') {
+  if (A.mode === 'quickwar') {
+    var qt = warTeams(ids[0], ids[1], 7).map(function (t) { return { servant: SERV_DUEL[t.servant.id], master: t.master }; });
+    newWar(qt, { map: 'fuyuki', quick: true, playAs: A.playAs, spawnOrder: [0].concat(shuffled([1, 2, 3, 4, 5, 6])) });
+  } else if (A.mode === 'pairs') {
     newWar([{ servant: SERV_DUEL[ids[0]], master: MASTERS[ids[1]] }, { servant: SERV_DUEL[ids[2]], master: MASTERS[ids[3]] }], { map: map, quick: true, playAs: A.playAs });
   } else {
     var defs = ids.map(function (id, i) { return S[i].k === 'm' ? MASTERS[id] : SERV_DUEL[id]; });
     newGame(defs, { map: map, mode: A.mode === 'masters' ? 'duel' : A.mode, teams: A.mode === 'teams' ? S.map(function (sl) { return sl.team; }) : null });
   }
   for (var k = 0; k < G.f.length; k++) if (k !== MEI) G.ai[k] = mkAI(G.f[k], DIFF[CFG.diff]);
-  enterGame(0, 'Arena', MAP.name + ' · ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1]);
+  enterGame(0, A.mode === 'quickwar' ? 'Quick Grail War' : 'Arena', MAP.name + ' · ' + ARENA_MODES.find(function (m) { return m[0] === A.mode; })[1]);
 }
 var MEI = 0;
 var cv = $('#cv'), ctx = cv.getContext('2d'), VW = 1120, VH = 700, VIEW = { cx: 0, cy: 0, zoom: 1 };
@@ -3022,6 +3448,7 @@ var THEME = {
 function mapNoise(m, n, seed) { if (m['_n' + seed]) return m['_n' + seed]; var v = seed >>> 0, out = []; for (var i = 0; i < n; i++) { v = (v * 1664525 + 1013904223) >>> 0; var a = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; var b = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; out.push([a * m.w, b * m.h, v / 4294967296]); } m['_n' + seed] = out; return out; }
 var VIEWR = null;
 function drawFloor(g, m) {
+  if (m.theme === 'city') { drawCity(g, m); return; }
   var th = m.theme, w = m.w, h = m.h;
   g.fillStyle = THEME[th].floor; g.fillRect(0, 0, w, h);
   if (th === 'fuyuki') {
@@ -3075,7 +3502,8 @@ function drawFloor(g, m) {
   else if (th === 'school') { g.fillStyle = '#4f4231'; g.fillRect(0, 0, w, 300); g.beginPath(); g.ellipse(950, 780, 560, 330, 0, 0, 6.283); g.fillStyle = '#6e5a42'; g.fill(); g.beginPath(); g.ellipse(950, 780, 450, 230, 0, 0, 6.283); g.fillStyle = '#3d5a36'; g.fill();
     g.strokeStyle = 'rgba(240,240,240,.55)'; g.lineWidth = 3; [560, 520, 480].forEach(function (rx, k) { g.beginPath(); g.ellipse(950, 780, rx, 330 - k * 40, 0, 0, 6.283); g.stroke(); }); g.beginPath(); g.moveTo(950, 560); g.lineTo(950, 1000); g.stroke(); g.beginPath(); g.arc(950, 780, 70, 0, 6.283); g.stroke(); }
 }
-function drawBlock(g, b, i) {
+function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
+function drawBlock0(g, b, i) {
   var x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, k = b.k;
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, b.w, b.h);
   if (k === 'water') return;
@@ -3102,6 +3530,10 @@ function drawObs(g, p) {
   if (p.h) return;
   var k = p.k || 'pillar';
   g.beginPath(); g.arc(p.x + 4, p.y + 7, p.r, 0, 6.283); g.fillStyle = 'rgba(0,0,0,.35)'; g.fill();
+  if (k === 'street') { g.beginPath(); g.arc(p.x, p.y, p.r + 6, 0, 6.283); g.fillStyle = '#2a4a2e'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); g.beginPath(); g.arc(p.x - 4, p.y - 4, p.r * 0.6, 0, 6.283); g.fillStyle = '#3a6a40'; g.fill(); return; }
+  if (k === 'fountain') { g.beginPath(); g.arc(p.x, p.y, p.r * 2.4, 0, 6.283); g.fillStyle = '#8a8f98'; g.fill(); g.beginPath(); g.arc(p.x, p.y, p.r * 2, 0, 6.283); g.fillStyle = '#2a5a80'; g.fill(); g.beginPath(); g.arc(p.x, p.y, p.r * 0.6, 0, 6.283); g.fillStyle = '#c8ccd4'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); return; }
+  if (k === 'column') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = '#b8b2a6'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.3, p.y - p.r * 0.3, p.r * 0.45, 0, 6.283); g.fillStyle = 'rgba(255,255,255,.2)'; g.fill(); return; }
+  if (k === 'chair') { g.fillStyle = '#5a3e28'; g.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); return; }
   if (k === 'tree' || k === 'pine') { g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fillStyle = k === 'pine' ? '#1f3d2a' : '#24432a'; g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.stroke(); g.beginPath(); g.arc(p.x - p.r * 0.25, p.y - p.r * 0.25, p.r * 0.6, 0, 6.283); g.fillStyle = k === 'pine' ? '#2c5238' : '#335e39'; g.fill(); g.beginPath(); g.arc(p.x - p.r * 0.35, p.y - p.r * 0.38, p.r * 0.25, 0, 6.283); g.fillStyle = 'rgba(160,210,140,.18)'; g.fill(); return; }
   if (k === 'lantern') { g.save(); g.translate(p.x, p.y); g.rotate(0.785); g.fillStyle = '#8a867a'; g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.fillRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.strokeRect(-p.r * 0.8, -p.r * 0.8, p.r * 1.6, p.r * 1.6); g.restore(); g.beginPath(); g.arc(p.x, p.y, 6, 0, 6.283); g.fillStyle = 'rgba(255,200,110,.85)'; g.fill(); return; }
   if (k === 'lamp') { var lg = g.createRadialGradient(p.x, p.y, 2, p.x, p.y, 120); lg.addColorStop(0, 'rgba(255,220,140,.22)'); lg.addColorStop(1, 'rgba(255,220,140,0)'); g.fillStyle = lg; g.beginPath(); g.arc(p.x, p.y, 120, 0, 6.283); g.fill(); }
@@ -3115,7 +3547,7 @@ function drawObs(g, p) {
 }
 function drawMapPreview(c, m) {
   var g = c.getContext('2d'), k = c.width / m.w; g.save(); g.scale(k, k);
-  drawFloor(g, m); var obs = m.o; m.b.forEach(function (b, i) { drawBlock(g, b, i); }); obs.forEach(function (p) { drawObs(g, p); });
+  drawFloor(g, m); var obs = m.o; m.b.forEach(function (b, i) { drawBlock(g, b, i, m); }); obs.forEach(function (p) { drawObs(g, p); });
   g.fillStyle = '#ffffff'; m.spawns.forEach(function (sp, i) { g.beginPath(); g.arc(sp[0], sp[1], 26, 0, 6.283); g.fillStyle = FFA_COL.at(i); g.fill(); });
   g.restore();
 }
@@ -3139,7 +3571,7 @@ function drawMarble(g, kind, al) {
   g.restore();
 }
 var MOX = 0, MOY = 0;
-function visL(o) { return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
+function visL(o) { if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
 function drawWorld() {
   var g = ctx, mb = G.marble, mal = mb ? Math.min(1, mb.t / 0.9) : 0;
   var vz = VIEW.zoom || 1, vr = { x0: VIEW.cx - VW / 2 / vz - 150, y0: VIEW.cy - VH / 2 / vz - 150, x1: VIEW.cx + VW / 2 / vz + 150, y1: VIEW.cy + VH / 2 / vz + 150 }; VIEWR = vr;
@@ -3147,7 +3579,7 @@ function drawWorld() {
   if (warM) {
     if (!pin || mal < 1) { mb = null; drawFloor(g, MAP); if (!mb) { MAP.b.forEach(function (b, i) { if (b.x + b.w / 2 > vr.x0 && b.x - b.w / 2 < vr.x1 && b.y + b.h / 2 > vr.y0 && b.y - b.h / 2 < vr.y1) drawBlock(g, b, i); }); PILLARS.forEach(function (p) { if (!p.h && p.x + p.r > vr.x0 && p.x - p.r < vr.x1 && p.y + p.r > vr.y0 && p.y - p.r < vr.y1) drawObs(g, p); }); }
       mb = G.marble; }
-    VIEWR = null;
+    zoneMask(g); VIEWR = null;
     if (pin) {
       g.save(); g.globalAlpha = mal; g.fillStyle = '#05070a'; g.fillRect(vr.x0 - 400, vr.y0 - 400, vr.x1 - vr.x0 + 800, vr.y1 - vr.y0 + 800); g.globalAlpha = 1;
       g.beginPath(); g.arc(mb.cx, mb.cy, mb.R, 0, 6.283); g.clip();
@@ -3163,7 +3595,7 @@ function drawWorld() {
     }
   } else {
   if (!mb || mal < 1) { drawFloor(g, MAP); if (!mb) { MAP.b.forEach(function (b, i) { if (b.x + b.w / 2 > vr.x0 && b.x - b.w / 2 < vr.x1 && b.y + b.h / 2 > vr.y0 && b.y - b.h / 2 < vr.y1) drawBlock(g, b, i); }); PILLARS.forEach(function (p) { if (!p.h && p.x + p.r > vr.x0 && p.x - p.r < vr.x1 && p.y + p.r > vr.y0 && p.y - p.r < vr.y1) drawObs(g, p); }); } }
-  VIEWR = null;
+  zoneMask(g); VIEWR = null;
   if (mb) drawMarble(g, mb.kind, mal);
   }
   g.strokeStyle = '#5a7388'; g.lineWidth = 8; g.strokeRect(0, 0, W, H);
@@ -3249,18 +3681,294 @@ function draw() {
     var ang = Math.atan2(f1.y - f0.y, f1.x - f0.x), px = clamp(sxp, 24, VW - 24), py = clamp(syp, SAFE.top + 16, Math.max(SAFE.top + 40, VH - SAFE.bottom - 16));
     ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.fillStyle = '#e2515c'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.fill(); ctx.restore();
   }
-  // minimap
-  var my0 = SAFE.topR, mw = Math.max(70, Math.min(clamp(VW * 0.18, VW < 560 ? 112 : 120, 240), (VH - SAFE.bottom - my0 - 10) * W / H)), mh = mw * H / W, mx0 = VW - mw - 10;
+  // minimap (the city only, never the interiors strip)
+  var MW = MAP.cityW || W;
+  var my0 = SAFE.topR, mw = Math.max(70, Math.min(clamp(VW * 0.18, VW < 560 ? 112 : 120, 240), (VH - SAFE.bottom - my0 - 10) * MW / H)), mh = mw * H / MW, mx0 = VW - mw - 10;
   ctx.fillStyle = 'rgba(8,14,20,.7)'; ctx.fillRect(mx0, my0, mw, mh); ctx.strokeStyle = '#2a4157'; ctx.lineWidth = 1; ctx.strokeRect(mx0, my0, mw, mh);
   if (!G.marble || (G.mode === 'war' && !G.f[MEI].inM)) { var mm = miniMap(mw, mh); ctx.drawImage(mm, mx0, my0, mw, mh); }
-  if (G.marble && G.mode === 'war') { ctx.beginPath(); ctx.arc(mx0 + G.marble.cx / W * mw, my0 + G.marble.cy / H * mh, (G.f[MEI].inM ? G.marble.R : MARBLE_PULL) / W * mw, 0, 6.283); ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 1.5; ctx.stroke(); }
-  ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + (cx - VW / 2 / zoom) / W * mw, my0 + (cy - VH / 2 / zoom) / H * mh, VW / zoom / W * mw, VH / zoom / H * mh);
-  G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / W * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
+  if (G.marble && G.mode === 'war') { ctx.beginPath(); ctx.arc(mx0 + G.marble.cx / MW * mw, my0 + G.marble.cy / H * mh, (G.f[MEI].inM ? G.marble.R : MARBLE_PULL) / MW * mw, 0, 6.283); ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + (cx - VW / 2 / zoom) / MW * mw, my0 + (cy - VH / 2 / zoom) / H * mh, VW / zoom / MW * mw, VH / zoom / H * mh);
+  if (G.homes) G.homes.forEach(function (hm) { var tf = G.f.find(function (f) { return f.team === hm.team; }); ctx.fillStyle = tf ? teamCol(tf) : '#fff'; ctx.globalAlpha = 0.85; ctx.fillRect(mx0 + hm.x / MW * mw - 3, my0 + hm.y / H * mh - 3, 6, 6); ctx.globalAlpha = 1; ctx.strokeStyle = '#0b121a'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + hm.x / MW * mw - 3, my0 + hm.y / H * mh - 3, 6, 6); });
+  G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || (MAP.cityW && f.x > MAP.cityW)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / MW * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
+}
+/* ---- drawing Fuyuki City: ground, roads, bridges, buildings, interiors ----
+   Top-down at night, light from the upper left: roofs get a lit and a shaded side, taller buildings cast longer shadows. */
+var CITY_PAL = {
+  miyama: '#2f3530', shinto: '#2c2f34', forest: '#1d3022', temple: '#57524a', hill: '#2c382b', churchyard: '#2b382c', schoolyard: '#54473a', park: '#2a4430',
+  sand: '#8a7c5c', plaza: '#45484e', harbor: '#3a3e44', castle: '#4a4b48', emiya: '#474d3e', garden: '#2b472f', arcade: '#4a4646', water: '#1b3a55', pond: '#1e4260'
+};
+function cityCache(m) {
+  if (m._cc) return m._cc;
+  var cc = { ix: [], lamps: [] }, R = m.roads;
+  R.forEach(function (h) { if (!h.h || (h.kind !== 'avenue' && h.kind !== 'street')) return; R.forEach(function (v) { if (v.h || (v.kind !== 'avenue' && v.kind !== 'street')) return; if (v.x0 >= h.x0 && v.x0 <= h.x1 && h.y0 >= v.y0 && h.y0 <= v.y1) cc.ix.push({ x: v.x0, y: h.y0, hw: h.w, vw: v.w, endH: v.x0 === h.x0 || v.x0 === h.x1, endV: h.y0 === v.y0 || h.y0 === v.y1 }); }); });
+  R.forEach(function (r) { if (r.kind !== 'avenue' && r.kind !== 'street') return; var len = r.h ? r.x1 - r.x0 : r.y1 - r.y0, step = r.kind === 'avenue' ? 280 : 360, off = r.w / 2 + 10;
+    for (var t = 140; t < len; t += step) { var x = r.h ? r.x0 + t : r.x0, y = r.h ? r.y0 : r.y0 + t; if (r.h && x > 5640 && x < 6360) continue; if (!r.h && y > 0 && false) continue; cc.lamps.push(r.h ? [x, y - off] : [x - off, y]); cc.lamps.push(r.h ? [x + step / 2, y + off] : [x + off, y + step / 2]); } });
+  m._cc = cc; return cc;
+}
+function vis(vr, x0, y0, x1, y1) { return !vr || (x1 > vr.x0 && x0 < vr.x1 && y1 > vr.y0 && y0 < vr.y1); }
+function drawCity(g, m) {
+  var vr = VIEWR, cc = cityCache(m), t = G ? G.time : 0, CW = m.cityW;
+  g.fillStyle = '#050608'; g.fillRect(vr ? vr.x0 : 0, vr ? vr.y0 : 0, vr ? vr.x1 - vr.x0 : m.w, vr ? vr.y1 - vr.y0 : m.h);
+  g.fillStyle = CITY_PAL.miyama; g.fillRect(0, 0, 5700, 7300); g.fillStyle = CITY_PAL.shinto; g.fillRect(6300, 0, CW - 6300, 7300);
+  m.zones.forEach(function (z) {
+    if (!vis(vr, z.x0, z.y0, z.x1, z.y1)) return;
+    if (z.kind === 'water' || z.kind === 'railbridge') return;
+    if (z.kind === 'pond') { g.fillStyle = CITY_PAL.pond; g.beginPath(); g.ellipse((z.x0 + z.x1) / 2, (z.y0 + z.y1) / 2, (z.x1 - z.x0) / 2 + 30, (z.y1 - z.y0) / 2 + 20, 0, 0, 6.283); g.fill(); g.strokeStyle = '#4c5a44'; g.lineWidth = 10; g.stroke(); return; }
+    g.fillStyle = CITY_PAL[z.kind] || '#333'; g.fillRect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0);
+    zoneTexture(g, z, vr);
+  });
+  // water: river and bay
+  m.zones.forEach(function (z) {
+    if (z.kind !== 'water' || !vis(vr, z.x0, z.y0, z.x1, z.y1)) return;
+    var x0 = Math.max(z.x0, vr ? vr.x0 : z.x0), x1 = Math.min(z.x1, vr ? vr.x1 : z.x1), y0 = Math.max(z.y0, vr ? vr.y0 : z.y0), y1 = Math.min(z.y1, vr ? vr.y1 : z.y1);
+    g.fillStyle = CITY_PAL.water; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    g.strokeStyle = 'rgba(150,195,230,.16)'; g.lineWidth = 2;
+    for (var wy = y0 - (y0 % 54); wy < y1; wy += 54) for (var wx = x0 - (x0 % 150); wx < x1; wx += 150) { var ph = Math.sin(t * 1.3 + wx * 0.01 + wy * 0.03) * 6; g.beginPath(); g.moveTo(wx + ph, wy); g.quadraticCurveTo(wx + 40 + ph, wy - 6, wx + 80 + ph, wy); g.stroke(); }
+  });
+  // embankments
+  g.fillStyle = '#4a4d4f'; g.fillRect(5680, 0, 22, 7300); g.fillRect(6298, 0, 22, 7300); g.fillRect(0, 7290, CW, 14);
+  // roads: sidewalks, asphalt, markings
+  var order = { path: 0, stairs: 1, rail: 2, street: 3, avenue: 4 };
+  m.roads.slice().sort(function (a, b) { return order[a.kind] - order[b.kind]; }).forEach(function (r) { drawRoad(g, r, vr); });
+  cc.ix.forEach(function (q) { if (vis(vr, q.x - 200, q.y - 200, q.x + 200, q.y + 200)) drawIntersection(g, q); });
+  drawBridges(g, m, vr, t);
+  // street lamps (pools of light)
+  cc.lamps.forEach(function (l) { if (!vis(vr, l[0] - 90, l[1] - 90, l[0] + 90, l[1] + 90)) return; var lg = g.createRadialGradient(l[0], l[1], 2, l[0], l[1], 90); lg.addColorStop(0, 'rgba(255,214,140,.20)'); lg.addColorStop(1, 'rgba(255,214,140,0)'); g.fillStyle = lg; g.fillRect(l[0] - 90, l[1] - 90, 180, 180); g.fillStyle = '#c9c3b0'; g.beginPath(); g.arc(l[0], l[1], 4, 0, 6.283); g.fill(); });
+  // home markers under everything else on the ground
+  if (G && G.homes) G.homes.forEach(function (h) { if (!vis(vr, h.x - 200, h.y - 200, h.x + 200, h.y + 200)) return; var tf = G.f.find(function (f) { return f.team === h.team; }); var col = tf ? teamCol(tf) : '#fff'; g.save(); g.globalAlpha = 0.5; g.strokeStyle = col; g.lineWidth = 4; g.setLineDash([16, 10]); g.beginPath(); g.arc(h.x, h.y, 70, 0, 6.283); g.stroke(); g.restore(); });
+  // interiors
+  m.rooms.forEach(function (rm) { if (vis(vr, rm.x0, rm.y0, rm.x1, rm.y1)) drawRoom(g, rm, t); });
+  if (m.labels) { g.save(); g.textAlign = 'center'; g.font = '700 58px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.10)'; m.labels.forEach(function (lb) { if (vis(vr, lb[1] - 600, lb[2] - 70, lb[1] + 600, lb[2] + 20)) g.fillText(lb[0], lb[1], lb[2]); }); g.restore(); }
+}
+function zoneTexture(g, z, vr) {
+  var x0 = Math.max(z.x0, vr ? vr.x0 : z.x0), x1 = Math.min(z.x1, vr ? vr.x1 : z.x1), y0 = Math.max(z.y0, vr ? vr.y0 : z.y0), y1 = Math.min(z.y1, vr ? vr.y1 : z.y1), k = z.kind;
+  if (x1 <= x0 || y1 <= y0) return;
+  g.save(); g.beginPath(); g.rect(x0, y0, x1 - x0, y1 - y0); g.clip();
+  if (k === 'forest' || k === 'park' || k === 'hill' || k === 'garden' || k === 'churchyard') {
+    for (var gx = x0 - (x0 % 90); gx < x1; gx += 90) for (var gy = y0 - (y0 % 90); gy < y1; gy += 90) { var h = Math.sin(gx * 12.9898 + gy * 78.233) * 43758.5453; h -= Math.floor(h); g.fillStyle = h < 0.5 ? 'rgba(120,170,110,.07)' : 'rgba(0,0,0,.10)'; g.beginPath(); g.arc(gx + h * 60, gy + (1 - h) * 60, 26 + h * 30, 0, 6.283); g.fill(); }
+    if (k === 'park' || k === 'garden') { g.strokeStyle = 'rgba(160,200,140,.05)'; g.lineWidth = 30; for (var sx = x0 - (x0 % 120); sx < x1; sx += 120) { g.beginPath(); g.moveTo(sx, y0); g.lineTo(sx, y1); g.stroke(); } }
+  } else if (k === 'temple' || k === 'castle' || k === 'emiya') {
+    g.strokeStyle = k === 'temple' ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.18)'; g.lineWidth = 2;
+    if (k === 'temple') { for (var ry = y0 - (y0 % 18); ry < y1; ry += 18) { g.beginPath(); g.moveTo(x0, ry); g.lineTo(x1, ry); g.stroke(); } }
+    else for (var cy = y0 - (y0 % 40); cy < y1; cy += 40) for (var cx = x0 - (x0 % 60) + (cy / 40 % 2) * 30; cx < x1; cx += 60) g.strokeRect(cx, cy, 60, 40);
+  } else if (k === 'schoolyard') {
+    g.fillStyle = '#6a5640'; g.beginPath(); g.ellipse(3950, 3170, 640, 250, 0, 0, 6.283); g.fill(); g.fillStyle = '#365234'; g.beginPath(); g.ellipse(3950, 3170, 520, 160, 0, 0, 6.283); g.fill();
+    g.strokeStyle = 'rgba(240,240,240,.5)'; g.lineWidth = 3; [580, 545, 510].forEach(function (rx, i) { g.beginPath(); g.ellipse(3950, 3170, rx, 225 - i * 12, 0, 0, 6.283); g.stroke(); });
+  } else if (k === 'plaza' || k === 'arcade' || k === 'harbor') {
+    g.strokeStyle = k === 'harbor' ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.05)'; g.lineWidth = 2; var st = k === 'harbor' ? 160 : 50;
+    for (var px = x0 - (x0 % st); px < x1; px += st) { g.beginPath(); g.moveTo(px, y0); g.lineTo(px, y1); g.stroke(); } for (var py = y0 - (y0 % st); py < y1; py += st) { g.beginPath(); g.moveTo(x0, py); g.lineTo(x1, py); g.stroke(); }
+    if (k === 'harbor') { g.strokeStyle = '#d9a73a'; g.lineWidth = 6; g.setLineDash([36, 22]); g.beginPath(); g.moveTo(x0, 7260); g.lineTo(x1, 7260); g.stroke(); g.setLineDash([]); }
+    if (k === 'arcade') { g.fillStyle = 'rgba(180,210,230,.08)'; for (var ax = 3110; ax < 4300; ax += 80) g.fillRect(ax, 4632, 70, 136); }
+  } else if (k === 'sand') {
+    for (var bx = x0 - (x0 % 70); bx < x1; bx += 70) for (var by = y0 - (y0 % 50); by < y1; by += 50) { var hh = Math.sin(bx * 3.1 + by * 7.7) * 999; hh -= Math.floor(hh); if (hh < 0.3) { g.fillStyle = 'rgba(255,240,200,.08)'; g.fillRect(bx, by, 6, 3); } }
+  }
+  g.restore();
+}
+function drawRoad(g, r, vr) {
+  var hw = r.w / 2, x0 = r.h ? r.x0 : r.x0 - hw, y0 = r.h ? r.y0 - hw : r.y0, w = r.h ? r.x1 - r.x0 : r.w, h = r.h ? r.w : r.y1 - r.y0;
+  if (!vis(vr, x0 - 40, y0 - 40, x0 + w + 40, y0 + h + 40)) return;
+  var k = r.kind;
+  if (k === 'path') { g.fillStyle = '#5e5a4c'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); g.fillStyle = 'rgba(255,255,255,.04)'; for (var s = 0; s < (r.h ? w : h); s += 34) { if (r.h) g.fillRect(x0 + s, y0 + 3, 30, h - 6); else g.fillRect(x0 + 3, y0 + s, w - 6, 30); } return; }
+  if (k === 'stairs') { g.fillStyle = '#6e6a5e'; g.fillRect(x0, y0, w, h); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2; for (var st = y0; st < y0 + h; st += 16) { g.beginPath(); g.moveTo(x0, st); g.lineTo(x0 + w, st); g.stroke(); } g.fillStyle = '#4a463c'; g.fillRect(x0 - 10, y0, 10, h); g.fillRect(x0 + w, y0, 10, h); return; }
+  if (k === 'rail') {
+    var a0 = Math.max(x0, vr ? vr.x0 : x0), a1 = Math.min(x0 + w, vr ? vr.x1 : x0 + w);
+    g.fillStyle = '#3a3530'; g.fillRect(a0, y0, a1 - a0, h); g.strokeStyle = '#5a4634'; g.lineWidth = 7;
+    for (var tx = a0 - (a0 % 26); tx < a1; tx += 26) { [r.y0 - 30, r.y0 + 30].forEach(function (cy) { g.beginPath(); g.moveTo(tx, cy - 22); g.lineTo(tx, cy + 22); g.stroke(); }); }
+    g.strokeStyle = '#a6adb5'; g.lineWidth = 3; [r.y0 - 46, r.y0 - 14, r.y0 + 14, r.y0 + 46].forEach(function (ry) { g.beginPath(); g.moveTo(a0, ry); g.lineTo(a1, ry); g.stroke(); });
+    return;
+  }
+  var side = k === 'avenue' ? 26 : 18;
+  g.fillStyle = '#585c61'; if (r.h) g.fillRect(x0 - side, y0 - side, w + side * 2, h + side * 2); else g.fillRect(x0 - side, y0 - side, w + side * 2, h + side * 2);
+  g.fillStyle = 'rgba(255,255,255,.05)'; var seg = r.h ? w : h; for (var q = 0; q < seg; q += 40) { if (r.h) { g.fillRect(x0 + q, y0 - side, 1.5, side); g.fillRect(x0 + q, y0 + h, 1.5, side); } else { g.fillRect(x0 - side, y0 + q, side, 1.5); g.fillRect(x0 + w, y0 + q, side, 1.5); } }
+  g.fillStyle = k === 'avenue' ? '#303338' : '#36393e'; g.fillRect(x0, y0, w, h);
+  g.strokeStyle = '#7a7e83'; g.lineWidth = 3; g.strokeRect(x0, y0, w, h);
+  g.save(); g.lineWidth = 3;
+  if (k === 'avenue') {
+    g.strokeStyle = '#c9a43a'; [-5, 5].forEach(function (o) { g.beginPath(); if (r.h) { g.moveTo(x0, r.y0 + o); g.lineTo(x0 + w, r.y0 + o); } else { g.moveTo(r.x0 + o, y0); g.lineTo(r.x0 + o, y0 + h); } g.stroke(); });
+    g.strokeStyle = 'rgba(225,225,225,.55)'; g.setLineDash([40, 40]); [-hw / 2, hw / 2].forEach(function (o) { g.beginPath(); if (r.h) { g.moveTo(x0, r.y0 + o); g.lineTo(x0 + w, r.y0 + o); } else { g.moveTo(r.x0 + o, y0); g.lineTo(r.x0 + o, y0 + h); } g.stroke(); });
+  } else { g.strokeStyle = 'rgba(225,225,225,.5)'; g.setLineDash([34, 30]); g.beginPath(); if (r.h) { g.moveTo(x0, r.y0); g.lineTo(x0 + w, r.y0); } else { g.moveTo(r.x0, y0); g.lineTo(r.x0, y0 + h); } g.stroke(); }
+  g.restore();
+}
+function drawIntersection(g, q) {
+  var hw = q.vw / 2, hh = q.hw / 2;
+  g.fillStyle = '#33363b'; g.fillRect(q.x - hw, q.y - hh, q.vw, q.hw);
+  g.fillStyle = 'rgba(232,232,232,.55)';
+  function zebra(cx, cy, len, across, horiz) { for (var s = -len / 2 + 6; s < len / 2 - 6; s += 18) { if (horiz) g.fillRect(cx + s, cy - across / 2, 9, across); else g.fillRect(cx - across / 2, cy + s, across, 9); } }
+  if (!q.endV) { zebra(q.x, q.y - hh - 22, q.vw, 28, true); zebra(q.x, q.y + hh + 22, q.vw, 28, true); }
+  if (!q.endH) { zebra(q.x - hw - 22, q.y, q.hw, 28, false); zebra(q.x + hw + 22, q.y, q.hw, 28, false); }
+}
+function drawBridges(g, m, vr, t) {
+  // Fuyuki Bridge: red steel arch over the Mion, deck at y 2400
+  var by = 2400, x0 = 5560, x1 = 6440, half = 110;
+  if (vis(vr, x0 - 100, by - 400, x1 + 100, by + 400)) {
+    g.fillStyle = 'rgba(0,0,0,.35)'; for (var s = 0; s <= 1; s += 0.02) { var hgt = Math.sin(Math.PI * s) * 150, sx = x0 + 60 + (x1 - x0 - 120) * s; g.fillRect(sx + hgt * 0.35, by - half - 6 + hgt * 0.6, 22, 14); g.fillRect(sx + hgt * 0.35, by + half - 8 + hgt * 0.6, 22, 14); }
+    g.fillStyle = '#3c3f44'; g.fillRect(x0, by - half - 18, x1 - x0, half * 2 + 36);
+    g.fillStyle = '#303338'; g.fillRect(x0, by - half, x1 - x0, half * 2);
+    g.strokeStyle = '#c9a43a'; g.lineWidth = 3; [-5, 5].forEach(function (o) { g.beginPath(); g.moveTo(x0, by + o); g.lineTo(x1, by + o); g.stroke(); });
+    g.strokeStyle = 'rgba(225,225,225,.5)'; g.setLineDash([40, 40]); [-55, 55].forEach(function (o) { g.beginPath(); g.moveTo(x0, by + o); g.lineTo(x1, by + o); g.stroke(); }); g.setLineDash([]);
+    // piers
+    g.fillStyle = '#5b5f66'; [5700, 6300].forEach(function (px) { g.fillRect(px - 30, by - half - 40, 60, 24); g.fillRect(px - 30, by + half + 16, 60, 24); });
+    // the arch ribs, bracing and hangers; the deck rises toward the middle
+    var ax0 = 5640, ax1 = 6360, red = '#b8322a', redL = '#e05040';
+    for (var i = 0; i < 18; i++) { var u = (i + 0.5) / 18, ux = ax0 + (ax1 - ax0) * u, hg = Math.sin(Math.PI * u); if (hg < 0.35) continue; g.strokeStyle = 'rgba(184,50,42,' + (0.55 + hg * 0.4) + ')'; g.lineWidth = 6; var dx = (ax1 - ax0) / 18; g.beginPath(); g.moveTo(ux - dx / 2, by - half - 10); g.lineTo(ux + dx / 2, by + half + 10); g.moveTo(ux + dx / 2, by - half - 10); g.lineTo(ux - dx / 2, by + half + 10); g.stroke(); }
+    [-1, 1].forEach(function (sd) {
+      var ry = by + sd * (half + 10);
+      g.strokeStyle = '#5e1712'; g.lineWidth = 20; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
+      g.strokeStyle = red; g.lineWidth = 14; g.beginPath(); g.moveTo(ax0, ry); g.lineTo(ax1, ry); g.stroke();
+      g.strokeStyle = redL; g.lineWidth = 4; g.beginPath(); g.moveTo(ax0 + 30, ry - sd * 3); g.lineTo(ax1 - 30, ry - sd * 3); g.stroke();
+      g.fillStyle = '#e9e4d3'; for (var hx = ax0 + 40; hx < ax1 - 20; hx += 40) { g.beginPath(); g.arc(hx, ry, 2.5, 0, 6.283); g.fill(); }
+    });
+    g.strokeStyle = red; g.lineWidth = 10; [ax0, ax1].forEach(function (ex) { g.beginPath(); g.moveTo(ex, by - half - 10); g.lineTo(ex, by + half + 10); g.stroke(); });
+    // lamps on the walkways
+    for (var lx = x0 + 40; lx < x1; lx += 120) [-1, 1].forEach(function (sd) { var ly = by + sd * (half + 6), lg = g.createRadialGradient(lx, ly, 2, lx, ly, 70); lg.addColorStop(0, 'rgba(255,214,140,.25)'); lg.addColorStop(1, 'rgba(255,214,140,0)'); g.fillStyle = lg; g.fillRect(lx - 70, ly - 70, 140, 140); });
+  }
+  // Mion Bridge: concrete girder bridge at y 5600
+  var my = 5600, mh = 95;
+  if (vis(vr, 5600, my - 200, 6400, my + 200)) {
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(5700 + 18, my - mh - 14 + 26, 600, mh * 2 + 28);
+    g.fillStyle = '#6a6e74'; g.fillRect(5640, my - mh - 16, 720, mh * 2 + 32); g.fillStyle = '#303338'; g.fillRect(5640, my - mh, 720, mh * 2);
+    g.strokeStyle = '#c9a43a'; g.lineWidth = 3; [-5, 5].forEach(function (o) { g.beginPath(); g.moveTo(5640, my + o); g.lineTo(6360, my + o); g.stroke(); });
+    g.strokeStyle = '#9aa0a8'; g.lineWidth = 4; [-1, 1].forEach(function (sd) { g.beginPath(); g.moveTo(5640, my + sd * (mh + 10)); g.lineTo(6360, my + sd * (mh + 10)); g.stroke(); for (var px = 5650; px < 6360; px += 30) { g.fillStyle = '#9aa0a8'; g.fillRect(px, my + sd * (mh + 10) - 3, 4, 6); } });
+  }
+  // railway bridge: steel truss at y 4050
+  if (vis(vr, 5600, 3950, 6400, 4150)) {
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(5720, 4000, 600, 130);
+    g.strokeStyle = '#7f8791'; g.lineWidth = 6; [-58, 58].forEach(function (o) { g.beginPath(); g.moveTo(5660, 4050 + o); g.lineTo(6340, 4050 + o); g.stroke(); });
+    g.lineWidth = 3; g.beginPath(); for (var zx = 5660, up = 1; zx < 6340; zx += 40, up = -up) { g.moveTo(zx, 4050 - 58); g.lineTo(zx + 40, 4050 + 58); } g.stroke();
+  }
+}
+/* ---- buildings ---- */
+var ROOF_JP = ['#4a4f58', '#55504a', '#3f4a52', '#574d55', '#465049', '#4d4a42'], ROOF_W = ['#7d4636', '#6a4038', '#566070', '#7a5a48', '#5f4a40'];
+var BHEIGHT = { house_jp: 8, house_jpL: 9, house_w: 9, mansion_w: 14, mansion_d: 14, mansion_s: 11, villa_e: 14, safehouse: 9, apt: 22, apt_s: 12, tower: 34, office: 26, shop_big: 12, shop: 8, hotel: 44, hotel_s: 18, center: 52, mall: 20, station: 14, station_s: 10, civic: 18, school: 16, gym: 16, dojo: 10, dojo_s: 9, storehouse: 9, temple: 16, temple2: 10, belltower: 12, gate_jp: 8, church: 22, chapel: 14, castle: 30, castletower: 40, castlewall: 10, warehouse: 14, box1: 8, box2: 8, box3: 8, grave: 2, fence: 2, wall: 5 };
+function shade(hex, k) { var n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, gg = (n >> 8) & 255, b = n & 255; function c(v) { return Math.max(0, Math.min(255, Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k)))); } return 'rgb(' + c(r) + ',' + c(gg) + ',' + c(b) + ')'; }
+function hipRoof(g, x0, y0, w, h, col, tiles) {
+  var x1 = x0 + w, y1 = y0 + h, horiz = w >= h, d = Math.min(w, h) / 2;
+  var poly = function (pts, c) { g.fillStyle = c; g.beginPath(); g.moveTo(pts[0], pts[1]); for (var i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]); g.closePath(); g.fill(); };
+  if (horiz) { var cy = y0 + h / 2; poly([x0, y0, x1, y0, x1 - d, cy, x0 + d, cy], shade(col, 0.18)); poly([x0, y1, x1, y1, x1 - d, cy, x0 + d, cy], shade(col, -0.25)); poly([x0, y0, x0 + d, cy, x0, y1], shade(col, 0.05)); poly([x1, y0, x1 - d, cy, x1, y1], shade(col, -0.12)); }
+  else { var cx = x0 + w / 2; poly([x0, y0, x0, y1, cx, y1 - d, cx, y0 + d], shade(col, 0.12)); poly([x1, y0, x1, y1, cx, y1 - d, cx, y0 + d], shade(col, -0.22)); poly([x0, y0, cx, y0 + d, x1, y0], shade(col, 0.22)); poly([x0, y1, cx, y1 - d, x1, y1], shade(col, -0.3)); }
+  if (tiles) { g.save(); g.beginPath(); g.rect(x0, y0, w, h); g.clip(); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 1.2; if (horiz) for (var ty = y0 + 6; ty < y1; ty += 7) { g.beginPath(); g.moveTo(x0, ty); g.lineTo(x1, ty); g.stroke(); } else for (var tx = x0 + 6; tx < x1; tx += 7) { g.beginPath(); g.moveTo(tx, y0); g.lineTo(tx, y1); g.stroke(); } g.restore(); }
+  g.strokeStyle = shade(col, -0.45); g.lineWidth = 3; g.beginPath(); if (horiz) { g.moveTo(x0 + d, y0 + h / 2); g.lineTo(x1 - d, y0 + h / 2); } else { g.moveTo(x0 + w / 2, y0 + d); g.lineTo(x0 + w / 2, y1 - d); } g.stroke();
+  g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h);
+}
+function gableRoof(g, x0, y0, w, h, col) {
+  var horiz = w >= h; g.fillStyle = shade(col, 0.15); if (horiz) g.fillRect(x0, y0, w, h / 2); else g.fillRect(x0, y0, w / 2, h); g.fillStyle = shade(col, -0.22); if (horiz) g.fillRect(x0, y0 + h / 2, w, h / 2); else g.fillRect(x0 + w / 2, y0, w / 2, h);
+  g.strokeStyle = 'rgba(0,0,0,.15)'; g.lineWidth = 1; g.save(); g.beginPath(); g.rect(x0, y0, w, h); g.clip(); if (horiz) for (var tx = x0 + 8; tx < x0 + w; tx += 9) { g.beginPath(); g.moveTo(tx, y0); g.lineTo(tx, y0 + h); g.stroke(); } else for (var ty = y0 + 8; ty < y0 + h; ty += 9) { g.beginPath(); g.moveTo(x0, ty); g.lineTo(x0 + w, ty); g.stroke(); } g.restore();
+  g.strokeStyle = shade(col, -0.5); g.lineWidth = 3; g.beginPath(); if (horiz) { g.moveTo(x0, y0 + h / 2); g.lineTo(x0 + w, y0 + h / 2); } else { g.moveTo(x0 + w / 2, y0); g.lineTo(x0 + w / 2, y0 + h); } g.stroke();
+  g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h);
+}
+function flatRoof(g, x0, y0, w, h, col, i, extra) {
+  g.fillStyle = col; g.fillRect(x0, y0, w, h); g.strokeStyle = shade(col, 0.25); g.lineWidth = 6; g.strokeRect(x0 + 5, y0 + 5, w - 10, h - 10);
+  g.strokeStyle = 'rgba(0,0,0,.2)'; g.lineWidth = 1; g.strokeRect(x0 + 10, y0 + 10, w - 20, h - 20);
+  var hsh = Math.sin(i * 91.7) * 1000; hsh -= Math.floor(hsh);
+  var n = 2 + Math.floor(hsh * 4); for (var k = 0; k < n; k++) { var ux = x0 + 18 + ((hsh * 997 * (k + 1)) % 1) * (w - 60), uy = y0 + 18 + ((hsh * 613 * (k + 3)) % 1) * (h - 50); g.fillStyle = '#6f757c'; g.fillRect(ux, uy, 30, 22); g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(ux + 4, uy + 22, 30, 5); g.strokeStyle = '#2a2e33'; g.lineWidth = 1.5; g.beginPath(); g.arc(ux + 15, uy + 11, 7, 0, 6.283); g.stroke(); }
+  if (extra === 'tank' && w > 160) { g.fillStyle = '#58606a'; g.beginPath(); g.arc(x0 + w - 40, y0 + 40, 20, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); }
+  if (extra === 'heli') { var cx = x0 + w / 2, cy = y0 + h / 2, r = Math.min(w, h) * 0.28; g.strokeStyle = '#e9d36a'; g.lineWidth = 5; g.beginPath(); g.arc(cx, cy, r, 0, 6.283); g.stroke(); g.fillStyle = '#e9d36a'; g.font = '700 ' + Math.round(r) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText('H', cx, cy + r * 0.36); }
+  g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h);
+}
+function drawCityBlock(g, b, i) {
+  if (b.hide) return;
+  var k = b.k, x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, w = b.w, h = b.h, sh = BHEIGHT[k] === undefined ? 10 : BHEIGHT[k];
+  if (sh > 2 && k !== 'iwall') { g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.moveTo(x0 + w, y0); g.lineTo(x0 + w + sh * 0.7, y0 + sh); g.lineTo(x0 + w + sh * 0.7, y0 + h + sh); g.lineTo(x0 + sh * 0.7, y0 + h + sh); g.lineTo(x0, y0 + h); g.closePath(); g.fill(); }
+  switch (k) {
+    case 'house_jp': hipRoof(g, x0, y0, w, h, ROOF_JP[i % ROOF_JP.length], true); break;
+    case 'house_jpL': g.fillStyle = '#7a5a3a'; g.fillRect(x0, y0 + h - 14, w, 14); hipRoof(g, x0, y0, w, h - 14, '#3d434b', true); break;
+    case 'house_w': gableRoof(g, x0, y0, w, h, ROOF_W[i % ROOF_W.length]); g.fillStyle = '#5a4a44'; g.fillRect(x0 + w * 0.7, y0 + h * 0.18, 16, 16); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(x0 + w * 0.7, y0 + h * 0.18, 16, 16); break;
+    case 'mansion_w': case 'mansion_d': case 'mansion_s': case 'villa_e':
+      var mc = k === 'mansion_w' ? '#7a3e34' : k === 'mansion_d' ? '#3a3444' : k === 'villa_e' ? '#cfd3da' : '#5e5560';
+      hipRoof(g, x0 + w * 0.22, y0, w * 0.56, h * 0.8, mc, true); hipRoof(g, x0, y0 + h * 0.15, w * 0.26, h * 0.85, mc, true); hipRoof(g, x0 + w * 0.74, y0 + h * 0.15, w * 0.26, h * 0.85, mc, true);
+      if (k === 'mansion_d' || k === 'villa_e') [[x0 + 10, y0 + h * 0.15 + 10], [x0 + w - 10, y0 + h * 0.15 + 10], [x0 + w / 2, y0 + 6]].forEach(function (p) { g.fillStyle = k === 'villa_e' ? '#9fa8b5' : '#251f2c'; g.beginPath(); g.arc(p[0], p[1], 14, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); });
+      if (k === 'mansion_w') { g.fillStyle = '#d9c38a'; g.beginPath(); g.arc(x0 + w / 2, y0 + h * 0.4, 5, 0, 6.283); g.fill(); }
+      break;
+    case 'safehouse': flatRoof(g, x0, y0, w, h, '#4f545b', i); break;
+    case 'chapel': hipRoof(g, x0, y0, w, h, '#5b6270', true); g.fillStyle = '#e9e4d3'; g.fillRect(b.x - 4, b.y - 20, 8, 40); g.fillRect(b.x - 14, b.y - 8, 28, 8); break;
+    case 'hotel_s': flatRoof(g, x0, y0, w, h, '#606670', i, 'tank'); break;
+    case 'tower': flatRoof(g, x0, y0, w, h, ['#4c5560', '#535a63', '#46505c', '#5a5e66'][i % 4], i, 'tank'); break;
+    case 'office': flatRoof(g, x0, y0, w, h, '#5d636b', i); g.fillStyle = 'rgba(160,200,230,.15)'; g.fillRect(x0 + 16, b.y - 10, w - 32, 20); break;
+    case 'shop_big': flatRoof(g, x0, y0, w, h, '#57565a', i); g.fillStyle = ['#a8452f', '#2f6fa8', '#3a8a5a', '#a88a2f'][i % 4]; g.fillRect(x0, y0 + h - 12, w, 12); break;
+    case 'apt': case 'apt_s': flatRoof(g, x0, y0, w, h, '#5c5f66', i); g.fillStyle = '#6c7078'; g.fillRect(x0 + w * 0.4, y0 + h * 0.35, w * 0.22, h * 0.25); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(x0 + w * 0.4, y0 + h * 0.35, w * 0.22, h * 0.25); g.strokeStyle = 'rgba(255,255,255,.12)'; for (var bl = x0 + 10; bl < x0 + w - 10; bl += 24) { g.beginPath(); g.moveTo(bl, y0 + h - 8); g.lineTo(bl + 16, y0 + h - 8); g.stroke(); } break;
+    case 'shop': flatRoof(g, x0, y0, w, h, '#5a5655', i); g.fillStyle = ['#b04a3a', '#3a78b0', '#d0a040', '#4a9a6a', '#9a4ab0'][i % 5]; var awY = b.y < 4700 ? y0 + h - 16 : y0; for (var aw = 0; aw < 4; aw++) { g.globalAlpha = aw % 2 ? 0.95 : 0.55; g.fillRect(x0 + aw * w / 4, awY, w / 4, 16); } g.globalAlpha = 1; break;
+    case 'hotel': flatRoof(g, x0, y0, w, h, '#646a74', i, 'heli'); break;
+    case 'center': flatRoof(g, x0, y0, w, h, '#5a6878', i); g.strokeStyle = '#9fc0de'; g.lineWidth = 4; g.strokeRect(x0 + 40, y0 + 40, w - 80, h - 80); g.beginPath(); g.moveTo(x0 + 40, y0 + 40); g.lineTo(x0 + w - 40, y0 + h - 40); g.moveTo(x0 + w - 40, y0 + 40); g.lineTo(x0 + 40, y0 + h - 40); g.stroke(); g.fillStyle = '#ff4d4d'; [[x0 + 20, y0 + 20], [x0 + w - 20, y0 + 20], [x0 + 20, y0 + h - 20], [x0 + w - 20, y0 + h - 20]].forEach(function (p) { g.globalAlpha = 0.5 + 0.5 * Math.sin((G ? G.time : 0) * 3); g.beginPath(); g.arc(p[0], p[1], 5, 0, 6.283); g.fill(); }); g.globalAlpha = 1; break;
+    case 'mall': flatRoof(g, x0, y0, w, h, '#5f6a58', i); g.fillStyle = 'rgba(150,200,230,.35)'; for (var gp = 0; gp < 6; gp++) g.fillRect(x0 + 60 + gp * (w - 120) / 6, y0 + h / 2 - 50, (w - 120) / 6 - 8, 100); break;
+    case 'station': case 'station_s': flatRoof(g, x0, y0, w, h, '#6a6f78', i); g.strokeStyle = 'rgba(255,255,255,.15)'; g.lineWidth = 2; for (var sl = x0 + 30; sl < x0 + w; sl += 30) { g.beginPath(); g.moveTo(sl, y0 + 8); g.lineTo(sl, y0 + h - 8); g.stroke(); } break;
+    case 'civic': flatRoof(g, x0, y0, w, h, '#6b6a66', i); g.fillStyle = '#8a8f99'; g.beginPath(); g.arc(b.x, b.y, Math.min(w, h) * 0.3, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); for (var rl = 0; rl < 12; rl++) { var ra = rl * 0.5236; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + Math.cos(ra) * Math.min(w, h) * 0.3, b.y + Math.sin(ra) * Math.min(w, h) * 0.3); g.stroke(); } break;
+    case 'school': flatRoof(g, x0, y0, w, h, '#7d8288', i, 'tank'); g.fillStyle = '#c9c3b0'; g.fillRect(b.x - 30, y0 - 4, 60, 18); g.fillStyle = '#e9e4d3'; g.beginPath(); g.arc(b.x, y0 + 5, 7, 0, 6.283); g.fill(); break;
+    case 'gym': g.fillStyle = '#3d6a9a'; g.fillRect(x0, y0, w, h); g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x0, y0, w / 2, h); g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 2; for (var gr = y0 + 16; gr < y0 + h; gr += 18) { g.beginPath(); g.moveTo(x0, gr); g.lineTo(x0 + w, gr); g.stroke(); } g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h); break;
+    case 'dojo': case 'dojo_s': case 'storehouse': case 'temple2': hipRoof(g, x0, y0, w, h, k === 'storehouse' ? '#5a554e' : '#3d3a36', true); if (k === 'storehouse') { g.fillStyle = '#d8d2c2'; g.fillRect(x0 + 6, y0 + h - 10, w - 12, 6); } break;
+    case 'temple': hipRoof(g, x0, y0, w, h, '#34363a', true); g.fillStyle = '#c9a43a'; [[x0 + h / 2, b.y], [x0 + w - h / 2, b.y]].forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], 8, 0, 6.283); g.fill(); }); break;
+    case 'belltower': hipRoof(g, x0, y0, w, h, '#3a3632', true); g.fillStyle = '#a98446'; g.beginPath(); g.arc(b.x, b.y, 18, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); break;
+    case 'gate_jp': g.fillStyle = '#6a2a22'; g.fillRect(x0, y0, w, h); g.fillStyle = '#2a2420'; g.fillRect(x0 - 10, y0 - 6, w + 20, 10); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'church':
+      var nave = [x0 + w * 0.32, y0, w * 0.36, h], tr = [x0, y0 + h * 0.35, w, h * 0.3];
+      gableRoof(g, nave[0], nave[1], nave[2], nave[3], '#59606c'); gableRoof(g, tr[0], tr[1], tr[2], tr[3], '#59606c');
+      g.fillStyle = '#4a505a'; g.fillRect(b.x - 34, y0 - 10, 68, 68); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(b.x - 34, y0 - 10, 68, 68);
+      g.fillStyle = '#e9e4d3'; g.fillRect(b.x - 5, y0 + 2, 10, 44); g.fillRect(b.x - 16, y0 + 14, 32, 9); break;
+    case 'castle':
+      hipRoof(g, x0 + w * 0.3, y0, w * 0.4, h, '#4e5868', true); hipRoof(g, x0, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true); hipRoof(g, x0 + w * 0.68, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true);
+      g.fillStyle = '#c8ccd4'; g.fillRect(b.x - 70, y0 + h - 26, 140, 26); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(b.x - 70, y0 + h - 26, 140, 26);
+      g.fillStyle = '#d9d4c8'; g.beginPath(); g.arc(b.x, b.y - 30, 26, 0, 6.283); g.fill(); g.stroke(); break;
+    case 'castletower': g.fillStyle = '#7a8290'; g.beginPath(); g.arc(b.x, b.y, w / 2, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 3; g.stroke(); for (var cr = 0; cr < 16; cr++) { var ca = cr * 0.3927; g.strokeStyle = cr % 2 ? 'rgba(0,0,0,.3)' : 'rgba(255,255,255,.15)'; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + Math.cos(ca) * w / 2, b.y + Math.sin(ca) * w / 2); g.stroke(); } g.fillStyle = '#c9a43a'; g.beginPath(); g.arc(b.x, b.y, 6, 0, 6.283); g.fill(); break;
+    case 'castlewall': case 'wall': g.fillStyle = k === 'castlewall' ? '#8a8f98' : '#8b857a'; g.fillRect(x0, y0, w, h); g.fillStyle = 'rgba(0,0,0,.25)'; var hz = w >= h; for (var mq = 0; mq < (hz ? w : h); mq += 24) { if (hz) g.fillRect(x0 + mq, y0, 12, h * 0.4); else g.fillRect(x0, y0 + mq, w * 0.4, 12); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'fence': g.strokeStyle = '#1a1c20'; g.lineWidth = 4; g.beginPath(); if (w >= h) { g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); } else { g.moveTo(b.x, y0); g.lineTo(b.x, y0 + h); } g.stroke(); g.fillStyle = '#2a2d33'; for (var fp = 0; fp <= (w >= h ? w : h); fp += 40) { if (w >= h) g.fillRect(x0 + fp - 4, b.y - 4, 8, 8); else g.fillRect(b.x - 4, y0 + fp - 4, 8, 8); } break;
+    case 'warehouse': flatRoof(g, x0, y0, w, h, '#56656e', i); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var wq = x0 + 14; wq < x0 + w; wq += 14) { g.beginPath(); g.moveTo(wq, y0 + 4); g.lineTo(wq, y0 + h - 4); g.stroke(); } break;
+    // interior furniture and walls
+    case 'iwall': g.fillStyle = '#16130f'; g.fillRect(x0, y0, w, h); g.fillStyle = '#3d362d'; g.fillRect(x0 + 3, y0 + 3, w - 6, h - 6); g.fillStyle = 'rgba(255,240,210,.07)'; g.fillRect(x0 + 3, y0 + 3, w - 6, 3); break;
+    case 'table': g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, w, h); g.fillStyle = '#5a3e28'; g.fillRect(x0, y0, w, h); g.fillStyle = '#d6d0c2'; g.fillRect(x0 + 8, y0 + 8, w - 16, h - 16); g.fillStyle = '#c9a43a'; for (var cd = x0 + 40; cd < x0 + w - 20; cd += 90) { g.beginPath(); g.arc(cd, b.y, 5, 0, 6.283); g.fill(); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'shelf': g.fillStyle = '#3e2b1c'; g.fillRect(x0, y0, w, h); for (var bk = 0; bk < (w > h ? w : h); bk += 9) { g.fillStyle = ['#7a2a2a', '#2a4a7a', '#5a6a2a', '#6a5a3a', '#4a2a5a'][Math.floor(bk / 9) % 5]; if (w > h) g.fillRect(x0 + bk, y0 + 4, 7, h - 8); else g.fillRect(x0 + 4, y0 + bk, w - 8, 7); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'pew': g.fillStyle = '#4a3220'; g.fillRect(x0, y0, w, h); g.fillStyle = '#6a4a30'; g.fillRect(x0, y0, w, h * 0.4); g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.strokeRect(x0, y0, w, h); break;
+    case 'altar': g.fillStyle = '#d6d0c2'; g.fillRect(x0, y0, w, h); g.fillStyle = '#c9a43a'; g.fillRect(b.x - 4, y0 + 6, 8, h - 12); g.fillRect(b.x - 14, y0 + h * 0.35, 28, 7); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'armory': g.fillStyle = '#2c2a28'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#b8c0c8'; g.lineWidth = 3; for (var sw = x0 + 14; sw < x0 + w; sw += 26) { g.beginPath(); g.moveTo(sw, y0 + 6); g.lineTo(sw + 10, y0 + h - 6); g.stroke(); } break;
+    case 'sofa': g.fillStyle = '#6a1e22'; g.fillRect(x0, y0, w, h); g.fillStyle = '#8a2a30'; g.fillRect(x0 + 10, y0 + 14, w - 20, h - 24); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
+    case 'kotatsu': g.fillStyle = '#8a3a2a'; g.fillRect(x0 - 10, y0 - 10, w + 20, h + 20); g.fillStyle = '#7a5a3a'; g.fillRect(x0, y0, w, h); g.fillStyle = '#e08a2a'; [[x0 + 40, y0 + 40], [x0 + w - 50, y0 + h - 40]].forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], 9, 0, 6.283); g.fill(); }); break;
+    case 'rack': g.fillStyle = '#5a3e28'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#c9b48a'; g.lineWidth = 3; for (var bo = x0 + 20; bo < x0 + w; bo += 40) { g.beginPath(); g.moveTo(bo, y0 - 6); g.lineTo(bo + 8, y0 + h + 10); g.stroke(); } break;
+    case 'confessional': g.fillStyle = '#3a2618'; g.fillRect(x0, y0, w, h); g.strokeStyle = '#c9a43a'; g.lineWidth = 2; g.strokeRect(x0 + 6, y0 + 6, w - 12, h - 12); break;
+    default:
+      if (k.indexOf('box') === 0 || k === 'grave' || k === 'goal') return drawBlock0(g, b, i);
+      flatRoof(g, x0, y0, w, h, '#555a60', i);
+  }
+}
+function drawRoom(g, rm, t) {
+  var F = { marble: ['#7e7a72', '#6e6a62'], wood: ['#4f3826', '#46321f'], darkwood: ['#2f2328', '#271d22'], stone: ['#4e4b45', '#45423d'], tatami: ['#7a7a52', '#6e6e48'] }[rm.floor] || ['#444', '#3a3a3a'];
+  var w = rm.x1 - rm.x0, h = rm.y1 - rm.y0;
+  g.fillStyle = F[0]; g.fillRect(rm.x0, rm.y0, w, h);
+  if (rm.floor === 'marble') { g.fillStyle = F[1]; for (var tx = rm.x0; tx < rm.x1; tx += 80) for (var ty = rm.y0 + ((tx - rm.x0) / 80 % 2) * 80; ty < rm.y1; ty += 160) g.fillRect(tx, ty, 80, 80); }
+  else if (rm.floor === 'tatami') { g.strokeStyle = '#3a3a24'; g.lineWidth = 3; for (var mx = rm.x0; mx < rm.x1; mx += 180) for (var my = rm.y0; my < rm.y1; my += 90) g.strokeRect(mx + ((my - rm.y0) / 90 % 2) * 90, my, 180, 90); }
+  else { g.strokeStyle = F[1]; g.lineWidth = 2; for (var py = rm.y0; py < rm.y1; py += rm.floor === 'stone' ? 70 : 24) { g.beginPath(); g.moveTo(rm.x0, py); g.lineTo(rm.x1, py); g.stroke(); } }
+  rm.parts.forEach(function (p) {
+    var pw = p.x1 - p.x0, ph = p.y1 - p.y0, cx = (p.x0 + p.x1) / 2, cy = (p.y0 + p.y1) / 2;
+    if (p.kind === 'carpet') { g.fillStyle = '#5a1a1e'; g.fillRect(p.x0, p.y0, pw, ph); g.strokeStyle = '#c9a43a'; g.lineWidth = 4; g.strokeRect(p.x0 + 10, p.y0 + 10, pw - 20, ph - 20); }
+    else if (p.kind === 'wood' || p.kind === 'stone') { g.fillStyle = p.kind === 'wood' ? '#4f3826' : '#4e4b45'; g.fillRect(p.x0, p.y0, pw, ph); g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 2; for (var ly = p.y0; ly < p.y1; ly += p.kind === 'wood' ? 24 : 70) { g.beginPath(); g.moveTo(p.x0, ly); g.lineTo(p.x1, ly); g.stroke(); } }
+    else if (p.kind === 'stairs') { g.fillStyle = '#6e6a62'; g.fillRect(p.x0, p.y0, pw, ph); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; for (var sy = p.y0; sy < p.y1; sy += 20) { g.beginPath(); g.moveTo(p.x0, sy); g.lineTo(p.x1, sy); g.stroke(); } g.fillStyle = '#5a1a1e'; g.fillRect(cx - 60, p.y0, 120, ph); }
+    else if (p.kind === 'workshop' || p.kind === 'pit') { g.fillStyle = p.kind === 'pit' ? '#1e1622' : '#2c2b33'; g.fillRect(p.x0, p.y0, pw, ph); }
+    else if (p.kind === 'circle') { runeCircle(g, cx, cy, pw / 2, p.kind === 'circle' && rm.id === 'emiya' ? '#7fc4ee' : '#e04a5a', t * 0.4, 0.75); }
+    else if (p.kind === 'wormpit') { g.fillStyle = '#120c14'; g.beginPath(); g.arc(cx, cy, pw / 2, 0, 6.283); g.fill(); g.strokeStyle = '#4a3458'; g.lineWidth = 4; for (var wk = 0; wk < 14; wk++) { var wa = wk * 0.45 + t * 0.6, wr = pw / 2 * (0.3 + 0.6 * ((wk * 37) % 10) / 10); g.beginPath(); g.arc(cx + Math.cos(wa) * wr, cy + Math.sin(wa) * wr, 10, wa, wa + 3); g.stroke(); } }
+  });
+  var vg = g.createRadialGradient((rm.x0 + rm.x1) / 2, (rm.y0 + rm.y1) / 2, Math.min(w, h) * 0.2, (rm.x0 + rm.x1) / 2, (rm.y0 + rm.y1) / 2, Math.max(w, h) * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.45)'); g.fillStyle = vg; g.fillRect(rm.x0, rm.y0, w, h);
+}
+// cover what this viewer cannot see: the interiors while outside, everything but the current room while inside
+function zoneMask(g) {
+  if (!MAP.cityW || !G || !G.f[MEI]) return;
+  var me = G.f[MEI], vr = VIEWR || { x0: 0, y0: 0, x1: MAP.w, y1: MAP.h }, rm = roomAt(me.x, me.y);
+  g.fillStyle = '#050608';
+  if (!rm) { if (vr.x1 > MAP.cityW) g.fillRect(MAP.cityW, vr.y0 - 10, vr.x1 - MAP.cityW + 10, vr.y1 - vr.y0 + 20); return; }
+  g.fillRect(vr.x0 - 10, vr.y0 - 10, vr.x1 - vr.x0 + 20, rm.y0 - vr.y0 + 10); g.fillRect(vr.x0 - 10, rm.y1, vr.x1 - vr.x0 + 20, vr.y1 - rm.y1 + 10);
+  g.fillRect(vr.x0 - 10, rm.y0, rm.x0 - vr.x0 + 10, rm.y1 - rm.y0); g.fillRect(rm.x1, rm.y0, vr.x1 - rm.x1 + 10, rm.y1 - rm.y0);
+  g.fillStyle = 'rgba(233,228,211,.12)'; g.font = '700 46px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(rm.name.toUpperCase(), (rm.x0 + rm.x1) / 2, rm.y0 - 20);
 }
 var MINI = { id: null, c: null };
 function miniMap(mw, mh) {
   var key = MAP.id + ':' + mw; if (MINI.id === key) return MINI.c;
-  var c = document.createElement('canvas'), sc = 2; c.width = Math.round(mw * sc); c.height = Math.round(mh * sc); var g = c.getContext('2d'), k = c.width / W;
+  var c = document.createElement('canvas'), sc = 2; c.width = Math.round(mw * sc); c.height = Math.round(mh * sc); var g = c.getContext('2d'), k = c.width / (MAP.cityW || W);
+  if (MAP.theme === 'city') {
+    g.scale(k, k); g.fillStyle = CITY_PAL.miyama; g.fillRect(0, 0, MAP.cityW, H); g.fillStyle = CITY_PAL.shinto; g.fillRect(6300, 0, MAP.cityW - 6300, H);
+    MAP.zones.forEach(function (z) { if (z.kind === 'railbridge') return; g.fillStyle = z.kind === 'water' || z.kind === 'pond' ? '#25507a' : (CITY_PAL[z.kind] || '#333'); g.fillRect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0); });
+    MAP.roads.forEach(function (r) { g.fillStyle = r.kind === 'avenue' ? '#8a8e94' : r.kind === 'rail' ? '#6a5a4a' : r.kind === 'path' || r.kind === 'stairs' ? '#6e6a5a' : '#6a6e74'; var hw = Math.max(r.w, 90) / 2; if (r.h) g.fillRect(r.x0, r.y0 - hw, r.x1 - r.x0, hw * 2); else g.fillRect(r.x0 - hw, r.y0, hw * 2, r.y1 - r.y0); });
+    g.fillStyle = '#c0392b'; g.fillRect(5620, 2270, 760, 260);
+    MAP.b.forEach(function (bk) { if (bk.hide || bk.x > MAP.cityW || bk.k === 'fence') return; g.fillStyle = bk.name ? '#c9c3b0' : '#4a5058'; g.fillRect(bk.x - bk.w / 2, bk.y - bk.h / 2, bk.w, bk.h); });
+    g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgba(233,228,211,.6)'; g.font = '600 ' + Math.round(9 * sc) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center';
+    [['TEMPLE', 1500, 200], ['TOHSAKA', 3550, 250], ['MATOU', 5000, 250], ['CHURCH', 1100, 2600], ['ACADEMY', 4050, 2560], ['EMIYA', 2060, 4800], ['BRIDGE', 6000, 2200], ['STATION', 7700, 3400], ['CENTER', 8525, 1450], ['PARK', 10400, 4780], ['HARBOR', 9300, 6830], ['CASTLE', 11000, 540]].forEach(function (lb) { g.fillText(lb[0], lb[1] * k, lb[2] * k); });
+    MINI.id = key; MINI.c = c; return c;
+  }
   g.scale(k, k); if (MAP.theme === 'fuyuki') { g.fillStyle = '#2d3830'; g.fillRect(0, 0, 4300, H); g.fillStyle = '#30363e'; g.fillRect(4700, 0, W - 4700, H); g.fillStyle = '#25507a'; g.fillRect(4300, 0, 400, 5760); g.fillRect(0, 5760, W, H - 5760); g.fillStyle = '#3c424b'; g.fillRect(4270, 1590, 460, 220); g.fillRect(4270, 4190, 460, 220); }
   MAP.b.forEach(function (bk) { if (bk.k === 'water') return; g.fillStyle = bk.k === 'pond' ? '#25507a' : '#6a7a8a'; g.fillRect(bk.x - bk.w / 2, bk.y - bk.h / 2, bk.w, bk.h); });
   g.fillStyle = '#2f5a33'; MAP.o.forEach(function (p) { g.beginPath(); g.arc(p.x, p.y, Math.max(p.r, 30), 0, 6.283); g.fill(); });

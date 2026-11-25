@@ -89,7 +89,7 @@ MAPS.fuyuki = (function () {
   // ---- Einzbern Forest and Castle (east suburbs)
   B(8350, 1450, 460, 360, 'castle', 'Einzbern Castle');
   for (var fx = 7700; fx < 8950; fx += 170) for (var fy = 200; fy < 3050; fy += 160) { var x3 = fx + (rnd2() - 0.5) * 90, y3 = fy + (rnd2() - 0.5) * 80; if (Math.hypot(x3 - 8250, y3 - 1500) < 520) continue; if (Math.abs(y3 - 1500) < 90) continue; T(Math.round(x3), Math.round(y3), 26 + Math.round(rnd2() * 16)); }
-  return { id: 'fuyuki', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The war map.', w: 9000, h: 6000, theme: 'fuyuki', river: { x: 4500, half: 200, bridges: [1700, 4300] },
+  return { id: 'fuyuki', name: 'Compact Fuyuki', place: 'Miyama and Shinto across the Mion River', blurb: 'The compact city used for Quick Grail Wars.', haven: { x: 1100, y: 2480, name: 'Fuyuki Church' }, w: 9000, h: 6000, theme: 'fuyuki', river: { x: 4500, half: 200, bridges: [1700, 4300] },
     o: o, b: b, spawns: [[1250, 4020], [2650, 900], [1100, 860], [7950, 1500], [5300, 1500], [6300, 4870], [5600, 4220]],
     labels: [['RYUUDOU TEMPLE', 1100, 300], ['MOUNT ENZOU', 1100, 1500], ['TOHSAKA MANSION', 2650, 470], ['MATOU RESIDENCE', 3650, 430], ['FUYUKI CHURCH', 1100, 2050], ['FOREIGN CEMETERY', 1100, 3080], ['HOMURAHARA ACADEMY', 2900, 2060], ['EMIYA RESIDENCE', 1250, 4110], ['MIYAMA', 1500, 3350], ['MOUNT MIYAMA SHOPPING STREET', 3450, 3560], ['MION RIVER', 4500, 3000], ['FUYUKI BRIDGE', 4500, 1520], ['SHINTO', 6200, 1820], ['CENTER BUILDING', 6200, 1080], ['HYATT HOTEL', 5300, 900], ['VERDE', 6800, 2370], ['FUYUKI STATION', 5900, 2990], ['CENTRAL PARK', 7450, 3420], ['SEMINA APARTMENTS', 5600, 3620], ['HARBOR', 6800, 5480], ['FUYUKI BEACH', 1900, 5600], ['EINZBERN FOREST', 8300, 300], ['EINZBERN CASTLE', 8350, 1220]] };
 })();
@@ -99,5 +99,29 @@ function blockCircles(b) { var r = Math.min(b.w, b.h) / 2, L = Math.max(b.w, b.h
 var PGRID = null, PCELL = 320;
 function buildGrid() { PGRID = {}; PILLARS.forEach(function (p) { for (var gx = Math.floor((p.x - p.r) / PCELL); gx <= Math.floor((p.x + p.r) / PCELL); gx++) for (var gy = Math.floor((p.y - p.r) / PCELL); gy <= Math.floor((p.y + p.r) / PCELL); gy++) { var k = gx + ',' + gy; (PGRID[k] || (PGRID[k] = [])).push(p); } }); }
 function pillarsIn(x0, y0, x1, y1) { if (!PGRID) return PILLARS; var out = [], seen = new Set(); for (var gx = Math.floor(Math.min(x0, x1) / PCELL); gx <= Math.floor(Math.max(x0, x1) / PCELL); gx++) for (var gy = Math.floor(Math.min(y0, y1) / PCELL); gy <= Math.floor(Math.max(y0, y1) / PCELL); gy++) { var c = PGRID[gx + ',' + gy]; if (c) for (var i = 0; i < c.length; i++) if (!seen.has(c[i])) { seen.add(c[i]); out.push(c[i]); } } return out; }
-function setMap(id) { MAP = MAPS[id] || MAPS.arena; W = MAP.w; H = MAP.h; PILLARS = MAP.o.slice(); MAP.b.forEach(function (b) { PILLARS = PILLARS.concat(blockCircles(b)); }); buildGrid(); }
+function setMap(id) {
+  MAP = MAPS[id] || MAPS.arena; W = MAP.w; H = MAP.h; PILLARS = MAP.o.slice(); RECTS = [];
+  if (MAP.rects) MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); });
+  else MAP.b.forEach(function (b) { PILLARS = PILLARS.concat(blockCircles(b)); });
+  buildGrid(); buildRectGrid(); if (MAP.roads && !MAP.nav) buildNav(MAP);
+}
+/* ---- rectangle colliders (city buildings, walls and water) ---- */
+var RECTS = [], RGRID = null;
+function buildRectGrid() { RGRID = {}; RECTS.forEach(function (r) { for (var gx = Math.floor(r.x0 / PCELL); gx <= Math.floor(r.x1 / PCELL); gx++) for (var gy = Math.floor(r.y0 / PCELL); gy <= Math.floor(r.y1 / PCELL); gy++) { var k = gx + ',' + gy; (RGRID[k] || (RGRID[k] = [])).push(r); } }); }
+function rectsIn(x0, y0, x1, y1) { if (!RECTS.length) return RECTS; var out = [], seen = new Set(); for (var gx = Math.floor(Math.min(x0, x1) / PCELL); gx <= Math.floor(Math.max(x0, x1) / PCELL); gx++) for (var gy = Math.floor(Math.min(y0, y1) / PCELL); gy <= Math.floor(Math.max(y0, y1) / PCELL); gy++) { var c = RGRID[gx + ',' + gy]; if (c) for (var i = 0; i < c.length; i++) if (!seen.has(c[i])) { seen.add(c[i]); out.push(c[i]); } } return out; }
+function inRect(r, x, y, pad) { pad = pad || 0; return x > r.x0 - pad && x < r.x1 + pad && y > r.y0 - pad && y < r.y1 + pad; }
+// does segment a-b cross rect r (grown by pad)? slab test
+function segRect(ax, ay, bx, by, r, pad) {
+  pad = pad || 0; var x0 = r.x0 - pad, y0 = r.y0 - pad, x1 = r.x1 + pad, y1 = r.y1 + pad, dx = bx - ax, dy = by - ay, t0 = 0, t1 = 1;
+  var p = [-dx, dx, -dy, dy], q = [ax - x0, x1 - ax, ay - y0, y1 - ay];
+  for (var i = 0; i < 4; i++) { if (p[i] === 0) { if (q[i] < 0) return false; } else { var t = q[i] / p[i]; if (p[i] < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } } }
+  return true;
+}
+function pushOutRect(f, r, rad) {
+  var cx = clamp(f.x, r.x0, r.x1), cy = clamp(f.y, r.y0, r.y1), dx = f.x - cx, dy = f.y - cy, d = Math.hypot(dx, dy);
+  if (d >= rad) return;
+  if (d > 0.001) { f.x = cx + dx / d * rad; f.y = cy + dy / d * rad; return; }
+  var l = f.x - r.x0, rr = r.x1 - f.x, t = f.y - r.y0, bt = r.y1 - f.y, m = Math.min(l, rr, t, bt);
+  if (m === l) f.x = r.x0 - rad; else if (m === rr) f.x = r.x1 + rad; else if (m === t) f.y = r.y0 - rad; else f.y = r.y1 + rad;
+}
 setMap('arena');

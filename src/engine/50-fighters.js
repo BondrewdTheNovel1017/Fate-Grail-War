@@ -34,14 +34,16 @@ function pickTarget(f) {
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
 function newWar(teamsIn, opts) {
   var spawnOrder = opts && opts.spawnOrder;
-  opts = opts || {}; setMap(opts.map || 'fuyuki');
+  opts = opts || {}; setMap(opts.map || 'city');
+  var homes = MAP.homes ? assignHomes(teamsIn) : null;
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick };
   teamsIn.forEach(function (t, ti) {
-    var sp = MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
+    var sp = homes ? [homes[ti].x, homes[ti].y] : MAP.spawns.at(spawnOrder ? spawnOrder.at(ti) : ti), sv = mkF(t.servant, sp[0], sp[1], 0, 0), ms = mkF(t.master, sp[0] - 70, sp[1] + 40, 0, 0); sv.home = ms.home = sp; initMana(ms);
     sv.team = ti; ms.team = ti; sv.partner = ms; ms.partner = sv; sv.face = ms.face = Math.atan2(MAP.h / 2 - sp[1], MAP.w / 2 - sp[0]);
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
+  G.homes = homes;
   G.f.forEach(pickTarget);
   return G;
 }

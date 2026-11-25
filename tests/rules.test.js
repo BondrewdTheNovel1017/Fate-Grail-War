@@ -180,3 +180,32 @@ test('Kiritsugu\'s Calico runs dry and reloads', () => {
   assert.ok(k.reloadT > 0 || k.ammo === 50, 'an empty magazine starts a reload');
   run(E, 2.5); assert.strictEqual(k.ammo, 50, 'reloaded');
 });
+
+test('city: masters start at their family seats; a second family member gets a new estate', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.cu, master: M.illya }, { servant: S.medusa, master: M.irisviel }, { servant: S.hassan, master: M.kirei }], {});
+  assert.strictEqual(G.homes[0].name, 'Tohsaka Mansion');
+  assert.strictEqual(G.homes[1].name, 'Einzbern Castle');
+  assert.ok(!G.homes[2].canon && G.homes[2].name === 'Einzbern villa', 'the second Einzbern gets a villa');
+  assert.strictEqual(G.homes[3].name, 'Fuyuki Church');
+  assert.ok(E.MAP.b.some((b) => b.gen && b.k === 'villa_e'), 'the villa is built on the map');
+});
+
+test('city: walking into the castle doors leads inside, and the AI can route there', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'illya', 3), {});
+  const f = G.f[0], d = E.MAP.doors.find((q) => q.room === 'einzbern');
+  f.x = d.out.x; f.y = d.out.y + 30; f.doorT = 0; f.inp.mx = 0; f.inp.my = -1;
+  E.doorTick(f, 1 / 60);
+  assert.strictEqual(E.roomAt(f.x, f.y) && E.roomAt(f.x, f.y).id, 'einzbern', 'inside the castle');
+  const path = E.navPath(2050, 4620, 12000 + 1500, 1600);
+  assert.ok(path && path.some((p) => p.door), 'a route from the Emiya house into the castle goes through its door');
+});
+
+test('quick Grail War: seven teams on the compact map finish in a few minutes', () => {
+  const E = loadEngine();
+  const teams = E.warTeams('richard', 'rin', 7).map((t) => ({ servant: E.SERV_DUEL[t.servant.id], master: t.master }));
+  const G = aiWar(E, teams, { map: 'fuyuki', quick: true });
+  run(E, 600);
+  assert.ok(G.over, 'finished'); assert.ok(G.time < 360, 'in under six minutes (' + G.time.toFixed(0) + 's)');
+});
