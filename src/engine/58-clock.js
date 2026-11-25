@@ -3,9 +3,10 @@
    Night: dark streets, short sight, few people about. Day: crowded streets, teams rest at home.
    Civilians are witnesses, never targets: fighting where they can see raises the team's exposure,
    and the Church answers with rumors, a warning, and finally a sanction that shows the team to everyone. */
+var MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
 var CLOCK = { night: 360, day: 240, nights: 3, fade: 18 };
 var CIV = { day: 140, night: 22, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
-var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.12, sanction: 50, perN: 1.2, perD: 2.6 };
+var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 1.6, after: 30 };
 var BUSY = [[3700, 4700], [7700, 3400], [8525, 1450], [4050, 2650], [10400, 4780], [6000, 2400], [9300, 6600], [2050, 4880]];
 function clockOn() { return !!(G && G.clock); }
 function isDay() { return clockOn() && G.clock.phase === 'day'; }
@@ -75,7 +76,7 @@ function expose(team, v) {
   var o = G.expo[team] || 0, n = Math.min(EXPO.max, o + v); G.expo[team] = n;
   if (o < EXPO.rumor && n >= EXPO.rumor) FX.church('rumor', team);
   if (o < EXPO.warn && n >= EXPO.warn) FX.church('warn', team);
-  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.warn - 5; FX.church('sanction', team); }
+  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.after; FX.church('sanction', team); }
 }
 // a fight at (x, y): civilians close enough see it, flee, and each one counts once
 function witness(x, y, teams, k) {

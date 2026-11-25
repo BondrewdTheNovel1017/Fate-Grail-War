@@ -213,7 +213,7 @@ function aiWar(ai, dt) {
   var EH = G.event; if (EH && EH.kind === 'horror' && !EH.boss.dead && f.team !== EH.culprit && !f.isPlayerMate && f.hp > f.def.hp * 0.45 && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) < 3200 && !(near && nd < 300 && !inTruce(f, near))) { if (f.spirit === 2) press(f, 'spirit'); var bx = clamp(EH.boss.x, 5720, 6280), by = EH.boss.y < 3300 ? 2440 : 5560; if (Math.hypot(f.x - bx, f.y - by) > 60) moveTo(f, bx, by, 1); else { f.inp.mx = 0; f.inp.my = 0; } if (f.st === 'idle' && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) - EH.boss.r < (f.A.light.reach || 80) + 20) press(f, 'light'); return; }
   var gps = grailPull(f); if (gps && !f.isPlayerMate && Math.hypot(f.x - gps.x, f.y - gps.y) > gps.r - 200 && !(near && nd < 300)) { if (f.spirit === 2) press(f, 'spirit'); moveTo(f, gps.x, gps.y, 1); return; }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
-  if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * 0.35 && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
+  if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
   if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
@@ -241,6 +241,8 @@ function aiWar(ai, dt) {
   }
   if (st === 'passive') { aiTick(ai, dt); noOffense(f); if (m && dist(f, m) > 200) moveTo(f, m.x, m.y); return; }
   f.lock = null;
+  // before the final night, a servant that breaks off is let go: no chasing the wounded across the city
+  if (near && near.recover && !near.def.isMaster && nd > 260 && clockOn() && !finalNight() && !f.isPlayerMate) { near = null; nd = 1e9; }
   if (!near || nd > 1400) {
     var tgt = near || f.foe; if (m && dist(f, m) > 500) { moveTo(f, m.x, m.y); return; }
     if (G.time < 100 && !f.inM && MAP.haven && !G.quick) { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }

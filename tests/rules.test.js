@@ -38,9 +38,9 @@ test('Command Seals: three separate seals, each usable once', () => {
 test('master death: servant fades, Archers last longer', () => {
   const E = loadEngine();
   let G = pairWar(E, 'richard', 'rin', 'cu', 'kirei');
-  E.kill(G.f[1]); assert.strictEqual(G.f[0].orphanT, 20);
+  E.kill(G.f[1]); assert.strictEqual(G.f[0].orphanT, 30);
   G = pairWar(E, 'atalanta', 'rin', 'cu', 'kirei');
-  E.kill(G.f[1]); assert.ok(G.f[0].orphanT > 20, 'Archers outlast other servants');
+  E.kill(G.f[1]); assert.ok(G.f[0].orphanT > 30, 'Archers outlast other servants');
 });
 
 test('Origin Bullet burns a master\'s circuits', () => {

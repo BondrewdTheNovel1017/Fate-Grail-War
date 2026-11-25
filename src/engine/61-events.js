@@ -6,7 +6,7 @@
    The final night: the Grail descends on one of Fuyuki's three ley lines, pure or corrupted. ---- */
 var EVT = {
   nightAt: 45, dayAt: 35, dayChance: 0.6, quietChance: 0.35,
-  challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.45 },
+  challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.65, acceptHp: 0.6 },
   school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 7, mobEvery: 7, mobHp: 24, contest: 95 },
   banquet: { x: 11000, y: 1820, r: 320, need: 20 },
   summons: { x: 1450, y: 3220, r: 280, need: 20 },
@@ -92,7 +92,7 @@ function startChallenge() {
   if (!h) { var pool = servantsAlive().filter(function (f) { return masterOf(f.team); }), pref = pool.filter(function (f) { return /Saber|Lancer|Rider/.test(f.def.cls); }); pool = pref.length ? pref : pool; h = pool[Math.floor(rnd() * pool.length)]; }
   if (!h) return;
   var E = { kind: 'challenge', host: h, team: h.team, x: C.x, y: C.y, r: C.r, dur: C.dur, t: 0, accepted: false, goers: {} };
-  servantsAlive().forEach(function (f) { if (f.team !== h.team && G.ai[f.idx] && f.hp > f.def.hp * 0.7 && rnd() < C.accept) E.goers[f.idx] = true; });
+  servantsAlive().forEach(function (f) { if (f.team !== h.team && G.ai[f.idx] && f.hp > f.def.hp * C.acceptHp && rnd() < C.accept) E.goers[f.idx] = true; });
   G.event = E; FX.event('challenge', E);
 }
 function challengeTick(E, dt) {

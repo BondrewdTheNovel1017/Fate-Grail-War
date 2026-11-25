@@ -1,6 +1,6 @@
 /* ---- second batch of events: the Demolition, the Shadow, the Festival; and the Great Cavern as a fourth final site ---- */
 var EVT2 = {
-  demo: { charges: 3, ring: 230, plant: 6, disarm: 4, dur: 150, fuse: 25, need: 2, blastR: 460, blastDmg: 45 },
+  demo: { charges: 3, ring: 230, plant: 4, disarm: 5, dur: 150, fuse: 20, need: 2, blastR: 460, blastDmg: 45 },
   shadow: { spd: 150, touch: 70, drain: 20, swallow: 0.15, sense: 2000, minNight: 2, minDead: 2 },
   festival: { x: 3700, y: 4700, r: 720, crowd: 45, mult: 3, relicNeed: 15, relicDmg: 1.08 },
   cavern: { chance: 0.15, r0: 1150, r1: 450, grace: 75 }

@@ -1126,8 +1126,11 @@ var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', '
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });
 /* war balance from tools/sim.js reports: multipliers on top of the duel values */
-var WAR_TUNE = { gilgamesh: { hp: 0.82 }, richard: { dmg: 1.07 }, heracles: { hp: 1.35 }, leonidas: { spd: 1.08 }, lancelot: { hp: 1.06 }, hassan: { dmg: 1.08 }, kojirou: { dmg: 1.08 } };
-var WAR_MELEE_RANGED_TAKEN = 0.8, ARCHER_INDEPENDENT = 75, ORPHAN_TIME = 20;
+var WAR_TUNE = { gilgamesh: { hp: 0.82 }, richard: { dmg: 1.07 }, heracles: { hp: 1.35 }, leonidas: { spd: 1.08 }, lancelot: { hp: 1.11 }, hassan: { dmg: 1.08 }, kojirou: { dmg: 1.08 }, emiya: { hp: 1.08 }, medea: { hp: 1.08 }, iskandar: { dmg: 1.04 }, atalanta: { hp: 1.06 }, medusa: { hp: 1.05 }, cu: { dmg: 0.95 } };
+// masters, from the same reports
+var MASTER_TUNE = { rin: { hp: 1.1 }, kariya: { hp: 1.1 }, waver: { hp: 1.1 }, irisviel: { hp: 0.95 } };
+Object.keys(MASTER_TUNE).forEach(function (k) { MASTERS[k].hp = Math.round(MASTERS[k].hp * MASTER_TUNE[k].hp); });
+var WAR_MELEE_RANGED_TAKEN = 0.8, ARCHER_INDEPENDENT = 75, ORPHAN_TIME = 30;
 Object.keys(WAR_TUNE).forEach(function (k) { var t = WAR_TUNE[k], d = SERV[k]; if (t.hp) d.hp = Math.round(d.hp * t.hp); if (t.dmg) d.dmg = Math.round(d.dmg * t.dmg * 100) / 100; if (t.spd) d.spd = Math.round(d.spd * t.spd); });
 Object.keys(MASTERS).forEach(function (k) { MASTERS[k].A = build(MASTERS[k]); });
 (function () { var sh = MASTERS.shirou, t1 = Object.assign({}, sh, {
@@ -1337,9 +1340,10 @@ function ammoTick(f, dt) {
    Night: dark streets, short sight, few people about. Day: crowded streets, teams rest at home.
    Civilians are witnesses, never targets: fighting where they can see raises the team's exposure,
    and the Church answers with rumors, a warning, and finally a sanction that shows the team to everyone. */
+var MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
 var CLOCK = { night: 360, day: 240, nights: 3, fade: 18 };
 var CIV = { day: 140, night: 22, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
-var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.12, sanction: 50, perN: 1.2, perD: 2.6 };
+var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 1.6, after: 30 };
 var BUSY = [[3700, 4700], [7700, 3400], [8525, 1450], [4050, 2650], [10400, 4780], [6000, 2400], [9300, 6600], [2050, 4880]];
 function clockOn() { return !!(G && G.clock); }
 function isDay() { return clockOn() && G.clock.phase === 'day'; }
@@ -1409,7 +1413,7 @@ function expose(team, v) {
   var o = G.expo[team] || 0, n = Math.min(EXPO.max, o + v); G.expo[team] = n;
   if (o < EXPO.rumor && n >= EXPO.rumor) FX.church('rumor', team);
   if (o < EXPO.warn && n >= EXPO.warn) FX.church('warn', team);
-  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.warn - 5; FX.church('sanction', team); }
+  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.after; FX.church('sanction', team); }
 }
 // a fight at (x, y): civilians close enough see it, flee, and each one counts once
 function witness(x, y, teams, k) {
@@ -1627,6 +1631,7 @@ function hurt(att, def, a, mult, src) {
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
   if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; }
   if (def.reinfT > 0) dmg *= 0.6;
+  if (def.def.isMaster && G.clock && !G.clock.final) { dmg *= MASTER_GUARD; if (att && att.def.isMaster) dmg *= 0.5; } // before the final night masters fight from cover, and rarely duel each other
   if (a.silence && def.shieldT > 0) { def.shieldT = 0; def.shieldN = 0; dmg *= 2; FX.text(def, 'MERCURY SHATTERED'); }
   else if (def.shieldT > 0 && def.shieldN > 0 && !a.unblock) { def.shieldN--; if (def.shieldN <= 0) def.shieldT = 0; FX.text(def, 'MERCURY WALL'); FX.spark(def.x, def.y, '#d8dde2', 10); FX.snd('block', def, a); if (src) src.dead = true; return 'block'; }
   if (a.kind === 'proj' && !a.wave) dmg *= 1 - (def.def.arrowRes || (def.def.armor ? 0.4 : 0));
@@ -2003,7 +2008,7 @@ function separate() {
    The final night: the Grail descends on one of Fuyuki's three ley lines, pure or corrupted. ---- */
 var EVT = {
   nightAt: 45, dayAt: 35, dayChance: 0.6, quietChance: 0.35,
-  challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.45 },
+  challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.65, acceptHp: 0.6 },
   school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 7, mobEvery: 7, mobHp: 24, contest: 95 },
   banquet: { x: 11000, y: 1820, r: 320, need: 20 },
   summons: { x: 1450, y: 3220, r: 280, need: 20 },
@@ -2089,7 +2094,7 @@ function startChallenge() {
   if (!h) { var pool = servantsAlive().filter(function (f) { return masterOf(f.team); }), pref = pool.filter(function (f) { return /Saber|Lancer|Rider/.test(f.def.cls); }); pool = pref.length ? pref : pool; h = pool[Math.floor(rnd() * pool.length)]; }
   if (!h) return;
   var E = { kind: 'challenge', host: h, team: h.team, x: C.x, y: C.y, r: C.r, dur: C.dur, t: 0, accepted: false, goers: {} };
-  servantsAlive().forEach(function (f) { if (f.team !== h.team && G.ai[f.idx] && f.hp > f.def.hp * 0.7 && rnd() < C.accept) E.goers[f.idx] = true; });
+  servantsAlive().forEach(function (f) { if (f.team !== h.team && G.ai[f.idx] && f.hp > f.def.hp * C.acceptHp && rnd() < C.accept) E.goers[f.idx] = true; });
   G.event = E; FX.event('challenge', E);
 }
 function challengeTick(E, dt) {
@@ -2292,7 +2297,7 @@ function grailPull(f) { var E = G.event; if (!E || E.kind !== 'grail') return nu
 function grailMad(f) { var E = G.event; return !!(E && E.kind === 'grail' && E.corrupt && !f.def.isMaster && Math.hypot(f.x - E.x, f.y - E.y) < 450); }
 /* ---- second batch of events: the Demolition, the Shadow, the Festival; and the Great Cavern as a fourth final site ---- */
 var EVT2 = {
-  demo: { charges: 3, ring: 230, plant: 6, disarm: 4, dur: 150, fuse: 25, need: 2, blastR: 460, blastDmg: 45 },
+  demo: { charges: 3, ring: 230, plant: 4, disarm: 5, dur: 150, fuse: 20, need: 2, blastR: 460, blastDmg: 45 },
   shadow: { spd: 150, touch: 70, drain: 20, swallow: 0.15, sense: 2000, minNight: 2, minDead: 2 },
   festival: { x: 3700, y: 4700, r: 720, crowd: 45, mult: 3, relicNeed: 15, relicDmg: 1.08 },
   cavern: { chance: 0.15, r0: 1150, r1: 450, grace: 75 }
@@ -2601,7 +2606,7 @@ function aiWar(ai, dt) {
   var EH = G.event; if (EH && EH.kind === 'horror' && !EH.boss.dead && f.team !== EH.culprit && !f.isPlayerMate && f.hp > f.def.hp * 0.45 && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) < 3200 && !(near && nd < 300 && !inTruce(f, near))) { if (f.spirit === 2) press(f, 'spirit'); var bx = clamp(EH.boss.x, 5720, 6280), by = EH.boss.y < 3300 ? 2440 : 5560; if (Math.hypot(f.x - bx, f.y - by) > 60) moveTo(f, bx, by, 1); else { f.inp.mx = 0; f.inp.my = 0; } if (f.st === 'idle' && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) - EH.boss.r < (f.A.light.reach || 80) + 20) press(f, 'light'); return; }
   var gps = grailPull(f); if (gps && !f.isPlayerMate && Math.hypot(f.x - gps.x, f.y - gps.y) > gps.r - 200 && !(near && nd < 300)) { if (f.spirit === 2) press(f, 'spirit'); moveTo(f, gps.x, gps.y, 1); return; }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
-  if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * 0.35 && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
+  if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
   if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
@@ -2629,6 +2634,8 @@ function aiWar(ai, dt) {
   }
   if (st === 'passive') { aiTick(ai, dt); noOffense(f); if (m && dist(f, m) > 200) moveTo(f, m.x, m.y); return; }
   f.lock = null;
+  // before the final night, a servant that breaks off is let go: no chasing the wounded across the city
+  if (near && near.recover && !near.def.isMaster && nd > 260 && clockOn() && !finalNight() && !f.isPlayerMate) { near = null; nd = 1e9; }
   if (!near || nd > 1400) {
     var tgt = near || f.foe; if (m && dist(f, m) > 500) { moveTo(f, m.x, m.y); return; }
     if (G.time < 100 && !f.inM && MAP.haven && !G.quick) { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }

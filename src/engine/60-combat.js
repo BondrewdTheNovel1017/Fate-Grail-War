@@ -23,6 +23,7 @@ function hurt(att, def, a, mult, src) {
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
   if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; }
   if (def.reinfT > 0) dmg *= 0.6;
+  if (def.def.isMaster && G.clock && !G.clock.final) { dmg *= MASTER_GUARD; if (att && att.def.isMaster) dmg *= 0.5; } // before the final night masters fight from cover, and rarely duel each other
   if (a.silence && def.shieldT > 0) { def.shieldT = 0; def.shieldN = 0; dmg *= 2; FX.text(def, 'MERCURY SHATTERED'); }
   else if (def.shieldT > 0 && def.shieldN > 0 && !a.unblock) { def.shieldN--; if (def.shieldN <= 0) def.shieldT = 0; FX.text(def, 'MERCURY WALL'); FX.spark(def.x, def.y, '#d8dde2', 10); FX.snd('block', def, a); if (src) src.dead = true; return 'block'; }
   if (a.kind === 'proj' && !a.wave) dmg *= 1 - (def.def.arrowRes || (def.def.armor ? 0.4 : 0));
