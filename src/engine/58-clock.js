@@ -29,8 +29,8 @@ function clockTick(dt) {
   var c = G.clock; if (!c) return;
   c.t += dt;
   if (!c.final && c.t >= c.len) {
-    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); FX.phase('day', c.n, false); }
-    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; G.tasks = []; c.final = c.n >= c.nights; FX.phase('night', c.n, c.final); }
+    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); newPhaseEvents(); FX.phase('day', c.n, false); }
+    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; G.tasks = []; c.final = c.n >= c.nights; newPhaseEvents(); FX.phase('night', c.n, c.final); }
     civShift();
   }
   // resting at home by day: wounds close, mana returns
@@ -57,6 +57,7 @@ function knows(f, e) { return knowsExact(f, e) || (clockOn() && (G.expo[e.team] 
 function rumored(team) { return clockOn() && !G.clock.final && (G.expo[team] || 0) >= EXPO.rumor; }
 // where an AI goes looking when it knows of nobody: landmarks, rival homes, busy places
 function huntPoint(f) {
+  var E = G.event; if (E && E.kind === 'harbor' && !f.def.isMaster && f.hp > f.def.hp * 0.6) return { x: E.x, y: E.y };
   var nz = null, nd = 1e9; (G.noise || []).forEach(function (q) { var d = Math.hypot(q.x - f.x, q.y - f.y); if (G.time - q.t < 15 && d < q.r && d < nd && d > 150) { nd = d; nz = q; } });
   if (nz) { f.hunt = { x: nz.x, y: nz.y }; f.huntT = G.time + 20; return f.hunt; }
   if (f.hunt && G.time < f.huntT && dist(f, f.hunt) > 220) return f.hunt;

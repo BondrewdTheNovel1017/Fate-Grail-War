@@ -11,11 +11,11 @@ FX.field = function (kind, F, e) {
 };
 FX.truename = function (team, s, how) {
   if (!G.f[MEI] || team !== G.f[MEI].team) return;
-  note('True name: the ' + s.def.cls + ' is ' + s.def.name + (how === 'np' ? ', revealed by its Noble Phantasm' : ', read from the battle site'), '#ffd36b');
+  note('True name: the ' + s.def.cls + ' is ' + s.def.name + (how === 'np' ? ', revealed by its Noble Phantasm' : how === 'banquet' ? ', named at the King\u2019s table' : ', read from the battle site'), '#ffd36b');
   buildHud();
 };
 FX.task = function (t, k, msg) { if (!G.f[MEI] || t !== G.f[MEI].team) return; FX.banner(k.name, msg); FX.snd('chant', G.f[MEI]); };
-var TASK_ICON = { fortify: 'Fortify', ley: 'Ley line', trace: 'Investigate', school: 'School' }, TASK_COL = { fortify: '#7fc4ee', ley: '#b48cff', trace: '#f0a85a', school: '#7ac08a' };
+var TASK_ICON = { fortify: 'Fortify', ley: 'Ley line', trace: 'Investigate', school: 'School', banquet: 'The King\u2019s Banquet' }, TASK_COL = { fortify: '#7fc4ee', ley: '#b48cff', trace: '#f0a85a', school: '#7ac08a', banquet: '#e8bf4a' };
 // bounded fields: a ring of runes in the owner's color; a Caster's Temple gets a second ring
 function drawFields(g, vr, t) {
   if (!G || !G.fields) return;

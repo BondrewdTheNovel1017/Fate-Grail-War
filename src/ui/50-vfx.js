@@ -74,8 +74,9 @@ function npfireGen(f, x, y) {
   }
 }
 function rgbaOf(h, a) { return 'rgba(' + rgbOf(h) + ',' + a + ')'; }
+var fxExtra = null;
 FX.fx = function (name, x, y, f) {
-  fxPos = { x: x, y: y };
+  fxPos = { x: x, y: y }; if (fxExtra && fxExtra(name, x, y, f)) return;
   var col = f && f.def ? f.def.col : '#fff', id = f && f.def ? f.def.id : '';
   switch (name) {
     case 'parry': ringFx(x, y, 8, 72, '#ffffff', 0.3, 6); raysFx(x, y, 8, 14, 64, '#ffffff', 0.24, 3); break;

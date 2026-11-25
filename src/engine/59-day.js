@@ -104,17 +104,20 @@ function finishTask(t, k) {
   if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); note = 'Bounded field strengthened to level ' + F.lvl; }
   else if (k.kind === 'ley') { if (m) { m.mana = m.manaMax; m.manaBonus = 40; } note = 'Mana overflows: full mana and 40 stored'; }
   else if (k.kind === 'school') { G.expo[t] = Math.max(0, (G.expo[t] || 0) - 35); if (m) m.mana = m.manaMax; note = 'A normal school day: suspicion fades'; }
+  else if (k.kind === 'banquet') { banquetDone(t, k); note = 'You share the king\u2019s wine, and the names of everyone at the table'; }
   else if (k.kind === 'trace') { var id = k.sv.filter(function (q) { return !G.tn[t][q]; })[0], s = G.f.filter(function (f) { return f.def.id === id; })[0]; if (s) learnName(t, s, 'trace'); note = 'Traces read'; }
   FX.task(t, k, note);
 }
 // the AI's choice of what to do today
 function aiDayGoal(f) {
+  var E = G.event;
+  if (E && E.kind === 'school' && E.culprit !== f.team && (inSchool(f) || STUDENTS[f.def.id] || Math.hypot(f.x - E.x, f.y - E.y) < 3500)) { var c = null, cd = 1e9; E.circles.forEach(function (q) { var d = Math.hypot(f.x - q.x, f.y - q.y); if (q.up && d < cd) { cd = d; c = q; } }); if (c) return c; }
   if (!G.tasks || !G.tasks.length) return null;
   if (f.hp < f.def.hp * 0.6 || (f.partner && f.partner.hp < f.partner.def.hp * 0.5)) return null;
   var best = null, bs = -1e9;
   G.tasks.forEach(function (k) {
     if (!taskFor(f.team, k)) return;
-    var v = { fortify: 60, trace: 50, ley: 30, school: 45 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
+    var v = { fortify: 60, trace: 50, ley: 30, school: 45, banquet: k.host === f.team ? 120 : 40 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
     if (G.f.some(function (e) { return e.team !== f.team && e.st !== 'dead' && Math.hypot(e.x - k.x, e.y - k.y) < 500 && knows(f, e); })) v -= 60;
     if (v > bs) { bs = v; best = k; }
   });

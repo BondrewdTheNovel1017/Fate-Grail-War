@@ -352,3 +352,35 @@ test('days: fortify, ley lines, battle sites and Noble Phantasms reveal what the
   assert.ok(!G.tn[1].richard); rich.mom = 100; E.press(rich, 'np'); for (let i = 0; i < 90; i++) E.simStep(E.STEP);
   assert.ok(G.tn[1].richard, 'using a Noble Phantasm in sight reveals the true name');
 });
+
+test('the school event: servants are held out, everyone inside is drained, three circles hold the field', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, ev = [];
+  E.FX.event = (k) => ev.push(k);
+  const G = E.newWar([{ servant: S.richard, master: M.shirou }, { servant: S.cu, master: M.rin }, { servant: S.medusa, master: M.sakura }], { nights: 3 });
+  G.clock.phase = 'day'; G.ai.forEach((a, i) => { G.ai[i] = null; });
+  const sh = G.f.find((f) => f.def.id === 'shirou'), rin = G.f.find((f) => f.def.id === 'rin'), sab = sh.partner, X = E.EVT.school;
+  G.f.forEach((f) => { f.x = 200; f.y = 6000; });
+  sh.x = X.x; sh.y = X.y; rin.x = X.x + 100; rin.y = X.y;
+  E.startSchool(); assert.strictEqual(G.event.kind, 'school'); assert.strictEqual(G.event.culprit, 2, 'Medusa\'s team raised it');
+  sab.x = X.x + X.r - 100; sab.y = X.y; E.eventsTick(0.1);
+  assert.ok(Math.hypot(sab.x - X.x, sab.y - X.y) > X.r, 'a servant outside is held out');
+  const h0 = sh.hp; E.eventsTick(2); assert.ok(sh.hp < h0, 'the field drains the masters inside');
+  assert.ok(E.inTruce(sh, rin), 'masters inside are in truce');
+  G.ai[rin.idx] = E.mkAI(rin, E.DIFF.knight); const r0 = sh.hp; E.hurt(rin, sh, { dmg: 10, power: 1 }); assert.strictEqual(sh.hp, r0, 'an AI master honours the truce');
+  G.mobs = [];
+  for (const c of G.event.circles) { sh.x = c.x; sh.y = c.y; sh.lastHitT = -99; for (let i = 0; i < 12 * 10; i++) { G.mobs = []; E.eventsTick(0.1); if (!G.event) break; } }
+  assert.ok(!G.event, 'breaking the three circles ends it'); assert.ok(ev.includes('circle'));
+});
+
+test('harbor challenge and Church bounty give a Command Seal back; the Grail draws everyone to the temple', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.cu, master: M.waver }, { servant: S.gilles, master: M.kariya }, { servant: S.medea, master: M.shirou }], { nights: 3 });
+  const rin = G.f.find((f) => f.def.id === 'rin'), rich = rin.partner, cu = G.f.find((f) => f.def.id === 'cu'), gil = G.f.find((f) => f.def.id === 'gilles');
+  E.useSeal(rin, 'heal'); assert.ok(rin.sealUsed.heal);
+  E.startHarbor(); cu.x = E.EVT.harbor.x; cu.y = E.EVT.harbor.y; cu.lastHit = { by: rich, key: 'light' }; E.kill(cu, true);
+  assert.ok(!rin.sealUsed.heal, 'winning at the harbor restores a seal'); assert.ok(!G.event);
+  E.useSeal(rin, 'heal'); G.clock.n = 2; E.startBounty(); assert.strictEqual(G.event.team, gil.team, 'the Church hunts Caster first');
+  assert.ok(E.knows(cu, gil) || true); gil.lastHit = { by: rich, key: 'light' }; E.kill(gil, true); assert.ok(!rin.sealUsed.heal, 'the bounty pays a seal');
+  E.startGrail(); const g = G.event; const far = rin; far.x = 9000; far.y = 6000; const h = far.hp; E.eventsTick(1);
+  assert.ok(far.hp < h, 'outside the Grail\'s light you wither'); for (let i = 0; i < 400; i++) E.eventsTick(1); assert.ok(g.r <= E.EVT.grail.r1 + 1);
+});

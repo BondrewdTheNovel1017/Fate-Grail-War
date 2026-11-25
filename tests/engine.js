@@ -3,7 +3,7 @@
 const { engineSource } = require('../tools/build.js');
 
 const EXPORTS = ['SERV', 'ORDER', 'CLASSES', 'MASTERS', 'MASTER_ORDER', 'DIFF', 'MAPS', 'STEP', 'FR',
-  'FX', 'SERV_DUEL', 'assignHomes', 'navPath', 'cityNav', 'zoneOf', 'navAttach', 'doorTick', 'roomAt', 'sameZone', 'knows', 'knowsExact', 'concealed', 'learnName', 'startDay', 'finishTask', 'fieldsTick', 'skipDay', 'isDay', 'CLOCK', 'EXPO', 'expose', 'witness', 'rectsIn', 'newGame', 'MAP_ORDER', 'newWar', 'warTeams', 'formContract', 'contractCandidate', 'canNP', 'npManaCost', 'MANA', 'initMana', 'mkAI', 'simStep', 'press', 'hurt', 'kill', 'useSeal', 'sealsLeft', 'setMarble', 'breakMarble', 'enemiesOf', 'gainMom', 'dist'];
+  'FX', 'SERV_DUEL', 'assignHomes', 'navPath', 'cityNav', 'zoneOf', 'navAttach', 'doorTick', 'roomAt', 'sameZone', 'knows', 'knowsExact', 'concealed', 'learnName', 'startDay', 'finishTask', 'fieldsTick', 'eventsTick', 'startSchool', 'startHarbor', 'startBounty', 'startGrail', 'inTruce', 'EVT', 'skipDay', 'isDay', 'CLOCK', 'EXPO', 'expose', 'witness', 'rectsIn', 'newGame', 'MAP_ORDER', 'newWar', 'warTeams', 'formContract', 'contractCandidate', 'canNP', 'npManaCost', 'MANA', 'initMana', 'mkAI', 'simStep', 'press', 'hurt', 'kill', 'useSeal', 'sealsLeft', 'setMarble', 'breakMarble', 'enemiesOf', 'gainMom', 'dist'];
 
 function loadEngine() {
   const body = engineSource() + '\nreturn { ' + EXPORTS.map((n) => n + ': ' + n).join(', ') +
