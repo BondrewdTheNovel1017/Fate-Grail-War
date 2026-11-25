@@ -227,6 +227,7 @@ function drawFighter(f) {
   if (f.hid && f.idx === 0) { ctx.fillStyle = 'rgba(200,215,225,.85)'; ctx.font = '600 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('HIDDEN', f.x, f.y - 40); }
   var bw = 48; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(f.x - bw / 2, f.y + FR + 14, bw, 5);
   ctx.fillStyle = base; ctx.fillRect(f.x - bw / 2, f.y + FR + 14, bw * clamp(f.hp / d.hp, 0, 1), 5); ctx.globalAlpha = 1;
+  if (d.mag && f.ammo !== undefined && f.st !== 'dead') { var am = f.reloadT > 0 ? 1 - f.reloadT / d.mag.reload : f.ammo / d.mag.size; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(f.x - bw / 2, f.y + FR + 21, bw, 3); ctx.fillStyle = f.reloadT > 0 ? '#8a94a0' : '#ffd36b'; ctx.fillRect(f.x - bw / 2, f.y + FR + 21, bw * clamp(am, 0, 1), 3); }
 }
 var THEME = {
   fuyuki: { floor: '#2a333b', block: '#5a6470', obs: '#2f5a33' },

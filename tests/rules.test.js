@@ -167,3 +167,16 @@ test('arena modes: duel, free-for-all, teams, masters and pairs all finish', () 
   G = E.newWar([{ servant: S.cu, master: M.rin }, { servant: S.richard, master: M.shirou }], { map: 'bridge', quick: true });
   arenaRun(E, G, 500); assert.ok(G.over, 'pairs');
 });
+
+test('Kiritsugu\'s Calico runs dry and reloads', () => {
+  const E = loadEngine();
+  const G = pairWar(E, 'richard', 'kiritsugu', 'cu', 'kirei');
+  const k = G.f[1], foe = G.f[3];
+  k.x = 3000; k.y = 3000; foe.x = 3300; foe.y = 3000; k.lock = foe; k.sta = 100;
+  run(E, 0.1); assert.strictEqual(k.ammo, 50, 'starts with a full magazine');
+  E.press(k, 'heavy'); run(E, 2.2);
+  assert.ok(k.ammo <= 32 && k.ammo >= 26, 'a long burst spends about twenty rounds (' + k.ammo + ' left)');
+  run(E, 1.0); k.ammo = 3; k.sta = 100; E.press(k, 'heavy'); run(E, 1.4);
+  assert.ok(k.reloadT > 0 || k.ammo === 50, 'an empty magazine starts a reload');
+  run(E, 2.5); assert.strictEqual(k.ammo, 50, 'reloaded');
+});

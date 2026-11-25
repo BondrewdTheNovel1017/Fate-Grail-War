@@ -22,6 +22,8 @@ function hud() {
   $('#spl').textContent = a.spirit === 2 ? 'unseen' : a.spirit ? '...' : ''; $('#tgl').textContent = a.lock ? 'locked' : 'auto'; document.querySelector('.b[data-b="target"]').classList.toggle('locked', !!a.lock);
   var sk = document.querySelector('.b[data-b="skill"]'); sk.classList.toggle('off', a.cd > 0 || (a.def.isMaster && a.silenceT > 0));
   var ls = a.A.lightSeq, lt = $('#lightSp'), ht = $('#heavySp');
+  document.querySelector('.b[data-b="light"]').classList.toggle('off', a.reloadT > 0); document.querySelector('.b[data-b="heavy"]').classList.toggle('off', a.reloadT > 0);
+  if (a.def.mag) { lt.textContent = a.reloadT > 0 ? 'Reloading' : (a.ammo === undefined ? a.def.mag.size : a.ammo) + '/' + a.def.mag.size; ht.textContent = a.reloadT > 0 ? 'Reloading' : 'burst'; } else
   if (a.A.arms) { lt.textContent = a.armT > 0 ? a.A.arms[a.arm].name + ' ' + Math.ceil(a.armT) : 'Fists'; ht.textContent = 'hold'; } else
   if (ls) { var ni = (a.st === 'rec' && a.key === 'light') ? Math.min(a.combo + 1, ls.length - 1) : 0; lt.textContent = ls[ni].tag; ht.textContent = a.A.heavy.tag + ' \u00B7 hold'; } else { lt.textContent = ''; ht.textContent = 'hold'; }
 }

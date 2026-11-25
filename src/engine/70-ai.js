@@ -272,5 +272,5 @@ function aiMaster(ai, dt) {
     if (np.aiUse === 'ally' && sf && dist(s, sf) < 420) { press(f, 'np'); return; }
     if (np.aiUse === 'ubw' && sf && !sf.def.isMaster && dist(f, sf) < 560 && dist(s, sf) < 500) { press(f, 'np'); return; }
   }
-  if (tg && f.st === 'idle' && ai.cool <= 0) { var d2 = dist(f, tg); if (d2 < 560 && losClear(f, tg)) { f.lock = tg; if (Math.random() < 0.25 && d2 < 420) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.55; } else press(f, 'light'); ai.cool = (0.7 + Math.random() * 0.9) * (1.6 - cfg.agg); } else f.lock = null; }
+  if (tg && f.st === 'idle' && ai.cool <= 0) { var d2 = dist(f, tg); if (d2 < 560 && losClear(f, tg)) { f.lock = tg; if (Math.random() < 0.25 && d2 < 420 && (!f.def.mag || f.ammo >= 20)) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.55; } else press(f, 'light'); ai.cool = (0.7 + Math.random() * 0.9) * (1.6 - cfg.agg); } else f.lock = null; }
 }

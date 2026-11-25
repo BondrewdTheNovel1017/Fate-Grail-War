@@ -87,6 +87,7 @@ function startAct(f, key) {
   if (key === 'light' && f.A.lightSeq) a = f.A.lightSeq[Math.min(f.combo, f.A.lightSeq.length - 1)];
   if ((key === 'light' || key === 'heavy') && f.armT > 0 && f.arm >= 0 && f.A.arms) a = f.A.arms[f.arm][key];
   if ((key === 'light' || key === 'heavy') && f.brokenT > 0) { FX.text(f, 'NO BLADE'); return false; }
+  if ((key === 'light' || key === 'heavy') && !canFire(f, a)) return false;
   if (f.sta <= 0 || f.exh > 0) return false;
   f.hidAct = !!(f.hid && key !== 'np'); if (key === 'np') { f.hid = false; f.hidAct = false; }
   f.quietT = 0; f.hid = false;
@@ -155,7 +156,7 @@ function strikeInit(f) {
   if (f.key === 'np' && !f.def.isMaster) { if (a.breaksMarble) breakMarble(f); FX.snd('npfire:' + f.def.id, f, a); FX.fx('npfire', f.x, f.y, f); }
   if (k === 'melee') { if (a.arc) meleeCheck(f, a.lunge > 100 ? Object.assign({}, a, { reach: a.reach + a.lunge * 0.85 }) : a, mult); }
   else if (k === 'proj') { spawnProj(f, a, mult, f.face, 0); if (a.breakT) { f.brokenT = a.breakT + a.rec; FX.text(f, 'BLADE SHATTERED'); FX.fx('swordBreak', f.x + Math.cos(f.face) * 40, f.y + Math.sin(f.face) * 40, f); } }
-  else if (k === 'volley') { for (var vi = 0; vi < a.count; vi++) spawnProj(f, a, mult, f.face + (vi - (a.count - 1) / 2) * a.spread, vi); FX.shake(3); }
+  else if (k === 'volley') { var vn = a.ammo && hasMag(f) ? Math.min(a.count, f.ammo) : a.count; for (var vi = 0; vi < vn; vi++) { if (a.ammo && hasMag(f)) takeRound(f); spawnProj(f, a, mult, f.face + (vi - (vn - 1) / 2) * a.spread, vi); } FX.shake(3); }
   else if (k === 'aoe') {
     enemiesOf(f).forEach(function (e) { if (dist(f, e) <= a.r + FR) { var r = hurt(f, e, a, 1); if (r === 'hit' || r === 'gbreak') { var an = angTo(f, e); e.kx = Math.cos(an) * 260; e.ky = Math.sin(an) * 260; } } });
     if (f.key !== 'np') { FX.spark(f.x, f.y, '#f0a93b', 16); FX.shake(7); FX.fx('slam', f.x, f.y, f); } else { FX.shake(14); }
@@ -225,6 +226,7 @@ function stepF(f, dt) {
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
+    if (f.def.mag) ammoTick(f, dt);
     if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);
     if (f.sigCd > 0) f.sigCd -= dt; if (f.silenceT > 0) f.silenceT -= dt; if (f.shieldT > 0) f.shieldT -= dt; if (f.rootT > 0) f.rootT -= dt; if (f.buffT > 0) f.buffT -= dt; if (f.reinfT > 0) f.reinfT -= dt;
   }
@@ -281,6 +283,7 @@ function stepF(f, dt) {
       turnToward(f, toO, a.track || 1.2, dt);
       f.barT += dt;
       while (f.barN * a.rate <= f.barT && f.barN * a.rate < a.act) {
+        if (a.ammo && hasMag(f)) { if (f.ammo <= 0) { f.t = Math.max(f.t, a.act); FX.text(f, 'CLICK'); break; } takeRound(f); }
         f.barN++; spawnProj(f, a.bullet, 1, f.face + (rnd() - 0.5) * 2 * a.spread);
         FX.snd('gun', f); FX.spark(f.x + Math.cos(f.face) * 44, f.y + Math.sin(f.face) * 44, '#ffd36b', 1);
       }
