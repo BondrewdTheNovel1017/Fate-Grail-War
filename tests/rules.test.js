@@ -82,7 +82,7 @@ test('Shirou learns Trace On at 40 and Unlimited Blade Works at 100', () => {
 test('AI wars finish without errors', () => {
   const E = loadEngine();
   for (let n = 0; n < 2; n++) {
-    const G = aiWar(E, E.warTeams(E.ORDER[n * 5], E.MASTER_ORDER[n], 4));
+    const G = aiWar(E, E.warTeams(E.ORDER[n * 5], E.MASTER_ORDER[n], 4), { nights: 1 });
     run(E, 1500);
     assert.ok(G.over, 'war ' + n + ' ended');
     for (const f of G.f) assert.ok(Number.isFinite(f.x) && Number.isFinite(f.hp), 'finite state');
@@ -276,4 +276,39 @@ test('hit-stop freezes only the two fighters in a hit; the rest of the war moves
   assert.ok(a.hs > 0 && d.hs > 0, 'attacker and defender freeze');
   assert.ok(!(c.hs > 0) && G.hitstop === 0, 'nobody else does');
   const t0 = G.time; E.simStep(E.STEP); assert.ok(G.time > t0, 'the war keeps running');
+});
+
+test('nights and days: the war runs night, day, night... and ends on a final night', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 3), { nights: 3 });
+  assert.strictEqual(G.clock.phase, 'night'); assert.strictEqual(G.clock.n, 1);
+  G.clock.t = G.clock.len - 0.01; E.simStep(E.STEP); assert.strictEqual(G.clock.phase, 'day'); assert.strictEqual(G.clock.n, 2);
+  G.f[0].hp = 50; G.f[0].x = G.f[0].home[0]; G.f[0].y = G.f[0].home[1]; for (let i = 0; i < 300; i++) E.simStep(E.STEP);
+  assert.ok(G.f[0].hp > 50, 'resting at home by day heals');
+  E.skipDay(); for (let i = 0; i < E.CLOCK.fade * 60 + 5; i++) E.simStep(E.STEP);
+  assert.strictEqual(G.clock.phase, 'night'); assert.ok(!G.clock.final);
+  G.clock.t = G.clock.len; E.simStep(E.STEP); G.clock.t = G.clock.len; E.simStep(E.STEP);
+  assert.ok(G.clock.final, 'night 3 is the final night'); assert.ok(G.civ.length > 0, 'civilians walk the city');
+});
+
+test('at night a fighter only knows what is close; on the final night everyone knows', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 2), { nights: 3 });
+  const a = G.f[0], b = G.f.find((f) => f.team !== a.team);
+  G.f.forEach((f) => { f.x = 3700; f.y = 4700; }); b.x = a.x + 3000; G.f.filter((f) => f.team === b.team).forEach((f) => { f.x = b.x; f.y = b.y; });
+  assert.ok(!E.knows(a, b), 'far away at night: unknown');
+  b.x = a.x + 300; assert.ok(E.knows(a, b), 'close: known');
+  b.x = a.x + 3000; G.clock.final = true; assert.ok(E.knows(a, b), 'final night: known');
+});
+
+test('civilians who see a fight raise the team\'s exposure; the Church acts at the top', () => {
+  const E = loadEngine(), seen = [];
+  E.FX.church = (k, t) => seen.push(k);
+  const G = E.newWar(E.warTeams('richard', 'rin', 2), { nights: 3 });
+  G.civ.forEach((c, i) => { c.on = i < 10; c.x = 3700 + i * 10; c.y = 4700; c.saw = -99; });
+  const n = E.witness(3700, 4700, [0], 1);
+  assert.strictEqual(n, 10); assert.ok(G.expo[0] > 0); assert.ok(G.civ[0].flee > 0, 'witnesses run');
+  assert.strictEqual(E.witness(3700, 4700, [0], 1), 0, 'a witness counts once in a while');
+  E.expose(0, 200); assert.ok(seen.includes('rumor') && seen.includes('warn') && seen.includes('sanction'));
+  assert.ok(E.knows(G.f.find((f) => f.team === 1), G.f[0]), 'a sanctioned team is visible to everyone');
 });

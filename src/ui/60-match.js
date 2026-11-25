@@ -13,7 +13,7 @@ function startMatch() {
   if (NET.role === 'client') return;
   MEI = 0; NET.mirror = false;
   var nt = NET.role === 'host' ? netTeams() : { teams: warTeams(CFG.servant, CFG.master, CFG.teams), slots: {} }, teams = nt.teams, spawn = [0].concat(shuffled([1, 2, 3, 4, 5, 6]));
-  newWar(teams, { playAs: CFG.playAs, spawnOrder: spawn });
+  newWar(teams, { playAs: CFG.playAs, spawnOrder: spawn, nights: NET.role === 'host' ? 1 : (CFG.nights || 3) });
   for (var k2 = 1; k2 < G.f.length; k2++) G.ai[k2] = mkAI(G.f[k2], DIFF[CFG.diff]);
   if (NET.role === 'host') {
     NET.game = { id: Math.random().toString(36).slice(2, 8), teams: teams.map(function (t) { return [t.servant.id, t.master.id]; }), spawn: spawn, playAs: CFG.playAs, slots: nt.slots };
@@ -33,7 +33,7 @@ function enterGame(nTeams, title, sub) {
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
   if (title) { FX.banner(title, sub); return; }
-  BUB = []; DUO = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
+  NOTES = []; BUB = []; DUO = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }
@@ -42,6 +42,7 @@ function startCurrent() { if (CFG.game === 'arena') startArena(); else startMatc
 $('#go').addEventListener('click', startCurrent);
 $('#again').addEventListener('click', function () { if (NET.role === 'client') { netSay('Waiting for the host to start again.'); endMatch(); return; } startCurrent(); });
 $('#menu').addEventListener('click', endMatch); $('#menu2').addEventListener('click', endMatch); $('#quit').addEventListener('click', endMatch);
+$('#restBtn').addEventListener('click', function () { if (G && isDay() && !NET.mirror) { skipDay(); note('You rest until nightfall.'); } });
 $('#pause').addEventListener('click', function () { paused = true; $('#pz').classList.add('on'); });
 $('#resume').addEventListener('click', function () { paused = false; last = performance.now(); $('#pz').classList.remove('on'); });
 document.addEventListener('visibilitychange', function () { if (document.hidden && running && !G.over) { paused = true; $('#pz').classList.add('on'); } });

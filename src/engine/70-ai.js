@@ -183,7 +183,7 @@ startAct = function (f, key) {
   return ok;
 };
 function zoneGap(a, b) { return MAP.cityW && !sameZone(a, b) ? 2500 : 0; }
-function nearestEnemyTo(f, pt, maxD) { var b = null, bd = maxD || 1e9; enemiesOf(f).forEach(function (e) { var d = dist(e, pt) + zoneGap(e, pt.def ? pt : f); if (d < bd) { bd = d; b = e; } }); return b; }
+function nearestEnemyTo(f, pt, maxD) { var b = null, bd = maxD || 1e9; enemiesOf(f).forEach(function (e) { if (!knows(f, e)) return; var d = dist(e, pt) + zoneGap(e, pt.def ? pt : f); if (d < bd) { bd = d; b = e; } }); return b; }
 function moveTo(f, x, y, k) {
   var sv = steer(f, x, y), now = G.time;
   if (f._mvT === undefined || now - f._mvT > 0.5) { var moved = f._mvX === undefined ? 99 : Math.hypot(f.x - f._mvX, f.y - f._mvY); f._mvX = f.x; f._mvY = f.y; f._mvT = now; if (moved < 12 && Math.hypot(x - f.x, y - f.y) > 60 && f.st === 'idle' && !(f.rootT > 0)) { f._usA = Math.atan2(sv[1], sv[0]) + (Math.random() < 0.5 ? 1 : -1) * (1.2 + Math.random()); f._usT = now + 0.8; } }
@@ -201,6 +201,9 @@ function aiWar(ai, dt) {
   if (f.recover && (f.hp > f.def.hp * 0.85 || (near && nd < 300))) f.recover = false;
   if (f.recover && st === 'charge' && !f.isPlayerMate) st = 'spirit';
   if (f.sealOrder > 0 && st !== 'charge') st = 'charge';
+  if (m && m.fleeing && !f.isPlayerMate && !(f.sealOrder > 0) && st === 'charge') st = 'protect';
+  if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * 0.35 && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
+  if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
     if (f.spirit === 0 && f.st === 'idle' && nd > 160) press(f, 'spirit');
@@ -228,6 +231,7 @@ function aiWar(ai, dt) {
   if (!near || nd > 1400) {
     var tgt = near || f.foe; if (m && dist(f, m) > 500) { moveTo(f, m.x, m.y); return; }
     if (G.time < 100 && !f.inM && MAP.haven && !G.quick) { var hs = f.home || MAP.spawns.at(f.team); if (!f.patrol || dist(f, f.patrol) < 90 || G.time > f.patrolT) { var pa = rnd() * 6.283, pr = 250 + rnd() * 650; f.patrol = { x: clamp(hs[0] + Math.cos(pa) * pr, 100, W - 100), y: clamp(hs[1] + Math.sin(pa) * pr, 100, H - 100) }; f.patrolT = G.time + 9; } moveTo(f, f.patrol.x, f.patrol.y, 0.6); return; }
+    if (clockOn() && !finalNight() && !near) { var hp2 = huntPoint(f); moveTo(f, hp2.x, hp2.y, 0.85); return; }
     if (tgt) { moveTo(f, tgt.x, tgt.y, 0.85); return; } }
   aiTick(ai, dt);
 }
@@ -247,6 +251,11 @@ function aiMaster(ai, dt) {
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
     var haven = MAP.haven ? MAP.haven : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
     moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.haven) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
+  // before the final night a wounded master breaks off and runs home; the servant covers the retreat
+  if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75) f.fleeing = true; else if (f.hp > f.def.hp * 0.9) f.fleeing = false; } else f.fleeing = false;
+  if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
+  // by day a master goes home to rest unless an enemy servant is right there
+  if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) { if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140) moveTo(f, f.home[0], f.home[1], 1); else { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
@@ -265,7 +274,7 @@ function aiMaster(ai, dt) {
   // close-quarters masters (Shirou, Kirei) duel enemy masters when no enemy servant is guarding them
   if (A.light.kind === 'melee') {
     var em = null, ed = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) { var d4 = dist(f, e); if (d4 < ed) { ed = d4; em = e; } } });
-    if (em && ed < 650 && f.hp > f.def.hp * 0.35) { var guarded = em.partner && em.partner.st !== 'dead' && dist(em.partner, em) < 260 && !(dist(s, em) < 300); if (!guarded) { f.lock = em; f.foe = em; aiTick(ai, dt); return; } }
+    if (em && ed < (clockOn() && !finalNight() ? 300 : 650) && f.hp > f.def.hp * 0.35) { var guarded = em.partner && em.partner.st !== 'dead' && dist(em.partner, em) < 260 && !(dist(s, em) < 300); if (!guarded) { f.lock = em; f.foe = em; aiTick(ai, dt); return; } }
   }
   var sf = s.foe, bx = s.x, by = s.y;
   if (sf) { var ba = angTo(sf, s); bx = s.x + Math.cos(ba) * 150; by = s.y + Math.sin(ba) * 150; }

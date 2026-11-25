@@ -25,6 +25,10 @@ function buildNav(M) {
     r.pts.sort(function (a, b) { return r.h ? a.x - b.x : a.y - b.y; });
     for (var k = 1; k < r.pts.length; k++) link(r.pts[k - 1], r.pts[k]);
   });
+  // footpaths through walled yards: a chain of waypoints whose ends join the nearest road
+  (M.walks || []).forEach(function (ch) { var prev = null; ch.forEach(function (p) { var n = node(p[0], p[1], 'walk'); if (prev) link(prev, n); prev = n; }); });
+  var walkNodes = nodes.filter(function (n) { return n.tag === 'walk'; });
+  walkNodes.forEach(function (n) { if (n.adj.length > 1) return; var best = null, bd = 1e9; nodes.forEach(function (q) { if (q.tag === 'walk') return; var d = Math.hypot(q.x - n.x, q.y - n.y); if (d < bd && d < 600 && rectLos(n.x, n.y, q.x, q.y, 16)) { bd = d; best = q; } }); if (best) link(n, best); });
   var roadNodes = nodes.slice();
   function nearestReach(x, y, pool, maxD) {
     var c = pool.map(function (n) { return [n, Math.hypot(n.x - x, n.y - y)]; }).filter(function (q) { return q[1] < (maxD || 1e9); }).sort(function (a, b) { return a[1] - b[1]; });

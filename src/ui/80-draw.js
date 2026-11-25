@@ -405,6 +405,7 @@ function drawWorld() {
   });
   ghosts.forEach(function (gh) { var I = IMG[gh.id].body; if (!weaponOK(I)) return; g.save(); g.globalAlpha = 0.4 * (1 - gh.t / gh.life); g.translate(gh.x, gh.y); g.rotate(gh.face); g.drawImage(I.im, I.x, I.y, I.w, I.h); g.restore(); });
   puffs.forEach(function (p) { var pp = p.t / p.life; g.beginPath(); g.arc(p.x, p.y, p.r * (1 + 1.8 * pp), 0, 6.283); g.fillStyle = 'rgba(' + p.rgb + ',' + (0.45 * (1 - pp)) + ')'; g.fill(); });
+  drawCivs(g);
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawField(f, i, ar); });
   G.f.forEach(function (f, i, ar) { if (visL(f)) drawTelegraph(f, i, ar); });
   // a fighter frozen by their own hit-stop shudders in place when they are the one hit
@@ -445,6 +446,7 @@ function draw() {
   drawWorld();
   if (G.dimT > 0) { /* spotlight on the caster */ }
   ctx.restore();
+  drawNight(cx, cy, zoom);
   if (G.dimT > 0) { var gr = ctx.createRadialGradient(VW / 2, VH / 2, 120, VW / 2, VH / 2, 460); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,' + Math.min(0.6, G.dimT * 0.8) + ')'); ctx.fillStyle = gr; ctx.fillRect(0, 0, VW, VH); }
   if (G.dimT > 0) { var cc = G.f.filter(function (f) { return f.key === 'np' && (f.st === 'wind' || f.st === 'act'); })[0]; if (cc) { ctx.globalAlpha = 0.1; ctx.fillStyle = cc.def.col; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; } }
   flashes.forEach(function (fl) { ctx.globalAlpha = fl.a * (1 - fl.t / fl.life); ctx.fillStyle = fl.col; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; });
@@ -472,7 +474,7 @@ function draw() {
   if (INTRO) { drawIntro(); return; }
   // off-screen foe pointer
   var f0 = G.f[MEI], f1 = f0.foe || G.f[1], sxp = (f1.x - cx) * zoom + VW / 2, syp = (f1.y - cy) * zoom + VH / 2;
-  if (sxp < 20 || sxp > VW - 20 || syp < 20 || syp > VH - 20) {
+  if ((sxp < 20 || sxp > VW - 20 || syp < 20 || syp > VH - 20) && knowsExact(f0, f1)) {
     var ang = Math.atan2(f1.y - f0.y, f1.x - f0.x), px = clamp(sxp, 24, VW - 24), py = clamp(syp, SAFE.top + 16, Math.max(SAFE.top + 40, VH - SAFE.bottom - 16));
     ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.fillStyle = '#e2515c'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.fill(); ctx.restore();
   }
@@ -484,5 +486,7 @@ function draw() {
   if (G.marble && G.mode === 'war') { ctx.beginPath(); ctx.arc(mx0 + G.marble.cx / MW * mw, my0 + G.marble.cy / H * mh, (G.f[MEI].inM ? G.marble.R : MARBLE_PULL) / MW * mw, 0, 6.283); ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 1.5; ctx.stroke(); }
   ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + (cx - VW / 2 / zoom) / MW * mw, my0 + (cy - VH / 2 / zoom) / H * mh, VW / zoom / MW * mw, VH / zoom / H * mh);
   if (G.homes) G.homes.forEach(function (hm) { var tf = G.f.find(function (f) { return f.team === hm.team; }); ctx.fillStyle = tf ? teamCol(tf) : '#fff'; ctx.globalAlpha = 0.85; ctx.fillRect(mx0 + hm.x / MW * mw - 3, my0 + hm.y / H * mh - 3, 6, 6); ctx.globalAlpha = 1; ctx.strokeStyle = '#0b121a'; ctx.lineWidth = 1; ctx.strokeRect(mx0 + hm.x / MW * mw - 3, my0 + hm.y / H * mh - 3, 6, 6); });
-  G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || (MAP.cityW && f.x > MAP.cityW)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / MW * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
+  drawRumors(mx0, my0, mw, mh, MW);
+  G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || (MAP.cityW && f.x > MAP.cityW) || !knowsExact(f0, f)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / MW * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
+  drawClockHud(mx0, my0, mw, mh);
 }

@@ -19,7 +19,7 @@ function miniMap(mw, mh) {
   MINI.id = key; MINI.c = c; return c;
 }
 function hud() {
-  var a = G.f[MEI];
+  var a = G.f[MEI]; var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !NET.mirror && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
   if (a.foe !== hudTarget || a.partner !== hudPartner) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';

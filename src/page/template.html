@@ -16,7 +16,7 @@
   <div class="step"><div class="stepn">1</div><div><div class="lbl">Play as</div><div class="modes" id="playas"></div></div></div>
   <div class="step"><div class="stepn">2</div><div><div class="lbl">Your servant</div><div class="roster" id="roster"></div><div class="detail" id="sdetail"></div></div></div>
   <div class="step"><div class="stepn">3</div><div><div class="lbl">Your master</div><div class="roster" id="masters"></div><div class="detail" id="mdetail"></div></div></div>
-  <div class="step"><div class="stepn">4</div><div><div class="lbl">Teams</div><div class="chips" id="rivals"></div><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div></div>
+  <div class="step"><div class="stepn">4</div><div><div class="lbl">Teams</div><div class="chips" id="rivals"></div><div class="lbl">War length</div><div class="chips" id="nightsC"></div><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div></div>
   <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
     <p class="note" style="margin:0 0 8px">Up to 4 players. One person hosts and runs the war; the others pick their servant and master above, then join with the room code. AI fills the remaining classes.</p>
     <div class="chips"><button type="button" class="chip" id="netHost">Host a room</button><input id="netCode" class="netin" maxlength="8" placeholder="Room code" autocomplete="off" aria-label="Room code"><button type="button" class="chip" id="netJoin">Join</button><button type="button" class="chip" id="netLeave" hidden>Leave room</button></div>
@@ -61,7 +61,7 @@
 <section id="duel">
   <div class="hud" id="hud"></div>
   <div class="stage"><canvas id="cv" width="800" height="500"></canvas>
-    <div class="top"><button type="button" id="snd">Sound on</button><button type="button" id="fs">Full screen</button><button type="button" id="pause">Pause</button><button type="button" id="quit">Quit</button></div>
+    <div class="top"><button type="button" id="snd">Sound on</button><button type="button" id="fs">Full screen</button><button type="button" id="restBtn" hidden>Rest until nightfall</button><button type="button" id="pause">Pause</button><button type="button" id="quit">Quit</button></div>
     <div class="toast" id="toast"></div></div>
   <div class="pad">
     <div id="stick" aria-label="Movement stick"><div id="knob"></div></div>

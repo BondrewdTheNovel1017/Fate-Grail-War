@@ -1,7 +1,7 @@
 
 /* ================= UI / RENDER ================= */
 var $ = function (s) { return document.querySelector(s); };
-var CFG = { game: 'war', servant: 'richard', master: 'rin', playAs: 'servant', teams: 7, diff: 'knight', speed: 1, arena: null };
+var CFG = { game: 'war', servant: 'richard', master: 'rin', playAs: 'servant', teams: 7, nights: 3, diff: 'knight', speed: 1, arena: null };
 try { var sv = JSON.parse(localStorage.getItem('war2.cfg') || 'null'); if (sv) Object.keys(CFG).forEach(function (k) { if (sv[k] !== undefined) CFG[k] = sv[k]; }); } catch (e) {}
 if (!SERV[CFG.servant]) CFG.servant = 'richard'; if (!MASTERS[CFG.master]) CFG.master = 'rin'; if ([3, 4, 7].indexOf(CFG.teams) < 0) CFG.teams = 7; if (CFG.game !== 'arena') CFG.game = 'war';
 var FFA_COL = ['#3fb3c4', '#cf4a52', '#e0b04a', '#a77be0'];

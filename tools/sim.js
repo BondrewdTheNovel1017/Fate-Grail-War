@@ -7,7 +7,7 @@ const { loadEngine, run, aiWar } = require('../tests/engine.js');
 const WARS = +(process.argv[2] || 20), TEAMS = +(process.argv[3] || 7), LIMIT = 1800;
 const E = loadEngine();
 const S = {}, M = {}, cause = { servant: {}, master: {} };
-const tot = { ended: 0, len: [], contracts: 0, marbles: 0, nps: 0, noMana: 0, seals: { np: 0, heal: 0, warp: 0 } };
+const tot = { ended: 0, len: [], contracts: 0, marbles: 0, nps: 0, noMana: 0, seals: { np: 0, heal: 0, warp: 0 }, teamT: 0, deadT: 0, nights: [], expo: [], sanctions: 0 };
 const row = (T, id) => T[id] || (T[id] = { games: 0, wins: 0, kills: 0, deaths: 0, alive: 0 });
 let noMana = 0; const text0 = E.FX.text; E.FX.text = function (f, s) { if (s === 'NO MANA') noMana++; return text0.apply(this, arguments); };
 const t0 = Date.now();
@@ -16,7 +16,16 @@ for (let n = 0; n < WARS; n++) {
   const G = aiWar(E, E.warTeams(my, mm, TEAMS));
   const start = G.f.map((f) => ({ f, id: f.def.id }));
   let marble = null; noMana = 0;
-  for (let i = 0; i < LIMIT * 60 && !G.over; i++) { E.simStep(E.STEP); if (G.marble && G.marble !== marble) { marble = G.marble; tot.marbles++; } }
+  for (let i = 0; i < LIMIT * 60 && !G.over; i++) {
+    E.simStep(E.STEP); if (G.marble && G.marble !== marble) { marble = G.marble; tot.marbles++; }
+    // dead time: a living team with no enemy within 1500 at night (days are meant to be quiet)
+    if (i % 30 === 0 && (!G.clock || G.clock.phase === 'night')) {
+      const alive = G.f.filter((f) => f.st !== 'dead'), teams = [...new Set(alive.map((f) => f.team))];
+      for (const t of teams) { const mine = alive.filter((f) => f.team === t), foes = alive.filter((f) => f.team !== t);
+        tot.teamT += 0.5; if (!mine.some((a) => foes.some((b) => Math.hypot(a.x - b.x, a.y - b.y) < 1500))) tot.deadT += 0.5; }
+    }
+  }
+  if (G.clock) { tot.nights.push(G.clock.n); tot.expo.push(Math.max(0, ...Object.values(G.expo))); tot.sanctions += Object.keys(G.reveal).length; }
   tot.noMana += noMana;
   if (G.over) { tot.ended++; tot.len.push(G.time); }
   tot.contracts += G.contracts || 0;
@@ -37,6 +46,7 @@ function table(title, T) {
   Object.keys(T).sort((a, b) => T[b].wins / T[b].games - T[a].wins / T[a].games).forEach((id) => { const r = T[id]; console.log('  ' + id.padEnd(12) + String(r.games).padStart(6) + pct(r.wins, r.games).padStart(7) + (r.kills / r.games).toFixed(2).padStart(9) + pct(r.deaths, r.games).padStart(8)); });
 }
 console.log(`Balance report: ${WARS} wars of ${TEAMS} teams (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+console.log(`  night dead time ${(100 * tot.deadT / Math.max(1, tot.teamT)).toFixed(0)}% of team-time; ended on night ${tot.nights.join(',')}; sanctions ${tot.sanctions}`);
 console.log(`  finished ${tot.ended}/${WARS}, length avg ${(avg(tot.len) / 60).toFixed(1)} min (min ${(Math.min(...tot.len) / 60).toFixed(1)}, max ${(Math.max(...tot.len) / 60).toFixed(1)})`);
 console.log(`  per war: ${(tot.nps / WARS).toFixed(1)} NPs, ${(tot.noMana / WARS).toFixed(1)} blocked for mana, ${(tot.contracts / WARS).toFixed(2)} contracts, ${(tot.marbles / WARS).toFixed(2)} marbles`);
 console.log(`  seals used per war: NP ${(tot.seals.np / WARS).toFixed(1)}, heal ${(tot.seals.heal / WARS).toFixed(1)}, recall ${(tot.seals.warp / WARS).toFixed(1)}`);

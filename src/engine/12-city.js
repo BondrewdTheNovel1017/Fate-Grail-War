@@ -108,7 +108,7 @@ MAPS.city = (function () {
   B(1720, 4790, 540, 20, 'wall'); B(2480, 4790, 740, 20, 'wall'); B(1450, 5135, 20, 690, 'wall'); B(2850, 5135, 20, 690, 'wall'); B(2150, 5480, 1400, 20, 'wall');
   B(2050, 4790, 170, 46, 'gate_roof', { walk: true, over: true });
   B(2090, 5320, 260, 130, 'water', { nb: true, hide: true }); B(1810, 5420, 70, 40, 'woodpile');
-  T(1600, 4860, 14, 'lantern'); T(2420, 4860, 14, 'lantern'); T(2210, 5260, 12, 'lantern'); T(1520, 4860, 26, 'pine'); T(2770, 4880, 30, 'pine'); T(1870, 5225, 30, 'persimmon');
+  T(1600, 4860, 14, 'lantern'); T(2420, 4860, 14, 'lantern'); T(2210, 5260, 12, 'lantern'); T(1520, 4860, 26, 'pine'); T(2770, 4880, 30, 'pine'); T(1850, 5300, 30, 'persimmon');
   reserve(1450, 4780, 2860, 5490);
   // Mount Miyama shopping street (covered arcade along H5)
   for (var sx = 3170; sx <= 4250; sx += 135) { B(sx, 4580, 120, 110, 'shop'); B(sx, 4820, 120, 110, 'shop'); }
@@ -273,6 +273,7 @@ MAPS.city = (function () {
   };
   return {
     id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
+    walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]]], // footpaths through walled yards the road graph cannot see
     spots: spots, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
     river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [2850, 1800], [5000, 1180]]
   };
