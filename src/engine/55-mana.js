@@ -4,7 +4,7 @@
    A servant whose master runs dry fights weaker. A masterless servant pays for its NP with its own remaining time. */
 var MANA = { upkeep: 0.25, farDist: 1800, farDrain: 0.8, npCost: 40, marbleCost: 55, sigCost: 12, skillCost: 6, starved: 5, starveDmg: 0.85, orphanNp: 6 };
 // [pool, regen per second]
-var MANA_POOL = { rin: [100, 2.0], kiritsugu: [70, 1.4], shirou: [45, 0.8], kayneth: [110, 2.2], kirei: [80, 1.6], waver: [60, 1.2], irisviel: [100, 2.0], kariya: [50, 0.8], illya: [160, 3.2], sakura: [130, 2.6] };
+var MANA_POOL = { rin: [100, 2.0], kiritsugu: [70, 1.4], shirou: [45, 0.8], kayneth: [110, 2.2], kirei: [90, 1.8], waver: [75, 1.5], irisviel: [100, 2.0], kariya: [50, 0.8], illya: [140, 2.8], sakura: [130, 2.6] };
 function initMana(m) { var p = MANA_POOL[m.def.id] || [80, 1.6]; m.manaMax = p[0]; m.manaRegen = p[1]; m.mana = p[0] * 0.75; }
 function livingMaster(s) { var m = s.partner; return m && m.def.isMaster && m.st !== 'dead' ? m : null; }
 function npManaCost(s) { var a = s.A.np; return a.manaCost || ((a.marble || a.kind === 'ubw') ? MANA.marbleCost : MANA.npCost); }
