@@ -1,5 +1,5 @@
 var HUD = [];
-function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
+function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(knownName(f)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
 var hudTarget = null, hudPartner = null;
 function buildHud() {
   var me0 = G.f[MEI], tg = me0.foe, list;
@@ -26,7 +26,7 @@ function enterGame(nTeams, title, sub) {
   var me0 = G.f[MEI];
   parts = []; texts = []; V = []; puffs = []; ghosts = []; flashes = []; cracks = []; band.t = 0; slowT = 0; audInit(); shake = 0; endShown = false; speedMul = CFG.speed; acc = 0;
   buildHud(); renderStances(); $('#skl').textContent = me0.A.skill.name.split(': ').pop().split(' ').slice(0, 2).join(' ');
-  document.querySelector('.b[data-b="spirit"]').hidden = !!me0.def.isMaster || G.mode !== 'war';
+  var spb = document.querySelector('.b[data-b="spirit"]'); spb.hidden = !!me0.def.isMaster || (G.mode !== 'war' && me0.def.cls !== 'Assassin'); spb.firstChild.textContent = me0.def.cls === 'Assassin' ? 'Conceal' : 'Spirit';
   document.querySelectorAll('.b.seal').forEach(function (el) { el.classList.remove('used'); });
   $('#ordBtn').hidden = $('#sealBtn').hidden = !me0.def.isMaster || !me0.partner; closePops();
   $('#setup').style.display = 'none'; $('#duel').style.display = 'block'; document.body.classList.add('ingame'); $('#end').classList.remove('on'); $('#pz').classList.remove('on');

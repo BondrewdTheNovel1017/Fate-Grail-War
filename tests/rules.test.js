@@ -312,3 +312,43 @@ test('civilians who see a fight raise the team\'s exposure; the Church acts at t
   E.expose(0, 200); assert.ok(seen.includes('rumor') && seen.includes('warn') && seen.includes('sanction'));
   assert.ok(E.knows(G.f.find((f) => f.team === 1), G.f[0]), 'a sanctioned team is visible to everyone');
 });
+
+test('bounded fields: every home has one; a Caster makes a Temple; intruders are felt, a concealed Assassin is not', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.medea, master: M.shirou }, { servant: S.hassan, master: M.kirei }], { nights: 3 });
+  assert.strictEqual(G.fields[0].lvl, 2, 'mage family field'); assert.strictEqual(G.fields[1].lvl, 2, 'fledgling + Caster temple'); assert.ok(G.fields[1].temple);
+  const F = G.fields[0], rich = G.f.find((f) => f.def.id === 'richard'), med = G.f.find((f) => f.def.id === 'medea'), has = G.f.find((f) => f.def.id === 'hassan');
+  [med, has].forEach((f) => { f.x = F.x + 100; f.y = F.y; }); med.spirit = 2;
+  has.cnc = true; E.fieldsTick(0.1);
+  assert.ok(E.knowsExact(rich, med), 'a servant in spirit form is felt by the field');
+  rich.x = F.x - 2000; rich.y = F.y; G.f.filter((f) => f.team === 0).forEach((f) => { f.x = F.x - 2000; f.y = F.y; });
+  assert.ok(!E.knowsExact(rich, has), 'a concealed Assassin is not');
+  has.cnc = false; E.fieldsTick(0.1); assert.ok(E.knowsExact(rich, has), 'until it shows itself');
+});
+
+test('Presence Concealment: the Assassin vanishes, strikes from hiding, and is found only up close', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.hassan, master: M.kirei }, { servant: S.richard, master: M.rin }], { map: 'fuyuki', quick: true });
+  const h = G.f.find((f) => f.def.id === 'hassan'), r = G.f.find((f) => f.def.id === 'richard');
+  E.press(h, 'spirit'); E.simStep(E.STEP); E.simStep(E.STEP);
+  assert.ok(h.cnc && h.hid, 'concealed');
+  h.x = r.x + 400; h.y = r.y; assert.ok(!E.knowsExact(r, h), 'unseen at range');
+  h.x = r.x + 90; assert.ok(E.knowsExact(r, h), 'found up close');
+  E.press(h, 'light'); for (let i = 0; i < 30; i++) E.simStep(E.STEP);
+  assert.ok(!h.cnc, 'attacking ends it');
+});
+
+test('days: fortify, ley lines, battle sites and Noble Phantasms reveal what they should', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.cu, master: M.waver }], { nights: 3 });
+  const cu = G.f.find((f) => f.def.id === 'cu'), rin = G.f.find((f) => f.def.id === 'rin');
+  assert.ok(!G.tn[0].cu, 'names start unknown');
+  G.traces.push({ x: 3700, y: 4700, t: 1, sv: ['cu'], teams: [1] }); E.startDay(); G.clock.phase = 'day';
+  const tr = G.tasks.find((k) => k.kind === 'trace'), fo = G.tasks.find((k) => k.kind === 'fortify' && k.team === 0), ley = G.tasks.find((k) => k.kind === 'ley');
+  E.finishTask(0, tr); assert.ok(G.tn[0].cu, 'the battle site gives Cu Chulainn away');
+  const l0 = G.fields[0].lvl; E.finishTask(0, fo); assert.strictEqual(G.fields[0].lvl, l0 + 1);
+  E.finishTask(0, ley); assert.ok(rin.manaBonus > 0 && rin.mana === rin.manaMax);
+  const rich = G.f.find((f) => f.def.id === 'richard'); cu.x = rich.x = 3700; cu.y = rich.y = 4700; rich.x += 200;
+  assert.ok(!G.tn[1].richard); rich.mom = 100; E.press(rich, 'np'); for (let i = 0; i < 90; i++) E.simStep(E.STEP);
+  assert.ok(G.tn[1].richard, 'using a Noble Phantasm in sight reveals the true name');
+});

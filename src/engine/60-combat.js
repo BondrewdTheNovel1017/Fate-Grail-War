@@ -12,6 +12,9 @@ function hurt(att, def, a, mult, src) {
   if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
+  if (att && G.tn && att.team !== def.team && !def.def.isMaster && G.clock && G.tn[att.team] && G.tn[att.team][def.def.id]) dmg *= 1.1; // true name known
+  if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
+  if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
   if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; }
@@ -64,7 +67,7 @@ function hurt(att, def, a, mult, src) {
   if (a.silence && def.def.isMaster) { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); }
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
-  def.quietT = 0; def.hid = false;
+  def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
   if (a.strip) { breakField(def, 'FIELD BROKEN'); def.wallT = 0; def.veilT = 0; def.bleedT = 0; def.mom = 0; FX.text(def, 'STRIPPED'); FX.spark(def.x, def.y, '#d6b4ff', 14); }
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
@@ -91,7 +94,7 @@ function startAct(f, key) {
   if ((key === 'light' || key === 'heavy') && !canFire(f, a)) return false;
   if (f.sta <= 0 || f.exh > 0) return false;
   f.hidAct = !!(f.hid && key !== 'np'); if (key === 'np') { f.hid = false; f.hidAct = false; }
-  f.quietT = 0; f.hid = false;
+  f.quietT = 0; f.hid = false; if (f.cnc) { f.cnc = false; f.cncCd = G.time + 3; }
   f.act = a; f.key = key; f.st = 'wind'; f.t = 0; f.hitDone = false; f.atkId++;
   f.sta -= a.cost; f.stDelay = 0.7;
   if (f.sta <= 0) { f.sta = 0; f.exh = 1.0; f.stDelay = 0.9; FX.snd('exhaust', f); }
@@ -102,7 +105,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) npSeen(f); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -210,7 +213,8 @@ function stepF(f, dt) {
       else f.stillT = Math.max(0, f.stillT - dt * 2);
       if (f.field) f.field.t += dt;
     }
-    if (f.def.conceal) { if (f.st === 'idle' || f.st === 'dodge' || f.st === 'rec' && false) { f.quietT += dt; if (!f.hid && f.quietT >= f.def.conceal) { f.hid = true; FX.fx('hide', f.x, f.y, f); } } }
+    // Presence Concealment: an Assassin's own spirit form. Unseen, it heals out of combat and can strike straight from it
+    if (f.cnc) { f.hid = true; if (G.time - (f.lastHitT || -99) > 4) f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
   }
   if (f.bleedT > 0 && f.st !== 'dead' && !G.over) { f.bleedT -= dt; var bd = f.bleedDps * dt; f.hp -= bd; f.stat.taken += bd; if (f.bleedBy) f.bleedBy.stat.dealt += bd; if (Math.floor(G.time * 14) % 3 === 0) FX.spark(f.x, f.y, f.burnFx ? '#ff8a3a' : '#b3202a', f.burnFx ? 2 : 1); if (f.hp <= 0) kill(f); } if (f.buf.t > 0) f.buf.t -= dt; else f.buf.name = null;
   if (f.ripo > 0) f.ripo -= dt; if (f.crit > 0) f.crit -= dt; if (f.wallT > 0) f.wallT -= dt; if (f.veilT > 0) f.veilT -= dt; if (f.ghT > 0) f.ghT -= dt; if (f.exh > 0) f.exh -= dt; if (f.hit > 0) f.hit -= dt;
@@ -245,7 +249,7 @@ function stepF(f, dt) {
   var slow = (G.f.some(function (c) { return c.team !== f.team && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
   var toO = angTo(f, o);
   if (f.st === 'idle') {
-    var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.buffT > 0 ? 1.1 : 1);
+    var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.fslowT > G.time ? f.fslowK : 1) * (f.buffT > 0 ? 1.1 : 1);
     var L = Math.hypot(f.inp.mx, f.inp.my); if (L > 1) L = 1;
     var dl = Math.hypot(f.inp.mx, f.inp.my) || 1;
     vx = f.inp.mx / dl * L * sp; vy = f.inp.my / dl * L * sp;
@@ -257,6 +261,7 @@ function stepF(f, dt) {
       if (n === 'dodge') { startDodge(f); ok = true; }
       else if (n === 'skill') { if (f.def.isMaster && G.mode === 'war' && f.cd <= 0 && !(f.silenceT > 0) && !canPay(f, MANA.skillCost)) FX.text(f, 'NO MANA'); else if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
       else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0) && (G.mode !== 'war' || canPay(f, MANA.sigCost))) : (f.mom >= 100 && canNP(f))) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); else if (f.def.isMaster ? f.sigCd <= 0 : f.mom >= 100) FX.text(f.def.isMaster ? f : (livingMaster(f) || f), 'NO MANA'); }
+      else if (n === 'spirit' && f.def.cls === 'Assassin') { if (f.cnc) { f.cnc = false; f.hid = false; f.cncCd = G.time + 1; FX.fx('spiritOut', f.x, f.y, f); } else if (G.time >= (f.cncCd || 0) && f.st === 'idle') { f.cnc = true; f.hid = true; FX.fx('hide', f.x, f.y, f); } ok = true; }
       else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
       else if (n === 'heavy') { f.combo = 0; ok = startAct(f, 'heavy'); }
       else if (n === 'light') { f.combo = 0; ok = startAct(f, 'light'); }

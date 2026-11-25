@@ -321,7 +321,7 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
 (function () {
 /*ENGINE_START*/
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, near: function () { return true; } };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, near: function () { return true; } };
 // hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
 // Hit-stop is per fighter: only the attacker and the one hit freeze, the rest of the war keeps moving.
 function hitPause(att, def, v) { if (att) att.hs = Math.max(att.hs || 0, v); if (def) def.hs = Math.max(def.hs || 0, v); }
@@ -1035,8 +1035,8 @@ var CLS = {
   Lancer: { pname: 'Swift Footwork', desc: 'Dodge rolls cost 30% less stamina, so a Lancer can keep dodging long after others run dry.' },
   Archer: { pname: 'Independent Action', desc: 'Needs no master to hold their power: if the Noble Phantasm cast is interrupted, they keep 40% of their momentum instead of losing it all.' },
   Rider: { pname: 'Riding', desc: 'Moves 8% faster, and charge attacks hit 12% harder.' },
-  Caster: { pname: 'Territory Creation', desc: 'Stand still for 1 second to raise a bounded field, 230 units wide. Inside it the caster\'s spells hit 12% harder, the skill cooldown recovers 50% faster, stamina returns 30% faster, and enemies move 12% slower. The field collapses if the caster leaves it, is staggered, or is stripped of enchantments.' },
-  Assassin: { pname: 'Presence Concealment', desc: 'After 1.5 seconds without attacking or being hit, the assassin fades from sight. Their next light, heavy or skill attack shows no warning telegraph.' },
+  Caster: { pname: 'Territory Creation', desc: 'Stand still for 1 second to raise a bounded field, 230 units wide. Inside it the caster\'s spells hit 12% harder, the skill cooldown recovers 50% faster, stamina returns 30% faster, and enemies move 12% slower. The field collapses if the caster leaves it, is staggered, or is stripped of enchantments. In the Grail War a Caster also makes the team\'s home a Temple: its bounded field starts a level higher, can grow a level further, and strikes intruders sooner.' },
+  Assassin: { pname: 'Presence Concealment', desc: 'The Spirit button becomes Conceal: the assassin vanishes almost completely, heals while out of combat, and can strike straight from hiding. The first blow shows no warning and hits 20% harder. Enemies only find a concealed assassin up close, and bounded fields never notice one. Attacking or being hit ends it; 3 seconds before the next.' },
   Berserker: { pname: 'Mad Enhancement', desc: 'Deals 10% more damage, but their guard is 8 points weaker. Reason is traded for raw force.' }
 };
 Object.keys(SERV).forEach(function (k) {
@@ -1169,7 +1169,7 @@ function newGame(dA, dB, opts) {
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
 function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 function pickTarget(f) {
-  if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2)) f.lock = null;
+  if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
   var best = null, bd = 1e9, es = enemiesOf(f);
   for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
@@ -1192,7 +1192,7 @@ function newWar(teamsIn, opts) {
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
-  G.homes = homes; initClock(opts);
+  G.homes = homes; initClock(opts); if (MAP.cityW && !G.quick) initFields();
   G.f.forEach(pickTarget);
   return G;
 }
@@ -1237,12 +1237,13 @@ function kill(f, noRevive) {
     FX.text(f, 'GOD HAND'); FX.fx('godhand', f.x, f.y, f); FX.snd('godhand', f); if (FX.near(f.x, f.y)) { FX.shake(10); G.hitstop = Math.max(G.hitstop, 0.3); FX.slow(0.6); }
     return;
   }
-  f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0;
+  f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0; f.cnc = false;
   f.cause = f.cause || (f.lastHit ? (f.lastHit.key === 'np' && !f.lastHit.by.def.isMaster ? 'np' : f.lastHit.by.def.isMaster ? 'master' : 'combat') : 'other'); f.killer = f.lastHit ? f.lastHit.by : null;
   if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? ARCHER_INDEPENDENT : ORPHAN_TIME; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
   var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
   else { G.f.forEach(pickTarget); }
+  if (G.tn) traceKill(f);
   if (G.mode === 'war') { if (f.killer && f.killer.st !== 'dead' && f.killer !== f) FX.say(f.killer, 'kill'); if (f.partner && f.partner.st !== 'dead' && f.partner.team === f.team) FX.say(f.partner, f.def.isMaster ? 'masterdown' : 'servantdown'); }
   FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); if (FX.near(f.x, f.y)) { G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.slow(1.1); }
 }
@@ -1257,8 +1258,9 @@ function initMana(m) { var p = MANA_POOL[m.def.id] || [80, 1.6]; m.manaMax = p[0
 function livingMaster(s) { var m = s.partner; return m && m.def.isMaster && m.st !== 'dead' ? m : null; }
 function npManaCost(s) { var a = s.A.np; return a.manaCost || ((a.marble || a.kind === 'ubw') ? MANA.marbleCost : MANA.npCost); }
 // can master m pay `cost`? Kariya pays any shortfall in blood
-function canPay(m, cost) { return m.mana >= cost || !!(m.def.bloodMana && m.hp > cost - m.mana + 30); }
+function canPay(m, cost) { return m.mana + (m.manaBonus || 0) >= cost || !!(m.def.bloodMana && m.hp > cost - m.mana + 30); }
 function payMana(m, cost) {
+  if (m.manaBonus > 0) { var fromB = Math.min(m.manaBonus, cost); m.manaBonus -= fromB; cost -= fromB; if (cost <= 0) return true; }
   if (m.mana >= cost) { m.mana -= cost; return true; }
   if (m.def.bloodMana) { var need = cost - m.mana; if (m.hp > need + 30) { m.mana = 0; m.hp -= need; m.stat.taken += need; FX.text(m, 'CREST WORMS -' + Math.round(need)); return true; } }
   return false;
@@ -1354,18 +1356,22 @@ function clockTick(dt) {
   var c = G.clock; if (!c) return;
   c.t += dt;
   if (!c.final && c.t >= c.len) {
-    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; FX.phase('day', c.n, false); }
-    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; c.final = c.n >= c.nights; FX.phase('night', c.n, c.final); }
+    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); FX.phase('day', c.n, false); }
+    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; G.tasks = []; c.final = c.n >= c.nights; FX.phase('night', c.n, c.final); }
     civShift();
   }
   // resting at home by day: wounds close, mana returns
   if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
-  civTick(dt);
+  civTick(dt); tasksTick(dt);
 }
 /* ---- what a fighter knows: at night only what is close, what hit them, what rumor or the Church reveals ---- */
 function knowsExact(f, e) {
-  if (!clockOn() || G.clock.final || !e || !f || e.team === f.team) return true;
+  if (!e || !f || e.team === f.team) return true;
+  // an Assassin in Presence Concealment is found only up close, or by the one it just struck
+  if (concealed(e) && !(sameZone(f, e) && dist(f, e) < 120) && !(f.lastHit && f.lastHit.by === e && G.time - (f.lastHitT || -99) < 3)) return false;
+  if (G.seenBy && G.seenBy[f.team] && G.seenBy[f.team][e.idx] > G.time) return true;
+  if (!clockOn() || G.clock.final) return true;
   if (G.reveal[e.team] > G.time) return true;
   var r = senseRange();
   if (sameZone(f, e) && dist(f, e) < r) return true;
@@ -1456,6 +1462,128 @@ function civTick(dt) {
     if ((i + Math.floor(G.time * 60)) % 4 === 0) rectsIn(c.x - 12, c.y - 12, c.x + 12, c.y + 12).forEach(function (r) { pushOutRect(c, r, 8); });
   }
 }
+/* ---- 3b-2: bounded fields, true names and what teams do by day ----
+   Every home is a mage's workshop with a bounded field. Mage families start with stronger fields;
+   a Caster servant turns the home into a Temple on top of whatever the master built.
+   Any enemy that crosses a field is felt by its owners, spirit form or not. Only an Assassin's
+   Presence Concealment slips through. Fields slow intruders and, when strong, fire on them.
+   By day each team chooses what to do: fortify the home, draw on a ley line, investigate where
+   last night's battles happened (and learn a servant's true name), or, for the students, go to school. */
+var FIELD = { baseR: 380, perLvl: 70, slow: [1, 1, 0.9, 0.86, 0.82, 0.78], bolt: [0, 0, 0, 7, 5, 3.5], boltDmg: 7, home: [1, 1, 1.06, 1.08, 1.12, 1.15], seen: 5 };
+var DAYTASK = { fortify: 35, ley: 30, trace: 22, school: 30, contest: 320 };
+var LEY = [{ x: 1500, y: 1060, name: 'Ryuudou Temple ley line' }, { x: 1260, y: 3060, name: 'Church hill ley line' }, { x: 10400, y: 4900, name: 'Central Park ley line' }];
+var SCHOOL = { x: 4050, y: 2720, name: 'Homurahara Academy' }, STUDENTS = { shirou: 1, rin: 1, sakura: 1 };
+function initFields() {
+  G.fields = {}; G.seenBy = {}; G.tn = {}; G.traces = []; G.tasks = [];
+  if (!G.homes || !MAP.cityW) return;
+  G.homes.forEach(function (h) {
+    var t = h.team, m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0], s = m && m.partner;
+    var lvl = m && m.def.type === 'Mage family' ? 2 : 1, max = m && m.def.type === 'Mage family' ? 4 : 3, temple = !!(s && s.def.cls === 'Caster');
+    if (temple) { lvl += 1; max += 1; }
+    var rooms = (MAP.rooms || []).filter(function (r) { return h.canon && (r.id === h.key || (h.key === 'emiya' && r.id === 'shed')); }).map(function (r) { return r.id; });
+    G.fields[t] = { team: t, x: h.x, y: h.y, lvl: lvl, max: max, temple: temple, rooms: rooms, boltT: 3, name: h.name, inside: {} };
+    G.seenBy[t] = {}; G.tn[t] = {};
+  });
+  G.f.forEach(function (f) { if (!f.def.isMaster) G.tn[f.team][f.def.id] = true; });
+}
+function fieldR(F) { return FIELD.baseR + FIELD.perLvl * F.lvl; }
+function fieldAlive(F) { return G.f.some(function (f) { return f.team === F.team && f.st !== 'dead' && (f.def.isMaster || f.def.cls === 'Caster'); }); }
+function inHomeField(F, f) {
+  if (f.x > MAP.cityW) { var rm = roomAt(f.x, f.y); return !!(rm && F.rooms.indexOf(rm.id) >= 0); }
+  return Math.hypot(f.x - F.x, f.y - F.y) <= fieldR(F);
+}
+function concealed(f) { return !!(f.cnc && f.def.cls === 'Assassin'); }
+function fieldAt(f) { if (!G.fields) return null; for (var t in G.fields) { var F = G.fields[t]; if (+t !== f.team && F.lvl > 0 && inHomeField(F, f)) return F; } return null; }
+function ownField(f) { var F = G.fields && G.fields[f.team]; return F && F.lvl > 0 && inHomeField(F, f) ? F : null; }
+function fieldsTick(dt) {
+  if (!G.fields) return;
+  for (var t in G.fields) {
+    var F = G.fields[t]; if (F.lvl > 0 && !fieldAlive(F)) { F.lvl = 0; FX.field('fade', F, null); }
+    if (F.lvl <= 0) continue;
+    var intr = [];
+    G.f.forEach(function (e) {
+      if (e.team === F.team || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
+      var inside = inHomeField(F, e);
+      if (inside && !concealed(e)) {
+        G.seenBy[F.team][e.idx] = G.time + FIELD.seen;
+        if (!F.inside[e.idx]) FX.field('intrude', F, e);
+        intr.push(e);
+        if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }
+      }
+      if (inside && !F.inside[e.idx] && e.idx !== undefined && !concealed(e)) FX.field('enter', F, e);
+      F.inside[e.idx] = inside && !concealed(e);
+    });
+    // a strong field strikes at intruders who are materialized
+    var bt = FIELD.bolt[F.lvl];
+    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2 && !e.def.isMaster; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)]; FX.field('bolt', F, e); hurt(null, e, { dmg: FIELD.boltDmg + F.lvl * 2, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
+    else F.boltT = Math.max(F.boltT, 1.5);
+  }
+}
+function trueName(team, s) { return !s || s.def.isMaster || !G.tn || !G.tn[team] || !!G.tn[team][s.def.id]; }
+function learnName(team, s, how) { if (!G.tn || !G.tn[team] || s.def.isMaster || G.tn[team][s.def.id]) return false; G.tn[team][s.def.id] = true; FX.truename(team, s, how); return true; }
+// using a Noble Phantasm where a team can see it gives the servant's identity away
+function npSeen(f) {
+  if (!G.tn) return;
+  var seen = {}; G.f.forEach(function (o) { if (o.st !== 'dead' && o.team !== f.team && sameZone(o, f) && dist(o, f) < 1300) seen[o.team] = 1; });
+  for (var t in seen) learnName(+t, f, 'np');
+  if (isDay() || !clockOn()) return;
+  G.traces.push({ x: f.x, y: f.y, t: G.time, sv: [f.def.id], teams: [f.team] });
+}
+function traceKill(f) { if (!clockOn() || isDay() || f.x > MAP.cityW) return; var sv = [f, f.killer].filter(function (q) { return q && !q.def.isMaster; }).map(function (q) { return q.def.id; }); var tm = f.killer ? [f.team, f.killer.team] : [f.team]; if (f.partner && !f.partner.def.isMaster) sv.push(f.partner.def.id); G.traces.push({ x: f.x, y: f.y, t: G.time, sv: sv, teams: tm }); }
+/* ---- day tasks ---- */
+function startDay() {
+  G.tasks = [];
+  if (!G.fields) return;
+  LEY.forEach(function (l) { G.tasks.push({ kind: 'ley', x: l.x, y: l.y, r: 170, name: l.name, need: DAYTASK.ley, prog: {}, done: {} }); });
+  G.tasks.push({ kind: 'school', x: SCHOOL.x, y: SCHOOL.y, r: 260, name: SCHOOL.name, need: DAYTASK.school, prog: {}, done: {} });
+  var tr = G.traces.slice().reverse(), picked = [];
+  tr.forEach(function (q) { if (picked.length < 3 && !picked.some(function (p) { return Math.hypot(p.x - q.x, p.y - q.y) < 900; })) picked.push(q); });
+  picked.forEach(function (q, i) { G.tasks.push({ kind: 'trace', x: q.x, y: q.y, r: 170, name: 'Battle site ' + (i + 1), sv: q.sv, need: DAYTASK.trace, prog: {}, done: {} }); });
+  for (var t in G.fields) { var F = G.fields[t]; if (F.lvl > 0 && F.lvl < F.max) G.tasks.push({ kind: 'fortify', x: F.x, y: F.y, r: 220, name: 'Fortify ' + F.name, team: +t, need: DAYTASK.fortify, prog: {}, done: {} }); }
+  G.traces = [];
+}
+function taskFor(team, k) {
+  if (k.team !== undefined && k.team !== team) return false;
+  if (k.done[team]) return false;
+  if (k.kind === 'school') return G.f.some(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead' && STUDENTS[f.def.id]; });
+  if (k.kind === 'trace') return k.sv.some(function (id) { return !G.tn[team][id] && G.f.some(function (f) { return f.def.id === id && f.team !== team; }); });
+  return true;
+}
+function tasksTick(dt) {
+  if (!isDay() || !G.tasks.length) return;
+  G.tasks.forEach(function (k) {
+    var teams = {};
+    G.f.forEach(function (f) { if (f.st !== 'dead' && !f.inM && f.x < MAP.cityW && Math.hypot(f.x - k.x, f.y - k.y) < k.r && (f.def.isMaster || k.kind !== 'school')) teams[f.team] = 1; });
+    for (var t in teams) {
+      t = +t; if (!taskFor(t, k)) continue;
+      var contested = G.f.some(function (e) { return e.team !== t && e.st !== 'dead' && e.spirit !== 2 && !concealed(e) && Math.hypot(e.x - k.x, e.y - k.y) < DAYTASK.contest; });
+      k.cont = k.cont || {}; k.cont[t] = contested; if (contested) continue;
+      k.prog[t] = (k.prog[t] || 0) + dt;
+      if (k.prog[t] >= k.need) { k.done[t] = true; finishTask(t, k); }
+    }
+  });
+}
+function finishTask(t, k) {
+  var m = G.f.filter(function (f) { return f.team === t && f.def.isMaster && f.st !== 'dead'; })[0], note = '';
+  if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); note = 'Bounded field strengthened to level ' + F.lvl; }
+  else if (k.kind === 'ley') { if (m) { m.mana = m.manaMax; m.manaBonus = 40; } note = 'Mana overflows: full mana and 40 stored'; }
+  else if (k.kind === 'school') { G.expo[t] = Math.max(0, (G.expo[t] || 0) - 35); if (m) m.mana = m.manaMax; note = 'A normal school day: suspicion fades'; }
+  else if (k.kind === 'trace') { var id = k.sv.filter(function (q) { return !G.tn[t][q]; })[0], s = G.f.filter(function (f) { return f.def.id === id; })[0]; if (s) learnName(t, s, 'trace'); note = 'Traces read'; }
+  FX.task(t, k, note);
+}
+// the AI's choice of what to do today
+function aiDayGoal(f) {
+  if (!G.tasks || !G.tasks.length) return null;
+  if (f.hp < f.def.hp * 0.6 || (f.partner && f.partner.hp < f.partner.def.hp * 0.5)) return null;
+  var best = null, bs = -1e9;
+  G.tasks.forEach(function (k) {
+    if (!taskFor(f.team, k)) return;
+    var v = { fortify: 60, trace: 50, ley: 30, school: 45 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
+    if (G.f.some(function (e) { return e.team !== f.team && e.st !== 'dead' && Math.hypot(e.x - k.x, e.y - k.y) < 500 && knows(f, e); })) v -= 60;
+    if (v > bs) { bs = v; best = k; }
+  });
+  return bs > 0 ? best : null;
+}
 /* source: attacker fighter (for facing checks) or projectile. returns outcome string */
 function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
@@ -1470,6 +1598,9 @@ function hurt(att, def, a, mult, src) {
   if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
   if (att && att.buffT > 0) dmg *= 1.15;
+  if (att && G.tn && att.team !== def.team && !def.def.isMaster && G.clock && G.tn[att.team] && G.tn[att.team][def.def.id]) dmg *= 1.1; // true name known
+  if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
+  if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
   if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; }
@@ -1522,7 +1653,7 @@ function hurt(att, def, a, mult, src) {
   if (a.silence && def.def.isMaster) { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); }
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
-  def.quietT = 0; def.hid = false;
+  def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
   if (a.strip) { breakField(def, 'FIELD BROKEN'); def.wallT = 0; def.veilT = 0; def.bleedT = 0; def.mom = 0; FX.text(def, 'STRIPPED'); FX.spark(def.x, def.y, '#d6b4ff', 14); }
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
@@ -1549,7 +1680,7 @@ function startAct(f, key) {
   if ((key === 'light' || key === 'heavy') && !canFire(f, a)) return false;
   if (f.sta <= 0 || f.exh > 0) return false;
   f.hidAct = !!(f.hid && key !== 'np'); if (key === 'np') { f.hid = false; f.hidAct = false; }
-  f.quietT = 0; f.hid = false;
+  f.quietT = 0; f.hid = false; if (f.cnc) { f.cnc = false; f.cncCd = G.time + 3; }
   f.act = a; f.key = key; f.st = 'wind'; f.t = 0; f.hitDone = false; f.atkId++;
   f.sta -= a.cost; f.stDelay = 0.7;
   if (f.sta <= 0) { f.sta = 0; f.exh = 1.0; f.stDelay = 0.9; FX.snd('exhaust', f); }
@@ -1560,7 +1691,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) npSeen(f); FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -1668,7 +1799,8 @@ function stepF(f, dt) {
       else f.stillT = Math.max(0, f.stillT - dt * 2);
       if (f.field) f.field.t += dt;
     }
-    if (f.def.conceal) { if (f.st === 'idle' || f.st === 'dodge' || f.st === 'rec' && false) { f.quietT += dt; if (!f.hid && f.quietT >= f.def.conceal) { f.hid = true; FX.fx('hide', f.x, f.y, f); } } }
+    // Presence Concealment: an Assassin's own spirit form. Unseen, it heals out of combat and can strike straight from it
+    if (f.cnc) { f.hid = true; if (G.time - (f.lastHitT || -99) > 4) f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
   }
   if (f.bleedT > 0 && f.st !== 'dead' && !G.over) { f.bleedT -= dt; var bd = f.bleedDps * dt; f.hp -= bd; f.stat.taken += bd; if (f.bleedBy) f.bleedBy.stat.dealt += bd; if (Math.floor(G.time * 14) % 3 === 0) FX.spark(f.x, f.y, f.burnFx ? '#ff8a3a' : '#b3202a', f.burnFx ? 2 : 1); if (f.hp <= 0) kill(f); } if (f.buf.t > 0) f.buf.t -= dt; else f.buf.name = null;
   if (f.ripo > 0) f.ripo -= dt; if (f.crit > 0) f.crit -= dt; if (f.wallT > 0) f.wallT -= dt; if (f.veilT > 0) f.veilT -= dt; if (f.ghT > 0) f.ghT -= dt; if (f.exh > 0) f.exh -= dt; if (f.hit > 0) f.hit -= dt;
@@ -1703,7 +1835,7 @@ function stepF(f, dt) {
   var slow = (G.f.some(function (c) { return c.team !== f.team && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
   var toO = angTo(f, o);
   if (f.st === 'idle') {
-    var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.buffT > 0 ? 1.1 : 1);
+    var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.fslowT > G.time ? f.fslowK : 1) * (f.buffT > 0 ? 1.1 : 1);
     var L = Math.hypot(f.inp.mx, f.inp.my); if (L > 1) L = 1;
     var dl = Math.hypot(f.inp.mx, f.inp.my) || 1;
     vx = f.inp.mx / dl * L * sp; vy = f.inp.my / dl * L * sp;
@@ -1715,6 +1847,7 @@ function stepF(f, dt) {
       if (n === 'dodge') { startDodge(f); ok = true; }
       else if (n === 'skill') { if (f.def.isMaster && G.mode === 'war' && f.cd <= 0 && !(f.silenceT > 0) && !canPay(f, MANA.skillCost)) FX.text(f, 'NO MANA'); else if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
       else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0) && (G.mode !== 'war' || canPay(f, MANA.sigCost))) : (f.mom >= 100 && canNP(f))) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); else if (f.def.isMaster ? f.sigCd <= 0 : f.mom >= 100) FX.text(f.def.isMaster ? f : (livingMaster(f) || f), 'NO MANA'); }
+      else if (n === 'spirit' && f.def.cls === 'Assassin') { if (f.cnc) { f.cnc = false; f.hid = false; f.cncCd = G.time + 1; FX.fx('spiritOut', f.x, f.y, f); } else if (G.time >= (f.cncCd || 0) && f.st === 'idle') { f.cnc = true; f.hid = true; FX.fx('hide', f.x, f.y, f); } ok = true; }
       else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
       else if (n === 'heavy') { f.combo = 0; ok = startAct(f, 'heavy'); }
       else if (n === 'light') { f.combo = 0; ok = startAct(f, 'light'); }
@@ -1906,6 +2039,8 @@ function aiTick(ai, dt) {
   if (ai.orbitT <= 0) { ai.orbit = Math.random() < 0.5 ? 1 : -1; ai.orbitT = 1 + Math.random() * 1.6; }
   var d = dist(f, o), toO = angTo(f, o);
   if (inp.heavy && G.time >= ai.relAt) inp.heavy = false;
+  if (f.def.cls === 'Assassin' && !f.cnc && f.st === 'idle' && d > 360 && G.time >= (f.cncCd || 0) && !f.isPlayerMate && Math.random() < 0.02) press(f, 'spirit');
+  if (concealed(o) && !knowsExact(f, o)) { inp.mx = 0; inp.my = 0; inp.guard = Math.random() < 0.6; turnToward(f, f.face + 0.6, 2, dt); return; }
   inp.guard = G.time < ai.guardUntil;
   // distance from stuck detection
   if (f.st === 'idle') {
@@ -2046,13 +2181,15 @@ function aiWar(ai, dt) {
   if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
-    if (f.spirit === 0 && f.st === 'idle' && nd > 160) press(f, 'spirit');
+    if (f.def.cls === 'Assassin') { if (!f.cnc && f.st === 'idle' && nd > 160 && G.time >= (f.cncCd || 0)) press(f, 'spirit'); }
+    else if (f.spirit === 0 && f.st === 'idle' && nd > 160) press(f, 'spirit');
     var hh = f.home || MAP.spawns.at(f.team), home = m || { x: hh[0], y: hh[1] };
     if (st === 'retreat' && near && nd < 400) { var aw = angTo(near, f); moveTo(f, f.x + Math.cos(aw) * 300, f.y + Math.sin(aw) * 300); }
     else if (dist(f, home) > 110) moveTo(f, home.x, home.y, 0.9); else { f.inp.mx = 0; f.inp.my = 0; }
     if (f.spirit === 0 && near && nd < 160) aiTick(ai, dt);
     noOffense(f); return;
   }
+  if (f.def.cls === 'Assassin' && !f.cnc && f.st === 'idle' && nd > 320 && G.time >= (f.cncCd || 0) && !f.isPlayerMate) press(f, 'spirit');
   if (f.spirit === 2 && ((near && nd < 420) || (st === 'charge' && f.hp > f.def.hp * 0.7))) press(f, 'spirit');
   if (f.spirit) { if (m) moveTo(f, m.x, m.y, 0.8); noOffense(f); return; }
   if (st === 'protect' && m) {
@@ -2094,8 +2231,11 @@ function aiMaster(ai, dt) {
   // before the final night a wounded master breaks off and runs home; the servant covers the retreat
   if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75) f.fleeing = true; else if (f.hp > f.def.hp * 0.9) f.fleeing = false; } else f.fleeing = false;
   if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
-  // by day a master goes home to rest unless an enemy servant is right there
-  if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) { if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140) moveTo(f, f.home[0], f.home[1], 1); else { inp.mx = 0; inp.my = 0; } return; }
+  // by day a master works on the day's tasks, or goes home to rest, unless an enemy servant is right there
+  if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) {
+    if (!(f.dayGoalT > G.time)) { f.dayGoal = aiDayGoal(f); f.dayGoalT = G.time + 6; }
+    var dg = f.dayGoal && !f.dayGoal.done[f.team] ? f.dayGoal : { x: f.home[0], y: f.home[1], r: 280 };
+    if (Math.hypot(f.x - dg.x, f.y - dg.y) > dg.r * 0.45) moveTo(f, dg.x, dg.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
@@ -2131,7 +2271,7 @@ function aiMaster(ai, dt) {
 }
 function simStep(dt) {
   if (G.hitstop > 0) { G.hitstop -= dt; return; }
-  G.time += dt; if (G.clock) clockTick(dt); if (G.dimT > 0) G.dimT -= dt; if (G.marble) { G.marble.t += dt; if (G.mode === 'war' && (G.marble.t > G.marble.life || G.marble.owner.st === 'dead')) endMarble(null, false); }
+  G.time += dt; if (G.clock) clockTick(dt); if (G.fields) fieldsTick(dt); if (G.dimT > 0) G.dimT -= dt; if (G.marble) { G.marble.t += dt; if (G.mode === 'war' && (G.marble.t > G.marble.life || G.marble.owner.st === 'dead')) endMarble(null, false); }
   G.f.forEach(function (f) { if (f.st !== 'dead' && (!f.foe || f.foe.st === 'dead' || G.f.length > 2)) pickTarget(f); });
   for (var i = 0; i < G.f.length; i++) if (G.ai[i]) { if (G.mode === 'war') aiWar(G.ai[i], dt); else aiTick(G.ai[i], dt); }
   for (var k = 0; k < G.f.length; k++) stepF(G.f[k], dt);
@@ -3321,7 +3461,7 @@ FX.fx = function (name, x, y, f) {
 FX.spark = function (x, y, col, n) { fxPos = { x: x, y: y }; for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, s = 80 + Math.random() * 220; parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: 0.25 + Math.random() * 0.25, col: col }); } };
 
 var HUD = [];
-function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(shortName(f.def.name)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
+function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(knownName(f)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
 var hudTarget = null, hudPartner = null;
 function buildHud() {
   var me0 = G.f[MEI], tg = me0.foe, list;
@@ -3348,7 +3488,7 @@ function enterGame(nTeams, title, sub) {
   var me0 = G.f[MEI];
   parts = []; texts = []; V = []; puffs = []; ghosts = []; flashes = []; cracks = []; band.t = 0; slowT = 0; audInit(); shake = 0; endShown = false; speedMul = CFG.speed; acc = 0;
   buildHud(); renderStances(); $('#skl').textContent = me0.A.skill.name.split(': ').pop().split(' ').slice(0, 2).join(' ');
-  document.querySelector('.b[data-b="spirit"]').hidden = !!me0.def.isMaster || G.mode !== 'war';
+  var spb = document.querySelector('.b[data-b="spirit"]'); spb.hidden = !!me0.def.isMaster || (G.mode !== 'war' && me0.def.cls !== 'Assassin'); spb.firstChild.textContent = me0.def.cls === 'Assassin' ? 'Conceal' : 'Spirit';
   document.querySelectorAll('.b.seal').forEach(function (el) { el.classList.remove('used'); });
   $('#ordBtn').hidden = $('#sealBtn').hidden = !me0.def.isMaster || !me0.partner; closePops();
   $('#setup').style.display = 'none'; $('#duel').style.display = 'block'; document.body.classList.add('ingame'); $('#end').classList.remove('on'); $('#pz').classList.remove('on');
@@ -3789,7 +3929,7 @@ function drawMarble(g, kind, al) {
   g.restore();
 }
 var MOX = 0, MOY = 0;
-function visL(o) { if (INTRO && o.def && !o.def.isMaster && !INTRO.shown) return false; if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
+function visL(o) { if (INTRO && o.def && !o.def.isMaster && !INTRO.shown) return false; if (o.def && o.cnc && G.f[MEI] && o.team !== G.f[MEI].team && !knowsExact(G.f[MEI], o)) return false; if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
 function drawWorld() {
   var g = ctx, mb = G.marble, mal = mb ? Math.min(1, mb.t / 0.9) : 0;
   var vz = VIEW.zoom || 1, vr = { x0: VIEW.cx - VW / 2 / vz - 150, y0: VIEW.cy - VH / 2 / vz - 150, x1: VIEW.cx + VW / 2 / vz + 150, y1: VIEW.cy + VH / 2 / vz + 150 }; VIEWR = vr;
@@ -3964,7 +4104,7 @@ function drawCity(g, m) {
   drawYards(g, vr, t);
   // interiors
   m.rooms.forEach(function (rm) { if (vis(vr, rm.x0, rm.y0, rm.x1, rm.y1)) drawRoom(g, rm, t); });
-  drawCircles(g, vr, t);
+  drawCircles(g, vr, t); drawFields(g, vr, t); drawTasks(g, vr, t);
   if (m.labels) { g.save(); g.textAlign = 'center'; g.font = '700 58px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.10)'; m.labels.forEach(function (lb) { if (vis(vr, lb[1] - 600, lb[2] - 70, lb[1] + 600, lb[2] + 20)) g.fillText(lb[0], lb[1], lb[2]); }); g.restore(); }
 }
 function zoneTexture(g, z, vr) {
@@ -4551,6 +4691,7 @@ function drawClockHud(mx0, my0, mw, mh) {
   c.fillStyle = rv ? '#ff5a5a' : ex >= EXPO.warn ? '#e8583a' : ex >= EXPO.rumor ? '#f0a85a' : '#7ac08a'; c.fillRect(x - bw + 50, by + 7, (bw - 56) * Math.min(1, ex / EXPO.max), 6);
   c.fillStyle = 'rgba(255,255,255,.5)'; [EXPO.rumor, EXPO.warn].forEach(function (v) { c.fillRect(x - bw + 50 + (bw - 56) * v / EXPO.max, by + 5, 1.5, 10); });
   c.textAlign = 'left'; c.font = '600 12px "Barlow Condensed", sans-serif'; c.fillStyle = rv ? '#ff8a8a' : '#c9c3b0'; c.fillText(rv ? 'EXPOSED ' + Math.ceil(G.reveal[me.team] - G.time) : 'SEEN', x - bw + 6, by + 14);
+  drawDayHud(x, by + 30, mx0, my0, mw, mh);
 }
 // rumors on the minimap: a pulsing area, not a position
 function drawRumors(mx0, my0, mw, mh, MW) {
@@ -4592,7 +4733,7 @@ function hud() {
   var np = document.querySelector('.b[data-b="np"]'), npReady = a.def.isMaster ? (a.sigCd <= 0 && !(a.silenceT > 0) && canPay(a, MANA.sigCost)) : (a.mom >= 100 && canNP(a)); np.classList.toggle('rdy', npReady); np.classList.toggle('off', !npReady); np.firstChild.textContent = a.def.isMaster ? (a.silenceT > 0 ? 'Burned ' + Math.ceil(a.silenceT) : a.sigCd > 0 ? (a.A.np.short || a.A.np.name.split(' ')[0]) + ' ' + Math.ceil(a.sigCd) : (a.A.np.short || a.A.np.name.split(' ')[0])) : (a.mom >= 100 && !canNP(a) ? 'No mana' : 'NP');
   if (a.def.isMaster) { document.querySelectorAll('.b.seal[data-b]').forEach(function (el) { el.classList.toggle('used', !!a.sealUsed[el.dataset.b.slice(5)] || !a.partner || a.partner.st === 'dead'); }); var sl = sealsLeft(a); $('#sealL').textContent = sl; $('#sealBtn').classList.toggle('used', sl === 0); }
   var ctb = document.querySelector('.b[data-b="contract"]'), cand = contractCandidate(a, CONTRACT_RANGE + 40); ctb.hidden = !cand; if (cand) ctb.lastChild.textContent = cand.def.isMaster ? shortName(cand.def.name) : shortName(cand.def.name);
-  $('#spl').textContent = a.spirit === 2 ? 'unseen' : a.spirit ? '...' : ''; $('#tgl').textContent = a.lock ? 'locked' : 'auto'; document.querySelector('.b[data-b="target"]').classList.toggle('locked', !!a.lock);
+  $('#spl').textContent = a.cnc ? 'hidden' : a.def.cls === 'Assassin' && a.cncCd > G.time ? Math.ceil(a.cncCd - G.time) + 's' : a.spirit === 2 ? 'unseen' : a.spirit ? '...' : ''; $('#tgl').textContent = a.lock ? 'locked' : 'auto'; document.querySelector('.b[data-b="target"]').classList.toggle('locked', !!a.lock);
   var sk = document.querySelector('.b[data-b="skill"]'); sk.classList.toggle('off', a.cd > 0 || (a.def.isMaster && a.silenceT > 0));
   var ls = a.A.lightSeq, lt = $('#lightSp'), ht = $('#heavySp');
   document.querySelector('.b[data-b="light"]').classList.toggle('off', a.reloadT > 0); document.querySelector('.b[data-b="heavy"]').classList.toggle('off', a.reloadT > 0);
@@ -4636,6 +4777,62 @@ function frame(now) {
     if (G.over && !endShown && G.time > 0) { if (!G._endAt) G._endAt = now + 1100; if (now >= G._endAt) showEnd(); }
   }
   draw(); hud();
+}
+/* ---- bounded fields, true names and the day's tasks on screen ---- */
+var FNOTE = {};
+function knownName(f) { return (!f.def.isMaster && G && G.f[MEI] && !trueName(G.f[MEI].team, f)) ? f.def.cls : shortName(f.def.name); }
+function teamColOf(t) { var f = G.f.filter(function (q) { return q.team === t; })[0]; return f ? teamCol(f) : '#c9c3b0'; }
+FX.field = function (kind, F, e) {
+  if (!G || !G.f[MEI]) return; var me = G.f[MEI], key = kind + F.team + ':' + (e ? e.idx : ''), now = G.time;
+  if (kind === 'bolt') { if (!FX.near(e.x, e.y)) return; var col = teamColOf(F.team); vfx(0.4, function (g, p) { g.save(); g.globalAlpha = 1 - p; g.strokeStyle = col; g.lineWidth = 4; g.shadowColor = col; g.shadowBlur = 12; g.beginPath(); var x = e.x, y = e.y - 240; g.moveTo(x, y); for (var i = 1; i <= 6; i++) { g.lineTo(e.x + (i < 6 ? (Math.sin(i * 7.1 + now) * 18) : 0), y + i * 40); } g.stroke(); g.restore(); }); FX.snd('hitL', e); return; }
+  if (FNOTE[key] > now) return; FNOTE[key] = now + 20;
+  if (kind === 'intrude' && F.team === me.team) note('Intruder: ' + (e.def.isMaster ? shortName(e.def.name) : knownName(e)) + ' crossed your bounded field', '#f0a85a');
+  else if (kind === 'enter' && e === me) note('You crossed the bounded field of ' + F.name + '. They know you are here.', '#f0a85a');
+};
+FX.truename = function (team, s, how) {
+  if (!G.f[MEI] || team !== G.f[MEI].team) return;
+  note('True name: the ' + s.def.cls + ' is ' + s.def.name + (how === 'np' ? ', revealed by its Noble Phantasm' : ', read from the battle site'), '#ffd36b');
+  buildHud();
+};
+FX.task = function (t, k, msg) { if (!G.f[MEI] || t !== G.f[MEI].team) return; FX.banner(k.name, msg); FX.snd('chant', G.f[MEI]); };
+var TASK_ICON = { fortify: 'Fortify', ley: 'Ley line', trace: 'Investigate', school: 'School' }, TASK_COL = { fortify: '#7fc4ee', ley: '#b48cff', trace: '#f0a85a', school: '#7ac08a' };
+// bounded fields: a ring of runes in the owner's color; a Caster's Temple gets a second ring
+function drawFields(g, vr, t) {
+  if (!G || !G.fields) return;
+  for (var k in G.fields) {
+    var F = G.fields[k]; if (F.lvl <= 0) continue; var r = fieldR(F);
+    if (!vis(vr, F.x - r, F.y - r, F.x + r, F.y + r)) continue;
+    var col = teamColOf(F.team), al = 0.16 + F.lvl * 0.05;
+    g.save(); g.strokeStyle = col; g.globalAlpha = al; g.lineWidth = 4; g.setLineDash([26, 14]); g.lineDashOffset = -t * 12; g.beginPath(); g.arc(F.x, F.y, r, 0, 6.283); g.stroke();
+    g.setLineDash([]); g.lineWidth = 2; for (var i = 0; i < 12 + F.lvl * 4; i++) { var a = i / (12 + F.lvl * 4) * 6.283 + t * 0.05; g.beginPath(); g.moveTo(F.x + Math.cos(a) * (r - 10), F.y + Math.sin(a) * (r - 10)); g.lineTo(F.x + Math.cos(a) * (r + 10), F.y + Math.sin(a) * (r + 10)); g.stroke(); }
+    if (F.temple) { g.globalAlpha = al * 0.9; g.lineWidth = 3; g.setLineDash([8, 10]); g.lineDashOffset = t * 20; g.beginPath(); g.arc(F.x, F.y, r - 34, 0, 6.283); g.stroke(); g.setLineDash([]); }
+    var lg = g.createRadialGradient(F.x, F.y, r * 0.6, F.x, F.y, r); lg.addColorStop(0, rgbaOf(col, 0)); lg.addColorStop(1, rgbaOf(col, 0.05 + F.lvl * 0.015)); g.globalAlpha = 1; g.fillStyle = lg; g.beginPath(); g.arc(F.x, F.y, r, 0, 6.283); g.fill();
+    g.restore();
+  }
+}
+function drawTasks(g, vr, t) {
+  if (!G || !G.tasks || !G.tasks.length || !isDay()) return; var my = G.f[MEI].team;
+  G.tasks.forEach(function (k) {
+    if (!taskFor(my, k) && !k.done[my]) return; if (!vis(vr, k.x - k.r - 60, k.y - k.r - 40, k.x + k.r + 60, k.y + k.r + 60)) return;
+    var col = TASK_COL[k.kind], done = k.done[my], p = Math.min(1, (k.prog[my] || 0) / k.need);
+    g.save(); g.globalAlpha = done ? 0.35 : 0.85; g.strokeStyle = col; g.lineWidth = 3; g.setLineDash([12, 10]); g.lineDashOffset = -t * 18; g.beginPath(); g.arc(k.x, k.y, k.r, 0, 6.283); g.stroke(); g.setLineDash([]);
+    g.fillStyle = rgbaOf(col, 0.08); g.fill();
+    if (p > 0 && !done) { g.lineWidth = 8; g.beginPath(); g.arc(k.x, k.y, k.r + 10, -1.571, -1.571 + 6.283 * p); g.stroke(); }
+    g.textAlign = 'center'; g.font = '700 20px "Barlow Condensed", sans-serif'; var lab = (done ? '✓ ' : '') + TASK_ICON[k.kind] + (k.cont && k.cont[my] ? ' · CONTESTED' : ''), tw = g.measureText(lab).width + 18;
+    g.fillStyle = 'rgba(6,10,16,.75)'; g.fillRect(k.x - tw / 2, k.y + k.r + 18, tw, 26); g.fillStyle = col; g.fillText(lab, k.x, k.y + k.r + 37);
+    g.restore();
+  });
+}
+// the day's checklist under the clock, and gold diamonds on the minimap
+function drawDayHud(x, y, mx0, my0, mw, mh) {
+  if (!isDay() || !G.tasks || !G.tasks.length) return; var my = G.f[MEI].team, c = ctx, MW = MAP.cityW || W;
+  var list = G.tasks.filter(function (k) { return taskFor(my, k) || k.done[my]; });
+  list.forEach(function (k) { var px = mx0 + k.x / MW * mw, py = my0 + k.y / H * mh; c.save(); c.translate(px, py); c.rotate(0.785); c.fillStyle = k.done[my] ? 'rgba(200,200,200,.4)' : TASK_COL[k.kind]; c.fillRect(-3.5, -3.5, 7, 7); c.restore(); });
+  c.font = '600 ' + (VW < 560 ? 12 : 14) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right';
+  list.slice(0, 7).forEach(function (k, i) {
+    var done = k.done[my], s = (done ? '✓ ' : '') + k.name + (done ? '' : '  ' + Math.floor(k.prog[my] || 0) + '/' + k.need + 's'), tw = c.measureText(s).width + 16, yy = y + i * 20;
+    c.fillStyle = 'rgba(8,14,20,.72)'; c.fillRect(x - tw, yy - 14, tw, 19); c.fillStyle = done ? 'rgba(201,195,176,.55)' : TASK_COL[k.kind]; c.fillText(s, x - 6, yy);
+  });
 }
 /* ---- multiplayer test: host-authoritative, relayed through the claude.ai room (WebRTC is blocked in artifacts) ---- */
 var NET = { ns: null, R: null, role: null, code: '', me: null, game: null, mirror: false, snapAt: 0, sentAt: 0, lastHost: null, seq: 0, ev: [], lastSeq: 0, prev: {}, cnt: {}, g: 0, h: 0, so: null, lk: -1, msg: '' };

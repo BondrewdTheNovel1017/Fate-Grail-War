@@ -44,7 +44,7 @@ function drawCity(g, m) {
   drawYards(g, vr, t);
   // interiors
   m.rooms.forEach(function (rm) { if (vis(vr, rm.x0, rm.y0, rm.x1, rm.y1)) drawRoom(g, rm, t); });
-  drawCircles(g, vr, t);
+  drawCircles(g, vr, t); drawFields(g, vr, t); drawTasks(g, vr, t);
   if (m.labels) { g.save(); g.textAlign = 'center'; g.font = '700 58px "Barlow Condensed", sans-serif'; g.fillStyle = 'rgba(233,228,211,.10)'; m.labels.forEach(function (lb) { if (vis(vr, lb[1] - 600, lb[2] - 70, lb[1] + 600, lb[2] + 20)) g.fillText(lb[0], lb[1], lb[2]); }); g.restore(); }
 }
 function zoneTexture(g, z, vr) {

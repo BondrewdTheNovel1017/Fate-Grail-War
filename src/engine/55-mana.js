@@ -9,8 +9,9 @@ function initMana(m) { var p = MANA_POOL[m.def.id] || [80, 1.6]; m.manaMax = p[0
 function livingMaster(s) { var m = s.partner; return m && m.def.isMaster && m.st !== 'dead' ? m : null; }
 function npManaCost(s) { var a = s.A.np; return a.manaCost || ((a.marble || a.kind === 'ubw') ? MANA.marbleCost : MANA.npCost); }
 // can master m pay `cost`? Kariya pays any shortfall in blood
-function canPay(m, cost) { return m.mana >= cost || !!(m.def.bloodMana && m.hp > cost - m.mana + 30); }
+function canPay(m, cost) { return m.mana + (m.manaBonus || 0) >= cost || !!(m.def.bloodMana && m.hp > cost - m.mana + 30); }
 function payMana(m, cost) {
+  if (m.manaBonus > 0) { var fromB = Math.min(m.manaBonus, cost); m.manaBonus -= fromB; cost -= fromB; if (cost <= 0) return true; }
   if (m.mana >= cost) { m.mana -= cost; return true; }
   if (m.def.bloodMana) { var need = cost - m.mana; if (m.hp > need + 30) { m.mana = 0; m.hp -= need; m.stat.taken += need; FX.text(m, 'CREST WORMS -' + Math.round(need)); return true; } }
   return false;

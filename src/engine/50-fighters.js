@@ -25,7 +25,7 @@ function newGame(dA, dB, opts) {
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
 function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 function pickTarget(f) {
-  if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2)) f.lock = null;
+  if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
   var best = null, bd = 1e9, es = enemiesOf(f);
   for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
@@ -48,7 +48,7 @@ function newWar(teamsIn, opts) {
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
-  G.homes = homes; initClock(opts);
+  G.homes = homes; initClock(opts); if (MAP.cityW && !G.quick) initFields();
   G.f.forEach(pickTarget);
   return G;
 }
@@ -93,12 +93,13 @@ function kill(f, noRevive) {
     FX.text(f, 'GOD HAND'); FX.fx('godhand', f.x, f.y, f); FX.snd('godhand', f); if (FX.near(f.x, f.y)) { FX.shake(10); G.hitstop = Math.max(G.hitstop, 0.3); FX.slow(0.6); }
     return;
   }
-  f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0;
+  f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0; f.cnc = false;
   f.cause = f.cause || (f.lastHit ? (f.lastHit.key === 'np' && !f.lastHit.by.def.isMaster ? 'np' : f.lastHit.by.def.isMaster ? 'master' : 'combat') : 'other'); f.killer = f.lastHit ? f.lastHit.by : null;
   if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? ARCHER_INDEPENDENT : ORPHAN_TIME; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
   var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
   else { G.f.forEach(pickTarget); }
+  if (G.tn) traceKill(f);
   if (G.mode === 'war') { if (f.killer && f.killer.st !== 'dead' && f.killer !== f) FX.say(f.killer, 'kill'); if (f.partner && f.partner.st !== 'dead' && f.partner.team === f.team) FX.say(f.partner, f.def.isMaster ? 'masterdown' : 'servantdown'); }
   FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); if (FX.near(f.x, f.y)) { G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.slow(1.1); }
 }

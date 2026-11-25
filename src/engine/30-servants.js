@@ -120,8 +120,8 @@ var CLS = {
   Lancer: { pname: 'Swift Footwork', desc: 'Dodge rolls cost 30% less stamina, so a Lancer can keep dodging long after others run dry.' },
   Archer: { pname: 'Independent Action', desc: 'Needs no master to hold their power: if the Noble Phantasm cast is interrupted, they keep 40% of their momentum instead of losing it all.' },
   Rider: { pname: 'Riding', desc: 'Moves 8% faster, and charge attacks hit 12% harder.' },
-  Caster: { pname: 'Territory Creation', desc: 'Stand still for 1 second to raise a bounded field, 230 units wide. Inside it the caster\'s spells hit 12% harder, the skill cooldown recovers 50% faster, stamina returns 30% faster, and enemies move 12% slower. The field collapses if the caster leaves it, is staggered, or is stripped of enchantments.' },
-  Assassin: { pname: 'Presence Concealment', desc: 'After 1.5 seconds without attacking or being hit, the assassin fades from sight. Their next light, heavy or skill attack shows no warning telegraph.' },
+  Caster: { pname: 'Territory Creation', desc: 'Stand still for 1 second to raise a bounded field, 230 units wide. Inside it the caster\'s spells hit 12% harder, the skill cooldown recovers 50% faster, stamina returns 30% faster, and enemies move 12% slower. The field collapses if the caster leaves it, is staggered, or is stripped of enchantments. In the Grail War a Caster also makes the team\'s home a Temple: its bounded field starts a level higher, can grow a level further, and strikes intruders sooner.' },
+  Assassin: { pname: 'Presence Concealment', desc: 'The Spirit button becomes Conceal: the assassin vanishes almost completely, heals while out of combat, and can strike straight from hiding. The first blow shows no warning and hits 20% harder. Enemies only find a concealed assassin up close, and bounded fields never notice one. Attacking or being hit ends it; 3 seconds before the next.' },
   Berserker: { pname: 'Mad Enhancement', desc: 'Deals 10% more damage, but their guard is 8 points weaker. Reason is traded for raw force.' }
 };
 Object.keys(SERV).forEach(function (k) {

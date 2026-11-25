@@ -9,7 +9,7 @@ const E = loadEngine();
 const S = {}, M = {}, cause = { servant: {}, master: {} };
 const tot = { ended: 0, len: [], contracts: 0, marbles: 0, nps: 0, noMana: 0, seals: { np: 0, heal: 0, warp: 0 }, teamT: 0, deadT: 0, nights: [], expo: [], sanctions: 0 };
 const row = (T, id) => T[id] || (T[id] = { games: 0, wins: 0, kills: 0, deaths: 0, alive: 0 });
-let noMana = 0; const text0 = E.FX.text; E.FX.text = function (f, s) { if (s === 'NO MANA') noMana++; return text0.apply(this, arguments); };
+let noMana = 0; const taskN = {}, tnN = { np: 0, trace: 0 }; E.FX.task = (t, k) => { taskN[k.kind] = (taskN[k.kind] || 0) + 1; }; E.FX.truename = (t, s, how) => { tnN[how]++; }; const text0 = E.FX.text; E.FX.text = function (f, s) { if (s === 'NO MANA') noMana++; return text0.apply(this, arguments); };
 const t0 = Date.now();
 for (let n = 0; n < WARS; n++) {
   const my = E.ORDER[n % E.ORDER.length], mm = E.MASTER_ORDER[(n * 3) % E.MASTER_ORDER.length];
@@ -47,6 +47,7 @@ function table(title, T) {
 }
 console.log(`Balance report: ${WARS} wars of ${TEAMS} teams (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
 console.log(`  night dead time ${(100 * tot.deadT / Math.max(1, tot.teamT)).toFixed(0)}% of team-time; ended on night ${tot.nights.join(',')}; sanctions ${tot.sanctions}`);
+console.log(`  day tasks per war: ${Object.entries(taskN).map(([k, v]) => k + ' ' + (v / WARS).toFixed(1)).join(', ')}; true names learned per war: by NP ${(tnN.np / WARS).toFixed(1)}, by battle site ${(tnN.trace / WARS).toFixed(1)}`);
 console.log(`  finished ${tot.ended}/${WARS}, length avg ${(avg(tot.len) / 60).toFixed(1)} min (min ${(Math.min(...tot.len) / 60).toFixed(1)}, max ${(Math.max(...tot.len) / 60).toFixed(1)})`);
 console.log(`  per war: ${(tot.nps / WARS).toFixed(1)} NPs, ${(tot.noMana / WARS).toFixed(1)} blocked for mana, ${(tot.contracts / WARS).toFixed(2)} contracts, ${(tot.marbles / WARS).toFixed(2)} marbles`);
 console.log(`  seals used per war: NP ${(tot.seals.np / WARS).toFixed(1)}, heal ${(tot.seals.heal / WARS).toFixed(1)}, recall ${(tot.seals.warp / WARS).toFixed(1)}`);

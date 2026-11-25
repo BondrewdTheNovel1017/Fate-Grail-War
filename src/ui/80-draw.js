@@ -361,7 +361,7 @@ function drawMarble(g, kind, al) {
   g.restore();
 }
 var MOX = 0, MOY = 0;
-function visL(o) { if (INTRO && o.def && !o.def.isMaster && !INTRO.shown) return false; if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
+function visL(o) { if (INTRO && o.def && !o.def.isMaster && !INTRO.shown) return false; if (o.def && o.cnc && G.f[MEI] && o.team !== G.f[MEI].team && !knowsExact(G.f[MEI], o)) return false; if (MAP.cityW && G.f[MEI] && !sameZone(o.def ? o : (o.owner || o), G.f[MEI])) return false; return G.mode !== 'war' || !G.marble || !!o.inM === !!G.f[MEI].inM; }
 function drawWorld() {
   var g = ctx, mb = G.marble, mal = mb ? Math.min(1, mb.t / 0.9) : 0;
   var vz = VIEW.zoom || 1, vr = { x0: VIEW.cx - VW / 2 / vz - 150, y0: VIEW.cy - VH / 2 / vz - 150, x1: VIEW.cx + VW / 2 / vz + 150, y1: VIEW.cy + VH / 2 / vz + 150 }; VIEWR = vr;

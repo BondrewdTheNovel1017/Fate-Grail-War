@@ -66,6 +66,8 @@ function aiTick(ai, dt) {
   if (ai.orbitT <= 0) { ai.orbit = Math.random() < 0.5 ? 1 : -1; ai.orbitT = 1 + Math.random() * 1.6; }
   var d = dist(f, o), toO = angTo(f, o);
   if (inp.heavy && G.time >= ai.relAt) inp.heavy = false;
+  if (f.def.cls === 'Assassin' && !f.cnc && f.st === 'idle' && d > 360 && G.time >= (f.cncCd || 0) && !f.isPlayerMate && Math.random() < 0.02) press(f, 'spirit');
+  if (concealed(o) && !knowsExact(f, o)) { inp.mx = 0; inp.my = 0; inp.guard = Math.random() < 0.6; turnToward(f, f.face + 0.6, 2, dt); return; }
   inp.guard = G.time < ai.guardUntil;
   // distance from stuck detection
   if (f.st === 'idle') {
@@ -206,13 +208,15 @@ function aiWar(ai, dt) {
   if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
-    if (f.spirit === 0 && f.st === 'idle' && nd > 160) press(f, 'spirit');
+    if (f.def.cls === 'Assassin') { if (!f.cnc && f.st === 'idle' && nd > 160 && G.time >= (f.cncCd || 0)) press(f, 'spirit'); }
+    else if (f.spirit === 0 && f.st === 'idle' && nd > 160) press(f, 'spirit');
     var hh = f.home || MAP.spawns.at(f.team), home = m || { x: hh[0], y: hh[1] };
     if (st === 'retreat' && near && nd < 400) { var aw = angTo(near, f); moveTo(f, f.x + Math.cos(aw) * 300, f.y + Math.sin(aw) * 300); }
     else if (dist(f, home) > 110) moveTo(f, home.x, home.y, 0.9); else { f.inp.mx = 0; f.inp.my = 0; }
     if (f.spirit === 0 && near && nd < 160) aiTick(ai, dt);
     noOffense(f); return;
   }
+  if (f.def.cls === 'Assassin' && !f.cnc && f.st === 'idle' && nd > 320 && G.time >= (f.cncCd || 0) && !f.isPlayerMate) press(f, 'spirit');
   if (f.spirit === 2 && ((near && nd < 420) || (st === 'charge' && f.hp > f.def.hp * 0.7))) press(f, 'spirit');
   if (f.spirit) { if (m) moveTo(f, m.x, m.y, 0.8); noOffense(f); return; }
   if (st === 'protect' && m) {
@@ -254,8 +258,11 @@ function aiMaster(ai, dt) {
   // before the final night a wounded master breaks off and runs home; the servant covers the retreat
   if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75) f.fleeing = true; else if (f.hp > f.def.hp * 0.9) f.fleeing = false; } else f.fleeing = false;
   if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
-  // by day a master goes home to rest unless an enemy servant is right there
-  if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) { if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140) moveTo(f, f.home[0], f.home[1], 1); else { inp.mx = 0; inp.my = 0; } return; }
+  // by day a master works on the day's tasks, or goes home to rest, unless an enemy servant is right there
+  if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) {
+    if (!(f.dayGoalT > G.time)) { f.dayGoal = aiDayGoal(f); f.dayGoalT = G.time + 6; }
+    var dg = f.dayGoal && !f.dayGoal.done[f.team] ? f.dayGoal : { x: f.home[0], y: f.home[1], r: 280 };
+    if (Math.hypot(f.x - dg.x, f.y - dg.y) > dg.r * 0.45) moveTo(f, dg.x, dg.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
     var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);

@@ -1,5 +1,5 @@
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, near: function () { return true; } };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, near: function () { return true; } };
 // hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
 // Hit-stop is per fighter: only the attacker and the one hit freeze, the rest of the war keeps moving.
 function hitPause(att, def, v) { if (att) att.hs = Math.max(att.hs || 0, v); if (def) def.hs = Math.max(def.hs || 0, v); }

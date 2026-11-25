@@ -75,6 +75,7 @@ function drawClockHud(mx0, my0, mw, mh) {
   c.fillStyle = rv ? '#ff5a5a' : ex >= EXPO.warn ? '#e8583a' : ex >= EXPO.rumor ? '#f0a85a' : '#7ac08a'; c.fillRect(x - bw + 50, by + 7, (bw - 56) * Math.min(1, ex / EXPO.max), 6);
   c.fillStyle = 'rgba(255,255,255,.5)'; [EXPO.rumor, EXPO.warn].forEach(function (v) { c.fillRect(x - bw + 50 + (bw - 56) * v / EXPO.max, by + 5, 1.5, 10); });
   c.textAlign = 'left'; c.font = '600 12px "Barlow Condensed", sans-serif'; c.fillStyle = rv ? '#ff8a8a' : '#c9c3b0'; c.fillText(rv ? 'EXPOSED ' + Math.ceil(G.reveal[me.team] - G.time) : 'SEEN', x - bw + 6, by + 14);
+  drawDayHud(x, by + 30, mx0, my0, mw, mh);
 }
 // rumors on the minimap: a pulsing area, not a position
 function drawRumors(mx0, my0, mw, mh, MW) {

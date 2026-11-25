@@ -29,18 +29,22 @@ function clockTick(dt) {
   var c = G.clock; if (!c) return;
   c.t += dt;
   if (!c.final && c.t >= c.len) {
-    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; FX.phase('day', c.n, false); }
-    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; c.final = c.n >= c.nights; FX.phase('night', c.n, c.final); }
+    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); FX.phase('day', c.n, false); }
+    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; G.tasks = []; c.final = c.n >= c.nights; FX.phase('night', c.n, c.final); }
     civShift();
   }
   // resting at home by day: wounds close, mana returns
   if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
-  civTick(dt);
+  civTick(dt); tasksTick(dt);
 }
 /* ---- what a fighter knows: at night only what is close, what hit them, what rumor or the Church reveals ---- */
 function knowsExact(f, e) {
-  if (!clockOn() || G.clock.final || !e || !f || e.team === f.team) return true;
+  if (!e || !f || e.team === f.team) return true;
+  // an Assassin in Presence Concealment is found only up close, or by the one it just struck
+  if (concealed(e) && !(sameZone(f, e) && dist(f, e) < 120) && !(f.lastHit && f.lastHit.by === e && G.time - (f.lastHitT || -99) < 3)) return false;
+  if (G.seenBy && G.seenBy[f.team] && G.seenBy[f.team][e.idx] > G.time) return true;
+  if (!clockOn() || G.clock.final) return true;
   if (G.reveal[e.team] > G.time) return true;
   var r = senseRange();
   if (sameZone(f, e) && dist(f, e) < r) return true;
