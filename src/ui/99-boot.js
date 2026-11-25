@@ -1,0 +1,17 @@
+$('#fs').addEventListener('click', function () { var d = $('#duel'); try { if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen().catch(function () {}); } catch (e) {} });
+document.addEventListener('fullscreenchange', function () { $('#fs').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+$('#netHost').addEventListener('click', function () { var c = ''; for (var i = 0; i < 4; i++) c += 'abcdefghjkmnpqrstuvwxyz'.charAt(Math.floor(Math.random() * 23)); netJoin(c, true); });
+$('#netJoin').addEventListener('click', function () { netJoin($('#netCode').value, false); });
+$('#netCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') netJoin($('#netCode').value, false); });
+$('#netLeave').addEventListener('click', netLeave);
+function closePops() { ['ordPop', 'sealPop'].forEach(function (id) { $('#' + id).hidden = true; }); $('#ordBtn').setAttribute('aria-expanded', 'false'); $('#sealBtn').setAttribute('aria-expanded', 'false'); }
+function togglePop(id, btn) { var open = $('#' + id).hidden; closePops(); if (open) { $('#' + id).hidden = false; btn.setAttribute('aria-expanded', 'true'); if (id === 'ordPop') renderStances(); } }
+$('#ordBtn').addEventListener('click', function (e) { e.stopPropagation(); togglePop('ordPop', this); });
+$('#sealBtn').addEventListener('click', function (e) { e.stopPropagation(); togglePop('sealPop', this); });
+document.addEventListener('pointerup', function (e) { var t = e.target; if (!t.closest) return; if (t.closest('#sealPop .b') || t.closest('[data-stance]')) { setTimeout(closePops, 120); return; } if (!t.closest('.pop') && !t.closest('#ordBtn') && !t.closest('#sealBtn')) closePops(); });
+function syncSnd() { $('#snd').textContent = AUD.on ? 'Sound on' : 'Sound off'; }
+$('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localStorage.setItem('duel2.snd', AUD.on ? '1' : '0'); } catch (e) {} syncSnd(); audInit(); });
+syncSnd();
+renderSetup(); renderNet();
+requestAnimationFrame(frame);
+window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };

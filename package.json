@@ -1,0 +1,12 @@
+{
+  "name": "fate-grail-war",
+  "version": "0.2.0",
+  "private": true,
+  "description": "A top-down Holy Grail War game in the style of Fate/Zero and Fate/stay night.",
+  "scripts": {
+    "build": "node tools/build.js",
+    "test": "node --test tests/",
+    "sim": "node tools/sim.js"
+  },
+  "engines": { "node": ">=20" }
+}
