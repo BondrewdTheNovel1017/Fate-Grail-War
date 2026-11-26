@@ -224,6 +224,11 @@ function aiWar(ai, dt) {
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
   if (clockOn() && !finalNight() && !f.isPlayerMate && !f.bold && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
   if (isDay() && !f.isPlayerMate && !f.bold && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
+  // an enemy servant closing on our master: drop everything and go to them (unless this servant is the one at death's door)
+  if (clockOn() && m && m.st !== 'dead' && !f.isPlayerMate && st !== 'retreat' && !(f.sealOrder > 0)) {
+    var mhT = null, mhD = 650; G.f.forEach(function (e) { if (e.team === f.team || e.def.isMaster || e.st === 'dead' || e.spirit === 2 || pactTeams(e.team, f.team)) return; var d = dist(e, m); if (d < mhD) { mhD = d; mhT = e; } });
+    if (mhT) { if (f.spirit === 2 && dist(f, m) < 500) press(f, 'spirit'); if (dist(f, mhT) > 260) { moveTo(f, mhT.x, mhT.y, 1); if (f.spirit === 0 && dist(f, mhT) < 420) { f.lock = mhT; f.foe = mhT; aiTick(ai, dt); } return; } f.lock = mhT; f.foe = mhT; }
+  }
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
     if (f.def.cls === 'Assassin') { if (!f.cnc && f.st === 'idle' && nd > 160 && G.time >= (f.cncCd || 0)) press(f, 'spirit'); }
@@ -269,14 +274,19 @@ function aiMaster(ai, dt) {
   // Command Seals
   if (s && sealsLeft(f) > 0) {
     if (!f.sealUsed.heal && s.hp < s.def.hp * 0.3 && s.foe && dist(s, s.foe) < 500) useSeal(f, 'heal');
-    else if (!f.sealUsed.warp && thr && td < 260 && dist(f, s) > 600) useSeal(f, 'warp');
+    else if (!f.sealUsed.warp && thr && td < 420 && dist(f, s) > 600) useSeal(f, 'warp');
+    // a servant losing badly is pulled out of the fight to the master's side (before the final night)
+    else if (!f.sealUsed.warp && clockOn() && !finalNight() && s.hp < s.def.hp * 0.3 && s.foe && !s.foe.def.isMaster && dist(s, s.foe) < 320 && dist(f, s) > 650 && !(thr && td < 650)) useSeal(f, 'warp');
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && !s.foe.def.isMaster && Math.random() < 0.00025) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
     var haven = MAP.haven ? MAP.haven : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
     moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.haven) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // before the final night a wounded master breaks off and runs home; the servant covers the retreat
-  if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75) f.fleeing = true; else if (f.hp > f.def.hp * 0.9) f.fleeing = false; } else f.fleeing = false;
+  // ...and an unguarded master keeps away from enemy servants, running to their own servant if it is near
+  var guarded = s && dist(f, s) < 260, hunted = thr && td < 440 && !guarded;
+  if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75 || hunted) f.fleeing = true; else if (f.hp > f.def.hp * 0.9 && !(thr && td < 600)) f.fleeing = false; } else f.fleeing = false;
+  if (f.fleeing && hunted && s && dist(f, s) < 1400 && dist(s, thr) > td) { var sa2 = angTo(thr, f); moveTo(f, s.x + Math.cos(sa2) * 60, s.y + Math.sin(sa2) * 60, 1); return; }
   if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
   if (shadowNear(f, 520) && !f.isPlayerMate) { var sm = Math.atan2(f.y - G.event.y, f.x - G.event.x); moveTo(f, f.x + Math.cos(sm) * 400, f.y + Math.sin(sm) * 400, 1); return; }
   var EM = G.event;

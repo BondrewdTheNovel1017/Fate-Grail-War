@@ -27,6 +27,14 @@ function liveTeams() { var s = {}; G.f.forEach(function (f) { if (f.st !== 'dead
 function teamPower(t) { var v = 0; G.f.forEach(function (f) { if (f.team === t && f.st !== 'dead') v += (f.def.isMaster ? 0.35 : 1) * f.hp / f.def.hp; }); return v; }
 function teamHas(t, ids) { return G.f.some(function (f) { return f.team === t && f.st !== 'dead' && ids.indexOf(f.def.id) >= 0; }); }
 // how willing team t is to share a night with team o
+// the team running away with the war: the most kills (two or more), at least one clear of the next; rivals rally against it
+function leadTeam() {
+  if (!G || !clockOn()) return -1; if (G._leadT !== undefined && G.time - G._leadAt < 2) return G._leadT;
+  var k = {}; G.f.forEach(function (f) { if (f.st === 'dead' && f.killer && f.killer.team !== f.team) { var t = f.killer.trueTeam !== undefined ? f.killer.trueTeam : f.killer.team; k[t] = (k[t] || 0) + 1; } });
+  var ts = Object.keys(k).sort(function (a, b) { return k[b] - k[a]; }), lead = -1;
+  if (ts.length && k[ts[0]] >= 2 && (ts.length < 2 || k[ts[0]] - k[ts[1]] >= 1) && teamFighters(+ts[0]).length) lead = +ts[0];
+  G._leadT = lead; G._leadAt = G.time; return lead;
+}
 function pactWill(t, o) {
   var m = teamMaster(t), s = teamServant(t); if (!m && !s) return 0;
   var wm = m ? (PACT_M[m.def.id] === undefined ? 0.5 : PACT_M[m.def.id]) : null, ws = s ? (PACT_S[s.def.id] === undefined ? 0.5 : PACT_S[s.def.id]) : null;
@@ -36,6 +44,7 @@ function pactWill(t, o) {
   if (s && s.def.id === 'gilgamesh') ws = (!m || m.def.id !== 'kirei') && teamHas(o, ['kirei']) ? 0.85 : 0; // the King allies with no one, unless it brings him Kirei
   var w = wm === null ? ws : ws === null ? wm : Math.sqrt(wm * ws);
   teamFighters(t).forEach(function (a) { teamFighters(o).forEach(function (b) { var k = bondKey(a, b); if (PACT_FEUD[k] !== undefined) w *= PACT_FEUD[k]; if (FAMILY[k]) w *= 1.5; if (G.hesit && (G.hesit[a.idx + '>' + b.idx] || G.hesit[b.idx + '>' + a.idx])) w *= 1.6; }); });
+  var ld = leadTeam(); if (ld >= 0 && t !== ld && o !== ld) w = Math.min(1, w * 1.6 + 0.15); // united against the strongest
   return clamp(w, 0, 1);
 }
 // can these two teams make a pact right now (the rules, not the will)

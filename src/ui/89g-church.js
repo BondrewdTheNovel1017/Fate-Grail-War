@@ -47,7 +47,7 @@ function drawExecKeys(g) {
 (function () {
   var ch0 = FX.church;
   FX.church = function (kind, team, d) {
-    if (kind !== 'civKill' && kind !== 'dispatch' && kind !== 'execDown') return ch0(kind, team, d);
+    if (kind !== 'civKill' && kind !== 'dispatch' && kind !== 'execDown' && kind !== 'rescue') return ch0(kind, team, d);
     if (!G || !G.f[MEI]) return;
     var me = G.f[MEI], mine = team === me.team, who = mine ? 'Your team' : teamName(team);
     if (kind === 'civKill') {
@@ -57,6 +57,10 @@ function drawExecKeys(g) {
       var whence = d && d.from === 'church' ? 'from Kotomine Church' : 'into the city from the ' + (d ? d.from : 'edge');
       if (mine) { FX.banner('The Church sends Executors', (d ? d.n : 2) + ' Executors are coming ' + whence + '. They hunt your master first.'); SFX('bell'); }
       else note('Executors set out ' + whence + ' to hunt ' + who + '.', '#c9b8e0');
+    } else if (kind === 'rescue') {
+      var sv = G.f[d.s]; if (!sv) return;
+      if (mine) { FX.banner('A Command Seal burns', (sv.idx === MEI ? 'Your master' : 'You') + ' pulled ' + (sv.idx === MEI ? 'you' : shortName(sv.def.name)) + ' home from the brink of death. That seal is spent.'); SFX('bell'); }
+      else if (FX.near(sv.x, sv.y)) note(knownName(sv) + ' vanished at the last moment: a Command Seal.', '#c9c3b0');
     } else if (kind === 'execDown') {
       if (d && d.by === me.team) note('An Executor falls. The Church will remember it.', '#c9b8e0');
     }

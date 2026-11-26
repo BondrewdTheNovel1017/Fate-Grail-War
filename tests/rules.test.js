@@ -645,3 +645,16 @@ test('civilians walk home at dusk instead of vanishing where they stand', () => 
   assert.ok(going.length > before / 2, 'most head for a doorway');
   assert.ok(going.every((c) => c.on), 'and are still in the street for now');
 });
+test('before the final night a Command Seal pulls a servant home from a killing blow, once', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar(E.warTeams('richard', 'rin', 4), { nights: 3 });
+  const sv = G.f[0], foe = G.f.find((f) => f.team !== sv.team && !f.def.isMaster);
+  sv.x = 3000; sv.y = 3600; sv.hp = 5; sv.iframes = 0; sv.st = 'idle';
+  E.hurt(foe, sv, { dmg: 80, power: 2, kind: 'melee' }, 1, { x: sv.x - 30, y: sv.y });
+  assert.ok(sv.st !== 'dead' && sv.hp > 0, 'the servant survives');
+  assert.ok(Object.values(sv.partner.sealUsed).some(Boolean), 'a seal is spent');
+  assert.ok(Math.hypot(sv.x - 3000, sv.y - 3600) > 400, 'and is pulled away from the fight');
+  sv.hp = 5; sv.iframes = 0; sv.st = 'idle';
+  E.hurt(foe, sv, { dmg: 80, power: 2, kind: 'melee' }, 1, { x: sv.x - 30, y: sv.y });
+  assert.ok(sv.st === 'dead', 'only once');
+});

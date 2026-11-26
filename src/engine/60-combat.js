@@ -13,6 +13,8 @@ function hurt(att, def, a, mult, src) {
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
   if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
+  // a master in their own workshop is warded: before the final night, enemy servants' blows land at half strength there
+  if (att && def.def.isMaster && !att.def.isMaster && clockOn() && !finalNight() && inOwnHome(def)) dmg *= HOME_WARD;
   if (att && att.buffT > 0) dmg *= 1.15;
   if (att && G.tn && att.team !== def.team && !def.def.isMaster && G.clock && G.tn[att.team] && G.tn[att.team][def.def.id]) dmg *= 1.1; // true name known
   if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
@@ -70,6 +72,7 @@ function hurt(att, def, a, mult, src) {
   if (def.st === 'rec' && def.key === 'counter') taken = dmg;
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
+  if (def.hp - taken <= 0 && sealRescue(def)) return 'hit'; // the master spends a Command Seal to pull the servant out
   def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);

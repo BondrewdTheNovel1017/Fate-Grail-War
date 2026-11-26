@@ -157,3 +157,19 @@ function keysTick(dt) {
 }
 // nearest executor hunting this fighter's team (the AI turns to face them)
 function execNear(f, r) { var best = null, bd = r; (G.mobs || []).forEach(function (m) { if (!m.exec || m.dead || m.tgt !== f.team) return; var d = Math.hypot(m.x - f.x, m.y - f.y); if (d < bd) { bd = d; best = m; } }); return best; }
+
+/* ---- the emergency Command Seal: before the final night, the first killing blow on a servant whose master lives and
+   still holds a seal is cheated: the master spends a seal and the servant is pulled home at the brink of death ---- */
+function sealRescue(sv) {
+  if (!sv || sv.def.isMaster || !clockOn() || finalNight() || G.quick || sv.rescued) return false;
+  var m = sv.partner; if (!m || m.st === 'dead' || !m.sealUsed) return false;
+  var k = ['warp', 'heal', 'np'].filter(function (q) { return !m.sealUsed[q]; })[0]; if (!k) return false;
+  sv.rescued = true; m.sealUsed[k] = true;
+  // home to the summoning circle (the master's workshop), or to the master if the master is already there
+  var circ = (G.circles || []).filter(function (q) { return q.team === m.team; })[0], hx = circ ? circ.x : m.x, hy = circ ? circ.y : m.y;
+  if (!circ || inOwnHome(m)) { hx = m.x; hy = m.y; }
+  FX.fx('spiritOut', sv.x, sv.y, sv);
+  sv.hp = Math.max(1, sv.def.hp * 0.12); sv.x = hx + 50; sv.y = hy; sv.kx = sv.ky = 0; sv.st = 'idle'; sv.t = 0; sv.act = null; sv.iframes = 1.5; sv.spirit = 0; sv.lock = null; sv.recover = true;
+  FX.church('rescue', m.team, { s: sv.idx, k: k });
+  return true;
+}
