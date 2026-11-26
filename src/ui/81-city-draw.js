@@ -268,3 +268,23 @@ function zoneMask(g) {
   g.fillRect(vr.x0 - 10, rm.y0, rm.x0 - vr.x0 + 10, rm.y1 - rm.y0); g.fillRect(rm.x1, rm.y0, vr.x1 - rm.x1 + 10, rm.y1 - rm.y0);
   g.fillStyle = 'rgba(233,228,211,.12)'; g.font = '700 46px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(rm.name.toUpperCase(), (rm.x0 + rm.x1) / 2, rm.y0 - 20);
 }
+
+/* ---- an Arena window onto the city: the city floor, its buildings and trees around the window, then the world
+   outside the battlefield dimmed behind a faint barrier ---- */
+function drawCityWin(g, m) {
+  var C = MAPS.city, ox = m.win.x0, oy = m.win.y0, vr0 = VIEWR;
+  var vr = vr0 ? { x0: vr0.x0 + ox, y0: vr0.y0 + oy, x1: vr0.x1 + ox, y1: vr0.y1 + oy } : { x0: ox - 300, y0: oy - 300, x1: ox + m.w + 300, y1: oy + m.h + 300 };
+  if (!m._inWin) { m._inWin = {}; m.b.forEach(function (b) { if (b.ci !== undefined) m._inWin[b.ci] = 1; }); }
+  g.save(); g.translate(-ox, -oy); VIEWR = vr;
+  try {
+    drawCity(g, C);
+    C.b.forEach(function (b, i) { if (m._inWin[i] || b.x > C.cityW || b.over) return; if (b.x + b.w / 2 < vr.x0 || b.x - b.w / 2 > vr.x1 || b.y + b.h / 2 < vr.y0 || b.y - b.h / 2 > vr.y1) return; drawCityBlock(g, b, i); });
+    C.o.forEach(function (p) { if (p.x > C.cityW || p.x < vr.x0 - 60 || p.x > vr.x1 + 60 || p.y < vr.y0 - 60 || p.y > vr.y1 + 60) return; if (p.x > ox - 60 && p.x < ox + m.w + 60 && p.y > oy - 60 && p.y < oy + m.h + 60) return; drawObs(g, p); });
+  } finally { VIEWR = vr0; g.restore(); }
+  // outside the battlefield: dimmed, with a faint bounded-field edge
+  var X0 = (vr0 ? vr0.x0 : -300) - 10, Y0 = (vr0 ? vr0.y0 : -300) - 10, X1 = (vr0 ? vr0.x1 : m.w + 300) + 10, Y1 = (vr0 ? vr0.y1 : m.h + 300) + 10;
+  g.fillStyle = 'rgba(4,6,10,.62)';
+  if (Y0 < 0) g.fillRect(X0, Y0, X1 - X0, -Y0); if (Y1 > m.h) g.fillRect(X0, m.h, X1 - X0, Y1 - m.h);
+  if (X0 < 0) g.fillRect(X0, Math.max(0, Y0), -X0, Math.min(m.h, Y1) - Math.max(0, Y0)); if (X1 > m.w) g.fillRect(m.w, Math.max(0, Y0), X1 - m.w, Math.min(m.h, Y1) - Math.max(0, Y0));
+  var t = G ? G.time : 0; g.save(); g.strokeStyle = 'rgba(243,213,138,.35)'; g.lineWidth = 3; g.setLineDash([18, 14]); g.lineDashOffset = -t * 12; g.strokeRect(2, 2, m.w - 4, m.h - 4); g.restore();
+}

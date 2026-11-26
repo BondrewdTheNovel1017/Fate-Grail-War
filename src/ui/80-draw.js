@@ -243,6 +243,7 @@ function mapNoise(m, n, seed) { if (m['_n' + seed]) return m['_n' + seed]; var v
 var VIEWR = null;
 function drawFloor(g, m) {
   if (m.theme === 'city') { drawCity(g, m); return; }
+  if (m.theme === 'citywin') { drawCityWin(g, m); return; }
   var th = m.theme, w = m.w, h = m.h;
   g.fillStyle = THEME[th].floor; g.fillRect(0, 0, w, h);
   if (th === 'fuyuki') {
@@ -296,7 +297,7 @@ function drawFloor(g, m) {
   else if (th === 'school') { g.fillStyle = '#4f4231'; g.fillRect(0, 0, w, 300); g.beginPath(); g.ellipse(950, 780, 560, 330, 0, 0, 6.283); g.fillStyle = '#6e5a42'; g.fill(); g.beginPath(); g.ellipse(950, 780, 450, 230, 0, 0, 6.283); g.fillStyle = '#3d5a36'; g.fill();
     g.strokeStyle = 'rgba(240,240,240,.55)'; g.lineWidth = 3; [560, 520, 480].forEach(function (rx, k) { g.beginPath(); g.ellipse(950, 780, rx, 330 - k * 40, 0, 0, 6.283); g.stroke(); }); g.beginPath(); g.moveTo(950, 560); g.lineTo(950, 1000); g.stroke(); g.beginPath(); g.arc(950, 780, 70, 0, 6.283); g.stroke(); }
 }
-function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
+function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'citywin') return drawCityBlock(g, b, b.ci !== undefined ? b.ci : i); if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
 function drawBlock0(g, b, i) {
   var x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, k = b.k;
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, b.w, b.h);

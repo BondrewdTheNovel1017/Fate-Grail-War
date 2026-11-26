@@ -1238,6 +1238,39 @@ function summonSpot(h) {
   if (h.spot) return h.spot;
   return { x: h.x, y: h.y - 20, name: h.name };
 }
+/* ---- Arena battlefields are windows onto Fuyuki itself ----
+   Each Arena map (except the Training Hall) is a rectangle cut from MAPS.city: the same ground, roads, buildings
+   and trees, drawn by the same renderer, so the Arena and the war look like one city. Blocks and trees are copied
+   into the window's own coordinates (0..w, 0..h) for collisions; the UI draws the city floor shifted by `win`.
+   Spawns are picked automatically on open ground. */
+var ARENA_WIN = {
+  bridge: { x0: 4900, y0: 2060, w: 2200, h: 700, blurb: 'The avenue over the Mion River, from the Miyama bank to the first crossroads of Shinto. A long open deck with water on both sides.' },
+  temple: { x0: 600, y0: 150, w: 1800, h: 1300, blurb: 'The temple courtyard on Mount Enzou: the main hall, side halls and lanterns, with the forest closing in around the walls.' },
+  forest: { x0: 9950, y0: 2150, w: 2000, h: 1500, blurb: 'Deep in the Einzbern forest, south of the castle road: trees everywhere, and little room to swing.' },
+  harbor: { x0: 8600, y0: 5950, w: 2200, h: 1300, blurb: 'The harbor road and the docks: warehouses, stacked containers and the bay beyond the quay.' },
+  church: { x0: 520, y0: 2560, w: 1700, h: 1300, blurb: 'Kotomine Church on its hill: the graveyard, the chapel and the wooded slope down to the Miyama street.' },
+  school: { x0: 3100, y0: 2420, w: 2000, h: 1300, blurb: 'Homurahara Academy after dark: the school building, the running track and the gym, between two streets.' }
+};
+(function () {
+  var C = MAPS.city; if (!C) return;
+  Object.keys(ARENA_WIN).forEach(function (id) {
+    var old = MAPS[id] || {}, R = ARENA_WIN[id], x0 = R.x0, y0 = R.y0, w = R.w, h = R.h;
+    var touches = function (x, y, hw, hh) { return x + hw > x0 - 60 && x - hw < x0 + w + 60 && y + hh > y0 - 60 && y - hh < y0 + h + 60; };
+    var b = C.b.filter(function (q) { return q.x < C.cityW && !q.over && touches(q.x, q.y, q.w / 2, q.h / 2); }).map(function (q) { return Object.assign({}, q, { x: q.x - x0, y: q.y - y0, ci: C.b.indexOf(q) }); });
+    var o = C.o.filter(function (q) { return q.x < C.cityW && touches(q.x, q.y, q.r, q.r); }).map(function (q) { return Object.assign({}, q, { x: q.x - x0, y: q.y - y0 }); });
+    // open ground for spawns: away from walls, water and trees, spread to the four sides
+    var free = function (x, y) {
+      if (x < 140 || y < 140 || x > w - 140 || y > h - 140) return false;
+      for (var i = 0; i < b.length; i++) { var q = b[i]; if (q.walk) continue; if (x > q.x - q.w / 2 - 80 && x < q.x + q.w / 2 + 80 && y > q.y - q.h / 2 - 80 && y < q.y + q.h / 2 + 80) return false; }
+      for (var j = 0; j < o.length; j++) if (Math.hypot(o[j].x - x, o[j].y - y) < o[j].r + 70) return false;
+      return true;
+    };
+    var cand = []; for (var gx = 140; gx <= w - 140; gx += 40) for (var gy = 140; gy <= h - 140; gy += 40) if (free(gx, gy)) cand.push([gx, gy]);
+    var near = function (tx, ty) { var best = null, bd = 1e9; cand.forEach(function (c) { var d = Math.hypot(c[0] - tx, c[1] - ty); if (d < bd) { bd = d; best = c; } }); return best || [tx, ty]; };
+    var sp = [near(w * 0.22, h / 2), near(w * 0.78, h / 2), near(w / 2, h * 0.22), near(w / 2, h * 0.78)];
+    MAPS[id] = { id: id, name: old.name, place: old.place, blurb: R.blurb || old.blurb, w: w, h: h, theme: 'citywin', win: { x0: x0, y0: y0 }, rects: true, b: b, o: o, spawns: sp };
+  });
+})();
 /* ---- reality marbles: replace the battlefield until another marble overwrites it or Enuma Elish breaks it ---- */
 var MARBLE_PULL = 900, MARBLE_R = 1150, MARBLE_LIFE = 25;
 function setMarble(kind, f) {
@@ -5166,6 +5199,7 @@ function mapNoise(m, n, seed) { if (m['_n' + seed]) return m['_n' + seed]; var v
 var VIEWR = null;
 function drawFloor(g, m) {
   if (m.theme === 'city') { drawCity(g, m); return; }
+  if (m.theme === 'citywin') { drawCityWin(g, m); return; }
   var th = m.theme, w = m.w, h = m.h;
   g.fillStyle = THEME[th].floor; g.fillRect(0, 0, w, h);
   if (th === 'fuyuki') {
@@ -5219,7 +5253,7 @@ function drawFloor(g, m) {
   else if (th === 'school') { g.fillStyle = '#4f4231'; g.fillRect(0, 0, w, 300); g.beginPath(); g.ellipse(950, 780, 560, 330, 0, 0, 6.283); g.fillStyle = '#6e5a42'; g.fill(); g.beginPath(); g.ellipse(950, 780, 450, 230, 0, 0, 6.283); g.fillStyle = '#3d5a36'; g.fill();
     g.strokeStyle = 'rgba(240,240,240,.55)'; g.lineWidth = 3; [560, 520, 480].forEach(function (rx, k) { g.beginPath(); g.ellipse(950, 780, rx, 330 - k * 40, 0, 0, 6.283); g.stroke(); }); g.beginPath(); g.moveTo(950, 560); g.lineTo(950, 1000); g.stroke(); g.beginPath(); g.arc(950, 780, 70, 0, 6.283); g.stroke(); }
 }
-function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
+function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'citywin') return drawCityBlock(g, b, b.ci !== undefined ? b.ci : i); if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
 function drawBlock0(g, b, i) {
   var x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, k = b.k;
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, b.w, b.h);
@@ -5694,6 +5728,26 @@ function zoneMask(g) {
   g.fillRect(vr.x0 - 10, vr.y0 - 10, vr.x1 - vr.x0 + 20, rm.y0 - vr.y0 + 10); g.fillRect(vr.x0 - 10, rm.y1, vr.x1 - vr.x0 + 20, vr.y1 - rm.y1 + 10);
   g.fillRect(vr.x0 - 10, rm.y0, rm.x0 - vr.x0 + 10, rm.y1 - rm.y0); g.fillRect(rm.x1, rm.y0, vr.x1 - rm.x1 + 10, rm.y1 - rm.y0);
   g.fillStyle = 'rgba(233,228,211,.12)'; g.font = '700 46px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(rm.name.toUpperCase(), (rm.x0 + rm.x1) / 2, rm.y0 - 20);
+}
+
+/* ---- an Arena window onto the city: the city floor, its buildings and trees around the window, then the world
+   outside the battlefield dimmed behind a faint barrier ---- */
+function drawCityWin(g, m) {
+  var C = MAPS.city, ox = m.win.x0, oy = m.win.y0, vr0 = VIEWR;
+  var vr = vr0 ? { x0: vr0.x0 + ox, y0: vr0.y0 + oy, x1: vr0.x1 + ox, y1: vr0.y1 + oy } : { x0: ox - 300, y0: oy - 300, x1: ox + m.w + 300, y1: oy + m.h + 300 };
+  if (!m._inWin) { m._inWin = {}; m.b.forEach(function (b) { if (b.ci !== undefined) m._inWin[b.ci] = 1; }); }
+  g.save(); g.translate(-ox, -oy); VIEWR = vr;
+  try {
+    drawCity(g, C);
+    C.b.forEach(function (b, i) { if (m._inWin[i] || b.x > C.cityW || b.over) return; if (b.x + b.w / 2 < vr.x0 || b.x - b.w / 2 > vr.x1 || b.y + b.h / 2 < vr.y0 || b.y - b.h / 2 > vr.y1) return; drawCityBlock(g, b, i); });
+    C.o.forEach(function (p) { if (p.x > C.cityW || p.x < vr.x0 - 60 || p.x > vr.x1 + 60 || p.y < vr.y0 - 60 || p.y > vr.y1 + 60) return; if (p.x > ox - 60 && p.x < ox + m.w + 60 && p.y > oy - 60 && p.y < oy + m.h + 60) return; drawObs(g, p); });
+  } finally { VIEWR = vr0; g.restore(); }
+  // outside the battlefield: dimmed, with a faint bounded-field edge
+  var X0 = (vr0 ? vr0.x0 : -300) - 10, Y0 = (vr0 ? vr0.y0 : -300) - 10, X1 = (vr0 ? vr0.x1 : m.w + 300) + 10, Y1 = (vr0 ? vr0.y1 : m.h + 300) + 10;
+  g.fillStyle = 'rgba(4,6,10,.62)';
+  if (Y0 < 0) g.fillRect(X0, Y0, X1 - X0, -Y0); if (Y1 > m.h) g.fillRect(X0, m.h, X1 - X0, Y1 - m.h);
+  if (X0 < 0) g.fillRect(X0, Math.max(0, Y0), -X0, Math.min(m.h, Y1) - Math.max(0, Y0)); if (X1 > m.w) g.fillRect(m.w, Math.max(0, Y0), X1 - m.w, Math.min(m.h, Y1) - Math.max(0, Y0));
+  var t = G ? G.time : 0; g.save(); g.strokeStyle = 'rgba(243,213,138,.35)'; g.lineWidth = 3; g.setLineDash([18, 14]); g.lineDashOffset = -t * 12; g.strokeRect(2, 2, m.w - 4, m.h - 4); g.restore();
 }
 /* ---- city details drawn around the buildings: yards, the church hill, doors, summoning circles,
    and the things you walk under (gates, arches, roofs), which are drawn above the fighters ---- */
