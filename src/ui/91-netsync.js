@@ -8,7 +8,7 @@ var NS = { rate: { f: 66, m: 240, s: 480, c: 380, e: 100 }, max: 3900, reg: [], 
 var FAST = ['x', 'y', 'face', 'hp', 't', 'curWind', 'windTotal', 'recDur', 'sta', 'mom', 'combo', 'spirit', 'kx', 'ky', 'iframes', 'hit', 'mana', 'hs', 'dodges', 'cd'];
 var FAST_FLAGS = ['guarding', 'hid', 'cnc', 'inM'];
 var NST2 = ['idle', 'wind', 'act', 'rec', 'stag', 'dodge', 'counter', 'dead', 'move'];
-var MED_SKIP = { idx: 1, def: 1, A: 1, inp: 1, buf: 1, nav: 1, patrol: 1, patrolT: 1, hunt: 1, huntT: 1, stat: 1, act: 1, st: 1, key: 1, anchor: 1, home: 1, foe: 0 };
+var MED_SKIP = { idx: 1, def: 1, A: 1, inp: 1, buf: 1, nav: 1, patrol: 1, patrolT: 1, hunt: 1, huntT: 1, stat: 1, act: 1, st: 1, key: 1, anchor: 1, home: 1, foe: 0, nx: 1, ny: 1, sface: 1 }; // nx, ny, sface: the guest's own interpolation targets, never sent by the host
 FAST.concat(FAST_FLAGS).forEach(function (k) { MED_SKIP[k] = 1; });
 var G_SKIP = { f: 1, proj: 1, zones: 1, ai: 1, civ: 1, mobs: 1, noise: 1, seed: 1, homes: 1, circles: 1, marble: 1, time: 1, hitstop: 1, traces: 1, deck: 1, pactHate: 1, pactAsk: 1, pactT: 1, pactCd: 1, pactLog: 1, mode: 1, quick: 1 };
 // every attack table the fighters in this war can use gets a number, the same on every machine

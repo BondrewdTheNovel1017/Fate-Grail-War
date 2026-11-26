@@ -4,7 +4,7 @@ var NET_MODES = [['war', 'Holy Grail War', 'Up to seven teams across Fuyuki. Two
 function lobbyMode(L) { return L.kind === 'war' ? 'war' : L.amode; }
 function netStatusHTML() {
   var rows = [], ok = '<b class="ok">●</b>', bad = '<b class="bad">●</b>', wait = '<b class="wait">●</b>';
-  rows.push([NET.ns ? ok : (NET.err ? bad : wait), 'Room service', NET.ns ? (NET.ns.local ? 'local test room (this browser only)' : 'claude.ai room') : (NET.err ? 'unavailable' : 'looking…')]);
+  rows.push([NET.ns ? ok : (NET.err ? bad : wait), 'Room service', NET.ns ? (NET.ns.local ? 'local test room (this browser only)' : NET.ns.hosted ? 'game server' : 'claude.ai room') : (NET.err ? 'unavailable' : 'looking…')]);
   if (NET.R) {
     var peers = netPeers().filter(function (p) { return p.presence && p.presence.v === NET_V; });
     rows.push([NET.conn === false ? bad : ok, 'Connected', NET.conn === false ? 'reconnecting…' : 'yes']);
@@ -26,7 +26,7 @@ function renderNet() {
       '<div class="lbl" style="margin-top:16px">Host a room</div><p class="note">Your page runs the war; friends join with the code. The strongest computer should host.</p><button type="button" class="btn seal" id="netHostBtn">Host a room</button>' +
       '<div class="lbl" style="margin-top:18px">Join a room</div><div class="joinrow"><input class="netin" id="netCodeIn" maxlength="8" placeholder="Room code" autocomplete="off"><button type="button" class="btn" id="netJoinBtn">Join</button></div>' +
       (NET.msg ? '<p class="note">' + esc(NET.msg) + '</p>' : '') + '</div>' +
-      '<div class="ncard">' + netStatusHTML() + '<p class="note" style="margin-top:12px">Everyone opens this same page on claude.ai, signed in. Public-link visitors cannot join rooms. Up to seven players: every servant and every master is a seat, so two friends can share a team as servant and master.</p></div></div>';
+      '<div class="ncard">' + netStatusHTML() + '<p class="note" style="margin-top:12px">' + (NET.ns && NET.ns.hosted ? 'Send friends this page\u2019s link; no account needed. One person hosts, the others type the code.' : 'Everyone opens this same page on claude.ai, signed in. Public-link visitors cannot join rooms.') + ' Up to seven players: every servant and every master is a seat, so two friends can share a team as servant and master.</p></div></div>';
     return;
   }
   var L = NET.lob, host = NET.role === 'host', me = netSelfPeer() || 'host';

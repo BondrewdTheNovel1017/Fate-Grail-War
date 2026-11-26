@@ -38,6 +38,7 @@ function localRoomNs() {
 }
 (function findRoom(n) {
   if (NET.local) { NET.ns = localRoomNs(); renderNet(); return; }
+  if (typeof NET_WS !== 'undefined' && NET_WS && !NET.local) { NET.ns = wsRoomNs((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/'); renderNet(); return; }
   if (window.claude && window.claude.use) { window.claude.use('room').then(function (ns) { NET.ns = ns || null; if (!ns) NET.err = 'claude.ai did not open the room service for this view (signed out, opened from a public link, or not invited).'; renderNet(); }, function (e) { NET.err = 'Room unavailable: ' + ((e && e.code) || 'error'); renderNet(); }); return; }
   if (n < 40) setTimeout(function () { findRoom(n + 1); }, 100); else { NET.err = 'Not on claude.ai: online play needs the published page, opened while signed in.'; renderNet(); }
 })(0);

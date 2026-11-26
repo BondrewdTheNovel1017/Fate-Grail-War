@@ -13,10 +13,12 @@ const list = (dir) => fs.readdirSync(path.join(ROOT, dir)).filter((n) => n.endsW
 function engineSource() { return list('src/engine').map(read).join(''); }
 function uiSource() { return list('src/ui').map(read).join(''); }
 
-function buildPage(arena) {
-  const js = '(function () {\n' + (arena ? 'var ARENA_ENTRY = true;\n' : '') + '/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
+function buildPage(arena, hosted) {
+  const js = '(function () {\n' + (arena ? 'var ARENA_ENTRY = true;\n' : '') + (hosted ? 'var NET_WS = true;\n' : '') + '/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
   const css = read('src/page/style.css').replace(/\n$/, '');
-  return read('src/page/template.html').replace('{{CSS}}', () => css).replace('{{JS}}', () => js);
+  const page = read('src/page/template.html').replace('{{CSS}}', () => css).replace('{{JS}}', () => js);
+  // the hosted site is a plain web page, so it carries its own doctype, viewport and base reset (claude.ai adds these to artifacts)
+  return hosted ? '<!doctype html>\n<html lang="en">\n' + page.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<style>html{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>') : page;
 }
 
 module.exports = { engineSource, uiSource, buildPage };
@@ -30,4 +32,9 @@ if (require.main === module) {
   // The Arena entry page: the same game and the same sprites, opening on the Arena setup.
   fs.writeFileSync(path.join(ROOT, 'arena', 'servant-duel.html'), buildPage(true));
   console.log('built arena/servant-duel.html');
+  // The hosted site (Cloudflare): the same game, with online play through the game's own room relay (server/).
+  fs.mkdirSync(path.join(ROOT, 'site'), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, 'site', 'index.html'), buildPage(false, true));
+  fs.writeFileSync(path.join(ROOT, 'site', 'arena.html'), buildPage(true, true));
+  console.log('built site/index.html, site/arena.html');
 }
