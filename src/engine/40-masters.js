@@ -74,8 +74,14 @@ MASTERS.kuzuki = MD({ id: 'kuzuki', name: 'Souichirou Kuzuki', type: 'Outsider',
     heavy: { name: 'Coiled elbow', kind: 'melee', dmg: 12, reach: 82, arc: 0.9, wind: 0.4, max: 0.85, act: 0.1, rec: 0.55, lunge: 70, cost: 20, stag: 0.7, power: 2, gb: true },
     skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.25, act: 0.05, rec: 0.2, cd: 13, cost: 12 },
     np: { name: 'Coiled Strike', kind: 'grab', reach: 96, arc: 0.7, dmg: 22, stag: 1.0, unblock: true, noParry: true, noExec: true, wind: 0.35, act: 0.08, rec: 0.6, cost: 0, cd: 18, aiUse: 'near' } });
-MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki);
-var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki'];
+MASTERS.caren = MD({ id: 'caren', name: 'Caren Hortensia', type: 'Church', col: '#e8e4ec', hp: 90, spd: 200, guard: 0.3, stigmata: true,
+    brief: 'A sister of the Church whose body answers evil with wounds. Her Stigmata feel hidden Assassins and raging Berserkers through walls and show them to her side, at a slow cost in blood. The Shroud of Magdalene binds a man longer than a woman; Sacrament mends her and her servant.',
+    light: { name: 'Verse of Rebuke', kind: 'proj', speed: 950, range: 540, dmg: 4, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 5, col: '#f2e6c0' },
+    heavy: { name: 'Baptism', kind: 'proj', speed: 1050, range: 620, dmg: 10, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'orb', size: 8, col: '#fff4d6' },
+    skill: { name: 'Shroud of Magdalene', kind: 'proj', speed: 1000, range: 560, dmg: 2, root: 1.6, rootF: 0.8, wind: 0.35, act: 0.05, rec: 0.35, cd: 15, cost: 16, shape: 'shroud', size: 9, col: '#c8283a', aiRange: [140, 520] },
+    np: { name: 'Sacrament', kind: 'sacrament', self: 34, amount: 40, range: 380, wind: 0.6, act: 0.05, rec: 0.4, cost: 0, cd: 22, aiUse: 'mend' } });
+MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki); MASTERS.caren.A = build(MASTERS.caren);
+var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki', 'caren'];
 /* Arena mode keeps the duel-length numbers: copies taken before the war scaling below */
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });

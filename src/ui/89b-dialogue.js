@@ -1,6 +1,7 @@
 /* ---- the dialogue pass: fuller lines for every character, rivals who answer each other when they meet,
    conversations at the King's table, and Rule Breaker's broken contract. All lines are original. ---- */
 var MORE_LINES = {
+  caren: { low: ['It only hurts. Go on.', 'My wounds are open anyway.'] },
   tokiomi: { low: ['A setback. Nothing more.', 'Composure... composure.'] },
   kuzuki: { low: ['Still standing.', 'Pain is information.'], servantdown: ['I see. I will continue.'] },
   caerwyn: { engage: ['I will not fall here.', 'Your blade against mine, then.', 'Stand aside, or be cut down.'], kill: ['It is finished.', 'Go in peace.'], np: ['Ex... calibur!', 'Light, answer me!'], low: ['This is nothing.', 'A knight does not kneel.'], masterdown: ['Forgive me. I was too late.'], contract: ['Then I will be your sword.'] },
@@ -83,6 +84,7 @@ var BANQ_SCRIPTS = [
   { need: ['iskandar', 'leonidas'], lines: [['iskandar', 'The king of Sparta! Your three hundred would have made a fine vanguard.'], ['leonidas', 'They would have made a fine wall. Your horses would have broken on it.'], ['iskandar', 'Ha! Drink, then, wall-builder!']] },
   { need: ['gilgamesh', 'caerwyn'], lines: [['gilgamesh', 'Sit, Saber. You will drink my wine and listen.'], ['caerwyn', 'I did not come here to be lectured.'], ['gilgamesh', 'No. You came to be admired. I permit it.']] },
   { need: ['caerwyn', 'richard'], lines: [['richard', 'My king! To share a table with you is a dream!'], ['caerwyn', 'Richard. You were a far braver king than I.'], ['richard', 'Braver, perhaps. But never truer.']] },
+  { need: ['gilgamesh', 'caren'], lines: [['caren', 'A king who drinks at another king\u2019s table. How humble of you.'], ['gilgamesh', 'Your tongue is sharper than your faith, nun. Pour, and I will permit it.']] },
   { need: ['gilgamesh', 'tokiomi'], lines: [['tokiomi', 'Your Majesty honours this table.'], ['gilgamesh', 'Silence, Tokiomi. Kings are speaking.']] }
 ];
 var BSCRIPT = null;

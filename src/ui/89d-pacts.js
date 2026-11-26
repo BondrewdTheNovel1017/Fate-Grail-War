@@ -18,6 +18,7 @@ var PACT_LINES = {
   gilgamesh: { offer: 'You may stand near me tonight. Consider it an honor.', yes: 'Hmph. Amuse me.', no: 'You presume too much, mongrel.', brk: '...' },
   shirou: { offer: 'We don’t have to fight tonight. Let’s work together.', yes: 'Thanks. I mean it.', no: 'I understand. But I won’t give up on talking.', brk: '...' },
   rin: { offer: 'A temporary alliance. Strictly business.', yes: 'Good. Don’t make me regret it.', no: 'Fine. Your funeral.', brk: 'Sorry. It’s nothing personal. Mostly.' },
+  caren: { offer: 'Until dawn, then. Do not mistake this for kindness.', yes: 'Fine. Try not to embarrass me.', no: 'Wise. I would have broken it anyway.', brk: 'You trusted a nun. That was your sin, not mine.' },
   tokiomi: { offer: 'An arrangement between gentlemen, until dawn. You will find me a reliable partner.', yes: 'Splendid. Let us proceed.', no: 'A pity. We shall meet as enemies, then.', brk: 'Forgive me. Victory was always the arrangement.' },
   kuzuki: { offer: 'We have no reason to fight tonight.', yes: 'Understood.', no: 'Then I will not hold back.', brk: '...' },
   sakura: { offer: 'Um... could we not fight tonight?', yes: 'Thank you...', no: 'I see...', brk: 'I’m sorry. I couldn’t stop it.' },

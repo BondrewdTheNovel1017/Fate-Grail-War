@@ -9,7 +9,7 @@
    unless Kirei stands on another team; and when a truce puts them together, he may betray his own master to take Kirei. */
 var PACT = { range: 1100, tick: 6, base: 0.22, offerT: 14, askCd: 60, cd: 240, outnum: 0.85, outR: 700, breakExpo: 25, revealT: 40, minTeams: 4, hate: 20, treachT: 5 };
 // willingness to make a pact at all (0 never, 1 eager)
-var PACT_M = { kiritsugu: 0, irisviel: 0.6, illya: 0.3, shirou: 0.85, rin: 0.55, sakura: 0.4, kariya: 0.35, kayneth: 0.25, kirei: 0.3, waver: 0.7, tokiomi: 0.5, kuzuki: 0.3 };
+var PACT_M = { kiritsugu: 0, irisviel: 0.6, illya: 0.3, shirou: 0.85, rin: 0.55, sakura: 0.4, kariya: 0.35, kayneth: 0.25, kirei: 0.3, waver: 0.7, tokiomi: 0.5, kuzuki: 0.3, caren: 0.5 };
 var PACT_S = { gilgamesh: 0, iskandar: 0.95, caerwyn: 0.6, diarmuid: 0.75, cu: 0.6, emiya: 0.45, heracles: 0.6, lancelot: 0.35, medea: 0.55, medusa: 0.5, kojirou: 0.6, hassan: 0.4, gilles: 0.15, richard: 0.7, leonidas: 0.75, atalanta: 0.4 };
 // who turns on a partner when the chance comes
 var TREACH = { medea: 0.3, kiritsugu: 0.35, kirei: 0.25, gilles: 0.3, hassan: 0.2, kayneth: 0.15 };
@@ -42,7 +42,7 @@ function pactWill(t, o) {
   if (m && m.def.id === 'illya' && teamHas(o, ['shirou'])) wm = 0.8;
   if (m && (m.def.id === 'sakura' || m.def.id === 'rin') && teamHas(o, ['shirou', 'rin', 'sakura'])) wm = Math.max(wm, 0.8);
   if (m && ((m.def.id === 'tokiomi' && teamHas(o, ['kirei'])) || (m.def.id === 'kirei' && teamHas(o, ['tokiomi'])))) wm = 0.9; // teacher and student, allies of the Church
-  if (s && s.def.id === 'gilgamesh') ws = (!m || m.def.id !== 'kirei') && teamHas(o, ['kirei']) ? 0.85 : 0; // the King allies with no one, unless it brings him Kirei
+  if (s && s.def.id === 'gilgamesh') ws = (!m || m.def.id !== 'kirei') && (teamHas(o, ['kirei']) || teamHas(o, ['caren'])) ? 0.85 : 0; // the King allies with no one, unless it brings him Kirei or Caren
   var w = wm === null ? ws : ws === null ? wm : Math.sqrt(wm * ws);
   teamFighters(t).forEach(function (a) { teamFighters(o).forEach(function (b) { var k = bondKey(a, b); if (PACT_FEUD[k] !== undefined) w *= PACT_FEUD[k]; if (FAMILY[k]) w *= 1.5; if (G.hesit && (G.hesit[a.idx + '>' + b.idx] || G.hesit[b.idx + '>' + a.idx])) w *= 1.6; }); });
   var ld = leadTeam(); if (ld >= 0 && t !== ld && o !== ld) w = Math.min(1, w * 1.6 + 0.15); // united against the strongest

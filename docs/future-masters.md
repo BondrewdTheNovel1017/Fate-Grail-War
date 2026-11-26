@@ -22,7 +22,7 @@ Rules for every new master: no canon-pairing bonuses (any master can be paired w
 - Skill, Ansuz: a short rune blast in front of her that staggers. No healing.
 - Signature, Fragarach (Answerer): a counter stance with a one-second window. The first damaging attack aimed at her in the window (light, heavy, projectile, damaging skill or Noble Phantasm) is cancelled; she dashes up to 450 units to that attacker and strikes only them. Against an NP, the caster loses their momentum as if interrupted; her counter damage is the same either way. Long cooldown (about 35 s, set by the sim). A wasted stance leaves her briefly open. Counterplay: bait it with a cheap jab or shot, then commit once it is on cooldown.
 
-## Caren Hortensia — Church
+## Caren Hortensia — Church (ADDED Nov 26)
 - Health 90, lowest damage of any master.
 - Edge, Stigmata: within 700 units she senses concealed Assassins, rampaging Berserkers, the Shadow and corrupted things through walls, and her team sees them. Cost: a small health drain while something is in range, never below 40%.
 - Skill, Shroud of Magdalene: a bind, 1.6 s on men and 0.8 s on women (needs a male/female flag on every character), tuned so the average hold matches Irisviel's Wire Bind.

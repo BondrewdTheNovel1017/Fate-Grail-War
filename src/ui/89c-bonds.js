@@ -3,6 +3,12 @@
    All lines are original. ---- */
 var MORE_PAIRS = {
   // Tokiomi: his student, his rival in love, his enemies and his daughter
+  // Caren: the father who left her, the boy who bleeds for strangers, the King who is amused by her
+  'caren>kirei': ['Father. I came to watch you fail.', 'Then watch closely. I have never disappointed you in that.'],
+  'kirei>caren': ['Caren. Did the Church send you?', 'No one sent me. I wanted to see your face when you lose.'],
+  'caren>shirou': ['You again. Do you enjoy bleeding for strangers?', 'Someone has to.'],
+  'caren>gilles': ['There you are. My wounds have been screaming about you all night.', 'A saint! Come, let me show you heaven!'],
+  'caren>kariya': ['You are rotting from the inside. I can feel every worm.', 'Then get out of my way.'],
   'tokiomi>kirei': ['Kirei. You\u2019ve done well. Remember your place in the plan.', 'Of course, Master. I remember everything.'],
   'kirei>tokiomi': ['Teacher. I had wondered when we\u2019d meet.', 'Kirei? This was not part of our arrangement.'],
   'tokiomi>kariya': ['Kariya. You threw away your magecraft, and now you return like this?', 'You gave her away, Tokiomi. I\u2019ll make you answer for it.'],
@@ -53,6 +59,7 @@ Object.keys(MORE_PAIRS).forEach(function (k) { PAIRS[k] = MORE_PAIRS[k]; });
 var TRUCE_PAIRS = {
   'rin|tokiomi': ['tokiomi', 'Stay behind me, Rin.', 'I can manage on my own, Father.'],
   'sakura|tokiomi': ['tokiomi', '...Sakura. You\u2019ve grown.', '...You don\u2019t get to say that.'],
+  'caren|kirei': ['caren', 'Stand on that side of the room, Father.', 'As you wish, daughter.'],
   'kirei|tokiomi': ['kirei', 'Your plan holds, Teacher?', 'Perfectly. Trust in it.'],
   'irisviel|kiritsugu': ['kiritsugu', 'Stay close, Iri. Just for now.', 'Just for now. I know.'],
   'illya|kiritsugu': ['kiritsugu', 'Illya... are you hurt?', 'Don’t act like a father now. ...But thanks.'],
@@ -85,6 +92,8 @@ function trucePairs() {
 }
 // the hand that will not fall
 var HESIT = {
+  'kirei>caren': ['...No. Not this one. Not tonight.', 'How sentimental. It doesn\u2019t suit you.'],
+  'caren>kirei': ['...Get up, Father. I am not finished despising you.', '...'],
   'tokiomi>rin': ['Rin... no. Not by my hand.', 'Why did you stop?'],
   'tokiomi>sakura': ['I gave you away so you would live. Not for this.', '...You never asked what I wanted.'],
   'kiritsugu>illya': ['...My hands won’t move.', '...Why did you stop?'],
@@ -111,6 +120,8 @@ FX.hesitate = function (a, d) {
 };
 // last words over the fallen, for the kills that mean something
 var KILLQ = {
+  'caren>kirei': 'Rest. Someone will pray for you. Not me.',
+  'kirei>caren': 'So that is what it feels like. I expected more.',
   'kirei>tokiomi': 'I wondered if I would feel something. Nothing. How disappointing.',
   'kariya>tokiomi': 'That was for Sakura.',
   'kuzuki>shirou': 'Class dismissed.',

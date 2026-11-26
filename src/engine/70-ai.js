@@ -157,7 +157,7 @@ function aiTick(ai, dt) {
   if (f.brokenT > 0 && f.st === 'idle') { inp.mx = -Math.cos(toO) * 0.8; inp.my = -Math.sin(toO) * 0.8; }
   if (f.st === 'idle' && ai.cool <= 0 && !flee && f.exh <= 0 && G.time >= ai.guardUntil && f.brokenT <= 0) {
     var np = A.np, r2 = Math.random();
-    var canNP = f.mom >= 100 && d >= (np.aiMin || 0) && d <= (np.aiMax || 400) && (np.kind === 'wall' || o.st !== 'dodge') && (losClear(f, o) || np.kind === 'wall');
+    var canNP = np.aiUse === 'mend' ? f.mom >= 100 && f.hp < f.def.hp * 0.6 : f.mom >= 100 && d >= (np.aiMin || 0) && d <= (np.aiMax || 400) && (np.kind === 'wall' || o.st !== 'dodge') && (losClear(f, o) || np.kind === 'wall');
     var foeOpen = o.st === 'rec' || o.st === 'stag' || o.st === 'wind';
     if (f.hid && d <= wantRange + 60 && Math.random() < 0.5) { press(f, 'light'); ai.comboLeft = Math.floor(Math.random() * f.def.combo); ai.cool = 0.5; return; }
     if (canNP && (foeOpen || r2 < 0.5 || np.kind === 'rain')) { press(f, 'np'); ai.cool = 1.0; return; }
@@ -326,8 +326,8 @@ function aiMaster(ai, dt) {
     if (Math.hypot(f.x - dg.x, f.y - dg.y) > dg.r * 0.45) moveTo(f, dg.x, dg.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
-    var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
-    if (want) { press(f, 'skill'); return; }
+    var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'proj' && thr && td < 520 && losClear(f, thr)) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
+    if (want) { if (sk === 'proj') f.lock = thr; press(f, 'skill'); return; }
   }
   // Shirou stands in a servant's fight: he joins his servant against a servant it is already fighting, while he is healthy
   if (f.def.fightsServants && (!G.clock || !f.def.trace || (f.traceTier || 0) >= 1) && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
@@ -361,6 +361,7 @@ function aiMaster(ai, dt) {
     var dT = dist(f, tg);
     if ((np.aiUse === 'ranged' || np.aiUse === 'origin') && dT < (np.range || 600) * 0.85 && losClear(f, tg)) { f.lock = tg; press(f, 'np'); return; }
     if (np.aiUse === 'ally' && sf && dist(s, sf) < 420) { press(f, 'np'); return; }
+    if (np.aiUse === 'mend' && ((s.hp < s.def.hp * 0.6 && dist(f, s) < np.range) || f.hp < f.def.hp * 0.55)) { press(f, 'np'); return; }
     if (np.aiUse === 'ubw' && sf && !sf.def.isMaster && dist(f, sf) < 560 && dist(s, sf) < 500) { press(f, 'np'); return; }
   }
   if (tg && f.st === 'idle' && ai.cool <= 0) { var d2 = dist(f, tg), rk2 = rangedKey(A), knifeR = A.light.kind === 'melee' ? A.light.reach + FR + 10 : 0; if (d2 < 560 && losClear(f, tg)) { f.lock = tg; if (knifeR && d2 < knifeR) press(f, 'light'); else if (rk2 === 'heavy' || (Math.random() < 0.25 && d2 < 420)) { if (!f.def.mag || f.ammo >= 20) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.55; } } else press(f, 'light'); ai.cool = (0.7 + Math.random() * 0.9) * (1.6 - cfg.agg); } else f.lock = null; }

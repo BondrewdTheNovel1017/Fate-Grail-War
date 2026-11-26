@@ -80,7 +80,7 @@ function hurt(att, def, a, mult, src) {
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
-  if (a.root) { def.rootT = a.root; FX.text(def, 'BOUND'); }
+  if (a.root) { def.rootT = a.rootF && isFemale(def) ? a.rootF : a.root; FX.text(def, 'BOUND'); }
   if (a.bind && att) enkiduBind(att, def, a);
   // Origin Rounds burn magic circuits: an Outsider has none to burn
   if (a.silence && def.def.isMaster) { if (def.def.type === 'Outsider') FX.text(def, 'NO CIRCUITS TO BURN'); else { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); } }
@@ -197,6 +197,7 @@ function strikeInit(f) {
   }
   else if (k === 'arm') { f.arm = Math.floor(rnd() * f.A.arms.length); f.armT = a.dur; FX.text(f, f.A.arms[f.arm].name.toUpperCase()); FX.fx('arm', f.x, f.y, f); FX.shake(3); }
   else if (k === 'barrage') { f.barN = 0; f.barT = 0; }
+  else if (k === 'sacrament') sacrament(f, a);
   else if (k === 'heal') { var ht = a.self || !livePartner(f) ? f : f.partner, ham = ht === f && !a.self ? Math.round(a.amount * SOLO_HEAL) : a.amount; if (ht && ht.st !== 'dead' && (ht === f || dist(f, ht) <= a.range)) { ht.hp = Math.min(ht.def.hp, ht.hp + ham); FX.text(ht, '+' + ham); FX.fx('heal', ht.x, ht.y, ht); FX.snd('field', ht); } else FX.text(f, 'TOO FAR'); }
   else if (k === 'haste') { f.hasteT = a.dur; FX.text(f, 'DOUBLE ACCEL'); FX.fx('heal', f.x, f.y, f); }
   else if (k === 'siphon') { var got = 0; enemiesOf(f).forEach(function (o) { if (dist(f, o) <= a.r + FR) { if (hurt(f, o, { dmg: a.dmg, stag: 0.2, power: 1, unblock: true, spell: true, hs: 0.04, arc: 0, key: 'skill', vsServant: 1 }, 1, f) === 'hit') got += a.dmg; } }); if (got) { f.hp = Math.min(f.def.hp, f.hp + got); FX.text(f, '+' + got); } FX.fx('heal', f.x, f.y, f); FX.text(f, 'IMAGINARY DRAIN'); }
@@ -260,6 +261,7 @@ function stepF(f, dt) {
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
+    if (f.def.stigmata) stigmataTick(f, dt);
     if (f.def.id === 'emiya' || f.def.trace) rhoTick(f, dt);
     if (f.def.mag) ammoTick(f, dt);
     if (MAP.doors) doorTick(f, dt);

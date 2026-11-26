@@ -15,7 +15,7 @@ var EVT = {
   grail: { at: 60, r0: 4200, r1: 750, shrink: 330, dmg: 3, dmgC: 5, heal: 2, poolEvery: 3.5 }
 };
 var GRAIL_SITES = [{ x: 1500, y: 1060, name: 'Ryuudou Temple' }, { x: 1300, y: 3080, name: 'the Fuyuki Church hill' }, { x: 10450, y: 5050, name: 'the Fuyuki Civic Hall' }];
-var NIGHT_DECK = { challenge: 'diarmuid', bounty: 'gilles', horror: 'gilles', falsedeath: 'hassan', berserk: ['heracles', 'lancelot'], demo: 'kiritsugu', shadow: null }, DAY_DECK = { school: 'medusa', banquet: 'iskandar', summons: null, festival: null };
+var NIGHT_DECK = { challenge: 'diarmuid', bounty: 'gilles', horror: 'gilles', falsedeath: 'hassan', berserk: ['heracles', 'lancelot'], demo: 'kiritsugu', shadow: null }, DAY_DECK = { school: 'medusa', banquet: 'iskandar', summons: 'caren', festival: null };
 function eventsOn() { return clockOn() && !G.quick && MAP.cityW; }
 function evAlive(id) { return G.f.filter(function (f) { return f.def.id === id && f.st !== 'dead'; })[0]; }
 function loreHost(ids) { if (!ids) return null; ids = [].concat(ids); for (var i = 0; i < ids.length; i++) { var f = evAlive(ids[i]); if (f) return f; } return null; }

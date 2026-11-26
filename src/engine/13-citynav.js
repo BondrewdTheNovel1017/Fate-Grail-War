@@ -118,7 +118,7 @@ function stepDoor(f, x, y, d, entering) {
   G.f.forEach(function (o) { if (o.foe === f || o.lock === f) o.nav = null; });
 }
 /* ---- homes: each master starts at their family seat; a second member of the same family gets a new estate ---- */
-var MASTER_HOME = { rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null, tokiomi: 'tohsaka', kuzuki: null };
+var MASTER_HOME = { caren: 'church', rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null, tokiomi: 'tohsaka', kuzuki: null };
 var ESTATE_STYLE = { tohsaka: ['mansion_w', 'Tohsaka villa'], matou: ['mansion_d', 'Matou house'], einzbern: ['villa_e', 'Einzbern villa'], church: ['chapel', 'Church annex'], hyatt: ['hotel_s', 'Hotel suite'], mackenzie: ['house_w', 'Rented house'], emiya: ['house_jpL', 'Emiya house'], safe: ['safehouse', 'Safehouse'] };
 var PLOT_ORDER = null;
 function assignHomes(teams, rnd, plots) {

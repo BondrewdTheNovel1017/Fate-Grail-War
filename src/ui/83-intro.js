@@ -91,6 +91,7 @@ var LINES = {
   illya: { summon: ["Mm-hm! You're mine now. Let's go crush everyone."], engage: ['Found you~'], kill: ['Bye-bye!'], servantdown: ['...Liar. You said you were the strongest.'] },
   kariya: { summon: ['I am... For her sake, we will not lose.'], engage: ['Tokiomi... is that you?'], servantdown: ['Not like this...'] },
   sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] },
+  caren: { summon: ['Come, then. Let us see what kind of sinner answers me.'], engage: ['How sad. You think you can win.', 'Shall I pray for you now, or after?'], kill: ['Amen. That was quick.', 'There. You can rest from yourself.'], servantdown: ['...So even you could not stay. Typical.'] },
   tokiomi: { summon: ['I am. A Tohsaka does not lose his composure, and does not lose.'], engage: ['Let us settle this with dignity.'], kill: ['Elegance, to the very end.'], servantdown: ['This was not... how it was meant to go.'] },
   kuzuki: { summon: ['I am. I have no wish of my own. Tell me what you need.'], engage: ['...'], kill: ['It is finished.'], servantdown: ['I see. Then I will go on alone.'] }
 };

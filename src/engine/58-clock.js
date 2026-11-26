@@ -47,6 +47,7 @@ function clockTick(dt) {
 /* ---- what a fighter knows: at night only what is close, what hit them, what rumor or the Church reveals ---- */
 function knowsExact(f, e) {
   if (!e || !f || e.team === f.team) return true;
+  if (stigSees(f, e)) return true; // Caren's Stigmata feel them through walls, concealment included
   // an Assassin in Presence Concealment is found only up close, or by the one it just struck
   if (concealed(e) && !(sameZone(f, e) && dist(f, e) < 120) && !(f.lastHit && f.lastHit.by === e && G.time - (f.lastHitT || -99) < 3)) return false;
   if (G.ghost && ghosted(f, e)) return false;

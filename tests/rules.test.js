@@ -878,3 +878,31 @@ test('Master-duel tuning applies only when masters fight each other, never to th
   const W = E.newWar(E.warTeams('richard', 'kuzuki', 2), { nights: 1 });
   assert.strictEqual(W.f.find((f) => f.def.id === 'kuzuki').def.hp, E.MASTERS.kuzuki.hp, 'war Kuzuki keeps war numbers');
 });
+test('Caren: the Shroud of Magdalene holds a man twice as long as a woman', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.MASTERS.caren, E.MASTERS.kirei, { map: 'arena' }); G.ai = [null, null];
+  const c = G.f[0]; E.hurt(c, G.f[1], c.A.skill, 1);
+  const G2 = E.newGame(E.MASTERS.caren, E.MASTERS.rin, { map: 'arena' }); G2.ai = [null, null];
+  E.hurt(G2.f[0], G2.f[1], G2.f[0].A.skill, 1);
+  assert.ok(Math.abs(G.f[1].rootT - 1.6) < 1e-6 && Math.abs(G2.f[1].rootT - 0.8) < 1e-6, 'Kirei ' + G.f[1].rootT + ', Rin ' + G2.f[1].rootT);
+});
+test('Caren: Stigmata feel a concealed Assassin through walls, her side sees it, and she bleeds no lower than 40%', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'caren', 3), { nights: 1 }); G.ai = G.ai.map(() => null);
+  G.clock.pending = null; G.clock.evDone = true; G.event = null;
+  const c = G.f.find((f) => f.def.id === 'caren'), sv = c.partner;
+  const hassan = G.f.find((f) => f.team !== c.team && !f.def.isMaster); hassan.def = Object.assign({}, hassan.def, { cls: 'Assassin' }); hassan.cnc = true;
+  G.f.forEach((f) => { f.x = 600; f.y = 3000; }); c.x = 2300; c.y = 3100; sv.x = 2350; sv.y = 3100; hassan.x = 2700; hassan.y = 3100;
+  assert.ok(!E.knowsExact(sv, hassan), 'hidden before');
+  c.hp = c.def.hp * 0.42;
+  for (let i = 0; i < 60 * 2; i++) { G.f.forEach((f) => { f.inp = { mx: 0, my: 0 }; }); E.simStep(E.STEP); }
+  assert.ok(E.knowsExact(sv, hassan), 'her servant sees the hidden Assassin');
+  assert.ok(c.hp >= c.def.hp * 0.4 - 1e-6 && c.hp < c.def.hp * 0.42, 'she bled, but not below 40% (' + (c.hp / c.def.hp).toFixed(3) + ')');
+});
+test('Caren: Sacrament heals her and a nearby servant', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'caren', 2), { nights: 1 }); G.ai = G.ai.map(() => null);
+  const c = G.f.find((f) => f.def.id === 'caren'), sv = c.partner; sv.x = c.x + 100; sv.y = c.y;
+  c.hp = 30; sv.hp = 100; E.sacrament(c, c.A.np);
+  assert.ok(c.hp === 64 && sv.hp === 140, 'healed ' + c.hp + ' and ' + sv.hp);
+});

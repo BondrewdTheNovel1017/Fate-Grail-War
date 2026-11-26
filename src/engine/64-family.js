@@ -1,6 +1,6 @@
 /* ---- family and old bonds: when one of these would land a killing blow on the other, the hand
    stops the first time. The AI often lets them go; a player can strike again, or walk away. ---- */
-var FAMILY = { 'rin|tokiomi': 1, 'sakura|tokiomi': 1, 'irisviel|kiritsugu': 1, 'illya|kiritsugu': 1, 'illya|irisviel': 1, 'rin|sakura': 1, 'illya|shirou': 1, 'kariya|sakura': 1, 'sakura|shirou': 1, 'kiritsugu|shirou': 1, 'kariya|rin': 1 };
+var FAMILY = { 'caren|kirei': 1, 'rin|tokiomi': 1, 'sakura|tokiomi': 1, 'irisviel|kiritsugu': 1, 'illya|kiritsugu': 1, 'illya|irisviel': 1, 'rin|sakura': 1, 'illya|shirou': 1, 'kariya|sakura': 1, 'sakura|shirou': 1, 'kiritsugu|shirou': 1, 'kariya|rin': 1 };
 var SPARE = { chance: 0.6, dur: 90 };
 function bondKey(a, b) { return [a.def.id, b.def.id].sort().join('|'); }
 function familyHold(att, def) {
