@@ -851,3 +851,12 @@ test('Origin Rounds burn a mage\'s circuits but do nothing to an Outsider\'s abi
   const G2 = E.newGame(E.MASTERS.kiritsugu, E.MASTERS.rin, { map: 'arena' }); G2.ai = [null, null];
   E.hurt(G2.f[0], G2.f[1], G2.f[0].A.np, 1); assert.ok(G2.f[1].silenceT > 0, 'Rin is silenced');
 });
+test('Einzbern castle: climbing the grand staircase at the end of the hall leads out into the courtyard', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'illya', 2), { nights: 3 }); G.ai = G.ai.map(() => null);
+  const d = E.MAPS.city.doors.find((q) => q.id === 'court'), f = G.f[0];
+  const ix = d.in ? d.in.x : d.ix, iy = d.in ? d.in.y : d.iy;
+  f.x = ix; f.y = iy + 120; f.inM = false; G.f.forEach((q) => { if (q !== f) { q.x = 600; q.y = 600; } });
+  for (let i = 0; i < 60 * 3 && f.x > E.MAPS.city.cityW; i++) { f.inp = { mx: 0, my: -1 }; E.simStep(E.STEP); }
+  assert.ok(f.x < E.MAPS.city.cityW && Math.abs(f.x - 11000) < 300 && Math.abs(f.y - 1150) < 320, 'out in the courtyard (' + Math.round(f.x) + ',' + Math.round(f.y) + ')');
+});
