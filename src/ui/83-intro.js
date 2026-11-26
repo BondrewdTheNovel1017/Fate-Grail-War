@@ -6,23 +6,25 @@ var CHANT = [
   'Fill and empty, five times over. Let the gate between us open.',
   'I call upon the Throne of Heroes: lend me a hero, and I will lend you my fate.'
 ], CHANT_MAD = ['Let madness cloud your sight and chain your reason.', 'Be bound by fury, and fight only at my command.'],
-  CHANT_END = 'If you would win the Grail, cross over and come to me!';
+  CHANT_END = 'If you would win the Grail, cross over and come to me!',
+  // Ryuunosuke reads from his family's old notes, not quite sure he is doing it right; his circle is drawn in red
+  CHANT_RYU = ['Okay, okay... \u201cSilver for the circle\u201d... I didn\u2019t have silver. This is fine, right?', '\u201cFill and empty, five times over.\u201d Five? Huh. Okay, five.', '\u201cI call upon the Throne of Heroes...\u201d Come on, come on, come on...', 'Hello? Anybody? Come out and play!'];
 var LINE_T = 2.1;
 function startIntro(nTeams) {
   if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length) return false;
   var me = G.f[MEI], m = me.def.isMaster ? me : me.partner; if (!m || !m.partner) return false;
   var c = G.circles.filter(function (q) { return q.team === m.team; })[0]; if (!c) return false;
-  var s = m.partner, lines = CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
+  var s = m.partner, ryu = m.def.id === 'ryuunosuke', lines = ryu ? CHANT_RYU : CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
   var t0 = 1.7, reveal = t0 + lines.length * LINE_T + 0.2;
-  INTRO = { t: 0, m: m, s: s, c: c, lines: lines, t0: t0, reveal: reveal, sl: reveal + 1.0, rp: reveal + 4.0, end: reveal + 6.6, shown: false, said: 0, glow: 0, n: nTeams };
+  INTRO = { col: ryu ? '#b3202a' : null, t: 0, m: m, s: s, c: c, lines: lines, t0: t0, reveal: reveal, sl: reveal + 1.0, rp: reveal + 4.0, end: reveal + 6.6, shown: false, said: 0, glow: 0, n: nTeams };
   cam.x = c.x; cam.y = c.y + 20; document.body.classList.add('intro');
   return true;
 }
 function introReveal() {
-  var I = INTRO; if (I.shown) return; I.shown = true; var s = I.s, mad = s.def.cls === 'Berserker';
+  var I = INTRO; if (I.shown) return; I.shown = true; var s = I.s, mad = s.def.cls === 'Berserker' || I.m.def.id === 'ryuunosuke';
   flashFx(mad ? '#5a0a14' : '#ffffff', 0.85, 0.8); shake = Math.max(shake, 12); FX.snd('summon', I.m);
-  vfx(1.4, function (g, p) { var a = (1 - p), r = 60 + p * 140; g.globalAlpha = a; var lg = g.createRadialGradient(I.c.x, I.c.y, 4, I.c.x, I.c.y, r); lg.addColorStop(0, mad ? 'rgba(255,90,90,.9)' : 'rgba(255,255,255,.95)'); lg.addColorStop(1, rgbaOf(I.c.col, 0)); g.fillStyle = lg; g.beginPath(); g.arc(I.c.x, I.c.y, r, 0, 6.283); g.fill(); g.globalAlpha = 1; });
-  for (var i = 0; i < 40; i++) { var a = Math.random() * 6.283, v = 80 + Math.random() * 220; parts.push({ x: I.c.x, y: I.c.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: 0.9, col: i % 3 ? I.c.col : '#ffffff' }); }
+  vfx(1.4, function (g, p) { var a = (1 - p), r = 60 + p * 140; g.globalAlpha = a; var lg = g.createRadialGradient(I.c.x, I.c.y, 4, I.c.x, I.c.y, r); lg.addColorStop(0, mad ? 'rgba(255,90,90,.9)' : 'rgba(255,255,255,.95)'); lg.addColorStop(1, rgbaOf((I.col || I.c.col), 0)); g.fillStyle = lg; g.beginPath(); g.arc(I.c.x, I.c.y, r, 0, 6.283); g.fill(); g.globalAlpha = 1; });
+  for (var i = 0; i < 40; i++) { var a = Math.random() * 6.283, v = 80 + Math.random() * 220; parts.push({ x: I.c.x, y: I.c.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: 0.9, col: i % 3 ? (I.col || I.c.col) : '#ffffff' }); }
   G.f.forEach(function (f) { if (!f.def.isMaster) { f.face = f.partner ? Math.atan2(f.partner.y - f.y, f.partner.x - f.x) : f.face; } });
 }
 function introTick(dt) {
@@ -49,14 +51,14 @@ function drawIntro() {
   c.fillStyle = '#000'; c.fillRect(0, 0, VW, bar); c.fillRect(0, VH - bar, VW, bar);
   c.textAlign = 'left'; var ca = clamp((I.t - 0.4) / 0.8, 0, 1) * clamp((I.reveal + 0.5 - I.t) / 0.8, 0.35, 1);
   c.globalAlpha = ca; c.fillStyle = '#e9e4d3'; c.font = '400 ' + (VW < 560 ? 20 : 26) + 'px "Marcellus SC", "Times New Roman", serif'; c.fillText(I.m.def.name, 20, bar + 38);
-  c.font = 'italic 400 ' + (VW < 560 ? 14 : 17) + 'px "Times New Roman", serif'; c.fillStyle = I.c.col; c.fillText(I.c.name, 20, bar + 62); c.globalAlpha = 1;
+  c.font = 'italic 400 ' + (VW < 560 ? 14 : 17) + 'px "Times New Roman", serif'; c.fillStyle = (I.col || I.c.col); c.fillText(I.c.name, 20, bar + 62); c.globalAlpha = 1;
   var k = Math.floor((I.t - I.t0) / LINE_T);
   if (I.t >= I.t0 && k < I.lines.length + 1 && !I.shown) {
     c.textAlign = 'center';
     for (var j = Math.max(0, k - 1); j <= Math.min(k, I.lines.length - 1); j++) {
       var lt = I.t - I.t0 - j * LINE_T, al = j === k ? clamp(lt / 0.35, 0, 1) : 0.35, fs = VW < 560 ? 16 : 22, y = VH - bar - 34 - (k - j) * (fs + 14);
       c.globalAlpha = al; c.font = 'italic 400 ' + fs + 'px "Times New Roman", serif'; var ln = I.lines[j]; while (c.measureText(ln).width > VW - 40 && fs > 11) { fs--; c.font = 'italic 400 ' + fs + 'px "Times New Roman", serif'; }
-      c.shadowColor = I.c.col; c.shadowBlur = j === k ? 12 : 0; c.fillStyle = j === I.lines.length - 1 ? '#fff6dc' : '#e9e4d3'; c.fillText(ln, VW / 2, y); c.shadowBlur = 0;
+      c.shadowColor = (I.col || I.c.col); c.shadowBlur = j === k ? 12 : 0; c.fillStyle = j === I.lines.length - 1 ? '#fff6dc' : '#e9e4d3'; c.fillText(ln, VW / 2, y); c.shadowBlur = 0;
     }
     c.globalAlpha = 1;
   }
@@ -91,6 +93,7 @@ var LINES = {
   illya: { summon: ["Mm-hm! You're mine now. Let's go crush everyone."], engage: ['Found you~'], kill: ['Bye-bye!'], servantdown: ['...Liar. You said you were the strongest.'] },
   kariya: { summon: ['I am... For her sake, we will not lose.'], engage: ['Tokiomi... is that you?'], servantdown: ['Not like this...'] },
   sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] },
+  ryuunosuke: { summon: ['Huh. It actually worked? Hey, hey, are you a demon? That is so cool.'], engage: ['Oh, you look interesting!', 'Hold still, I just want to see something.'], kill: ['Ahh... not quite it. Next time.', 'Wow. So that\u2019s how it looks.'], servantdown: ['Wait, that\u2019s it? That\u2019s so lame.'] },
   caren: { summon: ['Come, then. Let us see what kind of sinner answers me.'], engage: ['How sad. You think you can win.', 'Shall I pray for you now, or after?'], kill: ['Amen. That was quick.', 'There. You can rest from yourself.'], servantdown: ['...So even you could not stay. Typical.'] },
   tokiomi: { summon: ['I am. A Tohsaka does not lose his composure, and does not lose.'], engage: ['Let us settle this with dignity.'], kill: ['Elegance, to the very end.'], servantdown: ['This was not... how it was meant to go.'] },
   kuzuki: { summon: ['I am. I have no wish of my own. Tell me what you need.'], engage: ['...'], kill: ['It is finished.'], servantdown: ['I see. Then I will go on alone.'] }

@@ -1232,7 +1232,7 @@ function stepDoor(f, x, y, d, entering) {
   G.f.forEach(function (o) { if (o.foe === f || o.lock === f) o.nav = null; });
 }
 /* ---- homes: each master starts at their family seat; a second member of the same family gets a new estate ---- */
-var MASTER_HOME = { caren: 'church', rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null, tokiomi: 'tohsaka', kuzuki: null };
+var MASTER_HOME = { ryuunosuke: null, caren: 'church', rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null, tokiomi: 'tohsaka', kuzuki: null };
 var ESTATE_STYLE = { tohsaka: ['mansion_w', 'Tohsaka villa'], matou: ['mansion_d', 'Matou house'], einzbern: ['villa_e', 'Einzbern villa'], church: ['chapel', 'Church annex'], hyatt: ['hotel_s', 'Hotel suite'], mackenzie: ['house_w', 'Rented house'], emiya: ['house_jpL', 'Emiya house'], safe: ['safehouse', 'Safehouse'] };
 var PLOT_ORDER = null;
 function assignHomes(teams, rnd, plots) {
@@ -1532,14 +1532,20 @@ MASTERS.kuzuki = MD({ id: 'kuzuki', name: 'Souichirou Kuzuki', type: 'Outsider',
     heavy: { name: 'Coiled elbow', kind: 'melee', dmg: 12, reach: 82, arc: 0.9, wind: 0.4, max: 0.85, act: 0.1, rec: 0.55, lunge: 70, cost: 20, stag: 0.7, power: 2, gb: true },
     skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.25, act: 0.05, rec: 0.2, cd: 13, cost: 12 },
     np: { name: 'Coiled Strike', kind: 'grab', reach: 96, arc: 0.7, dmg: 22, stag: 1.0, unblock: true, noParry: true, noExec: true, wind: 0.35, act: 0.08, rec: 0.6, cost: 0, cd: 18, aiUse: 'near' } });
-MASTERS.caren = MD({ id: 'caren', name: 'Caren Hortensia', type: 'Church', col: '#e8e4ec', hp: 90, spd: 200, guard: 0.3, stigmata: true,
-    brief: 'A sister of the Church whose body answers evil with wounds. Her Stigmata feel hidden Assassins and raging Berserkers through walls and show them to her side, at a slow cost in blood. The Shroud of Magdalene binds a man longer than a woman; Sacrament mends her and her servant.',
-    light: { name: 'Verse of Rebuke', kind: 'proj', speed: 950, range: 540, dmg: 4, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 5, col: '#f2e6c0' },
-    heavy: { name: 'Baptism', kind: 'proj', speed: 1050, range: 620, dmg: 10, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'orb', size: 8, col: '#fff4d6' },
+MASTERS.caren = MD({ id: 'caren', name: 'Caren Hortensia', type: 'Church', col: '#e8e4ec', hp: 90, spd: 200, guard: 0.3, stigmata: true, noCircuits: true, ranged: false, combo: 3,
+    brief: 'A sister of the Church with no magic circuits at all, so Origin Rounds have nothing to burn. She fights with the Shroud of Magdalene, a red ribbon that lashes and whirls around her and binds a man longer than a woman. Her Stigmata feel hidden Assassins and raging Berserkers through walls, at a slow cost in blood; Sacrament mends her and her servant.',
+    light: { name: 'Shroud lash', kind: 'melee', dmg: 4, reach: 125, aiWant: 95, arc: 0.6, wind: 0.2, act: 0.07, rec: 0.22, lunge: 10, cost: 7, stag: 0.25, power: 1 },
+    heavy: { name: 'Shroud whirl', kind: 'melee', dmg: 9, reach: 115, arc: 3.14, wind: 0.45, max: 1.0, act: 0.14, rec: 0.6, lunge: 0, cost: 20, stag: 0.5, power: 2 },
     skill: { name: 'Shroud of Magdalene', kind: 'proj', speed: 1000, range: 560, dmg: 2, root: 1.6, rootF: 0.8, wind: 0.35, act: 0.05, rec: 0.35, cd: 15, cost: 16, shape: 'shroud', size: 9, col: '#c8283a', aiRange: [140, 520] },
     np: { name: 'Sacrament', kind: 'sacrament', self: 34, amount: 40, range: 380, wind: 0.6, act: 0.05, rec: 0.4, cost: 0, cd: 22, aiUse: 'mend' } });
-MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki); MASTERS.caren.A = build(MASTERS.caren);
-var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki', 'caren'];
+MASTERS.ryuunosuke = MD({ id: 'ryuunosuke', name: 'Ryuunosuke Uryuu', type: 'Outsider', col: '#e07a3a', wpn: 'dagger', hp: 95, spd: 212, guard: 0.3, ranged: false, combo: 3, harmMana: true,
+    brief: 'A cheerful killer with no magecraft at all. He earns mana only by doing harm: every wound he or his servant deals pays a little, every kill pays more, and nothing comes back on its own. By day he can vanish into a crowd; his Masterpiece, from behind, finishes a weakened master.',
+    light: { name: 'Knife', kind: 'melee', dmg: 5, reach: 70, arc: 0.9, wind: 0.15, act: 0.06, rec: 0.18, lunge: 40, cost: 6, stag: 0.3, power: 1 },
+    heavy: { name: 'Lunging stab', kind: 'melee', dmg: 12, reach: 80, arc: 0.7, wind: 0.4, max: 0.9, act: 0.1, rec: 0.55, lunge: 110, cost: 20, stag: 0.6, power: 2, bleed: { dps: 2, t: 3 } },
+    skill: { name: 'Fade into the Crowd', kind: 'fade', dur: 5, wind: 0.2, act: 0.05, rec: 0.2, cd: 16, cost: 10 },
+    np: { name: 'Masterpiece', kind: 'grab', reach: 100, arc: 0.8, dmg: 14, vsServant: 0.4, execAt: 0.4, execMasters: true, behind: true, stag: 0.8, unblock: true, noParry: true, wind: 0.3, act: 0.08, rec: 0.6, cost: 0, cd: 22, aiUse: 'stalk' } });
+MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki); MASTERS.caren.A = build(MASTERS.caren); MASTERS.ryuunosuke.A = build(MASTERS.ryuunosuke);
+var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki', 'caren', 'ryuunosuke'];
 /* Arena mode keeps the duel-length numbers: copies taken before the war scaling below */
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });
@@ -1579,7 +1585,7 @@ function mkF(def, x, y, face, idx) {
     stat: { dealt: 0, taken: 0, parry: 0, dodge: 0, gbreak: 0, blocks: 0, intr: 0, hits: 0, nps: 0 } };
 }
 /* Arena master duels only: the war keeps MASTERS as tuned by tools/sim.js; these even out masters fighting each other (from master-duel sims) */
-var MDUEL = { caren: { hp: 1.38, dmg: 1.42 }, sakura: { ls: 0.2, hp: 0.92 }, waver: { hp: 1.2, dmg: 1.2 }, kuzuki: { hp: 1.4, dmg: 1.4 }, illya: { dmg: 1.3 }, irisviel: { hp: 1.1, dmg: 1.22 }, kariya: { dmg: 1.18 }, shirou: { hp: 1.15, dmg: 1.08 }, rin: { dmg: 0.88 }, kayneth: { dmg: 0.88 }, kirei: { hp: 0.9, dmg: 0.88 }, tokiomi: { dmg: 0.96 }, kiritsugu: { dmg: 0.95 } };
+var MDUEL = { ryuunosuke: { hp: 1.1, dmg: 1.1 }, caren: { hp: 1.38, dmg: 1.42 }, sakura: { ls: 0.2, hp: 0.92 }, waver: { hp: 1.2, dmg: 1.2 }, kuzuki: { hp: 1.4, dmg: 1.4 }, illya: { dmg: 1.3 }, irisviel: { hp: 1.1, dmg: 1.22 }, kariya: { dmg: 1.18 }, shirou: { hp: 1.15, dmg: 1.08 }, rin: { dmg: 0.88 }, kayneth: { dmg: 0.88 }, kirei: { hp: 0.9, dmg: 0.88 }, tokiomi: { dmg: 0.96 }, kiritsugu: { dmg: 0.95 } };
 function mduelDef(d) { var t = MDUEL[d.id]; if (!t) return d; var c = Object.assign({}, d); if (t.hp) c.hp = Math.round(d.hp * t.hp); if (t.dmg) c.dmg = (d.dmg || 1) * t.dmg; if (t.ls !== undefined) c.lifesteal = t.ls; return c; }
 function newGame(dA, dB, opts) {
   var defs = Array.isArray(dA) ? dA : [dA, dB]; opts = (Array.isArray(dA) ? dB : opts) || {};
@@ -1712,7 +1718,7 @@ function kill(f, noRevive) {
    A servant whose master runs dry fights weaker. A masterless servant pays for its NP with its own remaining time. */
 var MANA = { upkeep: 0.25, farDist: 1800, farDrain: 0.8, npCost: 40, marbleCost: 55, sigCost: 12, skillCost: 6, starved: 5, starveDmg: 0.85, orphanNp: 6 };
 // [pool, regen per second]
-var MANA_POOL = { caren: [100, 2.0], rin: [100, 2.0], kiritsugu: [70, 1.4], shirou: [45, 0.8], kayneth: [110, 2.2], kirei: [90, 1.8], waver: [75, 1.5], irisviel: [100, 2.0], kariya: [50, 0.8], illya: [140, 2.8], sakura: [130, 2.6], tokiomi: [105, 2.1], kuzuki: [40, 0.7] };
+var MANA_POOL = { ryuunosuke: [100, 0], caren: [100, 2.0], rin: [100, 2.0], kiritsugu: [70, 1.4], shirou: [45, 0.8], kayneth: [110, 2.2], kirei: [90, 1.8], waver: [75, 1.5], irisviel: [100, 2.0], kariya: [50, 0.8], illya: [140, 2.8], sakura: [130, 2.6], tokiomi: [105, 2.1], kuzuki: [40, 0.7] };
 function initMana(m) { var p = MANA_POOL[m.def.id] || [80, 1.6]; m.manaMax = p[0]; m.manaRegen = p[1]; m.mana = p[0] * 0.75; }
 function livingMaster(s) { var m = s.partner; return m && m.def.isMaster && m.st !== 'dead' ? m : null; }
 function npManaCost(s) { var a = s.A.np; return a.manaCost || ((a.marble || a.kind === 'ubw') ? MANA.marbleCost : MANA.npCost); }
@@ -2168,13 +2174,14 @@ function hurt(att, def, a, mult, src) {
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
   def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
+  harmMana(att, def, taken);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
-  if (a.root) { def.rootT = a.rootF && isFemale(def) ? a.rootF : a.root; FX.text(def, 'BOUND'); }
+  if (a.root) { def.rootT = a.rootF && isFemale(def) ? a.rootF : a.root; def.rootBy = att ? att.def.id : ''; FX.text(def, 'BOUND'); }
   if (a.bind && att) enkiduBind(att, def, a);
   // Origin Rounds burn magic circuits: an Outsider has none to burn
-  if (a.silence && def.def.isMaster) { if (def.def.type === 'Outsider') FX.text(def, 'NO CIRCUITS TO BURN'); else { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); } }
+  if (a.silence && def.def.isMaster) { if (def.def.type === 'Outsider' || def.def.noCircuits) FX.text(def, 'NO CIRCUITS TO BURN'); else { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); } }
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
   def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
@@ -2289,6 +2296,7 @@ function strikeInit(f) {
   else if (k === 'arm') { f.arm = Math.floor(rnd() * f.A.arms.length); f.armT = a.dur; FX.text(f, f.A.arms[f.arm].name.toUpperCase()); FX.fx('arm', f.x, f.y, f); FX.shake(3); }
   else if (k === 'barrage') { f.barN = 0; f.barT = 0; }
   else if (k === 'sacrament') sacrament(f, a);
+  else if (k === 'fade') startFade(f, a);
   else if (k === 'heal') { var ht = a.self || !livePartner(f) ? f : f.partner, ham = ht === f && !a.self ? Math.round(a.amount * SOLO_HEAL) : a.amount; if (ht && ht.st !== 'dead' && (ht === f || dist(f, ht) <= a.range)) { ht.hp = Math.min(ht.def.hp, ht.hp + ham); FX.text(ht, '+' + ham); FX.fx('heal', ht.x, ht.y, ht); FX.snd('field', ht); } else FX.text(f, 'TOO FAR'); }
   else if (k === 'haste') { f.hasteT = a.dur; FX.text(f, 'DOUBLE ACCEL'); FX.fx('heal', f.x, f.y, f); }
   else if (k === 'siphon') { var got = 0; enemiesOf(f).forEach(function (o) { if (dist(f, o) <= a.r + FR) { if (hurt(f, o, { dmg: a.dmg, stag: 0.2, power: 1, unblock: true, spell: true, hs: 0.04, arc: 0, key: 'skill', vsServant: 1 }, 1, f) === 'hit') got += a.dmg; } }); if (got) { f.hp = Math.min(f.def.hp, f.hp + got); FX.text(f, '+' + got); } FX.fx('heal', f.x, f.y, f); FX.text(f, 'IMAGINARY DRAIN'); }
@@ -2309,7 +2317,7 @@ function strikeInit(f) {
   else if (k === 'grab') {
     if (dist(f, o) <= a.reach + FR && Math.abs(angDiff(f.face, angTo(f, o))) <= a.arc) {
       if (o.iframes > 0) { hurt(f, o, a, 1); }
-      else if (!a.noExec && o.hp <= o.def.hp * 0.3) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
+      else if (!a.noExec && o.hp <= o.def.hp * (a.execAt || 0.3) && (!a.execMasters || o.def.isMaster) && (!a.behind || behindOf(f, o))) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
       else hurt(f, o, a, 1);
     }
   }
@@ -2350,6 +2358,7 @@ function stepF(f, dt) {
     else if (f.spirit === 2) { f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
     if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; f.cause = 'fade'; kill(f, true); } }
     if (f.hasteT > 0) f.hasteT -= dt;
+    if (f.fadeT > 0) f.fadeT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
     if (f.def.stigmata) stigmataTick(f, dt);
@@ -2489,7 +2498,7 @@ function stepProj(dt) {
     if (!p.dead && G.civ && G.civ.length && p.x < (MAP.cityW || 0) && hitCivsAt(p.x, p.y, p.a.rad || 6, p.owner)) p.dead = !p.a.beam && !p.a.wave;
     if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg, p.owner.team)) p.dead = !p.a.beam && !p.a.wave;
     for (var ti = 0; ti < es.length && !p.dead; ti++) {
-      tgt = es[ti];
+      tgt = es[ti]; if (tgt.fadeT > 0) continue; // lost in the crowd: shots pass him by
       var dx = tgt.x - sx, dy = tgt.y - sy, seg = Math.hypot(ox, oy) || 1, tt = clamp((dx * ox + dy * oy) / (seg * seg), 0, 1);
       var cx = sx + ox * tt, cy = sy + oy * tt;
       if (Math.hypot(tgt.x - cx, tgt.y - cy) < FR + (p.a.beam ? 34 * (p.a.bw || 1) : p.a.wave ? 26 : (p.a.rad || 4))) { var hr = hurt(p.owner, tgt, p.a, p.mult, p); p.dead = true; if (p.a.pull && hr === 'hit' && p.owner.st !== 'dead') { var ow = p.owner; ow.pull = 0.22; ow.ripo = 1.4; FX.text(ow, 'CHAIN PULL'); FX.snd('chain', ow); if (ow.st === 'rec') ow.recDur = Math.min(ow.recDur, ow.t + 0.28); } }
@@ -2504,7 +2513,7 @@ function stepZones(dt) {
     var z = G.zones[i]; z.t += dt;
     if (!z.done && z.t >= z.delay) {
       z.done = true;
-      enemiesOf(z.owner).forEach(function (o) { if (Math.hypot(o.x - z.x, o.y - z.y) <= z.r + FR) hurt(z.owner, o, { dmg: z.a.dmg, stag: 0.5, power: 2, gb: true, hs: 0.06, arc: 0, spell: true, key: z.a.key, root: z.a.root }, 1, { x: z.x, y: z.y }); });
+      enemiesOf(z.owner).forEach(function (o) { if (Math.hypot(o.x - z.x, o.y - z.y) <= z.r + FR && !(o.fadeT > 0)) hurt(z.owner, o, { dmg: z.a.dmg, stag: 0.5, power: 2, gb: true, hs: 0.06, arc: 0, spell: true, key: z.a.key, root: z.a.root }, 1, { x: z.x, y: z.y }); });
       FX.spark(z.x, z.y, z.owner.def.col, 10); FX.shake(3); FX.snd('arrowLand', { x: z.x, y: z.y, idx: -1 }); FX.fx('arrowLand', z.x, z.y, z);
     }
     if (z.t > z.delay + 0.25) G.zones.splice(i, 1);
@@ -2983,7 +2992,7 @@ function spared(f, e) { return !!(G.spare && G.spare[f.team + ':' + e.idx] > G.t
    unless Kirei stands on another team; and when a truce puts them together, he may betray his own master to take Kirei. */
 var PACT = { range: 1100, tick: 6, base: 0.22, offerT: 14, askCd: 60, cd: 240, outnum: 0.85, outR: 700, breakExpo: 25, revealT: 40, minTeams: 4, hate: 20, treachT: 5 };
 // willingness to make a pact at all (0 never, 1 eager)
-var PACT_M = { kiritsugu: 0, irisviel: 0.6, illya: 0.3, shirou: 0.85, rin: 0.55, sakura: 0.4, kariya: 0.35, kayneth: 0.25, kirei: 0.3, waver: 0.7, tokiomi: 0.5, kuzuki: 0.3, caren: 0.5 };
+var PACT_M = { kiritsugu: 0, irisviel: 0.6, illya: 0.3, shirou: 0.85, rin: 0.55, sakura: 0.4, kariya: 0.35, kayneth: 0.25, kirei: 0.3, waver: 0.7, tokiomi: 0.5, kuzuki: 0.3, caren: 0.5, ryuunosuke: 0.2 };
 var PACT_S = { gilgamesh: 0, iskandar: 0.95, caerwyn: 0.6, diarmuid: 0.75, cu: 0.6, emiya: 0.45, heracles: 0.6, lancelot: 0.35, medea: 0.55, medusa: 0.5, kojirou: 0.6, hassan: 0.4, gilles: 0.15, richard: 0.7, leonidas: 0.75, atalanta: 0.4 };
 // who turns on a partner when the chance comes
 var TREACH = { medea: 0.3, kiritsugu: 0.35, kirei: 0.25, gilles: 0.3, hassan: 0.2, kayneth: 0.15 };
@@ -3225,7 +3234,7 @@ function civStruck(c, f) {
   var C = churchSt(), t = f.team, before = C.waves[t] || 0;
   c.dead = true; c.on = false; c.offT = G.time; c.flee = 0; c.going = null;
   G.bodies = G.bodies || []; G.bodies.push({ x: Math.round(c.x), y: Math.round(c.y), a: Math.round((c.vx || 0) * 100) / 100, id: c.id, t: Math.round(G.time) }); if (G.bodies.length > 30) G.bodies.shift();
-  C.kills[t] = (C.kills[t] || 0) + 1;
+  C.kills[t] = (C.kills[t] || 0) + 1; harmCiv(f);
   G.expoQuiet = true; witness(c.x, c.y, [t], 3); fightNoise(c.x, c.y, 2600);
   expose(t, CHURCH.civExpo * (C.kills[t] > 1 ? 1.5 : 1)); G.expoQuiet = false;
   G.reveal[t] = Math.max(G.reveal[t] || 0, G.time + CHURCH.civReveal);
@@ -3589,6 +3598,60 @@ function sacrament(f, a) {
   if (s && dist(f, s) <= a.range) { s.hp = Math.min(s.def.hp, s.hp + a.amount); FX.text(s, '+' + a.amount); FX.fx('heal', s.x, s.y, s); }
   FX.snd('field', f);
 }
+/* ---- Ryuunosuke Uryuu: no magecraft. Mana from harm, Fade into the Crowd, Masterpiece ---- */
+// perDmg: mana per point of damage he or his servant deals; kill: lump per kill; civ: a civilian's worth, full for the first civFull each day
+var RYU = { perDmg: 0.3, kill: 22, civ: 14, civLate: 3, civFull: 2, fadeR: 360, behind: 1.9 };
+function harmEarner(att) {
+  if (!att || G.mode !== 'war') return null;
+  if (att.def.harmMana) return att;
+  var m = att.partner; return m && m.def.harmMana && m.st !== 'dead' ? m : null;
+}
+function harmGain(m, amt, why) {
+  if (m.manaMax === undefined) initMana(m);
+  var before = m.mana; m.mana = Math.min(m.manaMax, m.mana + amt);
+  if (why && m.mana - before >= 5) { FX.text(m, '+' + Math.round(m.mana - before) + ' MANA'); FX.fx('harm', m.x, m.y, m); }
+}
+// called from hurt() after damage lands
+function harmMana(att, def, taken) {
+  var m = harmEarner(att); if (!m || !def || def.team === m.team) return;
+  harmGain(m, taken * RYU.perDmg, false);
+  if (def.hp <= 0) harmGain(m, RYU.kill, 'kill');
+}
+// called when a civilian is struck down
+function harmCiv(f) {
+  var m = harmEarner(f); if (!m) return;
+  var day = G.clock ? G.clock.n + ':' + G.clock.phase : 0; m.civDay = m.civDay || {}; var n = m.civDay[day] = (m.civDay[day] || 0) + 1;
+  harmGain(m, n <= RYU.civFull ? RYU.civ : RYU.civLate, 'civ');
+}
+// Fade into the Crowd: by day among civilians (or anywhere off the war's clock, as in the Arena) shots pass him by
+function fadeAllowed(f) {
+  if (!clockOn()) return true;
+  if (!isDay()) return false;
+  return !!(G.civ && G.civ.some(function (c) { return c.on && !c.dead && Math.hypot(c.x - f.x, c.y - f.y) < RYU.fadeR; }));
+}
+function startFade(f, a) {
+  if (!fadeAllowed(f)) { FX.text(f, clockOn() && !isDay() ? 'NO CROWD AT NIGHT' : 'NO CROWD HERE'); return; }
+  f.fadeT = a.dur; FX.text(f, 'FADED INTO THE CROWD'); FX.fx('fade', f.x, f.y, f);
+}
+function behindOf(f, o) { return Math.abs(angDiff(o.face, angTo(o, f))) > RYU.behind; }
+// AI: with Masterpiece ready, circle round behind a weakened master and strike from there
+function stalkReady(f) { return G.mode === 'war' ? f.sigCd <= 0 && canPay(f, MANA.sigCost) && !(f.silenceT > 0) : f.mom >= 100; }
+function stalkVictim(f) {
+  var best = null, bd = 760, A = f.A.np;
+  enemiesOf(f).forEach(function (e) { if (!e.def.isMaster || e.st === 'dead' || e.hp > e.def.hp * (A.execAt + 0.04) || (G.mode === 'war' && !knowsExact(f, e))) return; var d = dist(f, e); if (d < bd) { bd = d; best = e; } });
+  return best;
+}
+function stalkTick(f) {
+  if (f.st !== 'idle' || !stalkReady(f)) return false;
+  var o = stalkVictim(f); if (!o) return false;
+  var A = f.A.np, d = dist(f, o);
+  if (d <= A.reach + FR - 6 && behindOf(f, o)) { f.lock = o; f.foe = o; f.face = angTo(f, o); press(f, 'np'); return true; }
+  // go round the side, then in behind
+  var back = o.face + Math.PI, side = angDiff(angTo(o, f), back) > 0 ? 1 : -1, cur = angTo(o, f), off = angDiff(cur, back);
+  var step = Math.abs(off) > 0.6 ? cur + side * 0.9 : back, r = Math.abs(off) > 0.6 ? 120 : 50;
+  moveTo(f, o.x + Math.cos(step) * r, o.y + Math.sin(step) * r, 1);
+  return true;
+}
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -3715,7 +3778,7 @@ function aiTick(ai, dt) {
   var flee = null;
   for (var j = 0; j < G.zones.length; j++) { var z = G.zones[j]; if (z.owner !== f && !z.done && Math.hypot(f.x - z.x, f.y - z.y) < z.r + 30 && z.t > cfg.react * 0.6) { flee = z; break; } }
   var mx = 0, my = 0;
-  var wantRange = f.def.ranged ? 380 : (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14);
+  var wantRange = f.def.ranged ? 380 : A.light.aiWant || (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14); // aiWant: a whip strikes from closer than its tip
   if (A.np.aiKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = A.np.aiKeep; } else ai.keepT = 0; // a reach-NP fighter steps back to cast it from out of sword reach
   if (f.st === 'idle' || f.st === 'rec') {
     if (ai.plantT > 0) ai.plantT -= dt;
@@ -3746,9 +3809,11 @@ function aiTick(ai, dt) {
   // --- offence ---
   if (f.st === 'rec' && f.key === 'light' && ai.comboLeft > 0 && f.t >= f.recDur * 0.5) { press(f, 'light'); ai.comboLeft--; }
   if (f.brokenT > 0 && f.st === 'idle') { inp.mx = -Math.cos(toO) * 0.8; inp.my = -Math.sin(toO) * 0.8; }
+  if (A.np.aiUse === 'stalk' && stalkTick(f)) return;
+  if (A.skill.kind === 'fade' && f.cd <= 0 && f.st === 'idle' && o.def.ranged !== false && d > 160 && !(f.fadeT > 0) && fadeAllowed(f) && Math.random() < 0.03) { press(f, 'skill'); return; }
   if (f.st === 'idle' && ai.cool <= 0 && !flee && f.exh <= 0 && G.time >= ai.guardUntil && f.brokenT <= 0) {
     var np = A.np, r2 = Math.random();
-    var canNP = np.aiUse === 'mend' ? f.mom >= 100 && f.hp < f.def.hp * 0.6 : f.mom >= 100 && d >= (np.aiMin || 0) && d <= (np.aiMax || 400) && (np.kind === 'wall' || o.st !== 'dodge') && (losClear(f, o) || np.kind === 'wall');
+    var canNP = np.aiUse === 'stalk' ? false : np.aiUse === 'mend' ? f.mom >= 100 && f.hp < f.def.hp * 0.6 : f.mom >= 100 && d >= (np.aiMin || 0) && d <= (np.aiMax || 400) && (np.kind === 'wall' || o.st !== 'dodge') && (losClear(f, o) || np.kind === 'wall');
     var foeOpen = o.st === 'rec' || o.st === 'stag' || o.st === 'wind';
     if (f.hid && d <= wantRange + 60 && Math.random() < 0.5) { press(f, 'light'); ai.comboLeft = Math.floor(Math.random() * f.def.combo); ai.cool = 0.5; return; }
     if (canNP && (foeOpen || r2 < 0.5 || np.kind === 'rain')) { press(f, 'np'); ai.cool = 1.0; return; }
@@ -3774,7 +3839,7 @@ function aiTick(ai, dt) {
       var gTurtle = 0.1 * (1.2 - cfg.agg);
       if (o.guarding && r2 < 0.45) { press(f, 'heavy'); inp.heavy = true; var g2 = 0.5 + Math.random() * 0.4; ai.relAt = G.time + g2; f.pendGoal = g2; }
       else if (f.def.id === 'caerwyn' && f.cd <= 0 && f.veilT <= 0 && r2 < 0.2) { press(f, 'skill'); }
-      else if (f.cd <= 0 && r2 < 0.2 && (f.def.id === 'leonidas' ? o.guarding : (f.def.id !== 'caerwyn')) && !(f.def.arms && f.armT > 0)) { press(f, 'skill'); }
+      else if (f.cd <= 0 && r2 < 0.2 && A.skill.kind !== 'fade' && (f.def.id === 'leonidas' ? o.guarding : (f.def.id !== 'caerwyn')) && !(f.def.arms && f.armT > 0)) { press(f, 'skill'); }
       else if (r2 < 0.55 + 0.1) { press(f, 'light'); ai.comboLeft = Math.floor(Math.random() * f.def.combo); }
       else if (r2 < 0.8) { press(f, 'heavy'); inp.heavy = true; var g3 = 0.5 + Math.random() * 0.45; ai.relAt = G.time + g3; f.pendGoal = g3; }
       else { ai.guardUntil = G.time + 0.6; }
@@ -3917,7 +3982,7 @@ function aiMaster(ai, dt) {
     if (Math.hypot(f.x - dg.x, f.y - dg.y) > dg.r * 0.45) moveTo(f, dg.x, dg.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
   // skills
   if (!silenced && skOk && f.cd <= 0 && f.st === 'idle') {
-    var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'proj' && thr && td < 520 && losClear(f, thr)) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
+    var want = (sk === 'heal' && !A.skill.self && s.hp < s.def.hp * 0.6 && dist(f, s) < A.skill.range) || (sk === 'heal' && A.skill.self && f.hp < f.def.hp * 0.6) || ((sk === 'haste' || sk === 'shield' || sk === 'reinforce') && thr && td < 320) || (sk === 'buff' && s.foe && dist(s, s.foe) < 400) || (sk === 'proj' && thr && td < 520 && losClear(f, thr)) || (sk === 'fade' && thr && td < 600 && !(f.fadeT > 0) && fadeAllowed(f)) || (sk === 'drain' && s.mom < 80 && f.hp > f.def.hp * 0.75 && s.foe && dist(s, s.foe) < 600);
     if (want) { if (sk === 'proj') f.lock = thr; press(f, 'skill'); return; }
   }
   // Shirou stands in a servant's fight: he joins his servant against a servant it is already fighting, while he is healthy
@@ -3948,6 +4013,7 @@ function aiMaster(ai, dt) {
   } else ai.flankT = 0;
   if (dist(f, { x: bx, y: by }) > 70) moveTo(f, bx, by, 0.9); else { inp.mx = 0; inp.my = 0; }
   if (np.aiUse === 'origin') { var em = null, ed = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) { var d3 = dist(f, e); if (d3 < ed) { ed = d3; em = e; } } }); if (em && ed < 850 && losClear(f, em)) tg = em; }
+  if (np.aiUse === 'stalk' && stalkTick(f)) return;
   if (!silenced && sigOk && f.sigCd <= 0 && f.st === 'idle' && tg) {
     var dT = dist(f, tg);
     if ((np.aiUse === 'ranged' || np.aiUse === 'origin') && dT < (np.range || 600) * 0.85 && losClear(f, tg)) { f.lock = tg; press(f, 'np'); return; }
@@ -4281,10 +4347,11 @@ var sakura = mkS('sakura', 'Sakura Matou', 'Master', '#7a4a8a', 'The Matou heir 
 var tokiomi = mkS('tokiomi', 'Tokiomi Tohsaka', 'Master', '#b8333c', 'Head of the Tohsaka in a deep red suit with a white cravat, brown hair swept back, a cane topped with a great ruby.', [['Suit', '#8a1e2a'], ['Cravat', '#f2ece0'], ['Hair', '#4a2e22']], [], function () { return HB('tokiomi', { t1: '#8a1e2a', t2: '#9c2834', sh: '#6e1620', arm: '#8a1e2a', hair: '#4a2e22', skin: '#e8c8b0', mh: true, fringe: 'none', hl: 'rgba(255,220,190,.3)', torso: '<path d="M6 -5 L12 0 L6 5 Z" fill="#f2ece0" stroke="#0b121a" stroke-width="1"/><path d="M-4 -13 L-4 13" stroke="#c9a24a" stroke-width="1.2"/>', strands: '<path d="M-8 -6 Q-2 -7.5 4 -6 M-8 0 L5 0 M-8 6 Q-2 7.5 4 6" stroke="#2e1c14" stroke-width="1.1" fill="none"/>' }); }, function () { return '<g stroke="#0b121a" stroke-width="1.4"><path d="M-4 0 L30 0" stroke="#2a1a14" stroke-width="3"/><path d="M27 -2 L31 -2 L31 2 L27 2Z" fill="#c9a24a"/><path d="M31 0 L36 -5 L41 0 L36 5Z" fill="#e0243a"/><path d="M34 -2 L37 -3" stroke="#ffb0b8" stroke-width="1"/></g>'; }, '-6 -8 50 16');
 var kuzuki = mkS('kuzuki', 'Souichirou Kuzuki', 'Master', '#5b6b7c', 'A quiet teacher in a dark grey suit and tie, short black hair and thin glasses. He fights bare-handed.', [['Suit', '#2e343c'], ['Tie', '#5b6b7c'], ['Hair', '#141416']], [], function () { return HB('kuzuki', { t1: '#2e343c', t2: '#3a414a', sh: '#262b32', arm: '#2e343c', hair: '#141416', skin: '#e0c4a8', mh: true, fringe: 'M4 -8.8 Q8.6 -6.8 9.2 -3.4 Q8.6 0 9.2 3.4 Q8.6 6.8 4 8.8Z', torso: '<path d="M6 -2 L13 0 L6 2 Z" fill="#5b6b7c" stroke="#0b121a" stroke-width=".8"/><path d="M2 -10 L8 -3 M2 10 L8 3" stroke="#e6e8ea" stroke-width="1.4"/>', strands: '<path d="M11.2 -4.8 L13.6 -4.8 L13.6 -1.4 L11.2 -1.4Z M11.2 1.4 L13.6 1.4 L13.6 4.8 L11.2 4.8Z" fill="rgba(200,225,245,.55)" stroke="#101214" stroke-width=".7"/><path d="M12.4 -1.4 L12.4 1.4" stroke="#101214" stroke-width=".7"/>' }); }, function () { return '<g stroke="#0b121a" stroke-width="1.4"><circle cx="4" cy="0" r="5" fill="#e0c4a8"/></g>'; }, '-2 -6 12 12');
 var caren = mkS('caren', 'Caren Hortensia', 'Master', '#e8e4ec', 'A slight priestess of the Church in a dark habit with white trim, shoulder-length white hair, and the red Shroud of Magdalene drifting around her like a dancer\u2019s ribbon.', [['Habit', '#1e1a24'], ['Trim', '#e8e4ec'], ['Hair', '#f0f1f5'], ['Shroud', '#c8283a']], [], function () { return HB('caren', { t1: '#1e1a24', t2: '#2a2532', sh: '#16131b', arm: '#1e1a24', hair: '#f0f1f5', skin: '#f6e8e2', shw: 7, mh: true, hl: 'rgba(255,255,255,.7)', torso: '<path d="M2 -9 Q8 0 2 9" stroke="#e8e4ec" stroke-width="2.2" fill="none"/><path d="M-6 -1.6 L6 -1.6 M-1.6 -6 L-1.6 6" stroke="#c9a24a" stroke-width="1.6"/><path d="M-12 -13 L-12 13" stroke="#e8e4ec" stroke-width="1"/>', over: '<path d="M2 -10 Q-8 -14 -16 -11 Q-22 -6 -22 0 Q-22 6 -16 11 Q-8 14 2 10Z" fill="#f0f1f5"/><path d="M-4 -7 Q-12 -8 -18 -4 M-4 0 L-19 0 M-4 7 Q-12 8 -18 4" stroke="#c9ccd6" stroke-width="1.1" fill="none"/>' }); }, function () { return '<g></g>'; }, '-2 -4 8 8');
-return { caren: caren, tokiomi: tokiomi, kuzuki: kuzuki, illya: illya, sakura: sakura, rin: rin, kiritsugu: kiritsugu, shirou: shirou, kayneth: kayneth, kirei: kirei, waver: waver, irisviel: irisviel, kariya: kariya, richard: richard, emiya: emiya, cid: cid, leonidas: leonidas, atalanta: atalanta, heracles: heracles, hassan: hassan, caerwyn: caerwyn, diarmuid: diarmuid, cu: cu, gilgamesh: gilgamesh, iskandar: iskandar, gilles: gilles, lancelot: lancelot, medusa: medusa, medea: medea, kojirou: kojirou };
+var ryuunosuke = mkS('ryuunosuke', 'Ryuunosuke Uryuu', 'Master', '#e07a3a', 'A lanky young man with messy ginger hair, a dark jacket open over a pale shirt, a thin chain at his neck and a kitchen knife held loosely, as if he had forgotten it.', [['Jacket', '#232a3a'], ['Shirt', '#d9d4c8'], ['Hair', '#d9773a'], ['Knife', '#cfd6dc']], [], function () { return HB('ryuunosuke', { t1: '#232a3a', t2: '#2e3648', sh: '#1a2030', arm: '#232a3a', hair: '#d9773a', skin: '#efd3bd', mh: true, hl: 'rgba(255,220,180,.35)', fringe: 'M3.4 -9 Q8.8 -8 9.6 -4.4 L7.6 -3 L9.8 -0.8 L7.6 1.2 L9.6 3.6 Q8.8 7.8 3.4 9Z', torso: '<path d="M0 -8 L9 -3 L9 3 L0 8 Z" fill="#d9d4c8" stroke="#0b121a" stroke-width=".8"/><path d="M4 -5 Q9 0 4 5" stroke="#b8bcc4" stroke-width="1" fill="none"/>', strands: '<path d="M-8 -7 L-11 -9 M-6 -3 L-10 -4 M-6 3 L-10 4 M-8 7 L-11 9" stroke="#b05a26" stroke-width="1.6" fill="none"/>' }); }, function () { return '<defs>' + grad('rkn', '#f2f4f6', '#8a949e') + '</defs><g stroke="#0b121a" stroke-width="1.5" stroke-linejoin="round"><rect x="-6" y="-2.4" width="13" height="4.8" rx="1.6" fill="#5a3a24"/><path d="M7 -3.4 L32 -1.6 Q38 0 32 2.2 L7 3.4 Z" fill="url(#rkn)"/></g>'; }, '-8 -6 48 12');
+return { ryuunosuke: ryuunosuke, caren: caren, tokiomi: tokiomi, kuzuki: kuzuki, illya: illya, sakura: sakura, rin: rin, kiritsugu: kiritsugu, shirou: shirou, kayneth: kayneth, kirei: kirei, waver: waver, irisviel: irisviel, kariya: kariya, richard: richard, emiya: emiya, cid: cid, leonidas: leonidas, atalanta: atalanta, heracles: heracles, hassan: hassan, caerwyn: caerwyn, diarmuid: diarmuid, cu: cu, gilgamesh: gilgamesh, iskandar: iskandar, gilles: gilles, lancelot: lancelot, medusa: medusa, medea: medea, kojirou: kojirou };
 })();
 
-var GRIP = { caren: { x: 18, y: 8, k: 0.8 }, kiritsugu_knife: { x: 22, y: 8, k: 1 }, tokiomi: { x: 22, y: 9, k: 1 }, kuzuki: { x: 22, y: 8, k: 1 }, illya: { x: 26, y: 8, k: 0.9 }, sakura: { x: 26, y: 8, k: 0.8 }, rin: { x: 26, y: 8, k: 0.8 }, kiritsugu: { x: 22, y: 8, k: 1 }, shirou: { x: 22, y: 8, k: 1 }, kayneth: { x: 26, y: 8, k: 0.8 }, kirei: { x: 20, y: 8, k: 1 }, waver: { x: 24, y: 8, k: 0.9 }, irisviel: { x: 26, y: 8, k: 0.9 }, kariya: { x: 26, y: 8, k: 0.9 }, richard: { x: 22, y: 9, k: 1.2 }, emiya: { x: 22, y: 10, k: 1.25, twin: true }, emiya_bow: { x: 22, y: 0, k: 1.0 }, cid: { x: 22, y: 9, k: 1.2 }, leonidas: { x: 24, y: 10, k: 1 }, atalanta: { x: 20, y: 0, k: 1.1 }, heracles: { x: 26, y: 16, k: 1.55 }, hassan: { x: 24, y: 9, k: 1.4 }, caerwyn: { x: 22, y: 9, k: 1.2 }, diarmuid: { x: 20, y: 9, k: 1, pair: 'diarmuid_yellow' }, cu: { x: 20, y: 9, k: 0.95 }, gilgamesh: { x: 26, y: -10, k: 0.9 }, iskandar: { x: 22, y: 9, k: 1.2 }, gilles: { x: 22, y: 7, k: 1.05 }, lancelot: { x: 28, y: 0, k: 1.1 }, lancelot_sword: { x: 22, y: 9, k: 1.15 }, lancelot_spear: { x: 24, y: 10, k: 1.0 }, lancelot_hammer: { x: 24, y: 12, k: 1.15 }, lancelot_gun: { x: 14, y: 2, k: 1.0 }, medusa: { x: 20, y: 9, k: 1.0 }, medea: { x: 18, y: 10, k: 1.0 }, kojirou: { x: 20, y: 9, k: 1.0 } };
+var GRIP = { ryuunosuke: { x: 20, y: 8, k: 0.95 }, caren: { x: 18, y: 8, k: 0.8 }, kiritsugu_knife: { x: 22, y: 8, k: 1 }, tokiomi: { x: 22, y: 9, k: 1 }, kuzuki: { x: 22, y: 8, k: 1 }, illya: { x: 26, y: 8, k: 0.9 }, sakura: { x: 26, y: 8, k: 0.8 }, rin: { x: 26, y: 8, k: 0.8 }, kiritsugu: { x: 22, y: 8, k: 1 }, shirou: { x: 22, y: 8, k: 1 }, kayneth: { x: 26, y: 8, k: 0.8 }, kirei: { x: 20, y: 8, k: 1 }, waver: { x: 24, y: 8, k: 0.9 }, irisviel: { x: 26, y: 8, k: 0.9 }, kariya: { x: 26, y: 8, k: 0.9 }, richard: { x: 22, y: 9, k: 1.2 }, emiya: { x: 22, y: 10, k: 1.25, twin: true }, emiya_bow: { x: 22, y: 0, k: 1.0 }, cid: { x: 22, y: 9, k: 1.2 }, leonidas: { x: 24, y: 10, k: 1 }, atalanta: { x: 20, y: 0, k: 1.1 }, heracles: { x: 26, y: 16, k: 1.55 }, hassan: { x: 24, y: 9, k: 1.4 }, caerwyn: { x: 22, y: 9, k: 1.2 }, diarmuid: { x: 20, y: 9, k: 1, pair: 'diarmuid_yellow' }, cu: { x: 20, y: 9, k: 0.95 }, gilgamesh: { x: 26, y: -10, k: 0.9 }, iskandar: { x: 22, y: 9, k: 1.2 }, gilles: { x: 22, y: 7, k: 1.05 }, lancelot: { x: 28, y: 0, k: 1.1 }, lancelot_sword: { x: 22, y: 9, k: 1.15 }, lancelot_spear: { x: 24, y: 10, k: 1.0 }, lancelot_hammer: { x: 24, y: 12, k: 1.15 }, lancelot_gun: { x: 14, y: 2, k: 1.0 }, medusa: { x: 20, y: 9, k: 1.0 }, medea: { x: 18, y: 10, k: 1.0 }, kojirou: { x: 20, y: 9, k: 1.0 } };
 var THUMBN = 0;
 function thumb(id, w) {
   var s = SPR[id], g = GRIP[id], wp = s.weapon(), inner = s.body();
@@ -4542,8 +4609,11 @@ var MASTER_INFO = {
   illya: { style: 'The Einzbern masterpiece. Her familiars hunt on their own and her mana is nearly endless.', passive: ['Grail Vessel', 'Her servant’s Noble Phantasm charges 30% faster, and her mana pool is the deepest in the war.'],
     light: 'A Storch Ritter bird that homes in on its target.', heavy: 'Hold to charge, release: three homing birds.',
     skill: 'Einzbern Alchemy. Heals her servant for 35 within 380.', np: 'Storch Ritter Swarm: six homing birds at once.' },
-  caren: { style: 'A sister of the Church who fights with a cloth and a sharp tongue. Her wounds open near evil: she feels what others cannot see.', passive: ['Stigmata', 'Within 700 she feels concealed Assassins, Berserkers and rampaging servants through walls, and her side sees them too. While something is felt she slowly bleeds, never below 40% health.'],
-    light: 'A verse of rebuke: a small bolt of pale light.', heavy: 'Hold to charge, release: Baptism, a heavier bolt of light.',
+  ryuunosuke: { style: 'A cheerful killer with no magecraft. Everything he spends he takes from someone else.', passive: ['Harm', 'No mana regeneration. Each point of damage he or his servant deals earns 0.3 mana; a kill earns 22; a civilian pays well only twice a day. Bounded fields cannot feel him.'],
+    light: 'Knife: quick, close cuts.', heavy: 'Hold to charge, release: a long lunging stab that leaves a bleed.',
+    skill: 'Fade into the Crowd. By day among civilians (and in the Arena) shots and spells from range pass him by for 5 s. Useless at night.', np: 'Masterpiece: a grab from behind. A master under 40% health is finished on the spot; from the front, or on a servant, it is only a shallow cut.' },
+  caren: { style: 'A sister of the Church with no magic circuits: everything she has is the Shroud, her wounds and her faith. Origin Rounds find nothing to burn.', passive: ['Stigmata', 'Within 700 she feels concealed Assassins, Berserkers and rampaging servants through walls, and her side sees them too. While something is felt she slowly bleeds, never below 40% health.'],
+    light: 'Shroud lash: the ribbon snaps out in a narrow line, reaching 125.', heavy: 'Hold to charge, release: Shroud whirl, the ribbon sweeps a full circle around her.',
     skill: 'Shroud of Magdalene. The red shroud flies out and binds whoever it touches: 1.6 s for a man, 0.8 s for a woman.', np: 'Sacrament: heals her by 34 and her servant by 40 if it is within 380.' },
   tokiomi: { style: 'Head of the Tohsaka and a mage of fire. Every flame he casts leaves a burn that keeps eating at its target.', passive: ['Elegance', 'While above 70% health, all his mana costs are a quarter lower: his servant\u2019s Noble Phantasm included.'],
     light: 'A flame bolt from his ruby cane that sets the target burning.', heavy: 'Hold to charge, release: a slow fireball that bursts and burns everyone near it.',
@@ -6223,10 +6293,10 @@ function drawCircles(g, vr, t) {
   if (!G || !G.circles) return;
   G.circles.forEach(function (c) {
     if (!vis(vr, c.x - 120, c.y - 120, c.x + 120, c.y + 120)) return;
-    var glow = INTRO && INTRO.c === c ? INTRO.glow : 0, al = INTRO ? 0.55 + glow * 0.45 : clamp(1 - G.time / 90, 0, 1) * 0.8;
+    var mine = INTRO && INTRO.c === c, cc = mine && INTRO.col ? INTRO.col : c.col, glow = mine ? INTRO.glow : 0, al = INTRO ? 0.55 + glow * 0.45 : clamp(1 - G.time / 90, 0, 1) * 0.8;
     if (al <= 0.01) return;
-    if (glow > 0) { var lg = g.createRadialGradient(c.x, c.y, 10, c.x, c.y, 150 + glow * 60); lg.addColorStop(0, rgbaOf(c.col, 0.35 * glow)); lg.addColorStop(1, rgbaOf(c.col, 0)); g.fillStyle = lg; g.fillRect(c.x - 220, c.y - 220, 440, 440); }
-    runeCircle(g, c.x, c.y, 88, c.col, t * (0.4 + glow * 2), al);
+    if (glow > 0) { var lg = g.createRadialGradient(c.x, c.y, 10, c.x, c.y, 150 + glow * 60); lg.addColorStop(0, rgbaOf(cc, 0.35 * glow)); lg.addColorStop(1, rgbaOf(cc, 0)); g.fillStyle = lg; g.fillRect(c.x - 220, c.y - 220, 440, 440); }
+    runeCircle(g, c.x, c.y, 88, cc, t * (0.4 + glow * 2), al);
   });
 }
 /* ---- doors: a lit, framed door on the outside with a mat and lanterns; inside, a bright opening marked EXIT ---- */
@@ -6343,23 +6413,25 @@ var CHANT = [
   'Fill and empty, five times over. Let the gate between us open.',
   'I call upon the Throne of Heroes: lend me a hero, and I will lend you my fate.'
 ], CHANT_MAD = ['Let madness cloud your sight and chain your reason.', 'Be bound by fury, and fight only at my command.'],
-  CHANT_END = 'If you would win the Grail, cross over and come to me!';
+  CHANT_END = 'If you would win the Grail, cross over and come to me!',
+  // Ryuunosuke reads from his family's old notes, not quite sure he is doing it right; his circle is drawn in red
+  CHANT_RYU = ['Okay, okay... \u201cSilver for the circle\u201d... I didn\u2019t have silver. This is fine, right?', '\u201cFill and empty, five times over.\u201d Five? Huh. Okay, five.', '\u201cI call upon the Throne of Heroes...\u201d Come on, come on, come on...', 'Hello? Anybody? Come out and play!'];
 var LINE_T = 2.1;
 function startIntro(nTeams) {
   if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length) return false;
   var me = G.f[MEI], m = me.def.isMaster ? me : me.partner; if (!m || !m.partner) return false;
   var c = G.circles.filter(function (q) { return q.team === m.team; })[0]; if (!c) return false;
-  var s = m.partner, lines = CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
+  var s = m.partner, ryu = m.def.id === 'ryuunosuke', lines = ryu ? CHANT_RYU : CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
   var t0 = 1.7, reveal = t0 + lines.length * LINE_T + 0.2;
-  INTRO = { t: 0, m: m, s: s, c: c, lines: lines, t0: t0, reveal: reveal, sl: reveal + 1.0, rp: reveal + 4.0, end: reveal + 6.6, shown: false, said: 0, glow: 0, n: nTeams };
+  INTRO = { col: ryu ? '#b3202a' : null, t: 0, m: m, s: s, c: c, lines: lines, t0: t0, reveal: reveal, sl: reveal + 1.0, rp: reveal + 4.0, end: reveal + 6.6, shown: false, said: 0, glow: 0, n: nTeams };
   cam.x = c.x; cam.y = c.y + 20; document.body.classList.add('intro');
   return true;
 }
 function introReveal() {
-  var I = INTRO; if (I.shown) return; I.shown = true; var s = I.s, mad = s.def.cls === 'Berserker';
+  var I = INTRO; if (I.shown) return; I.shown = true; var s = I.s, mad = s.def.cls === 'Berserker' || I.m.def.id === 'ryuunosuke';
   flashFx(mad ? '#5a0a14' : '#ffffff', 0.85, 0.8); shake = Math.max(shake, 12); FX.snd('summon', I.m);
-  vfx(1.4, function (g, p) { var a = (1 - p), r = 60 + p * 140; g.globalAlpha = a; var lg = g.createRadialGradient(I.c.x, I.c.y, 4, I.c.x, I.c.y, r); lg.addColorStop(0, mad ? 'rgba(255,90,90,.9)' : 'rgba(255,255,255,.95)'); lg.addColorStop(1, rgbaOf(I.c.col, 0)); g.fillStyle = lg; g.beginPath(); g.arc(I.c.x, I.c.y, r, 0, 6.283); g.fill(); g.globalAlpha = 1; });
-  for (var i = 0; i < 40; i++) { var a = Math.random() * 6.283, v = 80 + Math.random() * 220; parts.push({ x: I.c.x, y: I.c.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: 0.9, col: i % 3 ? I.c.col : '#ffffff' }); }
+  vfx(1.4, function (g, p) { var a = (1 - p), r = 60 + p * 140; g.globalAlpha = a; var lg = g.createRadialGradient(I.c.x, I.c.y, 4, I.c.x, I.c.y, r); lg.addColorStop(0, mad ? 'rgba(255,90,90,.9)' : 'rgba(255,255,255,.95)'); lg.addColorStop(1, rgbaOf((I.col || I.c.col), 0)); g.fillStyle = lg; g.beginPath(); g.arc(I.c.x, I.c.y, r, 0, 6.283); g.fill(); g.globalAlpha = 1; });
+  for (var i = 0; i < 40; i++) { var a = Math.random() * 6.283, v = 80 + Math.random() * 220; parts.push({ x: I.c.x, y: I.c.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: 0.9, col: i % 3 ? (I.col || I.c.col) : '#ffffff' }); }
   G.f.forEach(function (f) { if (!f.def.isMaster) { f.face = f.partner ? Math.atan2(f.partner.y - f.y, f.partner.x - f.x) : f.face; } });
 }
 function introTick(dt) {
@@ -6386,14 +6458,14 @@ function drawIntro() {
   c.fillStyle = '#000'; c.fillRect(0, 0, VW, bar); c.fillRect(0, VH - bar, VW, bar);
   c.textAlign = 'left'; var ca = clamp((I.t - 0.4) / 0.8, 0, 1) * clamp((I.reveal + 0.5 - I.t) / 0.8, 0.35, 1);
   c.globalAlpha = ca; c.fillStyle = '#e9e4d3'; c.font = '400 ' + (VW < 560 ? 20 : 26) + 'px "Marcellus SC", "Times New Roman", serif'; c.fillText(I.m.def.name, 20, bar + 38);
-  c.font = 'italic 400 ' + (VW < 560 ? 14 : 17) + 'px "Times New Roman", serif'; c.fillStyle = I.c.col; c.fillText(I.c.name, 20, bar + 62); c.globalAlpha = 1;
+  c.font = 'italic 400 ' + (VW < 560 ? 14 : 17) + 'px "Times New Roman", serif'; c.fillStyle = (I.col || I.c.col); c.fillText(I.c.name, 20, bar + 62); c.globalAlpha = 1;
   var k = Math.floor((I.t - I.t0) / LINE_T);
   if (I.t >= I.t0 && k < I.lines.length + 1 && !I.shown) {
     c.textAlign = 'center';
     for (var j = Math.max(0, k - 1); j <= Math.min(k, I.lines.length - 1); j++) {
       var lt = I.t - I.t0 - j * LINE_T, al = j === k ? clamp(lt / 0.35, 0, 1) : 0.35, fs = VW < 560 ? 16 : 22, y = VH - bar - 34 - (k - j) * (fs + 14);
       c.globalAlpha = al; c.font = 'italic 400 ' + fs + 'px "Times New Roman", serif'; var ln = I.lines[j]; while (c.measureText(ln).width > VW - 40 && fs > 11) { fs--; c.font = 'italic 400 ' + fs + 'px "Times New Roman", serif'; }
-      c.shadowColor = I.c.col; c.shadowBlur = j === k ? 12 : 0; c.fillStyle = j === I.lines.length - 1 ? '#fff6dc' : '#e9e4d3'; c.fillText(ln, VW / 2, y); c.shadowBlur = 0;
+      c.shadowColor = (I.col || I.c.col); c.shadowBlur = j === k ? 12 : 0; c.fillStyle = j === I.lines.length - 1 ? '#fff6dc' : '#e9e4d3'; c.fillText(ln, VW / 2, y); c.shadowBlur = 0;
     }
     c.globalAlpha = 1;
   }
@@ -6428,6 +6500,7 @@ var LINES = {
   illya: { summon: ["Mm-hm! You're mine now. Let's go crush everyone."], engage: ['Found you~'], kill: ['Bye-bye!'], servantdown: ['...Liar. You said you were the strongest.'] },
   kariya: { summon: ['I am... For her sake, we will not lose.'], engage: ['Tokiomi... is that you?'], servantdown: ['Not like this...'] },
   sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] },
+  ryuunosuke: { summon: ['Huh. It actually worked? Hey, hey, are you a demon? That is so cool.'], engage: ['Oh, you look interesting!', 'Hold still, I just want to see something.'], kill: ['Ahh... not quite it. Next time.', 'Wow. So that\u2019s how it looks.'], servantdown: ['Wait, that\u2019s it? That\u2019s so lame.'] },
   caren: { summon: ['Come, then. Let us see what kind of sinner answers me.'], engage: ['How sad. You think you can win.', 'Shall I pray for you now, or after?'], kill: ['Amen. That was quick.', 'There. You can rest from yourself.'], servantdown: ['...So even you could not stay. Typical.'] },
   tokiomi: { summon: ['I am. A Tohsaka does not lose his composure, and does not lose.'], engage: ['Let us settle this with dignity.'], kill: ['Elegance, to the very end.'], servantdown: ['This was not... how it was meant to go.'] },
   kuzuki: { summon: ['I am. I have no wish of my own. Tell me what you need.'], engage: ['...'], kill: ['It is finished.'], servantdown: ['I see. Then I will go on alone.'] }
@@ -7107,6 +7180,7 @@ function drawProjX(g, p, a) {
 /* ---- the dialogue pass: fuller lines for every character, rivals who answer each other when they meet,
    conversations at the King's table, and Rule Breaker's broken contract. All lines are original. ---- */
 var MORE_LINES = {
+  ryuunosuke: { low: ['Ow, ow, ow! That really hurts!', 'Oh! So that\u2019s what it feels like.'] },
   caren: { low: ['It only hurts. Go on.', 'My wounds are open anyway.'] },
   tokiomi: { low: ['A setback. Nothing more.', 'Composure... composure.'] },
   kuzuki: { low: ['Still standing.', 'Pain is information.'], servantdown: ['I see. I will continue.'] },
@@ -7242,6 +7316,13 @@ function drawTurnedScreen() {
    All lines are original. ---- */
 var MORE_PAIRS = {
   // Tokiomi: his student, his rival in love, his enemies and his daughter
+  // Ryuunosuke: the man who will not talk, the nun who feels him coming, the priest he sees through
+  'ryuunosuke>kiritsugu': ['You\u2019ve got such tired eyes, mister. I love it.', 'Stop talking.'],
+  'kiritsugu>ryuunosuke': ['A civilian with a Command Seal. Nothing to discuss.', 'Aw, don\u2019t be like that!'],
+  'ryuunosuke>caren': ['A nun! Do you really believe in God?', 'Enough to know where you are going.'],
+  'caren>ryuunosuke': ['My wounds are opening just looking at you.', 'Whoa, really? Show me!'],
+  'ryuunosuke>kirei': ['Mister priest! Is it fun, pretending?', '...More than you would think.'],
+  'ryuunosuke>gilles': ['Hey, big eyes! You get it, right? You totally get it!', 'Such a radiant soul... how tragic that we stand apart.'],
   // Caren: the father who left her, the boy who bleeds for strangers, the King who is amused by her
   'caren>kirei': ['Father. I came to watch you fail.', 'Then watch closely. I have never disappointed you in that.'],
   'kirei>caren': ['Caren. Did the Church send you?', 'No one sent me. I wanted to see your face when you lose.'],
@@ -7359,6 +7440,8 @@ FX.hesitate = function (a, d) {
 };
 // last words over the fallen, for the kills that mean something
 var KILLQ = {
+  'kiritsugu>ryuunosuke': 'Clean.',
+  'ryuunosuke>caren': 'Hey. Did God see that?',
   'caren>kirei': 'Rest. Someone will pray for you. Not me.',
   'kirei>caren': 'So that is what it feels like. I expected more.',
   'kirei>tokiomi': 'I wondered if I would feel something. Nothing. How disappointing.',
@@ -7427,6 +7510,7 @@ var PACT_LINES = {
   gilgamesh: { offer: 'You may stand near me tonight. Consider it an honor.', yes: 'Hmph. Amuse me.', no: 'You presume too much, mongrel.', brk: '...' },
   shirou: { offer: 'We don’t have to fight tonight. Let’s work together.', yes: 'Thanks. I mean it.', no: 'I understand. But I won’t give up on talking.', brk: '...' },
   rin: { offer: 'A temporary alliance. Strictly business.', yes: 'Good. Don’t make me regret it.', no: 'Fine. Your funeral.', brk: 'Sorry. It’s nothing personal. Mostly.' },
+  ryuunosuke: { offer: 'Let\u2019s be friends until morning! I\u2019ll be good, promise.', yes: 'Yay! This is gonna be fun.', no: 'Aww. Fine, I\u2019ll come find you later then.', brk: 'Sorry! I just really wanted to see your face when I did that.' },
   caren: { offer: 'Until dawn, then. Do not mistake this for kindness.', yes: 'Fine. Try not to embarrass me.', no: 'Wise. I would have broken it anyway.', brk: 'You trusted a nun. That was your sin, not mine.' },
   tokiomi: { offer: 'An arrangement between gentlemen, until dawn. You will find me a reliable partner.', yes: 'Splendid. Let us proceed.', no: 'A pity. We shall meet as enemies, then.', brk: 'Forgive me. Victory was always the arrangement.' },
   kuzuki: { offer: 'We have no reason to fight tonight.', yes: 'Understood.', no: 'Then I will not hold back.', brk: '...' },
@@ -8157,13 +8241,16 @@ function rescueAlpha(f) {
 /* the Shroud of Magdalene drifts around her like a dancer's ribbon; when she casts, its leading end unwinds toward her target */
 function drawCarenRibbon(f) {
   var t = G.time, base = t * 1.5 + f.idx * 1.7, ext = 0;
-  if (f.key === 'skill' && f.act) { if (f.st === 'wind') ext = clamp(f.t / (f.windTotal || f.act.wind || 0.3), 0, 1); else if (f.st === 'act') ext = 1; else if (f.st === 'rec') ext = Math.max(0, 1 - f.t / 0.3); }
+  // skill and light: the leading end unwinds toward the target; heavy: the whole ribbon whirls out around her
+  var reachX = 90, whirl = 0;
+  if (f.act && (f.key === 'skill' || f.key === 'light')) { if (f.key === 'light') reachX = f.act.reach - 36; if (f.st === 'wind') ext = clamp(f.t / (f.windTotal || f.act.wind || 0.3), 0, 1) * (f.key === 'light' ? 0.4 : 1); else if (f.st === 'act') ext = 1; else if (f.st === 'rec') ext = Math.max(0, 1 - f.t / 0.25); }
+  if (f.act && f.key === 'heavy') { if (f.st === 'wind') whirl = -0.25 * clamp(f.t / (f.windTotal || 0.45), 0, 1); else if (f.st === 'act') whirl = 1; else if (f.st === 'rec') whirl = Math.max(0, 1 - f.t / 0.3); if (whirl > 0) base += t * 9; }
   var N = 30, pts = [];
   for (var i = 0; i < N; i++) {
-    var u = i / (N - 1), an = base + u * 4.6, r = 31 + 4 * Math.sin(t * 2.6 + u * 6);
+    var u = i / (N - 1), an = base + u * (whirl > 0 ? 6.2 : 4.6), r = 31 + 4 * Math.sin(t * 2.6 + u * 6) + (whirl > 0 ? whirl * ((f.act ? f.act.reach : 115) - 34) : whirl * 28);
     var x = f.x + Math.cos(an) * r, y = f.y + Math.sin(an) * r * 0.88 + Math.sin(u * 9 + t * 4) * 2.5;
     var k = Math.max(0, (u - 0.5) / 0.5) * ext;
-    if (k > 0) { var tx = f.x + Math.cos(f.face) * (36 + 90 * k), ty = f.y + Math.sin(f.face) * (36 + 90 * k) + Math.sin(u * 14 + t * 20) * 5 * k; x += (tx - x) * k; y += (ty - y) * k; }
+    if (k > 0) { var tx = f.x + Math.cos(f.face) * (36 + reachX * k), ty = f.y + Math.sin(f.face) * (36 + reachX * k) + Math.sin(u * 14 + t * 20) * 5 * k; x += (tx - x) * k; y += (ty - y) * k; }
     pts.push([x, y, u]);
   }
   ctx.save(); ctx.lineCap = 'round';
@@ -8177,6 +8264,86 @@ var drawFighterC0 = drawFighter;
 drawFighter = function (f, i, ar) {
   drawFighterC0(f, i, ar);
   if (f.def.id === 'caren' && f.st !== 'dead' && !(f.hid && f.team !== (G.f[MEI] || {}).team)) drawCarenRibbon(f);
+};
+/* ---- Ryuunosuke's effects (knife cuts, Fade into the Crowd, Masterpiece, the harm he feeds on),
+   and two shared status looks: fire on a burning fighter, and the bind on a bound one ---- */
+(function () {
+  var prev = fxExtra;
+  fxExtra = function (n, x, y, f) {
+    var id = f && f.def ? f.def.id : '';
+    if (id === 'ryuunosuke' && n === 'skillfire') return true; // the fade itself draws, or the "no crowd" text says why not
+    if (n === 'fade' && f) {
+      // the street seems to close around him: faint figures pass between him and everyone else
+      for (var i = 0; i < 5; i++) (function (k) { var a0 = k * 1.257 + Math.random(), r = 50 + Math.random() * 30; vfx(1.1, function (g, p) { var a = a0 + p * 1.2, al = 0.7 * Math.sin(Math.PI * p); g.save(); g.globalAlpha = al; g.fillStyle = '#6a7280'; g.beginPath(); g.arc(f.x + Math.cos(a) * r, f.y + Math.sin(a) * r, 14, 0, 6.283); g.fill(); g.fillStyle = '#9aa2ae'; g.beginPath(); g.arc(f.x + Math.cos(a) * r, f.y + Math.sin(a) * r, 7.5, 0, 6.283); g.fill(); g.restore(); }); })(i);
+      return true;
+    }
+    if (id === 'ryuunosuke' && n === 'sigfire') {
+      // Masterpiece: the light seems to dip, then two quick red cuts cross in front of him
+      var fa = f.face, cx = x + Math.cos(fa) * 60, cy = y + Math.sin(fa) * 60;
+      flashFx('#1a0408', 0.25, 0.35);
+      slashFx(cx, cy, fa + 0.8, 70, 0.25, '200,30,50', 0.35, 5);
+      setTimeout(function () { slashFx(cx, cy, fa - 0.8, 70, -0.25, '200,30,50', 0.35, 5); }, 70);
+      return true;
+    }
+    if (n === 'harm' && f) {
+      // the harm he does flows back to him: dark red motes drawn inward
+      for (var j = 0; j < 7; j++) (function (k) { var a0 = Math.random() * 6.283, r0 = 70 + Math.random() * 40; vfx(0.7, function (g, p) { var r = r0 * (1 - p), a = a0 + p * 2; g.save(); g.globalAlpha = 0.8 * (1 - p * 0.6); g.fillStyle = '#8e1424'; g.beginPath(); g.arc(f.x + Math.cos(a) * r, f.y + Math.sin(a) * r, 3, 0, 6.283); g.fill(); g.restore(); }); })(j);
+      return true;
+    }
+    return prev ? prev(n, x, y, f) : false;
+  };
+})();
+
+// a knife's quick cut: a thin pale arc in front of him on each light and heavy strike
+var fxKnifeSeen = {};
+function ryuKnifeTrail(f) {
+  if (!f.act || (f.key !== 'light' && f.key !== 'heavy') || f.st !== 'act') { fxKnifeSeen[f.idx] = null; return; }
+  var tag = f.key + ':' + f.combo; if (fxKnifeSeen[f.idx] === tag) return; fxKnifeSeen[f.idx] = tag;
+  var fa = f.face, side = (f.combo || 0) % 2 ? 1 : -1;
+  slashFx(f.x + Math.cos(fa) * 46, f.y + Math.sin(fa) * 46, fa + side * 1.2, f.key === 'heavy' ? 90 : 56, side * 0.35, '235,238,242', 0.22, f.key === 'heavy' ? 4 : 2.5);
+}
+// fire licking at a burning fighter (Tokiomi's flames)
+function drawBurning(f) {
+  var t = G.time, n = 6; ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (var i = 0; i < n; i++) {
+    var a = i * 6.283 / n + t * 1.3, ph = (t * 3.2 + i * 0.37) % 1, r = 18 + 4 * Math.sin(i * 2.1), bx = f.x + Math.cos(a) * r, by = f.y + Math.sin(a) * r;
+    var h = 10 + 12 * Math.sin(Math.PI * ph), w = 5 + 2 * Math.sin(t * 9 + i);
+    var lg = ctx.createLinearGradient(bx, by, bx, by - h); lg.addColorStop(0, 'rgba(255,90,20,' + (0.7 * (1 - ph * 0.5)) + ')'); lg.addColorStop(1, 'rgba(255,210,90,0)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(bx - w, by); ctx.quadraticCurveTo(bx - w * 0.3, by - h * 0.6, bx + Math.sin(t * 7 + i) * 3, by - h); ctx.quadraticCurveTo(bx + w * 0.3, by - h * 0.6, bx + w, by); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+// the bind on a bound fighter, in the look of whoever bound them
+function drawBound(f) {
+  var t = G.time, by = f.rootBy || '', fade = Math.min(1, f.rootT * 3);
+  ctx.save(); ctx.globalAlpha = fade; ctx.lineCap = 'round';
+  if (by === 'caren') {
+    // the red shroud wound round them
+    ctx.strokeStyle = '#4a0a14'; ctx.lineWidth = 7; for (var k = 0; k < 2; k++) { ctx.beginPath(); ctx.ellipse(f.x, f.y + (k - 0.5) * 10, 24, 10, 0.3 + k * 0.5, 0, 6.283); ctx.stroke(); }
+    ctx.strokeStyle = '#c8283a'; ctx.lineWidth = 4.5; for (var k2 = 0; k2 < 2; k2++) { ctx.beginPath(); ctx.ellipse(f.x, f.y + (k2 - 0.5) * 10, 24, 10, 0.3 + k2 * 0.5, 0, 6.283); ctx.stroke(); }
+    ctx.fillStyle = '#c8283a'; ctx.beginPath(); ctx.moveTo(f.x + 20, f.y - 4); ctx.quadraticCurveTo(f.x + 34, f.y - 10 + Math.sin(t * 6) * 4, f.x + 42, f.y - 2); ctx.lineTo(f.x + 22, f.y + 2); ctx.fill();
+  } else if (by === 'sakura' || by === 'kariya') {
+    // shadow or worms clinging from the ground
+    ctx.strokeStyle = by === 'sakura' ? 'rgba(20,6,24,.9)' : 'rgba(74,58,90,.9)'; ctx.lineWidth = 5;
+    for (var i = 0; i < 5; i++) { var a = i * 1.257 + 0.3, r0 = 30; ctx.beginPath(); ctx.moveTo(f.x + Math.cos(a) * r0, f.y + Math.sin(a) * r0); ctx.quadraticCurveTo(f.x + Math.cos(a + 0.5) * 16, f.y + Math.sin(a + 0.5) * 16 + Math.sin(t * 5 + i) * 3, f.x + Math.cos(a + 1.1) * 8, f.y + Math.sin(a + 1.1) * 8); ctx.stroke(); }
+  } else {
+    // silver wire (Irisviel) and every other bind: thin bright loops pulled tight
+    ctx.strokeStyle = by === 'irisviel' || by === 'illya' ? 'rgba(230,238,248,.9)' : 'rgba(210,220,240,.75)'; ctx.lineWidth = 1.4;
+    for (var j = 0; j < 4; j++) { ctx.beginPath(); ctx.ellipse(f.x, f.y, 22 + j * 2, 9 + j * 2, j * 0.8 + t * 0.4, 0, 6.283); ctx.stroke(); }
+  }
+  ctx.restore();
+}
+var drawFighterR0 = drawFighter;
+drawFighter = function (f, i, ar) {
+  var vis = f.st !== 'dead' && !(f.hid && f.team !== (G.f[MEI] || {}).team);
+  var faded = vis && f.fadeT > 0;
+  if (faded) { ctx.save(); ctx.globalAlpha = f.team === (G.f[MEI] || {}).team ? 0.55 : 0.35; }
+  drawFighterR0(f, i, ar);
+  if (faded) ctx.restore();
+  if (!vis) return;
+  if (f.def.id === 'ryuunosuke') ryuKnifeTrail(f);
+  if (f.bleedT > 0 && f.burnFx) drawBurning(f);
+  if (f.rootT > 0) drawBound(f);
 };
 /* ---- online play on the hosted site: rooms over the game's own WebSocket relay (server/hub.js) ----
    The same calls as the claude.ai room (join, presence, peers, onPeers, onConnection, leave), so the lobby and
@@ -9033,6 +9200,7 @@ var MLORE = {
   irisviel: { ep: 'The Vessel', lore: 'A homunculus made by the Einzbern family to carry the Grail, given a heart she was never meant to have. She is Kiritsugu’s wife and Illya’s mother. This war is the first time she has seen the world beyond her castle and its snow.', wish: 'For her husband’s dream to come true, and for her daughter to live free of it.' },
   kariya: { ep: 'The Prodigal Matou', lore: 'He walked away from the Matou family and its magecraft, then came back to fight in the war to free Sakura. To become a master he let the crest worms eat away at his body. He has months to live, and spends his own life to keep his Servant fighting.', wish: 'Sakura safe, and back with her family.' },
   illya: { ep: 'Child of the Einzbern', lore: 'The daughter of Kiritsugu and Irisviel, raised alone in a castle in the snow and shaped into the next vessel of the Grail. She is playful and cruel by turns, and her mana seems endless. Her birds hunt on their own, and her Berserker guards her like a mountain.', wish: 'To ask her father why he never came back.' },
+  ryuunosuke: { ep: 'The Curious Killer', lore: 'A young man of Fuyuki who found ordinary life too dull to bear and went looking for what death really looks like. He copied a circle from old notes in his family storehouse without believing a word of them, and something answered. He is friendly, chatty and completely sincere, which is the worst part.', wish: 'To see something truly beautiful. He has not decided yet what that will be.' },
   caren: { ep: 'The Sister of the Wounds', lore: 'A girl raised by the Church to find what hides. Her body opens in wounds when evil comes near, so she was used like a compass and never asked if it hurt. She speaks gently and says the cruellest true thing in the room, and she is the daughter of a priest who never came for her.', wish: 'She says she has none. She came to watch the others want things.' },
   tokiomi: { ep: 'The Head of the Tohsaka', lore: 'The perfect gentleman of an old line of mages, raised from birth to reach the Root and never to show strain while doing it. He called a king to win the war, planned every step with the Church, and trusted that plan more than the people around him. He gave one daughter away so both could flourish.', wish: 'To reach the Root, as every Tohsaka before him meant to.' },
   kuzuki: { ep: 'The Empty Teacher', lore: 'A teacher of ethics at Homurahara Academy who lives at the temple on Mount Enzou. Raised from childhood to kill, he has never wanted anything for himself. He found a wounded sorceress in the rain one night and took her in without a question.', wish: 'None. He fights so that she can have hers.' },

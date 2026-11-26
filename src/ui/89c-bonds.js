@@ -3,6 +3,13 @@
    All lines are original. ---- */
 var MORE_PAIRS = {
   // Tokiomi: his student, his rival in love, his enemies and his daughter
+  // Ryuunosuke: the man who will not talk, the nun who feels him coming, the priest he sees through
+  'ryuunosuke>kiritsugu': ['You\u2019ve got such tired eyes, mister. I love it.', 'Stop talking.'],
+  'kiritsugu>ryuunosuke': ['A civilian with a Command Seal. Nothing to discuss.', 'Aw, don\u2019t be like that!'],
+  'ryuunosuke>caren': ['A nun! Do you really believe in God?', 'Enough to know where you are going.'],
+  'caren>ryuunosuke': ['My wounds are opening just looking at you.', 'Whoa, really? Show me!'],
+  'ryuunosuke>kirei': ['Mister priest! Is it fun, pretending?', '...More than you would think.'],
+  'ryuunosuke>gilles': ['Hey, big eyes! You get it, right? You totally get it!', 'Such a radiant soul... how tragic that we stand apart.'],
   // Caren: the father who left her, the boy who bleeds for strangers, the King who is amused by her
   'caren>kirei': ['Father. I came to watch you fail.', 'Then watch closely. I have never disappointed you in that.'],
   'kirei>caren': ['Caren. Did the Church send you?', 'No one sent me. I wanted to see your face when you lose.'],
@@ -120,6 +127,8 @@ FX.hesitate = function (a, d) {
 };
 // last words over the fallen, for the kills that mean something
 var KILLQ = {
+  'kiritsugu>ryuunosuke': 'Clean.',
+  'ryuunosuke>caren': 'Hey. Did God see that?',
   'caren>kirei': 'Rest. Someone will pray for you. Not me.',
   'kirei>caren': 'So that is what it feels like. I expected more.',
   'kirei>tokiomi': 'I wondered if I would feel something. Nothing. How disappointing.',

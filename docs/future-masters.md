@@ -2,7 +2,7 @@
 
 Rules for every new master: no canon-pairing bonuses (any master can be paired with any servant). Each gets one edge, one real cost, one skill and one signature, with health 85–125 and a mana pool in the existing range. Balance with the war and duel sims: each master's win rate within about ±5 points of the roster average; adjust health or one number on the edge, never add a bonus. Suggested build order: Caren, Bazett, Ryuunosuke, Shinji.
 
-## Ryuunosuke Uryuu — Outsider
+## Ryuunosuke Uryuu — Outsider (ADDED Nov 26)
 - Health 95. No magecraft: no healing, shields or anything defensive.
 - Edge: bounded fields cannot feel him. He earns mana by doing harm: a little per point of damage he or his servant deals, a lump per kill. The amounts are tuned in the sim so his average income across a war matches the median master's, and no more.
 - Cost: no natural regeneration, pool capped at 100. Civilian kills bring the Church as for anyone. Only the first few civilian kills each day pay in full.

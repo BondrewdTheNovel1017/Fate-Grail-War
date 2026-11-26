@@ -77,13 +77,14 @@ function hurt(att, def, a, mult, src) {
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
   def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
+  harmMana(att, def, taken);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
-  if (a.root) { def.rootT = a.rootF && isFemale(def) ? a.rootF : a.root; FX.text(def, 'BOUND'); }
+  if (a.root) { def.rootT = a.rootF && isFemale(def) ? a.rootF : a.root; def.rootBy = att ? att.def.id : ''; FX.text(def, 'BOUND'); }
   if (a.bind && att) enkiduBind(att, def, a);
   // Origin Rounds burn magic circuits: an Outsider has none to burn
-  if (a.silence && def.def.isMaster) { if (def.def.type === 'Outsider') FX.text(def, 'NO CIRCUITS TO BURN'); else { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); } }
+  if (a.silence && def.def.isMaster) { if (def.def.type === 'Outsider' || def.def.noCircuits) FX.text(def, 'NO CIRCUITS TO BURN'); else { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); } }
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
   def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
@@ -198,6 +199,7 @@ function strikeInit(f) {
   else if (k === 'arm') { f.arm = Math.floor(rnd() * f.A.arms.length); f.armT = a.dur; FX.text(f, f.A.arms[f.arm].name.toUpperCase()); FX.fx('arm', f.x, f.y, f); FX.shake(3); }
   else if (k === 'barrage') { f.barN = 0; f.barT = 0; }
   else if (k === 'sacrament') sacrament(f, a);
+  else if (k === 'fade') startFade(f, a);
   else if (k === 'heal') { var ht = a.self || !livePartner(f) ? f : f.partner, ham = ht === f && !a.self ? Math.round(a.amount * SOLO_HEAL) : a.amount; if (ht && ht.st !== 'dead' && (ht === f || dist(f, ht) <= a.range)) { ht.hp = Math.min(ht.def.hp, ht.hp + ham); FX.text(ht, '+' + ham); FX.fx('heal', ht.x, ht.y, ht); FX.snd('field', ht); } else FX.text(f, 'TOO FAR'); }
   else if (k === 'haste') { f.hasteT = a.dur; FX.text(f, 'DOUBLE ACCEL'); FX.fx('heal', f.x, f.y, f); }
   else if (k === 'siphon') { var got = 0; enemiesOf(f).forEach(function (o) { if (dist(f, o) <= a.r + FR) { if (hurt(f, o, { dmg: a.dmg, stag: 0.2, power: 1, unblock: true, spell: true, hs: 0.04, arc: 0, key: 'skill', vsServant: 1 }, 1, f) === 'hit') got += a.dmg; } }); if (got) { f.hp = Math.min(f.def.hp, f.hp + got); FX.text(f, '+' + got); } FX.fx('heal', f.x, f.y, f); FX.text(f, 'IMAGINARY DRAIN'); }
@@ -218,7 +220,7 @@ function strikeInit(f) {
   else if (k === 'grab') {
     if (dist(f, o) <= a.reach + FR && Math.abs(angDiff(f.face, angTo(f, o))) <= a.arc) {
       if (o.iframes > 0) { hurt(f, o, a, 1); }
-      else if (!a.noExec && o.hp <= o.def.hp * 0.3) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
+      else if (!a.noExec && o.hp <= o.def.hp * (a.execAt || 0.3) && (!a.execMasters || o.def.isMaster) && (!a.behind || behindOf(f, o))) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
       else hurt(f, o, a, 1);
     }
   }
@@ -259,6 +261,7 @@ function stepF(f, dt) {
     else if (f.spirit === 2) { f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
     if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; f.cause = 'fade'; kill(f, true); } }
     if (f.hasteT > 0) f.hasteT -= dt;
+    if (f.fadeT > 0) f.fadeT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
     if (f.def.stigmata) stigmataTick(f, dt);
@@ -398,7 +401,7 @@ function stepProj(dt) {
     if (!p.dead && G.civ && G.civ.length && p.x < (MAP.cityW || 0) && hitCivsAt(p.x, p.y, p.a.rad || 6, p.owner)) p.dead = !p.a.beam && !p.a.wave;
     if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg, p.owner.team)) p.dead = !p.a.beam && !p.a.wave;
     for (var ti = 0; ti < es.length && !p.dead; ti++) {
-      tgt = es[ti];
+      tgt = es[ti]; if (tgt.fadeT > 0) continue; // lost in the crowd: shots pass him by
       var dx = tgt.x - sx, dy = tgt.y - sy, seg = Math.hypot(ox, oy) || 1, tt = clamp((dx * ox + dy * oy) / (seg * seg), 0, 1);
       var cx = sx + ox * tt, cy = sy + oy * tt;
       if (Math.hypot(tgt.x - cx, tgt.y - cy) < FR + (p.a.beam ? 34 * (p.a.bw || 1) : p.a.wave ? 26 : (p.a.rad || 4))) { var hr = hurt(p.owner, tgt, p.a, p.mult, p); p.dead = true; if (p.a.pull && hr === 'hit' && p.owner.st !== 'dead') { var ow = p.owner; ow.pull = 0.22; ow.ripo = 1.4; FX.text(ow, 'CHAIN PULL'); FX.snd('chain', ow); if (ow.st === 'rec') ow.recDur = Math.min(ow.recDur, ow.t + 0.28); } }
@@ -413,7 +416,7 @@ function stepZones(dt) {
     var z = G.zones[i]; z.t += dt;
     if (!z.done && z.t >= z.delay) {
       z.done = true;
-      enemiesOf(z.owner).forEach(function (o) { if (Math.hypot(o.x - z.x, o.y - z.y) <= z.r + FR) hurt(z.owner, o, { dmg: z.a.dmg, stag: 0.5, power: 2, gb: true, hs: 0.06, arc: 0, spell: true, key: z.a.key, root: z.a.root }, 1, { x: z.x, y: z.y }); });
+      enemiesOf(z.owner).forEach(function (o) { if (Math.hypot(o.x - z.x, o.y - z.y) <= z.r + FR && !(o.fadeT > 0)) hurt(z.owner, o, { dmg: z.a.dmg, stag: 0.5, power: 2, gb: true, hs: 0.06, arc: 0, spell: true, key: z.a.key, root: z.a.root }, 1, { x: z.x, y: z.y }); });
       FX.spark(z.x, z.y, z.owner.def.col, 10); FX.shake(3); FX.snd('arrowLand', { x: z.x, y: z.y, idx: -1 }); FX.fx('arrowLand', z.x, z.y, z);
     }
     if (z.t > z.delay + 0.25) G.zones.splice(i, 1);

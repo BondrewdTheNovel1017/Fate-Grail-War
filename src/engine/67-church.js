@@ -18,7 +18,7 @@ function civStruck(c, f) {
   var C = churchSt(), t = f.team, before = C.waves[t] || 0;
   c.dead = true; c.on = false; c.offT = G.time; c.flee = 0; c.going = null;
   G.bodies = G.bodies || []; G.bodies.push({ x: Math.round(c.x), y: Math.round(c.y), a: Math.round((c.vx || 0) * 100) / 100, id: c.id, t: Math.round(G.time) }); if (G.bodies.length > 30) G.bodies.shift();
-  C.kills[t] = (C.kills[t] || 0) + 1;
+  C.kills[t] = (C.kills[t] || 0) + 1; harmCiv(f);
   G.expoQuiet = true; witness(c.x, c.y, [t], 3); fightNoise(c.x, c.y, 2600);
   expose(t, CHURCH.civExpo * (C.kills[t] > 1 ? 1.5 : 1)); G.expoQuiet = false;
   G.reveal[t] = Math.max(G.reveal[t] || 0, G.time + CHURCH.civReveal);

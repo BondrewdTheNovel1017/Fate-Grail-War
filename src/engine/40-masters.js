@@ -74,14 +74,20 @@ MASTERS.kuzuki = MD({ id: 'kuzuki', name: 'Souichirou Kuzuki', type: 'Outsider',
     heavy: { name: 'Coiled elbow', kind: 'melee', dmg: 12, reach: 82, arc: 0.9, wind: 0.4, max: 0.85, act: 0.1, rec: 0.55, lunge: 70, cost: 20, stag: 0.7, power: 2, gb: true },
     skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.25, act: 0.05, rec: 0.2, cd: 13, cost: 12 },
     np: { name: 'Coiled Strike', kind: 'grab', reach: 96, arc: 0.7, dmg: 22, stag: 1.0, unblock: true, noParry: true, noExec: true, wind: 0.35, act: 0.08, rec: 0.6, cost: 0, cd: 18, aiUse: 'near' } });
-MASTERS.caren = MD({ id: 'caren', name: 'Caren Hortensia', type: 'Church', col: '#e8e4ec', hp: 90, spd: 200, guard: 0.3, stigmata: true,
-    brief: 'A sister of the Church whose body answers evil with wounds. Her Stigmata feel hidden Assassins and raging Berserkers through walls and show them to her side, at a slow cost in blood. The Shroud of Magdalene binds a man longer than a woman; Sacrament mends her and her servant.',
-    light: { name: 'Verse of Rebuke', kind: 'proj', speed: 950, range: 540, dmg: 4, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'orb', size: 5, col: '#f2e6c0' },
-    heavy: { name: 'Baptism', kind: 'proj', speed: 1050, range: 620, dmg: 10, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'orb', size: 8, col: '#fff4d6' },
+MASTERS.caren = MD({ id: 'caren', name: 'Caren Hortensia', type: 'Church', col: '#e8e4ec', hp: 90, spd: 200, guard: 0.3, stigmata: true, noCircuits: true, ranged: false, combo: 3,
+    brief: 'A sister of the Church with no magic circuits at all, so Origin Rounds have nothing to burn. She fights with the Shroud of Magdalene, a red ribbon that lashes and whirls around her and binds a man longer than a woman. Her Stigmata feel hidden Assassins and raging Berserkers through walls, at a slow cost in blood; Sacrament mends her and her servant.',
+    light: { name: 'Shroud lash', kind: 'melee', dmg: 4, reach: 125, aiWant: 95, arc: 0.6, wind: 0.2, act: 0.07, rec: 0.22, lunge: 10, cost: 7, stag: 0.25, power: 1 },
+    heavy: { name: 'Shroud whirl', kind: 'melee', dmg: 9, reach: 115, arc: 3.14, wind: 0.45, max: 1.0, act: 0.14, rec: 0.6, lunge: 0, cost: 20, stag: 0.5, power: 2 },
     skill: { name: 'Shroud of Magdalene', kind: 'proj', speed: 1000, range: 560, dmg: 2, root: 1.6, rootF: 0.8, wind: 0.35, act: 0.05, rec: 0.35, cd: 15, cost: 16, shape: 'shroud', size: 9, col: '#c8283a', aiRange: [140, 520] },
     np: { name: 'Sacrament', kind: 'sacrament', self: 34, amount: 40, range: 380, wind: 0.6, act: 0.05, rec: 0.4, cost: 0, cd: 22, aiUse: 'mend' } });
-MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki); MASTERS.caren.A = build(MASTERS.caren);
-var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki', 'caren'];
+MASTERS.ryuunosuke = MD({ id: 'ryuunosuke', name: 'Ryuunosuke Uryuu', type: 'Outsider', col: '#e07a3a', wpn: 'dagger', hp: 95, spd: 212, guard: 0.3, ranged: false, combo: 3, harmMana: true,
+    brief: 'A cheerful killer with no magecraft at all. He earns mana only by doing harm: every wound he or his servant deals pays a little, every kill pays more, and nothing comes back on its own. By day he can vanish into a crowd; his Masterpiece, from behind, finishes a weakened master.',
+    light: { name: 'Knife', kind: 'melee', dmg: 5, reach: 70, arc: 0.9, wind: 0.15, act: 0.06, rec: 0.18, lunge: 40, cost: 6, stag: 0.3, power: 1 },
+    heavy: { name: 'Lunging stab', kind: 'melee', dmg: 12, reach: 80, arc: 0.7, wind: 0.4, max: 0.9, act: 0.1, rec: 0.55, lunge: 110, cost: 20, stag: 0.6, power: 2, bleed: { dps: 2, t: 3 } },
+    skill: { name: 'Fade into the Crowd', kind: 'fade', dur: 5, wind: 0.2, act: 0.05, rec: 0.2, cd: 16, cost: 10 },
+    np: { name: 'Masterpiece', kind: 'grab', reach: 100, arc: 0.8, dmg: 14, vsServant: 0.4, execAt: 0.4, execMasters: true, behind: true, stag: 0.8, unblock: true, noParry: true, wind: 0.3, act: 0.08, rec: 0.6, cost: 0, cd: 22, aiUse: 'stalk' } });
+MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki); MASTERS.caren.A = build(MASTERS.caren); MASTERS.ryuunosuke.A = build(MASTERS.ryuunosuke);
+var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki', 'caren', 'ryuunosuke'];
 /* Arena mode keeps the duel-length numbers: copies taken before the war scaling below */
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });

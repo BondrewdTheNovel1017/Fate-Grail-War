@@ -1,6 +1,7 @@
 /* ---- the dialogue pass: fuller lines for every character, rivals who answer each other when they meet,
    conversations at the King's table, and Rule Breaker's broken contract. All lines are original. ---- */
 var MORE_LINES = {
+  ryuunosuke: { low: ['Ow, ow, ow! That really hurts!', 'Oh! So that\u2019s what it feels like.'] },
   caren: { low: ['It only hurts. Go on.', 'My wounds are open anyway.'] },
   tokiomi: { low: ['A setback. Nothing more.', 'Composure... composure.'] },
   kuzuki: { low: ['Still standing.', 'Pain is information.'], servantdown: ['I see. I will continue.'] },

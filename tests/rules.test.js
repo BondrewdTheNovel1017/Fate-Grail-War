@@ -906,3 +906,35 @@ test('Caren: Sacrament heals her and a nearby servant', () => {
   c.hp = 30; sv.hp = 100; E.sacrament(c, c.A.np);
   assert.ok(c.hp === 64 && sv.hp === 140, 'healed ' + c.hp + ' and ' + sv.hp);
 });
+test('Caren has no magic circuits: Origin Rounds burn nothing', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.MASTERS.kiritsugu, E.MASTERS.caren, { map: 'arena' }); G.ai = [null, null];
+  E.hurt(G.f[0], G.f[1], G.f[0].A.np, 1); assert.ok(!(G.f[1].silenceT > 0), 'Caren keeps her skills');
+});
+test('Ryuunosuke earns mana only from harm: none on his own, some when his servant wounds, a lump for a kill', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'ryuunosuke', 2), { nights: 1 }); G.ai = G.ai.map(() => null);
+  const r = G.f.find((f) => f.def.id === 'ryuunosuke'), sv = r.partner, foe = G.f.find((f) => f.team !== r.team && !f.def.isMaster);
+  E.initMana(r); r.mana = 10; r.x = 600; r.y = 600; sv.x = 650; sv.y = 600;
+  for (let i = 0; i < 60 * 3; i++) { G.f.forEach((f) => { f.inp = { mx: 0, my: 0 }; }); E.simStep(E.STEP); }
+  assert.ok(r.mana <= 10, 'no regeneration, only the servant\'s upkeep (' + r.mana + ')');
+  const m0 = r.mana; E.harmMana(sv, foe, 40); assert.ok(Math.abs(r.mana - m0 - 12) < 1e-6, 'servant damage pays (' + r.mana + ')');
+  foe.hp = 0; E.harmMana(sv, foe, 5); assert.ok(r.mana > m0 + 12 + 20, 'a kill pays a lump (' + r.mana + ')');
+});
+test('Ryuunosuke: Masterpiece finishes a weakened master only from behind', () => {
+  const E = loadEngine();
+  const run = (behind) => { const G = E.newGame(E.MASTERS.ryuunosuke, E.MASTERS.rin, { map: 'arena' }); G.ai = [null, null];
+    const r = G.f[0], v = G.f[1]; v.x = 1000; v.y = 600; r.x = behind ? 1080 : 920; r.y = 600; v.face = Math.PI; r.face = behind ? Math.PI : 0; v.hp = v.def.hp * 0.35; r.mom = 100;
+    E.startAct(r, 'np'); for (let i = 0; i < 60; i++) { v.face = Math.PI; v.inp = { mx: 0, my: 0 }; r.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); } return v; };
+  assert.strictEqual(run(true).st, 'dead', 'executed from behind');
+  const f2 = run(false); assert.ok(f2.st !== 'dead' && f2.hp < f2.def.hp * 0.35, 'from the front only a cut');
+});
+test('Ryuunosuke: Fade into the Crowd lets shots pass him, and needs a crowd in the war', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.MASTERS.rin, E.MASTERS.ryuunosuke, { map: 'arena' }); G.ai = [null, null];
+  const rin = G.f[0], r = G.f[1]; rin.x = 500; rin.y = 600; r.x = 800; r.y = 600; rin.face = 0; r.fadeT = 5; const hp = r.hp;
+  E.startAct(rin, 'light'); for (let i = 0; i < 60; i++) { G.f.forEach((f) => { f.inp = { mx: 0, my: 0 }; }); E.simStep(E.STEP); }
+  assert.strictEqual(r.hp, hp, 'the Gandr passed him by');
+  const W = E.newWar(E.warTeams('richard', 'ryuunosuke', 2), { nights: 1 }); const rw = W.f.find((f) => f.def.id === 'ryuunosuke');
+  W.clock.phase = 'night'; assert.ok(!E.fadeAllowed(rw), 'no crowd at night');
+});

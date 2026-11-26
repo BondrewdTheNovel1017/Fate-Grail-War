@@ -49,10 +49,10 @@ function drawCircles(g, vr, t) {
   if (!G || !G.circles) return;
   G.circles.forEach(function (c) {
     if (!vis(vr, c.x - 120, c.y - 120, c.x + 120, c.y + 120)) return;
-    var glow = INTRO && INTRO.c === c ? INTRO.glow : 0, al = INTRO ? 0.55 + glow * 0.45 : clamp(1 - G.time / 90, 0, 1) * 0.8;
+    var mine = INTRO && INTRO.c === c, cc = mine && INTRO.col ? INTRO.col : c.col, glow = mine ? INTRO.glow : 0, al = INTRO ? 0.55 + glow * 0.45 : clamp(1 - G.time / 90, 0, 1) * 0.8;
     if (al <= 0.01) return;
-    if (glow > 0) { var lg = g.createRadialGradient(c.x, c.y, 10, c.x, c.y, 150 + glow * 60); lg.addColorStop(0, rgbaOf(c.col, 0.35 * glow)); lg.addColorStop(1, rgbaOf(c.col, 0)); g.fillStyle = lg; g.fillRect(c.x - 220, c.y - 220, 440, 440); }
-    runeCircle(g, c.x, c.y, 88, c.col, t * (0.4 + glow * 2), al);
+    if (glow > 0) { var lg = g.createRadialGradient(c.x, c.y, 10, c.x, c.y, 150 + glow * 60); lg.addColorStop(0, rgbaOf(cc, 0.35 * glow)); lg.addColorStop(1, rgbaOf(cc, 0)); g.fillStyle = lg; g.fillRect(c.x - 220, c.y - 220, 440, 440); }
+    runeCircle(g, c.x, c.y, 88, cc, t * (0.4 + glow * 2), al);
   });
 }
 /* ---- doors: a lit, framed door on the outside with a mat and lanterns; inside, a bright opening marked EXIT ---- */

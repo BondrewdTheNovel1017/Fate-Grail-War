@@ -42,13 +42,16 @@
 /* the Shroud of Magdalene drifts around her like a dancer's ribbon; when she casts, its leading end unwinds toward her target */
 function drawCarenRibbon(f) {
   var t = G.time, base = t * 1.5 + f.idx * 1.7, ext = 0;
-  if (f.key === 'skill' && f.act) { if (f.st === 'wind') ext = clamp(f.t / (f.windTotal || f.act.wind || 0.3), 0, 1); else if (f.st === 'act') ext = 1; else if (f.st === 'rec') ext = Math.max(0, 1 - f.t / 0.3); }
+  // skill and light: the leading end unwinds toward the target; heavy: the whole ribbon whirls out around her
+  var reachX = 90, whirl = 0;
+  if (f.act && (f.key === 'skill' || f.key === 'light')) { if (f.key === 'light') reachX = f.act.reach - 36; if (f.st === 'wind') ext = clamp(f.t / (f.windTotal || f.act.wind || 0.3), 0, 1) * (f.key === 'light' ? 0.4 : 1); else if (f.st === 'act') ext = 1; else if (f.st === 'rec') ext = Math.max(0, 1 - f.t / 0.25); }
+  if (f.act && f.key === 'heavy') { if (f.st === 'wind') whirl = -0.25 * clamp(f.t / (f.windTotal || 0.45), 0, 1); else if (f.st === 'act') whirl = 1; else if (f.st === 'rec') whirl = Math.max(0, 1 - f.t / 0.3); if (whirl > 0) base += t * 9; }
   var N = 30, pts = [];
   for (var i = 0; i < N; i++) {
-    var u = i / (N - 1), an = base + u * 4.6, r = 31 + 4 * Math.sin(t * 2.6 + u * 6);
+    var u = i / (N - 1), an = base + u * (whirl > 0 ? 6.2 : 4.6), r = 31 + 4 * Math.sin(t * 2.6 + u * 6) + (whirl > 0 ? whirl * ((f.act ? f.act.reach : 115) - 34) : whirl * 28);
     var x = f.x + Math.cos(an) * r, y = f.y + Math.sin(an) * r * 0.88 + Math.sin(u * 9 + t * 4) * 2.5;
     var k = Math.max(0, (u - 0.5) / 0.5) * ext;
-    if (k > 0) { var tx = f.x + Math.cos(f.face) * (36 + 90 * k), ty = f.y + Math.sin(f.face) * (36 + 90 * k) + Math.sin(u * 14 + t * 20) * 5 * k; x += (tx - x) * k; y += (ty - y) * k; }
+    if (k > 0) { var tx = f.x + Math.cos(f.face) * (36 + reachX * k), ty = f.y + Math.sin(f.face) * (36 + reachX * k) + Math.sin(u * 14 + t * 20) * 5 * k; x += (tx - x) * k; y += (ty - y) * k; }
     pts.push([x, y, u]);
   }
   ctx.save(); ctx.lineCap = 'round';
