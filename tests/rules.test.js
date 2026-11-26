@@ -844,3 +844,10 @@ test('Double Accel: Kiritsugu moves and attacks faster while it lasts', () => {
   const plain = time(false), fast = time(true);
   assert.ok(fast < plain * 0.85, 'a knife swing finishes sooner (' + fast + ' vs ' + plain + ' frames)');
 });
+test('Origin Rounds burn a mage\'s circuits but do nothing to an Outsider\'s abilities', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.MASTERS.kiritsugu, E.MASTERS.kuzuki, { map: 'arena' }); G.ai = [null, null];
+  const k = G.f[0], z = G.f[1]; E.hurt(k, z, k.A.np, 1); assert.ok(!(z.silenceT > 0), 'Kuzuki keeps his skills');
+  const G2 = E.newGame(E.MASTERS.kiritsugu, E.MASTERS.rin, { map: 'arena' }); G2.ai = [null, null];
+  E.hurt(G2.f[0], G2.f[1], G2.f[0].A.np, 1); assert.ok(G2.f[1].silenceT > 0, 'Rin is silenced');
+});

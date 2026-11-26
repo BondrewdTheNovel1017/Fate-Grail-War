@@ -13,7 +13,7 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 
 ## 2. Small direct requests
 - [x] **Kiritsugu:** light attacks become a combat knife (melee); guns stay on heavy, skill and signature. Double Accel (Time Alter) also speeds his attacks for its duration, balanced with the sims.
-- [ ] **Origin Rounds vs Outsiders:** no ability disable on Outsiders (no magic circuits); show "no effect".
+- [x] **Origin Rounds vs Outsiders:** no ability disable on Outsiders (no magic circuits); show "no effect".
 - [ ] **Einzbern castle stair:** move the stair to the courtyard somewhere natural (off the grand staircase or the great hall's back wall); keep the door and nav working.
 - [ ] **Lancelot's seized weapons:** tint the weapon itself black and red while `armT > 0`, and draw the veins along the weapon (using `drawWeapon`'s grip and rotation, `GRIP`/`putW`) so they follow each swing, instead of a fixed spot in front of him.
 

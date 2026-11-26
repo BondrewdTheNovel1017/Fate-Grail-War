@@ -74,6 +74,7 @@ function drawWeapon(f) {
     else if (f.armT > 0 && f.arm >= 0) { var am = d.arms[f.arm]; I = IMG['lancelot_' + am.id].weapon; g = GRIP['lancelot_' + am.id]; wp = am.wpn; }
     else wp = 'fist';
   }
+  if (d.id === 'kiritsugu' && f.key === 'light' && a && (f.st === 'wind' || f.st === 'act' || f.st === 'rec')) { I = IMG.kiritsugu_knife.weapon; g = GRIP.kiritsugu_knife; wp = 'sword'; }
   if (d.id === 'emiya' && f.key === 'skill' && a && (f.st === 'wind' || f.st === 'act' || (f.st === 'rec' && f.t < f.recDur * 0.6))) { I = IMG.emiya_bow.weapon; g = GRIP.emiya_bow; wp = 'bow'; }
   if (d.id === 'cu' && (G.proj.some(function (pr) { return pr.owner === f && pr.a.key === 'np'; }) || (f.key === 'np' && (f.st === 'act' || f.st === 'rec')))) return;
   var inAtk = (f.st === 'wind' || f.st === 'act' || f.st === 'rec') && a && a.kind !== 'counter';

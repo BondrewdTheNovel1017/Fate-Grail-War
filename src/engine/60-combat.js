@@ -79,7 +79,8 @@ function hurt(att, def, a, mult, src) {
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
   if (a.root) { def.rootT = a.root; FX.text(def, 'BOUND'); }
   if (a.bind && att) enkiduBind(att, def, a);
-  if (a.silence && def.def.isMaster) { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); }
+  // Origin Rounds burn magic circuits: an Outsider has none to burn
+  if (a.silence && def.def.isMaster) { if (def.def.type === 'Outsider') FX.text(def, 'NO CIRCUITS TO BURN'); else { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); } }
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
   def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
