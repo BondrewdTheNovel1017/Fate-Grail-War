@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Fate Grail War</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,8 +30,9 @@
       <nav class="mm" id="mainMenu" aria-label="Main menu">
         <button type="button" class="mmi" data-go="war" data-desc="war"><i>I</i><b>Holy Grail War</b></button>
         <button type="button" class="mmi" data-go="arena" data-desc="arena"><i>II</i><b>Arena</b></button>
-        <button type="button" class="mmi" data-go="codex" data-desc="codex"><i>III</i><b>Codex</b></button>
-        <button type="button" class="mmi" data-go="settings" data-desc="settings"><i>IV</i><b>Settings</b></button>
+        <button type="button" class="mmi" data-go="net" data-desc="net"><i>III</i><b>Multiplayer</b></button>
+        <button type="button" class="mmi" data-go="codex" data-desc="codex"><i>IV</i><b>Codex</b></button>
+        <button type="button" class="mmi" data-go="settings" data-desc="settings"><i>V</i><b>Settings</b></button>
       </nav>
       <div class="hints"><kbd>&uarr;</kbd><kbd>&darr;</kbd> choose &middot; <kbd>Enter</kbd> confirm &middot; <kbd>Esc</kbd> back</div>
     </div>
@@ -54,10 +56,7 @@
           <div class="opt"><div class="lbl">War length</div><div class="chips" id="nightsC"></div></div>
           <div class="opt"><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div></div>
           <div class="opt"><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div>
-          <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
-    <p class="note" style="margin:0 0 8px">Up to 4 players. One person hosts and runs the war; the others pick their servant and master above, then join with the room code. AI fills the remaining classes.</p>
-    <div class="chips"><button type="button" class="chip" id="netHost">Host a room</button><input id="netCode" class="netin" maxlength="8" placeholder="Room code" autocomplete="off" aria-label="Room code"><button type="button" class="chip" id="netJoin">Join</button><button type="button" class="chip" id="netLeave" hidden>Leave room</button></div>
-    <div id="netBox"></div></div></div>
+          
   
         </div>
       </div>
@@ -77,6 +76,11 @@
       <div id="amapsWrap"><div class="lbl">Battlefield</div><div class="maps" id="amaps"></div></div>
       <div class="opts two"><div class="opt"><div class="lbl">Opponent skill</div><div class="chips" id="adiff"></div></div><div class="opt"><div class="lbl">Game speed</div><div class="chips" id="aspd"></div></div></div>
     </div>
+  </div>
+
+  <div class="scr" id="scrNet" data-scr="net">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Multiplayer</h2><div class="netcode" id="netCodeTag"></div></header>
+    <div id="netPanel"></div>
   </div>
 
   <div class="scr" id="scrCodex" data-scr="codex">
@@ -108,7 +112,7 @@
     <div class="rule"><b>Noble Phantasm</b>Momentum fills as you fight. At full, the NP is ready. If you are hit while it winds up, it is lost. Masters use a signature spell on a cooldown instead.</div>
     <div class="rule"><b>Arena pace</b>Arena fights use duel-length health and normal Noble Phantasm charging, so a match takes a few minutes. In Master and servant matches the war rules apply: mana, Command Seals and a fading servant if its master falls.</div>
   </div></div>
-    <div class="codex" id="cKeys" hidden><p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract &middot; <kbd>P</kbd> pact.</p><div class="rules" style="margin-top:12px"><div class="rule"><b>Touch</b>Stick on the left to move, attack buttons on the right. Tap an enemy to lock on.</div><div class="rule"><b>Reading attacks</b>Red warnings can be blocked. Orange ones break your guard. Purple ones cannot be blocked: dodge them. Tap Block just before a hit lands to parry.</div></div></div>
+    <div class="codex" id="cKeys" hidden><p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract &middot; <kbd>P</kbd> pact.</p><div class="rules" style="margin-top:12px"><div class="rule"><b>Touch</b>Stick on the left to move, attack buttons on the right. Tap an enemy to lock on.</div><div class="rule"><b>Reading attacks</b>Red warnings can be blocked. Orange ones break your guard. Purple ones cannot be blocked: dodge them. Tap Block just before a hit lands to parry.<div class="rule"><b>Online play</b>Multiplayer on the main menu: one player hosts and shares the room code, the others join. Every servant and every master is a seat, so two friends can share a team, one as the servant and one as the master; empty seats are played by the AI. The host’s page runs the war, so the strongest computer should host. If you leave a match the AI takes over your fighter; if the host leaves, the match ends. Pause does not stop an online match.</div></div></div></div>
   </div>
 
   <div class="scr" id="scrSettings" data-scr="settings">

@@ -119,12 +119,13 @@ function stepDoor(f, x, y, d, entering) {
 /* ---- homes: each master starts at their family seat; a second member of the same family gets a new estate ---- */
 var MASTER_HOME = { rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null };
 var ESTATE_STYLE = { tohsaka: ['mansion_w', 'Tohsaka villa'], matou: ['mansion_d', 'Matou house'], einzbern: ['villa_e', 'Einzbern villa'], church: ['chapel', 'Church annex'], hyatt: ['hotel_s', 'Hotel suite'], mackenzie: ['house_w', 'Rented house'], emiya: ['house_jpL', 'Emiya house'], safe: ['safehouse', 'Safehouse'] };
-function assignHomes(teams, rnd) {
+var PLOT_ORDER = null;
+function assignHomes(teams, rnd, plots) {
   rnd = rnd || Math.random;
   MAP.b = MAP.b.filter(function (q) { return !q.gen; });
   var gd = (MAP.doors || []).filter(function (d) { return d.gen; }).length; MAP.doors = (MAP.doors || []).filter(function (d) { return !d.gen; });
   (MAP.doors || []).forEach(function (d) { d.ruined = false; });
-  var used = {}, freePlots = shuffled(MAP.plots.map(function (p, i) { return i; }), rnd), out = [], est = (MAP.estates || []).slice();
+  var used = {}, freePlots = plots ? plots.slice() : shuffled(MAP.plots.map(function (p, i) { return i; }), rnd), out = [], est = (MAP.estates || []).slice(); PLOT_ORDER = freePlots.slice();
   // family seats first, in team order; Kiritsugu takes the Einzbern castle when no Einzbern does
   var key = teams.map(function (t) { return MASTER_HOME[t.master.id]; });
   teams.forEach(function (t, ti) { var k = key[ti]; if (k && MAP.homes[k] && !used[k]) { used[k] = true; key[ti] = { canon: k }; } });

@@ -44,7 +44,7 @@ function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G
 function newWar(teamsIn, opts) {
   var spawnOrder = opts && opts.spawnOrder;
   opts = opts || {}; setMap(opts.map || 'city');
-  var homes = MAP.homes ? assignHomes(teamsIn) : null;
+  var homes = MAP.homes ? assignHomes(teamsIn, null, opts.plots) : null;
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick, circles: [] };
   teamsIn.forEach(function (t, ti) {
     // in the city each master starts at their summoning circle; the servant appears on it
@@ -57,7 +57,7 @@ function newWar(teamsIn, opts) {
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
-  G.homes = homes; initClock(opts); if (G.clock) initPacts(); if (MAP.cityW && !G.quick) initFields();
+  G.homes = homes; G.plotOrder = homes ? PLOT_ORDER : null; initClock(opts); if (G.clock) initPacts(); if (MAP.cityW && !G.quick) initFields();
   G.f.forEach(pickTarget);
   return G;
 }

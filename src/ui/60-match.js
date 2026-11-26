@@ -10,16 +10,10 @@ function buildHud() {
   el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]'), bma: c.querySelector('[data-h=bma]') }); });
 }
 function startMatch() {
-  if (NET.role === 'client') return;
-  MEI = 0; NET.mirror = false;
-  var nt = NET.role === 'host' ? netTeams() : { teams: warTeams(CFG.servant, CFG.master, CFG.teams), slots: {} }, teams = nt.teams, spawn = [0].concat(shuffled([1, 2, 3, 4, 5, 6]));
-  newWar(teams, { playAs: CFG.playAs, spawnOrder: spawn, nights: NET.role === 'host' ? 1 : (CFG.nights || 3) });
+  MEI = 0; NET.mirror = false; NET.hosting = false; NET.game = null;
+  var teams = warTeams(CFG.servant, CFG.master, CFG.teams), spawn = [0].concat(shuffled([1, 2, 3, 4, 5, 6]));
+  newWar(teams, { playAs: CFG.playAs, spawnOrder: spawn, nights: CFG.nights || 3 });
   for (var k2 = 1; k2 < G.f.length; k2++) G.ai[k2] = mkAI(G.f[k2], DIFF[CFG.diff]);
-  if (NET.role === 'host') {
-    NET.game = { id: Math.random().toString(36).slice(2, 8), teams: teams.map(function (t) { return [t.servant.id, t.master.id]; }), spawn: spawn, playAs: CFG.playAs, slots: nt.slots };
-    NET.ev = []; NET.prev = {}; netMarkHumans(nt.slots);
-    NET.R.presence({ game: NET.game, s: null }).catch(function () {});
-  }
   enterGame(teams.length);
 }
 function enterGame(nTeams, title, sub) {
@@ -37,13 +31,13 @@ function enterGame(nTeams, title, sub) {
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }
-function endMatch(toSetup) { running = false; INTRO = null; document.body.classList.remove('intro'); if (NET.role === 'host' && NET.game) { NET.game = null; NET.R.presence({ game: null, s: null }).catch(function () {}); } if (NET.mirror) { NET.mirror = false; MEI = 0; if (NET.R) NET.R.presence({ ing: null, inp: null }).catch(function () {}); } renderNet(); document.body.classList.remove('ingame'); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} $('#duel').style.display = 'none'; $('#setup').style.display = 'block'; $('#end').classList.remove('on'); $('#pz').classList.remove('on'); }
+function endMatch(toSetup) { running = false; INTRO = null; document.body.classList.remove('intro'); var wasNet = netInMatch(); if (NET.hosting) { NET.hosting = false; NET.game = null; netMyPresence({ game: null }); } if (NET.mirror) { NET.mirror = false; netMyPresence({ ing: null, inp: null }); } document.body.classList.remove('ingame'); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} $('#duel').style.display = 'none'; $('#setup').style.display = 'block'; $('#end').classList.remove('on'); $('#pz').classList.remove('on'); paused = false; if (wasNet || NET.R) { showScr('net', true); renderNet(); } }
 function startCurrent() { if (CFG.game === 'arena') startArena(); else startMatch(); }
 $('#go').addEventListener('click', function () { beginFlourish(startCurrent); });
-$('#again').addEventListener('click', function () { if (NET.role === 'client') { netSay('Waiting for the host to start again.'); endMatch(); return; } startCurrent(); });
+$('#again').addEventListener('click', function () { if (NET.R && NET.role === 'client') { endMatch(); netSay('Waiting for the host to start again.'); return; } if (NET.R && NET.role === 'host') { endMatch(); netStartHost(); return; } startCurrent(); });
 $('#menu').addEventListener('click', endMatch); $('#menu2').addEventListener('click', endMatch); $('#quit').addEventListener('click', endMatch);
-$('#restBtn').addEventListener('click', function () { if (G && isDay() && !NET.mirror) { skipDay(); note('You rest until nightfall.'); } });
-$('#pause').addEventListener('click', function () { paused = true; $('#pz').classList.add('on'); });
+$('#restBtn').addEventListener('click', function () { if (G && isDay() && !netInMatch()) { skipDay(); note('You rest until nightfall.'); } });
+$('#pause').addEventListener('click', function () { if (!netInMatch()) paused = true; $('#pz').classList.add('on'); });
 $('#resume').addEventListener('click', function () { paused = false; last = performance.now(); $('#pz').classList.remove('on'); });
-document.addEventListener('visibilitychange', function () { if (document.hidden && running && !G.over) { paused = true; $('#pz').classList.add('on'); } });
+document.addEventListener('visibilitychange', function () { if (document.hidden && running && !G.over && !netInMatch()) { paused = true; $('#pz').classList.add('on'); } });
 

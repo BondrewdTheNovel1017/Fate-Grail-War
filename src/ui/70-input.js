@@ -43,7 +43,7 @@ window.addEventListener('keydown', function (e) {
   if (/^[1-6]$/.test(k) && G.f[MEI].def.isMaster && G.f[MEI].partner && NET.mirror) { NET.so = STANCES.at(+k - 1)[0]; G.f[MEI].partner.stance = NET.so; renderStances(); return; }
   if (/^[1-6]$/.test(k) && G.f[MEI].def.isMaster && G.f[MEI].partner) { G.f[MEI].partner.stance = STANCES.at(+k - 1)[0]; G.f[MEI].partner.anchor = null; FX.text(G.f[MEI].partner, STANCES.at(+k - 1)[1].toUpperCase()); renderStances(); return; }
   if (e.repeat) return; keys[k] = true;
-  if (k === 'escape') { paused = true; $('#pz').classList.add('on'); return; }
+  if (k === 'escape') { if (!netInMatch()) paused = true; $('#pz').classList.add('on'); return; }
   if (KM[k]) { btnDown(KM[k]); var el = document.querySelector('.b[data-b="' + KM[k] + '"]'); if (el) el.classList.add('down'); }
 });
 window.addEventListener('keyup', function (e) {

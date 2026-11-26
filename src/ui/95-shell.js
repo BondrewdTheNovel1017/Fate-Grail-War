@@ -25,6 +25,7 @@ function showScr(id, quiet) {
   applySteps();
   if (id === 'main') { setCur(SHELL.cur, true); var it = document.querySelectorAll('.mmi')[SHELL.cur]; if (it && !quiet) it.focus({ preventScroll: true }); }
   if (id === 'settings') renderSettings();
+  if (id === 'net') { LOBBY.parts = {}; renderNet(); }
   window.scrollTo(0, 0);
 }
 function back() {
@@ -48,6 +49,7 @@ function applySteps() {
 var MAIN_DESC = {
   war: function () { var s = SERV[CFG.servant], m = MASTERS[CFG.master]; return { k: 'Seven teams · three or five nights', h: 'Holy Grail War', p: ['Summon a servant and fight for the Grail across Fuyuki City. Nights are for battle and days for preparation: fortify your home, learn true names, strike pacts, and live to see the final night.', 'Your last pairing: ' + shortName(s.name) + ' with ' + m.name + '.'], tags: ['Nights and days', 'Pacts', 'Events', 'Command Seals'], art: [CFG.servant, CFG.master] }; },
   arena: function () { return { k: 'Quick battles', h: 'Arena', p: ['Duels, free-for-all, team fights, master duels and master-and-servant pairs on themed battlefields: the bridge, the temple, the forest, the harbor and more.'], tags: ['Duel', 'Free-for-all', 'Teams', 'Quick Grail War'], art: ['caerwyn', 'gilgamesh', 'iskandar', 'heracles'] }; },
+  net: function () { return { k: 'Online \u00B7 up to seven players', h: 'Multiplayer', p: ['Host a room or join a friend’s with a code. Every servant and every master is a seat: fight each other in the Grail War or the Arena, or share a team, one as the servant and one as the master.'], tags: ['Grail War', 'Arena', 'Shared teams'], art: ['shirou', 'caerwyn', 'rin', 'emiya'] }; },
   codex: function () { return { k: 'Rules of the war', h: 'Codex', p: ['How fighting works, what masters and servants can do, how the nights and days run, and every control.'], tags: ['Combat', 'Masters', 'Controls'], art: ['medea', 'emiya', 'rin'] }; },
   settings: function () { return { k: 'Options', h: 'Settings', p: ['Sound, the animated menu background, and whether the title screen greets you.'], tags: [], art: [] }; }
 };
