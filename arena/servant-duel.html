@@ -467,6 +467,10 @@ body.ingame .hud.war .nm { font-size: 10.5px; letter-spacing: .04em; } body.inga
 body.ingame .hud.war .hc .hth svg { width: 30px; height: 15px; }
 body.ingame .hud.war .bar { height: 5px; margin-top: 1px; } body.ingame .hud.war .bar.sta, body.ingame .hud.war .bar.mom, body.ingame .hud.war .bar.mana { height: 3px; }
 body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
+
+/* a guest's ping, small, under the status cards */
+#pingTag { position: absolute; z-index: 4; left: var(--gap, 10px); top: calc(74px + env(safe-area-inset-top, 0px)); font: 600 11px var(--f-hud, sans-serif); letter-spacing: .06em; padding: 2px 7px; border-radius: 9px; background: rgba(5, 9, 14, .62); color: #9fe6b0; pointer-events: none; }
+#pingTag.mid { color: #f3d58a; } #pingTag.bad { color: #ff8a8a; }
 </style>
 
 <main class="wrap">
@@ -591,6 +595,7 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 
 <section id="duel">
   <div class="hud" id="hud"></div>
+  <div id="pingTag" hidden></div>
   <div class="stage"><canvas id="cv" width="800" height="500"></canvas>
     <div class="top"><button type="button" id="snd">Sound on</button><button type="button" id="fs">Full screen</button><button type="button" id="restBtn" hidden>Rest until nightfall</button><button type="button" id="pause">Pause</button><button type="button" id="quit">Quit</button></div>
     <div class="toast" id="toast"></div></div>
@@ -1783,13 +1788,13 @@ function clockTick(dt) {
   c.t += dt;
   if (!c.final && c.t >= c.len) {
     if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); newPhaseEvents(); FX.phase('day', c.n, false); }
-    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; G.tasks = []; c.final = c.n >= c.nights; newPhaseEvents(); FX.phase('night', c.n, c.final); }
+    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; scoutsReport(); G.tasks = []; c.final = c.n >= c.nights; newPhaseEvents(); FX.phase('night', c.n, c.final); }
     civShift();
   }
   // resting at home by day: wounds close, mana returns
   if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700 && !inOwnHome(f))) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
-  civTick(dt); tasksTick(dt); execTick(dt);
+  civTick(dt); tasksTick(dt); execTick(dt); scoutsTick(dt);
 }
 /* ---- what a fighter knows: at night only what is close, what hit them, what rumor or the Church reveals ---- */
 function knowsExact(f, e) {
@@ -1798,6 +1803,7 @@ function knowsExact(f, e) {
   if (concealed(e) && !(sameZone(f, e) && dist(f, e) < 120) && !(f.lastHit && f.lastHit.by === e && G.time - (f.lastHitT || -99) < 3)) return false;
   if (G.ghost && ghosted(f, e)) return false;
   if (G.seenBy && G.seenBy[f.team] && G.seenBy[f.team][e.idx] > G.time) return true;
+  if (G.intel && intelOn(f, e)) return true;
   if (!clockOn() || G.clock.final) return true;
   if (G.reveal[e.team] > G.time) return true;
   var r = senseRange();
@@ -1990,6 +1996,7 @@ function startDay() {
   picked.forEach(function (q, i) { G.tasks.push({ kind: 'trace', x: q.x, y: q.y, r: 170, name: 'Battle site ' + (i + 1), sv: q.sv, need: DAYTASK.trace, prog: {}, done: {} }); });
   for (var t in G.fields) { var F = G.fields[t]; if (F.lvl > 0 && F.lvl < F.max) G.tasks.push({ kind: 'fortify', x: F.x, y: F.y, r: 220, name: 'Fortify ' + F.name, team: +t, need: DAYTASK.fortify, prog: {}, done: {} }); }
   G.traces = [];
+  dayActivities(); sendScouts();
 }
 function taskFor(team, k) {
   if (k.team !== undefined && k.team !== team) return false;
@@ -2002,6 +2009,7 @@ function taskFor(team, k) {
 function tasksTick(dt) {
   if (!isDay() || !G.tasks.length) return;
   G.tasks.forEach(function (k) {
+    if (dayActiveTick(k, dt)) return;
     var teams = {};
     G.f.forEach(function (f) { if (f.st !== 'dead' && !f.inM && f.x < MAP.cityW && Math.hypot(f.x - k.x, f.y - k.y) < k.r && (f.def.isMaster || k.kind !== 'school')) teams[f.team] = 1; });
     for (var t in teams) {
@@ -2528,7 +2536,7 @@ function startNight(k) {
   if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk(); else if (k === 'demo') startDemolition(); else if (k === 'shadow') startShadow();
   if (!G.event) G.clock.evDone = true;
 }
-function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = (G.mobs || []).filter(function (m) { return m.exec; }); if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
+function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
 function masterOf(team) { return G.f.filter(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead'; })[0]; }
 function regainSeal(team) {
   var m = masterOf(team); if (!m) return false;
@@ -2572,7 +2580,7 @@ function bountyKill(f) {
    Every team near it is in truce. Bring it down before dawn, or the whole city sees it. ---- */
 function startHorror() {
   var H = EVT.horror, cul = loreHost('gilles') || loreHost('medea'), m = { boss: true, x: H.path[0][0], y: H.path[0][1], r: H.r, hp: H.hp, max: H.hp, t: 0, leg: 1, slamT: 3, slams: [], dmgBy: {}, team: cul ? cul.team : undefined };
-  G.mobs = (G.mobs || []).filter(function (q) { return q.exec; }).concat([m]); G.event = { kind: 'horror', boss: m, culprit: cul ? cul.team : -1, t: 0 }; fightNoise(m.x, m.y, 20000); FX.event('horror', G.event);
+  G.mobs = (G.mobs || []).filter(function (q) { return q.exec || q.keep; }).concat([m]); G.event = { kind: 'horror', boss: m, culprit: cul ? cul.team : -1, t: 0 }; fightNoise(m.x, m.y, 20000); FX.event('horror', G.event);
 }
 function horrorTick(E, dt) {
   var H = EVT.horror, m = E.boss;
@@ -2630,7 +2638,7 @@ function startSchool() {
   var E = { kind: 'school', x: S.x, y: S.y, r: S.r, dur: S.dur, t: 0, culprit: culprit, circles: S.circles.map(function (p) { return { x: p[0], y: p[1], r: 75, prog: {}, up: true, by: -1 }; }), allowed: {}, broken: {}, mobT: 2, students: [] };
   G.f.forEach(function (f) { if (f.st !== 'dead' && (Math.hypot(f.x - E.x, f.y - E.y) < E.r || f.team === culprit)) E.allowed[f.idx] = true; });
   for (var i = 0; i < 26; i++) { var a = rnd() * 6.283, d = 120 + rnd() * (E.r - 220); E.students.push({ x: E.x + Math.cos(a) * d, y: E.y + Math.sin(a) * d * 0.7, down: 0, id: i }); }
-  G.mobs = (G.mobs || []).filter(function (m) { return m.exec; }); G.event = E; FX.event('school', E);
+  G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); G.event = E; FX.event('school', E);
 }
 function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && f.x < MAP.cityW && Math.hypot(f.x - E.x, f.y - E.y) < E.r); }
 function schoolTick(E, dt) {
@@ -2669,14 +2677,14 @@ function endSchool(E, broken) {
 }
 function mobsTick(E, dt) {
   G.mobs.forEach(function (m) {
-    if (m.dead || m.boss || m.exec) return; m.t += dt; m.atkT -= dt;
+    if (m.dead || m.boss || m.exec || m.keep) return; m.t += dt; m.atkT -= dt;
     var tg = null, bd = 900; G.f.forEach(function (f) { if (f.st === 'dead' || f.team === E.culprit || f.spirit === 2 || !inSchool(f)) return; var d = Math.hypot(f.x - m.x, f.y - m.y); if (d < bd) { bd = d; tg = f; } });
     if (!tg) { m.vx = m.vy = 0; return; }
     var a = Math.atan2(tg.y - m.y, tg.x - m.x); m.face = a;
     if (bd > 34) { m.x += Math.cos(a) * 140 * dt; m.y += Math.sin(a) * 140 * dt; m.vx = Math.cos(a); m.vy = Math.sin(a); rectsIn(m.x - 14, m.y - 14, m.x + 14, m.y + 14).forEach(function (r) { pushOutRect(m, r, 12); }); }
     else if (m.atkT <= 0) { m.atkT = 1.2; m.swing = G.time; hurt(null, tg, { dmg: 5, power: 1, stag: 0.12, kind: 'melee', key: 'mob', hs: 0.03 }, 1, { x: m.x, y: m.y }); }
   });
-  G.mobs = G.mobs.filter(function (m) { return !m.dead || m.exec; });
+  G.mobs = G.mobs.filter(function (m) { return !m.dead || m.exec || m.keep; });
 }
 // fighters' blows and shots also strike familiars
 function hitMobsArc(f, a, mult) { if (!G.mobs || !G.mobs.length) return; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) <= (a.reach || 60) + 20) mobHurt(m, a.dmg * (mult || 1) * f.def.dmg * (f.def.isMaster ? 2 : 1), f.team); }); }
@@ -3297,6 +3305,150 @@ function sealRescue(sv) {
   FX.church('rescue', m.team, { s: sv.idx, k: k });
   return true;
 }
+/* ---- daytime activities: things to do, not circles to stand in ----
+   Fortify: carry three ward stones from the streets to ward points around your home (a blow or a stagger drops one).
+   Ley line: a wisp walks the streets while someone of your team walks with it; leave it and it drifts back.
+   Battle site: three clues lie hidden around the site; get close to see a glint, stand over it to read it.
+   Scouts: AI masters send a familiar to watch a rival home by day; shoot it down to learn whose it was, or its
+   master knows where you are when night falls. The AI walks the same steps (daySpot). */
+var DAYP = { carryR: 55, wardR: 75, wispSpd: 125, wispNear: 230, wispBack: 30, clueR: 55, clueT: 1.6, clueSee: 300, scoutHp: 24, scoutSpd: 230, scoutFlee: 260, scoutChance: 0.6, intelT: 75 };
+var LEYP = {}; // ley paths (host side only): task name -> { pts, len }
+function dayNodes(cx, cy, d0, d1, n, sep) {
+  var ns = civNodes().filter(function (q) { var d = Math.hypot(q.x - cx, q.y - cy); return d > d0 && d < d1; }), out = [];
+  for (var tries = 0; tries < 200 && out.length < n && ns.length; tries++) { var q = ns[Math.floor(rnd() * ns.length)]; if (out.every(function (o) { return Math.hypot(o.x - q.x, o.y - q.y) > sep; })) out.push({ x: q.x, y: q.y }); }
+  return out;
+}
+function openSpot(cx, cy, d0, d1) {
+  for (var i = 0; i < 40; i++) { var a = rnd() * 6.283, d = d0 + rnd() * (d1 - d0), x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d; if (x < 40 || x > MAP.cityW - 40 || y < 40 || y > H - 40) continue; if (!rectsIn(x - 30, y - 30, x + 30, y + 30).some(function (r) { return inRect(r, x, y, 30); })) return { x: Math.round(x), y: Math.round(y) }; }
+  return { x: Math.round(cx), y: Math.round(cy) };
+}
+// called by startDay: give each task its steps
+function dayActivities() {
+  G.tasks.forEach(function (k) {
+    if (k.kind === 'fortify') {
+      var F = G.fields[k.team], wards = dayNodes(F.x, F.y, 200, 800, 3, 260), stones = dayNodes(F.x, F.y, 700, 1700, 3, 420);
+      if (wards.length < 3 || stones.length < 3) return; // nowhere sensible: it stays a circle
+      k.act = 'stones'; k.stones = stones.map(function (p, i) { return { x: p.x, y: p.y, c: -1, ok: 0, tx: wards[i].x, ty: wards[i].y }; });
+    } else if (k.kind === 'ley') {
+      var ends = dayNodes(k.x, k.y, 1300, 2200, 1, 0), e = ends[0]; if (!e) return;
+      var p = navPath(k.x, k.y, e.x, e.y); if (!p || p.length < 2) return;
+      p = p.filter(function (q) { return q.x < MAP.cityW; }); var len = 0; for (var i = 1; i < p.length; i++) len += Math.hypot(p[i].x - p[i - 1].x, p[i].y - p[i - 1].y);
+      if (len < 600) return;
+      LEYP[k.name] = { pts: p.map(function (q) { return { x: q.x, y: q.y }; }), len: len };
+      k.act = 'wisp'; k.w = {}; k.wp = {}; k.len = Math.round(len); k.ex = Math.round(e.x); k.ey = Math.round(e.y);
+    } else if (k.kind === 'trace') {
+      k.act = 'clues'; k.clues = [openSpot(k.x, k.y, 120, 380), openSpot(k.x, k.y, 120, 380), openSpot(k.x, k.y, 120, 380)]; k.found = {}; k.exT = {};
+    }
+  });
+}
+function leyAt(k, d) {
+  var L = LEYP[k.name]; if (!L) return { x: k.x, y: k.y }; var p = L.pts, acc = 0;
+  for (var i = 1; i < p.length; i++) { var s = Math.hypot(p[i].x - p[i - 1].x, p[i].y - p[i - 1].y); if (acc + s >= d) { var u = (d - acc) / s; return { x: p[i - 1].x + (p[i].x - p[i - 1].x) * u, y: p[i - 1].y + (p[i].y - p[i - 1].y) * u }; } acc += s; }
+  return { x: p[p.length - 1].x, y: p[p.length - 1].y };
+}
+function teamNear(t, x, y, r, needBody) { return G.f.some(function (f) { return f.team === t && f.st !== 'dead' && !f.inM && f.x < MAP.cityW && (!needBody || f.spirit !== 2) && Math.hypot(f.x - x, f.y - y) < r; }); }
+function foesNear(t, x, y, r) { return G.f.some(function (e) { return e.team !== t && !pactTeams(e.team, t) && e.st !== 'dead' && e.spirit !== 2 && !concealed(e) && Math.hypot(e.x - x, e.y - y) < r; }); }
+// one step of an active task; returns true when it handled the task (tasksTick then skips the circle)
+function dayActiveTick(k, dt) {
+  if (!k.act) return false;
+  if (k.act === 'stones') {
+    var t = k.team; if (k.done[t]) return true;
+    k.stones.forEach(function (s) {
+      if (s.ok) return;
+      if (s.c >= 0) {
+        var f = G.f[s.c];
+        if (!f || f.st === 'dead' || f.st === 'stag' || f.spirit === 2 || f.x > MAP.cityW) { s.c = -1; return; }
+        s.x = Math.round(f.x - Math.cos(f.face) * 18); s.y = Math.round(f.y - Math.sin(f.face) * 18);
+        if (Math.hypot(s.x - s.tx, s.y - s.ty) < DAYP.wardR) { s.ok = 1; s.c = -1; s.x = s.tx; s.y = s.ty; FX.task(t, k, 'A ward stone is set: ' + k.stones.filter(function (q) { return q.ok; }).length + ' of 3', true); }
+        return;
+      }
+      G.f.forEach(function (f) { if (s.c >= 0 || f.team !== t || f.st === 'dead' || f.spirit === 2 || f.x > MAP.cityW || Math.hypot(f.x - s.x, f.y - s.y) > DAYP.carryR) return; if (k.stones.some(function (q) { return q.c === f.idx; })) return; s.c = f.idx; });
+    });
+    var n = k.stones.filter(function (q) { return q.ok; }).length; k.prog[t] = k.need * n / 3;
+    if (n === 3) { k.done[t] = true; finishTask(t, k); }
+    return true;
+  }
+  if (k.act === 'wisp') {
+    for (var tt in G.fields) {
+      tt = +tt; if (!taskFor(tt, k)) continue;
+      var d = k.w[tt] || 0, p = leyAt(k, d), near = teamNear(tt, p.x, p.y, DAYP.wispNear);
+      if (near && !foesNear(tt, p.x, p.y, DAYTASK.contest)) d = Math.min(k.len, d + DAYP.wispSpd * dt);
+      else if (!near && d > 0) d = Math.max(0, d - DAYP.wispBack * dt);
+      k.w[tt] = d; if (d > 0) { var q = leyAt(k, d); k.wp[tt] = [Math.round(q.x), Math.round(q.y)]; } else delete k.wp[tt];
+      k.prog[tt] = k.need * d / k.len;
+      if (d >= k.len) { k.done[tt] = true; finishTask(tt, k); }
+    }
+    return true;
+  }
+  if (k.act === 'clues') {
+    for (var t2 in G.fields) {
+      t2 = +t2; if (!taskFor(t2, k)) continue;
+      var fd = k.found[t2] || (k.found[t2] = [0, 0, 0]), ex = k.exT[t2] || (k.exT[t2] = [0, 0, 0]);
+      k.clues.forEach(function (c, i) {
+        if (fd[i]) return;
+        if (teamNear(t2, c.x, c.y, DAYP.clueR, true) && !foesNear(t2, c.x, c.y, DAYTASK.contest)) { ex[i] += dt; if (ex[i] >= DAYP.clueT) { fd[i] = 1; FX.task(t2, k, 'A clue: ' + fd.filter(Boolean).length + ' of 3', true); } }
+        else ex[i] = Math.max(0, ex[i] - dt * 0.5);
+      });
+      var m = fd.filter(Boolean).length; k.prog[t2] = k.need * m / 3;
+      if (m === 3) { k.done[t2] = true; finishTask(t2, k); }
+    }
+    return true;
+  }
+  return false;
+}
+// where the AI should walk for a task right now
+function daySpot(k, f) {
+  if (!k || !k.act) return k;
+  if (k.act === 'stones') {
+    var mine = k.stones.filter(function (s) { return s.c === f.idx; })[0]; if (mine) return { x: mine.tx, y: mine.ty, r: 60 };
+    var free = k.stones.filter(function (s) { return !s.ok && s.c < 0; }).sort(function (a, b) { return Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y); })[0];
+    return free ? { x: free.x, y: free.y, r: 40 } : { x: k.x, y: k.y, r: k.r };
+  }
+  if (k.act === 'wisp') { var p = leyAt(k, k.w[f.team] || 0); return { x: p.x, y: p.y, r: 120 }; }
+  if (k.act === 'clues') { var fd = k.found[f.team] || [0, 0, 0], c = k.clues.filter(function (q, i) { return !fd[i]; }).sort(function (a, b) { return Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y); })[0]; return c ? { x: c.x, y: c.y, r: 40 } : k; }
+  return k;
+}
+/* ---- scouts: a familiar watching a rival home ---- */
+function sendScouts() {
+  if (!G.fields || finalNight()) return;
+  var hs = humansAlive();
+  Object.keys(G.fields).forEach(function (ts) {
+    var t = +ts, m = teamMaster(t); if (!m || !G.ai[m.idx] || rnd() > DAYP.scoutChance) return;
+    var rivals = Object.keys(G.fields).map(Number).filter(function (o) { return o !== t && !pactTeams(o, t) && teamFighters(o).length; });
+    if (!rivals.length) return;
+    var hum = rivals.filter(function (o) { return hs.some(function (f) { return f.team === o; }); }), pool = hum.length && rnd() < 0.7 ? hum : rivals, tg = pool[Math.floor(rnd() * pool.length)];
+    var F = G.fields[tg]; if (!F) return;
+    var perch = openSpot(F.x, F.y, fieldR(F) + 120, fieldR(F) + 320), from = execSpawn(tg) || { x: perch.x, y: 40 };
+    G.mobs = G.mobs || []; G.mobs.push({ scout: true, keep: true, team: t, tgt: tg, x: from.x, y: from.y, px: perch.x, py: perch.y, r: 12, hp: DAYP.scoutHp, max: DAYP.scoutHp, t: 0, face: 0, fleeT: 0 });
+  });
+}
+function scoutsTick(dt) {
+  if (!G.mobs || !G.mobs.length) return;
+  G.mobs.forEach(function (m) {
+    if (!m.scout || m.dead) return; m.t += dt;
+    var thr = null, td = DAYP.scoutFlee; G.f.forEach(function (f) { if (f.team !== m.tgt || f.st === 'dead' || f.spirit === 2) return; var d = Math.hypot(f.x - m.x, f.y - m.y); if (d < td) { td = d; thr = f; } });
+    if (thr) m.fleeT = 1.6;
+    var tx = m.px, ty = m.py; if (m.fleeT > 0) { m.fleeT -= dt; var a0 = thr ? Math.atan2(m.y - thr.y, m.x - thr.x) : m.face; tx = m.x + Math.cos(a0) * 200; ty = m.y + Math.sin(a0) * 200; }
+    var dx = tx - m.x, dy = ty - m.y, L = Math.hypot(dx, dy), sp = DAYP.scoutSpd * (m.fleeT > 0 ? 0.85 : 1) * dt;
+    if (L > 6) { m.face = Math.atan2(dy, dx); m.x += dx / L * Math.min(L, sp); m.y += dy / L * Math.min(L, sp); }
+    m.x = clamp(m.x, 20, MAP.cityW - 20); m.y = clamp(m.y, 20, H - 20);
+  });
+  G.mobs.forEach(function (m) {
+    if (!m.scout || !m.dead || m.counted) return; m.counted = true;
+    var by = -1, bv = 0; Object.keys(m.dmgBy || {}).forEach(function (k) { if (m.dmgBy[k] > bv) { bv = m.dmgBy[k]; by = +k; } });
+    // whoever downs it learns who sent it, and where that team lives, for the coming night
+    if (by >= 0) { G.intel = G.intel || {}; G.intel[by] = { team: m.team, until: G.time + (isDay() ? (G.clock.len - G.clock.t) : 0) + DAYP.intelT }; }
+    FX.event('scoutDown', { team: by, owner: m.team, tgt: m.tgt, x: Math.round(m.x), y: Math.round(m.y) });
+  });
+  G.mobs = G.mobs.filter(function (m) { return !(m.scout && m.dead); });
+}
+// at dusk the familiars report: their masters know where the watched team is for a while
+function scoutsReport() {
+  if (!G.mobs) return; G.intel = G.intel || {};
+  G.mobs.forEach(function (m) { if (!m.scout || m.dead) return; G.intel[m.team] = { team: m.tgt, until: G.time + DAYP.intelT }; FX.event('scoutReport', { owner: m.team, tgt: m.tgt }); });
+  G.mobs = G.mobs.filter(function (m) { return !m.scout; });
+}
+function intelOn(f, e) { var I = G.intel && G.intel[f.team]; return !!(I && I.team === e.team && I.until > G.time); }
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -3600,7 +3752,7 @@ function aiMaster(ai, dt) {
   if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) {
     if (!(f.dayGoalT > G.time)) { f.dayGoal = aiDayGoal(f); f.dayGoalT = G.time + 6; }
     if (G.event && G.event.kind === 'school' && !(f.dayGoalT > G.time + 4)) f.dayGoalT = Math.min(f.dayGoalT, G.time + 1);
-    var dg = f.dayGoal && !(f.dayGoal.done && f.dayGoal.done[f.team]) && f.dayGoal.up !== false ? f.dayGoal : { x: f.home[0], y: f.home[1], r: 280 };
+    var dg = f.dayGoal && !(f.dayGoal.done && f.dayGoal.done[f.team]) && f.dayGoal.up !== false ? daySpot(f.dayGoal, f) : { x: f.home[0], y: f.home[1], r: 280 };
     if (G.mobs && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (A.light.reach || 70) + 20; }) && f.st === 'idle' && ai.cool <= 0) { press(f, 'light'); ai.cool = 0.5; }
     if (Math.hypot(f.x - dg.x, f.y - dg.y) > dg.r * 0.45) moveTo(f, dg.x, dg.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
   // skills
@@ -6167,7 +6319,7 @@ function miniMap(mw, mh) {
   MINI.id = key; MINI.c = c; return c;
 }
 function hud() {
-  var a = G.f[MEI]; var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !netInMatch() && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
+  var a = G.f[MEI]; var pt = $('#pingTag'); if (pt) { var on = !!NET.mirror && NET.ping > 0; if (pt.hidden === on) pt.hidden = !on; if (on) { var ms = Math.round(NET.ping); pt.textContent = 'Ping ' + ms + ' ms'; pt.className = ms < 120 ? 'ok' : ms < 250 ? 'mid' : 'bad'; } } var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !netInMatch() && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
   if (G.mode === 'war' ? hudKey() !== HUDKEY : (aimFoe(a) !== hudTarget || a.partner !== hudPartner)) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';
@@ -6240,7 +6392,7 @@ FX.truename = function (team, s, how) {
   note('True name: the ' + s.def.cls + ' is ' + s.def.name + (how === 'np' ? ', revealed by its Noble Phantasm' : how === 'banquet' ? ', named at the King\u2019s table' : how === 'church' ? ', told to you by the overseer' : ', read from the battle site'), '#ffd36b');
   buildHud();
 };
-FX.task = function (t, k, msg) { if (!G.f[MEI] || t !== G.f[MEI].team) return; FX.banner(k.name, msg); FX.snd('chant', G.f[MEI]); };
+FX.task = function (t, k, msg, step) { if (!G.f[MEI] || t !== G.f[MEI].team) return; if (step) { note(msg, TASK_COL[k.kind]); return; } FX.banner(k.name, msg); FX.snd('chant', G.f[MEI]); };
 var TASK_ICON = { fortify: 'Fortify', ley: 'Ley line', trace: 'Investigate', school: 'School', banquet: 'The King\u2019s Banquet', summons: 'The Church' }, TASK_COL = { summons: '#e9e4d3', fortify: '#7fc4ee', ley: '#b48cff', trace: '#f0a85a', school: '#7ac08a', banquet: '#e8bf4a' };
 // bounded fields: a ring of runes in the owner's color; a Caster's Temple gets a second ring
 function drawFields(g, vr, t) {
@@ -6259,7 +6411,7 @@ function drawFields(g, vr, t) {
 function drawTasks(g, vr, t) {
   if (!G || !G.tasks || !G.tasks.length || !isDay()) return; var my = G.f[MEI].team;
   G.tasks.forEach(function (k) {
-    if (!taskFor(my, k) && !k.done[my]) return; if (!vis(vr, k.x - k.r - 60, k.y - k.r - 40, k.x + k.r + 60, k.y + k.r + 60)) return;
+    if (!taskFor(my, k) && !k.done[my]) return; if (k.act && !k.done[my]) { drawActiveTask(g, k, my, vr, t); return; } if (!vis(vr, k.x - k.r - 60, k.y - k.r - 40, k.x + k.r + 60, k.y + k.r + 60)) return;
     var col = TASK_COL[k.kind], done = k.done[my], p = Math.min(1, (k.prog[my] || 0) / k.need);
     g.save(); g.globalAlpha = done ? 0.35 : 0.85; g.strokeStyle = col; g.lineWidth = 3; g.setLineDash([12, 10]); g.lineDashOffset = -t * 18; g.beginPath(); g.arc(k.x, k.y, k.r, 0, 6.283); g.stroke(); g.setLineDash([]);
     g.fillStyle = rgbaOf(col, 0.08); g.fill();
@@ -6276,10 +6428,73 @@ function drawDayHud(x, y, mx0, my0, mw, mh) {
   list.forEach(function (k) { var px = mx0 + k.x / MW * mw, py = my0 + k.y / H * mh; c.save(); c.translate(px, py); c.rotate(0.785); c.fillStyle = k.done[my] ? 'rgba(200,200,200,.4)' : TASK_COL[k.kind]; c.fillRect(-3.5, -3.5, 7, 7); c.restore(); });
   c.font = '600 ' + (VW < 560 ? 12 : 14) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right';
   list.slice(0, 7).forEach(function (k, i) {
-    var done = k.done[my], s = (done ? '✓ ' : '') + k.name + (done ? '' : '  ' + Math.floor(k.prog[my] || 0) + '/' + k.need + 's'), tw = c.measureText(s).width + 16, yy = y + i * 20;
+    var done = k.done[my], s = (done ? '✓ ' : '') + k.name + (done ? '' : '  ' + taskProgText(k, my)), tw = c.measureText(s).width + 16, yy = y + i * 20;
     c.fillStyle = 'rgba(8,14,20,.72)'; c.fillRect(x - tw, yy - 14, tw, 19); c.fillStyle = done ? 'rgba(201,195,176,.55)' : TASK_COL[k.kind]; c.fillText(s, x - 6, yy);
   });
 }
+
+/* ---- the active day tasks, drawn: stones and ward points, the ley wisp, clue glints; scout familiars ---- */
+function taskProgText(k, my) {
+  if (k.act === 'stones') return k.stones.filter(function (q) { return q.ok; }).length + '/3 stones';
+  if (k.act === 'wisp') return Math.floor(100 * (k.w && k.w[my] || 0) / k.len) + '% walked';
+  if (k.act === 'clues') return ((k.found && k.found[my]) || []).filter(Boolean).length + '/3 clues';
+  return Math.floor(k.prog[my] || 0) + '/' + k.need + 's';
+}
+function drawActiveTask(g, k, my, vr, t) {
+  var col = TASK_COL[k.kind]; g.save();
+  if (k.act === 'stones') {
+    k.stones.forEach(function (s, i) {
+      // the ward point: a ring of chalk, filled once its stone is set
+      if (vis(vr, s.tx - 80, s.ty - 80, s.tx + 80, s.ty + 80)) { g.strokeStyle = col; g.globalAlpha = s.ok ? 0.9 : 0.6; g.lineWidth = 3; g.setLineDash([8, 7]); g.lineDashOffset = -t * 14; g.beginPath(); g.arc(s.tx, s.ty, 46, 0, 6.283); g.stroke(); g.setLineDash([]); if (!s.ok) { g.globalAlpha = 0.85; g.fillStyle = col; g.font = '700 15px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText('WARD ' + (i + 1), s.tx, s.ty + 66); } }
+      var cf = s.c >= 0 ? G.f[s.c] : null, sx0 = s.x, sy0 = s.y; if (cf) { s = { x: cf.x, y: cf.y - 40, c: s.c, ok: 0 }; }
+      if (!vis(vr, s.x - 40, s.y - 40, s.x + 40, s.y + 40)) return;
+      // the stone: grey rock with a glowing rune (held over the head while carried)
+      g.globalAlpha = 1; g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(s.x + 3, s.y + 5, 15, 10, 0, 0, 6.283); g.fill();
+      g.fillStyle = '#8a8d93'; g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.beginPath(); g.moveTo(s.x - 13, s.y + 6); g.lineTo(s.x - 9, s.y - 10); g.lineTo(s.x + 6, s.y - 13); g.lineTo(s.x + 14, s.y + 2); g.lineTo(s.x + 5, s.y + 11); g.closePath(); g.fill(); g.stroke();
+      g.strokeStyle = col; g.globalAlpha = 0.6 + 0.4 * Math.sin(t * 4 + i); g.lineWidth = 2; g.beginPath(); g.moveTo(s.x - 4, s.y - 5); g.lineTo(s.x + 3, s.y - 5); g.lineTo(s.x - 2, s.y + 4); g.stroke();
+      if (s.c < 0 && !s.ok) { g.globalAlpha = 0.5 + 0.3 * Math.sin(t * 3 + i); g.beginPath(); g.arc(s.x, s.y, 28 + 4 * Math.sin(t * 3), 0, 6.283); g.stroke(); }
+    });
+  } else if (k.act === 'wisp') {
+    var wp = k.wp && k.wp[my], x = wp ? wp[0] : k.x, y = wp ? wp[1] : k.y;
+    if (vis(vr, x - 260, y - 260, x + 260, y + 260)) {
+      var pul = 0.5 + 0.5 * Math.sin(t * 5), gr = g.createRadialGradient(x, y, 2, x, y, 70); gr.addColorStop(0, 'rgba(230,220,255,.95)'); gr.addColorStop(0.3, rgbaOf(col, 0.6)); gr.addColorStop(1, rgbaOf(col, 0));
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, 70, 0, 6.283); g.fill();
+      g.globalAlpha = 0.4; g.strokeStyle = col; g.lineWidth = 2; g.setLineDash([6, 8]); g.beginPath(); g.arc(x, y, DAYP.wispNear, 0, 6.283); g.stroke(); g.setLineDash([]);
+      for (var j = 0; j < 4; j++) { var a = t * 2 + j * 1.57; g.globalAlpha = 0.6; g.fillStyle = '#efe8ff'; g.beginPath(); g.arc(x + Math.cos(a) * (18 + 6 * pul), y + Math.sin(a) * (18 + 6 * pul), 3, 0, 6.283); g.fill(); }
+      if (!wp) { g.globalAlpha = 0.9; g.fillStyle = col; g.font = '700 16px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText('WALK WITH THE LEY WISP', x, y + 92); }
+    }
+    if (k.ex !== undefined && vis(vr, k.ex - 80, k.ey - 80, k.ex + 80, k.ey + 80)) { g.globalAlpha = 0.55; g.strokeStyle = col; g.lineWidth = 3; g.beginPath(); g.arc(k.ex, k.ey, 50, 0, 6.283); g.stroke(); }
+  } else if (k.act === 'clues') {
+    var me = G.f[MEI], fd = (k.found && k.found[my]) || [], ex = (k.exT && k.exT[my]) || [];
+    if (vis(vr, k.x - 420, k.y - 420, k.x + 420, k.y + 420)) { g.globalAlpha = 0.35; g.strokeStyle = col; g.lineWidth = 2; g.setLineDash([10, 12]); g.beginPath(); g.arc(k.x, k.y, 400, 0, 6.283); g.stroke(); g.setLineDash([]); }
+    k.clues.forEach(function (c, i) {
+      if (fd[i]) return; var d = Math.hypot(me.x - c.x, me.y - c.y); if (d > DAYP.clueSee && !G.f.some(function (f) { return f.team === my && f.st !== 'dead' && Math.hypot(f.x - c.x, f.y - c.y) < DAYP.clueSee; })) return;
+      var a = clamp(1 - d / DAYP.clueSee, 0.25, 1) * (0.6 + 0.4 * Math.sin(t * 6 + i));
+      g.globalAlpha = a; g.fillStyle = '#fff6d0'; g.beginPath(); g.moveTo(c.x, c.y - 10); g.lineTo(c.x + 3, c.y - 3); g.lineTo(c.x + 10, c.y); g.lineTo(c.x + 3, c.y + 3); g.lineTo(c.x, c.y + 10); g.lineTo(c.x - 3, c.y + 3); g.lineTo(c.x - 10, c.y); g.lineTo(c.x - 3, c.y - 3); g.closePath(); g.fill();
+      if (ex[i] > 0) { g.globalAlpha = 0.9; g.strokeStyle = col; g.lineWidth = 4; g.beginPath(); g.arc(c.x, c.y, 26, -1.571, -1.571 + 6.283 * Math.min(1, ex[i] / DAYP.clueT)); g.stroke(); }
+    });
+  }
+  g.restore();
+}
+function drawScout(g, m) {
+  var a = m.face || 0, fl = Math.sin((m.t || 0) * 16) * 0.5 + 0.5, col = G.f.filter(function (f) { return f.team === m.team; }).map(function (f) { return teamCol(f); })[0] || '#c9c3b0';
+  g.save(); g.translate(m.x, m.y + 26); g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(0, 0, 10, 5, 0, 0, 6.283); g.fill(); g.restore();
+  g.save(); g.translate(m.x, m.y); g.rotate(a);
+  g.fillStyle = '#1d1c22'; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(10, 0); g.lineTo(-2, -4 - 12 * fl); g.lineTo(-6, -2); g.lineTo(-12, 0); g.lineTo(-6, 2); g.lineTo(-2, 4 + 12 * fl); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = col; g.beginPath(); g.arc(4, 0, 2.2, 0, 6.283); g.fill();
+  g.restore();
+}
+(function () {
+  var dm0 = drawMobs; drawMobs = function (g) { if (G && G.mobs) { var keep = G.mobs; G.mobs = keep.filter(function (m) { return !m.scout; }); try { dm0(g); } finally { G.mobs = keep; } keep.forEach(function (m) { if (m.scout && !m.dead) drawScout(g, m); }); } else dm0(g); };
+  var ev0 = FX.event;
+  FX.event = function (kind, d) {
+    if (kind !== 'scoutDown' && kind !== 'scoutReport') return ev0.apply(this, arguments);
+    if (!G || !G.f[MEI]) return; var my = G.f[MEI].team;
+    if (kind === 'scoutDown') { if (d.team === my) note('You downed a familiar sent by ' + teamName(d.owner) + '. You know where they are until the night is young.', '#c9b8e0'); else if (d.owner === my) note('Your familiar watching ' + teamName(d.tgt) + ' was shot down.', '#f0a85a'); }
+    else if (kind === 'scoutReport') { if (d.tgt === my) note('A familiar watched you all day: ' + teamName(d.owner) + ' knows where you are.', '#f0a85a'); else if (d.owner === my) note('Your familiar reports where ' + teamName(d.tgt) + ' is.', '#c9b8e0'); }
+  };
+})();
 /* ---- events on screen: headlines, the harbor beacon, the sealed school, skeleton familiars, the Grail's light ---- */
 FX.event = function (kind, d, msg) {
   if (!G || !G.f[MEI]) return; var my = G.f[MEI].team, mine = d && d.team === my;
@@ -7372,8 +7587,10 @@ function netClientFrame(dt) {
   G.time += dt;
   G.f.forEach(function (f, i) {
     if (f.nx === undefined) return;
-    if (i === MEI && f.st !== 'dead') { nsPredict(f, dt); return; }
-    var k = Math.min(1, dt * 12); f.x += (f.nx - f.x) * k; f.y += (f.ny - f.y) * k;
+    if (i === MEI && f.st !== 'dead') { nsPredict(f, dt); if (NET.pred && f.st === 'wind') f.t = Math.min(f.t + dt, f.curWind || 1); return; }
+    // between updates, carry on along the last known heading for a moment, then settle
+    var age = f._lt ? Math.min(0.2, performance.now() / 1000 - f._lt) : 0, tx = f.nx + (f._vx || 0) * age, ty = f.ny + (f._vy || 0) * age;
+    var k = Math.min(1, dt * 12); f.x += (tx - f.x) * k; f.y += (ty - f.y) * k;
   });
   G.proj.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.trav += Math.hypot(p.vx, p.vy) * dt; });
   G.zones.forEach(function (z) { z.t += dt; }); if (G.marble) G.marble.t += dt;
@@ -7383,6 +7600,7 @@ function netClientFrame(dt) {
   var mv = readMove(); netMyPresence({ ing: NET.game.id, sum: INTRO ? 1 : 0, inp: { mx: +mv[0].toFixed(2), my: +mv[1].toFixed(2), g: NET.g, h: NET.h, c: NET.cnt, so: NET.so, lk: NET.lk, pt: Math.round(performance.now()) } });
 }
 function netButton(b, down) {
+  if (down) netPredictAct(b);
   if (down) { if (b === 'block') NET.g = 1; else { if (b === 'heavy') NET.h = 1; NET.cnt[b] = (NET.cnt[b] || 0) + 1; } }
   else { if (b === 'block') NET.g = 0; if (b === 'heavy') NET.h = 0; }
 }
@@ -7390,6 +7608,14 @@ function netButton(b, down) {
 function netGuestsSummoning() {
   if (!NET.hosting || !NET.game || !G || G.mode !== 'war' || G.time > 1 || Date.now() - (NET.startedAt || 0) > 45000) return false;
   return netPeers().some(function (p) { return NET.game.slots[p.peer] !== undefined && p.presence && p.presence.ing === NET.game.id && p.presence.sum === 1; });
+}
+// a guest's own attack starts on screen at once; the host's word arrives a round trip later and takes over
+function netPredictAct(b) {
+  var f = G && G.f[MEI]; if (!f || f.st !== 'idle' || f.spirit || (b !== 'light' && b !== 'heavy' && b !== 'skill')) return;
+  var a = f.A[b]; if (!a) return; if (b === 'light' && f.A.lightSeq) a = f.A.lightSeq[Math.min(f.combo || 0, f.A.lightSeq.length - 1)];
+  if (b === 'skill' && f.cd > 0) return; if (f.sta < (a.cost || 0) || f.exh > 0 || f.turnT > G.time) return;
+  f.st = 'wind'; f.key = b; f.act = a; f.t = 0; f.curWind = a.wind * (b === 'light' && f.combo > 0 ? 0.8 : 1); f.windTotal = f.curWind;
+  NET.pred = { key: b, until: performance.now() + Math.max(260, (NET.ping || 120) + 160) };
 }
 function netInMatch() { return !!(NET.game && (NET.mirror || NET.hosting)); }
 /* ---- online play, part 2: replicating the host's war to every guest ----
@@ -7517,10 +7743,15 @@ function nsApplyFast(s) {
     var f = G.f[i]; if (!f) return;
     var st = NST2[a[0]] || 'idle';
     if (st === 'dead' && f.st !== 'dead') { f.t = 0; }
-    f.st = st; f.key = a[1] || null; f.act = nsAct(a[2]);
-    FAST.forEach(function (k, j) { var v = a[3 + j]; if (k === 'x') f.nx = v; else if (k === 'y') f.ny = v; else if (k === 'face' && i === MEI && f.st === 'idle') f.sface = v; else f[k] = v; });
+    // the guest's predicted attack holds until the host reports it (or the guess runs out)
+    var held = i === MEI && NET.pred && performance.now() < NET.pred.until && st === 'idle'; if (i === MEI && NET.pred && (st !== 'idle' || performance.now() >= NET.pred.until)) NET.pred = null;
+    if (!held) { f.st = st; f.key = a[1] || null; f.act = nsAct(a[2]); }
+    var tnow = performance.now() / 1000, ox = f.nx, oy = f.ny;
+    FAST.forEach(function (k, j) { var v = a[3 + j]; if (held && (k === 't' || k === 'curWind' || k === 'windTotal')) return; if (k === 'x') f.nx = v; else if (k === 'y') f.ny = v; else if (k === 'face' && i === MEI && f.st === 'idle') f.sface = v; else f[k] = v; });
     var fl = a[3 + FAST.length]; FAST_FLAGS.forEach(function (k, j) { f[k] = !!(fl & (1 << j)); });
-    if (f.nx !== undefined && (f.x === undefined || Math.hypot(f.x - f.nx, f.y - f.ny) > 260 || f._snap)) { f.x = f.nx; f.y = f.ny; f._snap = false; }
+    if (ox !== undefined && f._lt) { var gdt = tnow - f._lt; if (gdt > 0.02) { var vx = (f.nx - ox) / gdt, vy = (f.ny - oy) / gdt; if (Math.hypot(vx, vy) > 1400) { vx = 0; vy = 0; } f._vx = (f._vx || 0) * 0.4 + vx * 0.6; f._vy = (f._vy || 0) * 0.4 + vy * 0.6; } }
+    f._lt = tnow;
+    if (f.nx !== undefined && (f.x === undefined || Math.hypot(f.x - f.nx, f.y - f.ny) > 260 || f._snap)) { f.x = f.nx; f.y = f.ny; f._snap = false; f._vx = f._vy = 0; }
   });
   G.proj = s.p.map(function (q) { var o = G.f[q[4]], a = nsAct(q[5]); if (!o || !a) return null; return { x: q[0], y: q[1], vx: q[2], vy: q[3], owner: o, a: a, mult: 1, range: 99999, trav: q[6], dead: false }; }).filter(Boolean);
   G.zones = s.z.map(function (q) { var o = G.f[q[5]]; if (!o) return null; var a = nsAct(q[6]) || { zshape: q[8] || undefined, dmg: 0 }; return { x: q[0], y: q[1], r: q[2], delay: q[3], t: q[4], owner: o, a: a, done: !!q[7] }; }).filter(Boolean);

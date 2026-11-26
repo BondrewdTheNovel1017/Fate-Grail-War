@@ -76,7 +76,7 @@ function startNight(k) {
   if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk(); else if (k === 'demo') startDemolition(); else if (k === 'shadow') startShadow();
   if (!G.event) G.clock.evDone = true;
 }
-function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = (G.mobs || []).filter(function (m) { return m.exec; }); if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
+function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
 function masterOf(team) { return G.f.filter(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead'; })[0]; }
 function regainSeal(team) {
   var m = masterOf(team); if (!m) return false;
@@ -120,7 +120,7 @@ function bountyKill(f) {
    Every team near it is in truce. Bring it down before dawn, or the whole city sees it. ---- */
 function startHorror() {
   var H = EVT.horror, cul = loreHost('gilles') || loreHost('medea'), m = { boss: true, x: H.path[0][0], y: H.path[0][1], r: H.r, hp: H.hp, max: H.hp, t: 0, leg: 1, slamT: 3, slams: [], dmgBy: {}, team: cul ? cul.team : undefined };
-  G.mobs = (G.mobs || []).filter(function (q) { return q.exec; }).concat([m]); G.event = { kind: 'horror', boss: m, culprit: cul ? cul.team : -1, t: 0 }; fightNoise(m.x, m.y, 20000); FX.event('horror', G.event);
+  G.mobs = (G.mobs || []).filter(function (q) { return q.exec || q.keep; }).concat([m]); G.event = { kind: 'horror', boss: m, culprit: cul ? cul.team : -1, t: 0 }; fightNoise(m.x, m.y, 20000); FX.event('horror', G.event);
 }
 function horrorTick(E, dt) {
   var H = EVT.horror, m = E.boss;
@@ -178,7 +178,7 @@ function startSchool() {
   var E = { kind: 'school', x: S.x, y: S.y, r: S.r, dur: S.dur, t: 0, culprit: culprit, circles: S.circles.map(function (p) { return { x: p[0], y: p[1], r: 75, prog: {}, up: true, by: -1 }; }), allowed: {}, broken: {}, mobT: 2, students: [] };
   G.f.forEach(function (f) { if (f.st !== 'dead' && (Math.hypot(f.x - E.x, f.y - E.y) < E.r || f.team === culprit)) E.allowed[f.idx] = true; });
   for (var i = 0; i < 26; i++) { var a = rnd() * 6.283, d = 120 + rnd() * (E.r - 220); E.students.push({ x: E.x + Math.cos(a) * d, y: E.y + Math.sin(a) * d * 0.7, down: 0, id: i }); }
-  G.mobs = (G.mobs || []).filter(function (m) { return m.exec; }); G.event = E; FX.event('school', E);
+  G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); G.event = E; FX.event('school', E);
 }
 function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && f.x < MAP.cityW && Math.hypot(f.x - E.x, f.y - E.y) < E.r); }
 function schoolTick(E, dt) {
@@ -217,14 +217,14 @@ function endSchool(E, broken) {
 }
 function mobsTick(E, dt) {
   G.mobs.forEach(function (m) {
-    if (m.dead || m.boss || m.exec) return; m.t += dt; m.atkT -= dt;
+    if (m.dead || m.boss || m.exec || m.keep) return; m.t += dt; m.atkT -= dt;
     var tg = null, bd = 900; G.f.forEach(function (f) { if (f.st === 'dead' || f.team === E.culprit || f.spirit === 2 || !inSchool(f)) return; var d = Math.hypot(f.x - m.x, f.y - m.y); if (d < bd) { bd = d; tg = f; } });
     if (!tg) { m.vx = m.vy = 0; return; }
     var a = Math.atan2(tg.y - m.y, tg.x - m.x); m.face = a;
     if (bd > 34) { m.x += Math.cos(a) * 140 * dt; m.y += Math.sin(a) * 140 * dt; m.vx = Math.cos(a); m.vy = Math.sin(a); rectsIn(m.x - 14, m.y - 14, m.x + 14, m.y + 14).forEach(function (r) { pushOutRect(m, r, 12); }); }
     else if (m.atkT <= 0) { m.atkT = 1.2; m.swing = G.time; hurt(null, tg, { dmg: 5, power: 1, stag: 0.12, kind: 'melee', key: 'mob', hs: 0.03 }, 1, { x: m.x, y: m.y }); }
   });
-  G.mobs = G.mobs.filter(function (m) { return !m.dead || m.exec; });
+  G.mobs = G.mobs.filter(function (m) { return !m.dead || m.exec || m.keep; });
 }
 // fighters' blows and shots also strike familiars
 function hitMobsArc(f, a, mult) { if (!G.mobs || !G.mobs.length) return; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) <= (a.reach || 60) + 20) mobHurt(m, a.dmg * (mult || 1) * f.def.dmg * (f.def.isMaster ? 2 : 1), f.team); }); }

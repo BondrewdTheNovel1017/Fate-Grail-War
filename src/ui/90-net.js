@@ -209,8 +209,10 @@ function netClientFrame(dt) {
   G.time += dt;
   G.f.forEach(function (f, i) {
     if (f.nx === undefined) return;
-    if (i === MEI && f.st !== 'dead') { nsPredict(f, dt); return; }
-    var k = Math.min(1, dt * 12); f.x += (f.nx - f.x) * k; f.y += (f.ny - f.y) * k;
+    if (i === MEI && f.st !== 'dead') { nsPredict(f, dt); if (NET.pred && f.st === 'wind') f.t = Math.min(f.t + dt, f.curWind || 1); return; }
+    // between updates, carry on along the last known heading for a moment, then settle
+    var age = f._lt ? Math.min(0.2, performance.now() / 1000 - f._lt) : 0, tx = f.nx + (f._vx || 0) * age, ty = f.ny + (f._vy || 0) * age;
+    var k = Math.min(1, dt * 12); f.x += (tx - f.x) * k; f.y += (ty - f.y) * k;
   });
   G.proj.forEach(function (p) { p.x += p.vx * dt; p.y += p.vy * dt; p.trav += Math.hypot(p.vx, p.vy) * dt; });
   G.zones.forEach(function (z) { z.t += dt; }); if (G.marble) G.marble.t += dt;
@@ -220,6 +222,7 @@ function netClientFrame(dt) {
   var mv = readMove(); netMyPresence({ ing: NET.game.id, sum: INTRO ? 1 : 0, inp: { mx: +mv[0].toFixed(2), my: +mv[1].toFixed(2), g: NET.g, h: NET.h, c: NET.cnt, so: NET.so, lk: NET.lk, pt: Math.round(performance.now()) } });
 }
 function netButton(b, down) {
+  if (down) netPredictAct(b);
   if (down) { if (b === 'block') NET.g = 1; else { if (b === 'heavy') NET.h = 1; NET.cnt[b] = (NET.cnt[b] || 0) + 1; } }
   else { if (b === 'block') NET.g = 0; if (b === 'heavy') NET.h = 0; }
 }
@@ -227,5 +230,13 @@ function netButton(b, down) {
 function netGuestsSummoning() {
   if (!NET.hosting || !NET.game || !G || G.mode !== 'war' || G.time > 1 || Date.now() - (NET.startedAt || 0) > 45000) return false;
   return netPeers().some(function (p) { return NET.game.slots[p.peer] !== undefined && p.presence && p.presence.ing === NET.game.id && p.presence.sum === 1; });
+}
+// a guest's own attack starts on screen at once; the host's word arrives a round trip later and takes over
+function netPredictAct(b) {
+  var f = G && G.f[MEI]; if (!f || f.st !== 'idle' || f.spirit || (b !== 'light' && b !== 'heavy' && b !== 'skill')) return;
+  var a = f.A[b]; if (!a) return; if (b === 'light' && f.A.lightSeq) a = f.A.lightSeq[Math.min(f.combo || 0, f.A.lightSeq.length - 1)];
+  if (b === 'skill' && f.cd > 0) return; if (f.sta < (a.cost || 0) || f.exh > 0 || f.turnT > G.time) return;
+  f.st = 'wind'; f.key = b; f.act = a; f.t = 0; f.curWind = a.wind * (b === 'light' && f.combo > 0 ? 0.8 : 1); f.windTotal = f.curWind;
+  NET.pred = { key: b, until: performance.now() + Math.max(260, (NET.ping || 120) + 160) };
 }
 function netInMatch() { return !!(NET.game && (NET.mirror || NET.hosting)); }

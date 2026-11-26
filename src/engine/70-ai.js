@@ -301,7 +301,7 @@ function aiMaster(ai, dt) {
   if (isDay() && !f.isPlayerMate && !(thr && td < 380) && f.home) {
     if (!(f.dayGoalT > G.time)) { f.dayGoal = aiDayGoal(f); f.dayGoalT = G.time + 6; }
     if (G.event && G.event.kind === 'school' && !(f.dayGoalT > G.time + 4)) f.dayGoalT = Math.min(f.dayGoalT, G.time + 1);
-    var dg = f.dayGoal && !(f.dayGoal.done && f.dayGoal.done[f.team]) && f.dayGoal.up !== false ? f.dayGoal : { x: f.home[0], y: f.home[1], r: 280 };
+    var dg = f.dayGoal && !(f.dayGoal.done && f.dayGoal.done[f.team]) && f.dayGoal.up !== false ? daySpot(f.dayGoal, f) : { x: f.home[0], y: f.home[1], r: 280 };
     if (G.mobs && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (A.light.reach || 70) + 20; }) && f.st === 'idle' && ai.cool <= 0) { press(f, 'light'); ai.cool = 0.5; }
     if (Math.hypot(f.x - dg.x, f.y - dg.y) > dg.r * 0.45) moveTo(f, dg.x, dg.y, 1); else { inp.mx = 0; inp.my = 0; } return; }
   // skills

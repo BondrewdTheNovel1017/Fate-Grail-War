@@ -123,10 +123,15 @@ function nsApplyFast(s) {
     var f = G.f[i]; if (!f) return;
     var st = NST2[a[0]] || 'idle';
     if (st === 'dead' && f.st !== 'dead') { f.t = 0; }
-    f.st = st; f.key = a[1] || null; f.act = nsAct(a[2]);
-    FAST.forEach(function (k, j) { var v = a[3 + j]; if (k === 'x') f.nx = v; else if (k === 'y') f.ny = v; else if (k === 'face' && i === MEI && f.st === 'idle') f.sface = v; else f[k] = v; });
+    // the guest's predicted attack holds until the host reports it (or the guess runs out)
+    var held = i === MEI && NET.pred && performance.now() < NET.pred.until && st === 'idle'; if (i === MEI && NET.pred && (st !== 'idle' || performance.now() >= NET.pred.until)) NET.pred = null;
+    if (!held) { f.st = st; f.key = a[1] || null; f.act = nsAct(a[2]); }
+    var tnow = performance.now() / 1000, ox = f.nx, oy = f.ny;
+    FAST.forEach(function (k, j) { var v = a[3 + j]; if (held && (k === 't' || k === 'curWind' || k === 'windTotal')) return; if (k === 'x') f.nx = v; else if (k === 'y') f.ny = v; else if (k === 'face' && i === MEI && f.st === 'idle') f.sface = v; else f[k] = v; });
     var fl = a[3 + FAST.length]; FAST_FLAGS.forEach(function (k, j) { f[k] = !!(fl & (1 << j)); });
-    if (f.nx !== undefined && (f.x === undefined || Math.hypot(f.x - f.nx, f.y - f.ny) > 260 || f._snap)) { f.x = f.nx; f.y = f.ny; f._snap = false; }
+    if (ox !== undefined && f._lt) { var gdt = tnow - f._lt; if (gdt > 0.02) { var vx = (f.nx - ox) / gdt, vy = (f.ny - oy) / gdt; if (Math.hypot(vx, vy) > 1400) { vx = 0; vy = 0; } f._vx = (f._vx || 0) * 0.4 + vx * 0.6; f._vy = (f._vy || 0) * 0.4 + vy * 0.6; } }
+    f._lt = tnow;
+    if (f.nx !== undefined && (f.x === undefined || Math.hypot(f.x - f.nx, f.y - f.ny) > 260 || f._snap)) { f.x = f.nx; f.y = f.ny; f._snap = false; f._vx = f._vy = 0; }
   });
   G.proj = s.p.map(function (q) { var o = G.f[q[4]], a = nsAct(q[5]); if (!o || !a) return null; return { x: q[0], y: q[1], vx: q[2], vy: q[3], owner: o, a: a, mult: 1, range: 99999, trav: q[6], dead: false }; }).filter(Boolean);
   G.zones = s.z.map(function (q) { var o = G.f[q[5]]; if (!o) return null; var a = nsAct(q[6]) || { zshape: q[8] || undefined, dmg: 0 }; return { x: q[0], y: q[1], r: q[2], delay: q[3], t: q[4], owner: o, a: a, done: !!q[7] }; }).filter(Boolean);

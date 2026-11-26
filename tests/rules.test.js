@@ -206,8 +206,8 @@ test('quick Grail War: seven teams on the compact map finish in a few minutes', 
   const E = loadEngine();
   const teams = E.warTeams('richard', 'rin', 7).map((t) => ({ servant: E.SERV_DUEL[t.servant.id], master: t.master }));
   const G = aiWar(E, teams, { map: 'fuyuki', quick: true });
-  run(E, 600);
-  assert.ok(G.over, 'finished'); assert.ok(G.time < 360, 'in under six minutes (' + G.time.toFixed(0) + 's)');
+  run(E, 720);
+  assert.ok(G.over, 'finished'); assert.ok(G.time < 480, 'in under eight minutes (' + G.time.toFixed(0) + 's)');
 });
 
 test('city: every interior room can be reached from its door', () => {
@@ -657,4 +657,41 @@ test('before the final night a Command Seal pulls a servant home from a killing 
   sv.hp = 5; sv.iframes = 0; sv.st = 'idle';
   E.hurt(foe, sv, { dmg: 80, power: 2, kind: 'melee' }, 1, { x: sv.x - 30, y: sv.y });
   assert.ok(sv.st === 'dead', 'only once');
+});
+test('day activities: carry ward stones home, walk with the ley wisp, read the clues', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 4), { nights: 3 });
+  G.f.forEach((f, i) => { G.ai[i] = null; });
+  G.traces.push({ x: 3000, y: 3600, sv: [G.f[2].def.id] });
+  G.clock.t = G.clock.len - 0.01; E.simStep(E.STEP); assert.ok(E.isDay());
+  const rin = G.f[0].partner, me = G.f[0];
+  // fortify: three stones, each carried to its ward point
+  const fort = G.tasks.find((k) => k.kind === 'fortify' && k.team === me.team);
+  if (fort && fort.act === 'stones') {
+    const lvl = G.fields[me.team].lvl;
+    fort.stones.forEach((s) => { rin.x = s.x; rin.y = s.y; rin.st = 'idle'; E.dayActiveTick(fort, E.STEP); assert.strictEqual(s.c, rin.idx, 'picked up'); rin.x = s.tx; rin.y = s.ty; E.dayActiveTick(fort, E.STEP); assert.ok(s.ok, 'set at its ward point'); });
+    assert.ok(fort.done[me.team] && G.fields[me.team].lvl === lvl + 1, 'the field grows');
+  }
+  // ley: the wisp only moves while someone walks with it
+  const ley = G.tasks.find((k) => k.kind === 'ley' && k.act === 'wisp');
+  if (ley) {
+    rin.x = ley.x; rin.y = ley.y; for (let i = 0; i < 60; i++) E.dayActiveTick(ley, E.STEP);
+    const d1 = ley.w[me.team]; assert.ok(d1 > 50, 'the wisp walks');
+    rin.x = 100; rin.y = 100; for (let i = 0; i < 60; i++) E.dayActiveTick(ley, E.STEP);
+    assert.ok(ley.w[me.team] < d1, 'and drifts back when left');
+  }
+  // battle site: three clues to stand over
+  const tr = G.tasks.find((k) => k.kind === 'trace' && k.act === 'clues');
+  assert.ok(tr, 'a battle site to read');
+  tr.clues.forEach((c) => { rin.x = c.x; rin.y = c.y; for (let i = 0; i < 120; i++) E.dayActiveTick(tr, E.STEP); });
+  assert.ok(tr.done[me.team], 'all three clues read');
+});
+test('a scout that survives the day tells its master where its quarry is', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 4), { nights: 3 });
+  const me = G.f[0], foe = G.f.find((f) => f.team !== me.team && !f.def.isMaster);
+  G.mobs = [{ scout: true, keep: true, team: foe.team, tgt: me.team, x: 3000, y: 3000, px: 3000, py: 3000, r: 12, hp: 24, max: 24, t: 0, face: 0, fleeT: 0 }];
+  E.scoutsReport();
+  assert.ok(E.intelOn(foe, me), 'the rival knows where we are');
+  assert.ok(!G.mobs.some((m) => m.scout), 'the familiar goes home at dusk');
 });

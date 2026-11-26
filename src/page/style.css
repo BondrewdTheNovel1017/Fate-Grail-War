@@ -460,3 +460,7 @@ body.ingame .hud.war .nm { font-size: 10.5px; letter-spacing: .04em; } body.inga
 body.ingame .hud.war .hc .hth svg { width: 30px; height: 15px; }
 body.ingame .hud.war .bar { height: 5px; margin-top: 1px; } body.ingame .hud.war .bar.sta, body.ingame .hud.war .bar.mom, body.ingame .hud.war .bar.mana { height: 3px; }
 body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
+
+/* a guest's ping, small, under the status cards */
+#pingTag { position: absolute; z-index: 4; left: var(--gap, 10px); top: calc(74px + env(safe-area-inset-top, 0px)); font: 600 11px var(--f-hud, sans-serif); letter-spacing: .06em; padding: 2px 7px; border-radius: 9px; background: rgba(5, 9, 14, .62); color: #9fe6b0; pointer-events: none; }
+#pingTag.mid { color: #f3d58a; } #pingTag.bad { color: #ff8a8a; }

@@ -19,7 +19,7 @@ function miniMap(mw, mh) {
   MINI.id = key; MINI.c = c; return c;
 }
 function hud() {
-  var a = G.f[MEI]; var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !netInMatch() && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
+  var a = G.f[MEI]; var pt = $('#pingTag'); if (pt) { var on = !!NET.mirror && NET.ping > 0; if (pt.hidden === on) pt.hidden = !on; if (on) { var ms = Math.round(NET.ping); pt.textContent = 'Ping ' + ms + ' ms'; pt.className = ms < 120 ? 'ok' : ms < 250 ? 'mid' : 'bad'; } } var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !netInMatch() && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
   if (G.mode === 'war' ? hudKey() !== HUDKEY : (aimFoe(a) !== hudTarget || a.partner !== hudPartner)) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';

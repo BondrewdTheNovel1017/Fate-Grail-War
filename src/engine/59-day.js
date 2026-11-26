@@ -78,6 +78,7 @@ function startDay() {
   picked.forEach(function (q, i) { G.tasks.push({ kind: 'trace', x: q.x, y: q.y, r: 170, name: 'Battle site ' + (i + 1), sv: q.sv, need: DAYTASK.trace, prog: {}, done: {} }); });
   for (var t in G.fields) { var F = G.fields[t]; if (F.lvl > 0 && F.lvl < F.max) G.tasks.push({ kind: 'fortify', x: F.x, y: F.y, r: 220, name: 'Fortify ' + F.name, team: +t, need: DAYTASK.fortify, prog: {}, done: {} }); }
   G.traces = [];
+  dayActivities(); sendScouts();
 }
 function taskFor(team, k) {
   if (k.team !== undefined && k.team !== team) return false;
@@ -90,6 +91,7 @@ function taskFor(team, k) {
 function tasksTick(dt) {
   if (!isDay() || !G.tasks.length) return;
   G.tasks.forEach(function (k) {
+    if (dayActiveTick(k, dt)) return;
     var teams = {};
     G.f.forEach(function (f) { if (f.st !== 'dead' && !f.inM && f.x < MAP.cityW && Math.hypot(f.x - k.x, f.y - k.y) < k.r && (f.def.isMaster || k.kind !== 'school')) teams[f.team] = 1; });
     for (var t in teams) {
