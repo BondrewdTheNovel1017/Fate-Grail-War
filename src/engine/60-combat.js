@@ -299,7 +299,7 @@ function stepF(f, dt) {
     vx = f.inp.mx * spw; vy = f.inp.my * spw;
     if (a.hop) { var bk = f.face + Math.PI; vx = Math.cos(bk) * a.hop / a.wind; vy = Math.sin(bk) * a.hop / a.wind; }
     var track = heavy ? f.t < a.wind * 0.75 : f.t < f.curWind * 0.6;
-    if (f.key === 'np' && a.kind !== 'rain') track = f.t < f.curWind * 0.7;
+    if (f.key === 'np' && a.kind !== 'rain') track = f.t < f.curWind * (a.trackTo || 0.7);
     if (track) turnToward(f, toO, heavy ? 5 : (f.key === 'np' ? 4 : 8), dt);
     var go = false;
     if (heavy) { if (f.t >= a.wind && (!f.inp.heavy || f.t >= a.max)) { f.chg = clamp((f.t - a.wind) / (a.max - a.wind), 0, 1); go = true; } }

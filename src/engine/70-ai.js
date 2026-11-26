@@ -125,6 +125,7 @@ function aiTick(ai, dt) {
   for (var j = 0; j < G.zones.length; j++) { var z = G.zones[j]; if (z.owner !== f && !z.done && Math.hypot(f.x - z.x, f.y - z.y) < z.r + 30 && z.t > cfg.react * 0.6) { flee = z; break; } }
   var mx = 0, my = 0;
   var wantRange = f.def.ranged ? 380 : (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14);
+  if (A.np.aiKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = A.np.aiKeep; } else ai.keepT = 0; // a reach-NP fighter steps back to cast it from out of sword reach
   if (f.st === 'idle' || f.st === 'rec') {
     if (ai.plantT > 0) ai.plantT -= dt;
     if (flee) { var fa = Math.atan2(f.y - flee.y, f.x - flee.x); mx = Math.cos(fa); my = Math.sin(fa); }

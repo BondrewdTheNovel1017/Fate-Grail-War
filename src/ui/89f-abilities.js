@@ -284,7 +284,7 @@ function drawChariot(f) {
 function drawCursedArm(f) {
   var o = f.foe; if (!o) return;
   var a = f.act, p = f.st === 'wind' ? clamp(f.t / (f.windTotal || a.wind), 0, 1) : 1, ext = Math.max(0, (p - 0.25) / 0.75); if (ext <= 0) return;
-  var sh = locOf(f, 6, -14), D = Math.min(dist(f, o), a.reach + 60), an = angTo(f, o), L = D * (f.st === 'act' ? 1 : 0.35 + 0.45 * ext), ex = sh.x + Math.cos(an) * L, ey = sh.y + Math.sin(an) * L, t = G.time;
+  var sh = locOf(f, 6, -14), D = f.st === 'act' ? Math.min(dist(f, o), a.reach) : a.reach * 0.55, an = f.st === 'act' ? f.face : angTo(f, o), L = D * (f.st === 'act' ? 1 : 0.35 + 0.45 * ext), ex = sh.x + Math.cos(an) * L, ey = sh.y + Math.sin(an) * L, t = G.time;
   var mx = (sh.x + ex) / 2 - Math.sin(an) * 18 * Math.sin(t * 6), my = (sh.y + ey) / 2 + Math.cos(an) * 18 * Math.sin(t * 6);
   ctx.save(); ctx.lineCap = 'round';
   ctx.strokeStyle = '#140a10'; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke();

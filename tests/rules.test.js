@@ -732,3 +732,20 @@ test('Nine Lives: Heracles lunges at his foe and lands quick blows in front of h
   assert.ok(Math.hypot(r.x - 800, r.y - 500) > 60, 'the last blow throws the foe back');
   assert.ok(behind.x < h.x, 'a blow lands only where he faces');
 });
+test('Zabaniya: the cursed arm reaches a foe beyond sword reach, in a narrow line', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.SERV.hassan, E.SERV.richard, { map: 'arena' });
+  const h = G.f[0], r = G.f[1]; G.ai = [null, null];
+  h.x = 500; h.y = 500; r.x = 750; r.y = 500; h.face = 0; r.face = Math.PI; h.foe = r; r.foe = h; h.mom = 100;
+  const hp0 = r.hp; assert.ok(E.startAct(h, 'np'));
+  for (let i = 0; i < 60 * 1.5; i++) { r.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); }
+  assert.ok(r.hp < hp0, 'it lands from 250 away');
+  const G2 = E.newGame(E.SERV.hassan, E.SERV.richard, { map: 'arena' });
+  const h2 = G2.f[0], r2 = G2.f[1]; G2.ai = [null, null];
+  h2.x = 500; h2.y = 500; r2.x = 680; r2.y = 500; h2.face = 0; h2.foe = r2; r2.foe = h2; h2.mom = 100;
+  const hp1 = r2.hp; assert.ok(E.startAct(h2, 'np'));
+  for (let i = 0; i < 48; i++) E.simStep(E.STEP);
+  r2.y = 680; // stepped out of the line once his aim is locked
+  for (let i = 0; i < 60 * 0.9; i++) { r2.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); }
+  assert.strictEqual(r2.hp, hp1, 'a step out of the line beats it');
+});

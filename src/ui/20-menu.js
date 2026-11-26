@@ -136,8 +136,8 @@ function INFO(d) {
       passives: ['Five-hit light chain with 0.2 second wind-ups.', 'Three dodge charges instead of two.', 'Fastest movement in the roster.', 'Weak guard: blocks 50%.'],
       skill: 'He vanishes for 0.2 seconds and reappears 62 units behind you, facing you. His next light strike within about two seconds deals 60% more.',
       skillBeat: 'The vanish is your cue: turn, then tap Block to parry the first strike, or dodge sideways.',
-      np: 'A cursed grip with a short reach (110) and a narrow arc. It cannot be blocked or parried. It deals about ' + R(np.dmg * m) + ' damage, and kills outright if you are below 30% health. He must be very close for it to land.',
-      npBeat: 'A dodge makes you invulnerable for the moment it lands, which beats it completely. Watch for the purple warning and keep your health above 30% if you can.' }
+      np: 'The cursed arm shoots out up to ' + np.reach + ' units in a narrow line and grips your heart. It cannot be blocked or parried. It deals about ' + R(np.dmg * m) + ' damage, and kills outright if you are below 30% health. He can cast it from beyond sword reach.',
+      npBeat: 'The arm flies straight where he aims as the wind-up ends: step sideways out of the line, or dodge as it lands. Keep your health above 30% if you can.' }
   }[d.id];
   return T;
 }

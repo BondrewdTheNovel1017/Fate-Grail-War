@@ -16,6 +16,7 @@ function payMana(m, cost) {
   if (m.def.bloodMana) { var need = cost - m.mana; if (m.hp > need + 30) { m.mana = 0; m.hp -= need; m.stat.taken += need; FX.text(m, 'CREST WORMS -' + Math.round(need)); return true; } }
   return false;
 }
+function npAffordable(s) { return canNP(s); } // for code where a local name shadows canNP
 function canNP(s) { if (G.mode !== 'war' || s.sealFree) return true; var m = livingMaster(s); return !m || canPay(m, npManaCost(s)); }
 function spendNP(s) {
   if (G.mode !== 'war') return;

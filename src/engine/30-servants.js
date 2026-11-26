@@ -112,7 +112,7 @@ var SERV = {
     brief: 'Five-hit chains, fast footwork, and an execution grab.',
     light: { wind: 0.2, rec: 0.14, dmg: 8, reach: 88, arc: 1.0, lunge: 46 }, heavy: { reach: 100, dmg: 19, wind: 0.42, max: 0.85 },
     skill: { name: 'Shadow Step', kind: 'shadow', wind: 0.2, act: 0.05, rec: 0.2, cd: 6, cost: 12, desc: 'Vanish and appear behind the enemy. His next light hit deals extra damage.' },
-    np: { name: 'Zabaniya', sub: 'Delusional Heartbeat', kind: 'grab', wind: 0.85, act: 0.1, rec: 0.9, dmg: 26, reach: 110, arc: 0.7, unblock: true, noParry: true, aiMin: 0, aiMax: 105, desc: 'A cursed grip that cannot be blocked or parried. Crushes the heart. Kills outright below 30% health.' } }
+    np: { name: 'Zabaniya', sub: 'Delusional Heartbeat', kind: 'grab', wind: 0.85, act: 0.1, rec: 0.9, dmg: 26, reach: 280, arc: 0.42, trackTo: 0.92, unblock: true, noParry: true, aiMin: 150, aiMax: 270, aiKeep: 215, desc: 'The cursed arm shoots out in a narrow line and grips the heart. Cannot be blocked or parried. Kills outright below 30% health.' } }
 };
 /* ---- class passives: every class has one themed trait ---- */
 var CLS = {

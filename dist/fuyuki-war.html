@@ -1413,7 +1413,7 @@ var SERV = {
     brief: 'Five-hit chains, fast footwork, and an execution grab.',
     light: { wind: 0.2, rec: 0.14, dmg: 8, reach: 88, arc: 1.0, lunge: 46 }, heavy: { reach: 100, dmg: 19, wind: 0.42, max: 0.85 },
     skill: { name: 'Shadow Step', kind: 'shadow', wind: 0.2, act: 0.05, rec: 0.2, cd: 6, cost: 12, desc: 'Vanish and appear behind the enemy. His next light hit deals extra damage.' },
-    np: { name: 'Zabaniya', sub: 'Delusional Heartbeat', kind: 'grab', wind: 0.85, act: 0.1, rec: 0.9, dmg: 26, reach: 110, arc: 0.7, unblock: true, noParry: true, aiMin: 0, aiMax: 105, desc: 'A cursed grip that cannot be blocked or parried. Crushes the heart. Kills outright below 30% health.' } }
+    np: { name: 'Zabaniya', sub: 'Delusional Heartbeat', kind: 'grab', wind: 0.85, act: 0.1, rec: 0.9, dmg: 26, reach: 280, arc: 0.42, trackTo: 0.92, unblock: true, noParry: true, aiMin: 150, aiMax: 270, aiKeep: 215, desc: 'The cursed arm shoots out in a narrow line and grips the heart. Cannot be blocked or parried. Kills outright below 30% health.' } }
 };
 /* ---- class passives: every class has one themed trait ---- */
 var CLS = {
@@ -1682,6 +1682,7 @@ function payMana(m, cost) {
   if (m.def.bloodMana) { var need = cost - m.mana; if (m.hp > need + 30) { m.mana = 0; m.hp -= need; m.stat.taken += need; FX.text(m, 'CREST WORMS -' + Math.round(need)); return true; } }
   return false;
 }
+function npAffordable(s) { return canNP(s); } // for code where a local name shadows canNP
 function canNP(s) { if (G.mode !== 'war' || s.sealFree) return true; var m = livingMaster(s); return !m || canPay(m, npManaCost(s)); }
 function spendNP(s) {
   if (G.mode !== 'war') return;
@@ -2345,7 +2346,7 @@ function stepF(f, dt) {
     vx = f.inp.mx * spw; vy = f.inp.my * spw;
     if (a.hop) { var bk = f.face + Math.PI; vx = Math.cos(bk) * a.hop / a.wind; vy = Math.sin(bk) * a.hop / a.wind; }
     var track = heavy ? f.t < a.wind * 0.75 : f.t < f.curWind * 0.6;
-    if (f.key === 'np' && a.kind !== 'rain') track = f.t < f.curWind * 0.7;
+    if (f.key === 'np' && a.kind !== 'rain') track = f.t < f.curWind * (a.trackTo || 0.7);
     if (track) turnToward(f, toO, heavy ? 5 : (f.key === 'np' ? 4 : 8), dt);
     var go = false;
     if (heavy) { if (f.t >= a.wind && (!f.inp.heavy || f.t >= a.max)) { f.chg = clamp((f.t - a.wind) / (a.max - a.wind), 0, 1); go = true; } }
@@ -3635,6 +3636,7 @@ function aiTick(ai, dt) {
   for (var j = 0; j < G.zones.length; j++) { var z = G.zones[j]; if (z.owner !== f && !z.done && Math.hypot(f.x - z.x, f.y - z.y) < z.r + 30 && z.t > cfg.react * 0.6) { flee = z; break; } }
   var mx = 0, my = 0;
   var wantRange = f.def.ranged ? 380 : (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14);
+  if (A.np.aiKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = A.np.aiKeep; } else ai.keepT = 0; // a reach-NP fighter steps back to cast it from out of sword reach
   if (f.st === 'idle' || f.st === 'rec') {
     if (ai.plantT > 0) ai.plantT -= dt;
     if (flee) { var fa = Math.atan2(f.y - flee.y, f.x - flee.x); mx = Math.cos(fa); my = Math.sin(fa); }
@@ -4318,8 +4320,8 @@ function INFO(d) {
       passives: ['Five-hit light chain with 0.2 second wind-ups.', 'Three dodge charges instead of two.', 'Fastest movement in the roster.', 'Weak guard: blocks 50%.'],
       skill: 'He vanishes for 0.2 seconds and reappears 62 units behind you, facing you. His next light strike within about two seconds deals 60% more.',
       skillBeat: 'The vanish is your cue: turn, then tap Block to parry the first strike, or dodge sideways.',
-      np: 'A cursed grip with a short reach (110) and a narrow arc. It cannot be blocked or parried. It deals about ' + R(np.dmg * m) + ' damage, and kills outright if you are below 30% health. He must be very close for it to land.',
-      npBeat: 'A dodge makes you invulnerable for the moment it lands, which beats it completely. Watch for the purple warning and keep your health above 30% if you can.' }
+      np: 'The cursed arm shoots out up to ' + np.reach + ' units in a narrow line and grips your heart. It cannot be blocked or parried. It deals about ' + R(np.dmg * m) + ' damage, and kills outright if you are below 30% health. He can cast it from beyond sword reach.',
+      npBeat: 'The arm flies straight where he aims as the wind-up ends: step sideways out of the line, or dodge as it lands. Keep your health above 30% if you can.' }
   }[d.id];
   return T;
 }
@@ -7665,7 +7667,7 @@ function drawChariot(f) {
 function drawCursedArm(f) {
   var o = f.foe; if (!o) return;
   var a = f.act, p = f.st === 'wind' ? clamp(f.t / (f.windTotal || a.wind), 0, 1) : 1, ext = Math.max(0, (p - 0.25) / 0.75); if (ext <= 0) return;
-  var sh = locOf(f, 6, -14), D = Math.min(dist(f, o), a.reach + 60), an = angTo(f, o), L = D * (f.st === 'act' ? 1 : 0.35 + 0.45 * ext), ex = sh.x + Math.cos(an) * L, ey = sh.y + Math.sin(an) * L, t = G.time;
+  var sh = locOf(f, 6, -14), D = f.st === 'act' ? Math.min(dist(f, o), a.reach) : a.reach * 0.55, an = f.st === 'act' ? f.face : angTo(f, o), L = D * (f.st === 'act' ? 1 : 0.35 + 0.45 * ext), ex = sh.x + Math.cos(an) * L, ey = sh.y + Math.sin(an) * L, t = G.time;
   var mx = (sh.x + ex) / 2 - Math.sin(an) * 18 * Math.sin(t * 6), my = (sh.y + ey) / 2 + Math.cos(an) * 18 * Math.sin(t * 6);
   ctx.save(); ctx.lineCap = 'round';
   ctx.strokeStyle = '#140a10'; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke();
