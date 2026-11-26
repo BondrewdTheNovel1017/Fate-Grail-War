@@ -54,3 +54,14 @@ This is the largest change since the city map itself: expect two or three sessio
 - Is a bigger map fine (longer walks between rivals), or should it keep today's area with the space redistributed?
 - Tohsaka and Matou: same hill on opposite sides of a ravine (proposed), or separate districts entirely?
 - Keep the single river with two bridges, or add a second crossing?
+
+## Owner's answers and additions (Nov 26)
+- A bigger map is fine.
+- Vehicles (after the map overhaul): ambient traffic on the road graph, civilians on sidewalks, cars that AI can drive, that can be destroyed (smoke, fire, a cinematic explosion, a burning wreck left as cover) and that hurt servants and masters they hit. Proposed order: parked cars that can be wrecked → ambient traffic → AI and player driving. Rider-class servants drive best (Riding). A crash or explosion by day is a big witness event. Keep the number of moving cars near players small (online room budget).
+- Unique residences: home sites with their own interiors, e.g. the Uryuu storehouse for Ryuunosuke; Kuzuki at Ryuudou Temple (his lore home).
+- Master types get one passive each (proposed, to balance with the sims):
+  - Mage family: today their bounded field starts at level 2 (max 4). Keep that; their larger mana pools already come from each character's numbers, so no extra mana on top.
+  - Fledgling (Shirou, Waver, Kariya): Growth. Mana pool and regen rise by 10% for each night survived (up to +30%). Shirou keeps Trace on top.
+  - Mage killer (Kiritsugu): bounded fields do not slow him and their bolts deal half (they still sense him), and +10% damage to masters in the war only. Different from Outsiders, who are not sensed at all but are slowed.
+  - Church (Kirei, Caren): the Church is their home and they can share it; its interior is a sanctuary (no one can deal damage inside, like a truce zone). Limits: no bounded field there, sanctuary does not protect anyone who dealt damage in the last 20 s, and it ends when the Grail descends. Church heat is not reduced.
+  - Outsider: not felt by bounded fields (as now).
