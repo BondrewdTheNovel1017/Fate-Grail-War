@@ -819,7 +819,7 @@ MAPS.city = (function () {
   road('avenue', 8100, 300, 8100, 6600, 210);
   road('avenue', 6400, 6650, 11800, 6650, 170);
   // Miyama streets
-  road('street', 2600, 1250, 5400, 1250, 120);
+  road('street', 3000, 1250, 5400, 1250, 120);
   road('street', 200, 3600, 5500, 3600, 130);
   road('street', 200, 4700, 5500, 4700, 130);
   road('street', 200, 6450, 5500, 6450, 130);
@@ -840,7 +840,7 @@ MAPS.city = (function () {
   road('path', 5350, 2400, 5350, 6950, 80);
   road('path', 3550, 830, 3550, 1250, 70);
   road('path', 5000, 830, 5000, 1250, 70);
-  road('path', 2720, 1800, 3000, 1800, 60);
+  road('path', 1445, 1960, 640, 1960, 70); road('path', 640, 1890, 640, 1960, 70); // forest path along the hillside to the cave mouth
   road('path', 2050, 4700, 2050, 4830, 70);
   road('path', 9800, 2400, 11000, 2400, 110, 'Einzbern forest road');
   road('path', 11000, 1760, 11000, 2400, 110);
@@ -851,9 +851,9 @@ MAPS.city = (function () {
   B(6000, 2400, 720, 250, 'bridgearch', { walk: true, over: true });
 
   /* ---------- ground zones (drawn under everything) ---------- */
-  zone('forest', 0, 0, 2450, 2290);              // Mount Enzou
-  zone('temple', 700, 250, 2300, 1460);          // Ryuudou Temple grounds
-  zone('hill', 2450, 0, RX0, 2290);              // foreigners' district on the hill
+  zone('forest', 0, 0, 2900, 2290);              // Mount Enzou
+  zone('temple', 700, 440, 2300, 1460);          // Ryuudou Temple grounds
+  zone('hill', 2900, 0, RX0, 2290);              // foreigners' district on the hill
   zone('churchhill', 250, 2510, 2900, 3530);     // the church's own wooded hill
   zone('clearing', 1150, 2790, 1760, 3320); zone('cemetery', 430, 2700, 1060, 3110);
   zone('schoolyard', 3100, 2510, 5000, 3530);    // Homurahara Academy
@@ -872,7 +872,10 @@ MAPS.city = (function () {
   /* ---------- landmarks ---------- */
   // Ryuudou Temple
   B(1500, 650, 760, 260, 'temple', { name: 'Ryuudou Temple' }); B(950, 900, 200, 160, 'temple2'); B(2050, 900, 200, 160, 'temple2'); B(1080, 1220, 120, 120, 'belltower');
-  B(1500, 1470, 360, 60, 'gate_jp', { walk: true, over: true }); reserve(700, 250, 2300, 1500);
+  B(1500, 1470, 360, 60, 'gate_jp', { walk: true, over: true }); reserve(700, 440, 2300, 1500);
+  // the lake behind the temple, on the mountain's crown
+  zone('pond', 1100, 110, 1900, 380); B(1500, 245, 760, 230, 'water', { nb: true, hide: true }); reserve(1040, 70, 1960, 430);
+  reserve(520, 1760, 760, 1900); // the cave mouth on the hillside, kept clear of trees
   [[1180, 1350], [1820, 1350], [1180, 1100], [1820, 1100]].forEach(function (p) { T(p[0], p[1], 14, 'lantern'); });
   T(1950, 1250, 46, 'pine'); T(1060, 450, 44, 'pine'); T(2120, 450, 40, 'pine');
   // Foreigners' district
@@ -958,8 +961,7 @@ MAPS.city = (function () {
   fill(300, 6560, 1200, 6900, jp, 230, 160, 40); fill(1400, 6560, 2900, 6900, jp, 230, 160, 40); fill(3100, 6560, 4300, 6900, jp, 230, 160, 40);
   fill(4500, 3700, 5000, 6900, jp, 210, 190, 40);
   // the hill: a few western houses
-  fill(2500, 1350, 4300, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70); fill(4500, 1350, 5600, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70);
-  fill(2500, 120, 3050, 800, 'house_w', 260, 230, 60);
+  fill(3100, 1350, 4300, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70); fill(4500, 1350, 5600, 2280, function () { return R() < 0.7 ? 'house_w' : 'mansion_s'; }, 280, 230, 70);
   // Shinto business district
   fill(6650, 400, 7200, 3200, biz, 260, 330, 50); fill(7400, 400, 8000, 3200, biz, 280, 320, 50);
   fill(8220, 400, 8850, 3200, biz, 300, 320, 50); fill(9050, 400, 9700, 3200, biz, 280, 320, 50);
@@ -977,7 +979,7 @@ MAPS.city = (function () {
       T(tx, ty, tr, R() < 0.5 ? 'pine' : 'tree');
     }
   }
-  forest(60, 60, 2450, 2290, 170);
+  forest(60, 60, 2880, 2290, 170);
   forest(9950, 4200, CW - 80, 4640, 200); // the park's wooded north end
   forest(280, 2540, 2880, 3500, 150);
   forest(9950, 60, CW - 60, 3950, 160, function (x, y) { return Math.abs(y - 2400) < 120 && x < 11060 || Math.abs(x - 11000) < 110 && y > 1700 && y < 2450; });
@@ -1055,12 +1057,12 @@ MAPS.city = (function () {
   part(sh, 'circle', sh.x0 + 230, sh.y0 + 150, sh.x0 + 390, sh.y0 + 310);
   B(sh.x0 + 520, sh.y0 + 120, 120, 60, 'shelf'); B(sh.x0 + 100, sh.y0 + 330, 120, 70, 'table'); B(sh.x0 + 120, sh.y0 + 110, 80, 80, 'crate'); B(sh.x0 + 520, sh.y0 + 340, 90, 90, 'crate');
   door('shed', 'shed', 1620, 5285, 0, -1, sh.x0 + 310, sh.y0 + 60, 0, -1);
-  // the Great Cavern beneath Ryuudou Temple, where the Greater Grail sleeps; its mouth opens behind the temple
+  // the Great Cavern beneath Ryuudou Temple, where the Greater Grail sleeps; its mouth opens on the wooded hillside west of the stairs
   var gc = room('cavern', 'The Great Cavern', IX + 1000, 5300, 2600, 2300, 'cave');
   part(gc, 'crater', gc.x0 + 950, gc.y0 + 800, gc.x0 + 1650, gc.y0 + 1500);
   [[420, 500], [2150, 520], [600, 1700], [2000, 1800], [1300, 380], [380, 1150], [2250, 1150]].forEach(function (p) { o.push({ x: gc.x0 + p[0], y: gc.y0 + p[1], r: 70, k: 'rock' }); });
-  B(2120, 360, 180, 100, 'cave_mouth', { name: 'Cave mouth' });
-  door('cavern', 'cavern', 2120, 425, 0, 1, gc.x0 + 1300, gc.y0 + 70, 0, -1);
+  B(640, 1820, 180, 100, 'cave_mouth', { name: 'Cave mouth' });
+  door('cavern', 'cavern', 640, 1885, 0, 1, gc.x0 + 1300, gc.y0 + 70, 0, -1);
   // Hyatt Hotel: Kayneth's top-floor suite, the lounge and his workshop
   var hy = room('hyatt', 'Hyatt Hotel Suite', IX + 3900, 200, 1500, 1000, 'marble');
   wallV(hy, 900, 24, 976, [[380, 520]]); wallH(hy, 560, 900, 1476, [[1120, 1260]]);
@@ -1106,7 +1108,7 @@ MAPS.city = (function () {
   };
   return {
     id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
-    walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]], [[1500, 1400], [1500, 1100], [2240, 1100], [2240, 560], [2120, 495]]], // footpaths through walled yards the road graph cannot see
+    walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]], [[640, 1960], [640, 1885]]], // footpaths through walled yards the road graph cannot see
     spots: spots, estates: estates, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
     river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [3700, 5250], [5000, 1180]]
   };
@@ -6861,7 +6863,7 @@ function drawEventHud(x, y, mx0, my0, mw, mh) {
   var col = EV_COL[E.kind] || '#e9e4d3';
   c.font = '700 ' + (VW < 560 ? 13 : 15) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right'; var tw = c.measureText(s).width + 16;
   c.fillStyle = 'rgba(8,14,20,.8)'; c.fillRect(x - tw, y - 15, tw, 21); c.fillStyle = col; c.fillText(s, x - 6, y);
-  var ex = E.kind === 'bounty' ? (G.f.filter(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })[0] || E) : E.kind === 'horror' ? E.boss : E.kind === 'berserk' ? E.f : E; if (E.kind === 'grail' && E.cavern) ex = { x: 2120, y: 425 }; if (ex.x === undefined || E.kind === 'falsedeath') return 24;
+  var ex = E.kind === 'bounty' ? (G.f.filter(function (f) { return f.team === E.team && f.st !== 'dead' && !f.def.isMaster; })[0] || E) : E.kind === 'horror' ? E.boss : E.kind === 'berserk' ? E.f : E; if (E.kind === 'grail' && E.cavern) ex = { x: 640, y: 1885 }; if (ex.x === undefined || E.kind === 'falsedeath') return 24;
   var px = mx0 + ex.x / MW * mw, py = my0 + ex.y / H * mh, p = 0.5 + 0.5 * Math.sin(G.time * 5);
   c.strokeStyle = col; c.lineWidth = 2; c.globalAlpha = 0.6 + 0.4 * p; c.beginPath(); c.arc(px, py, 5 + 3 * p, 0, 6.283); c.stroke();
   if (E.kind === 'grail') { c.save(); c.beginPath(); c.rect(mx0, my0, mw, mh); c.clip(); c.beginPath(); c.arc(px, py, E.r / MW * mw, 0, 6.283); c.stroke(); c.restore(); }
