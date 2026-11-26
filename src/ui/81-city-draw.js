@@ -24,6 +24,15 @@ function drawCity(g, m) {
     g.fillStyle = CITY_PAL[z.kind] || '#333'; g.fillRect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0);
     zoneTexture(g, z, vr);
   });
+  // estate plots nobody has built on yet: fenced vacant lots, grass and a gravel drive
+  (m.plots || []).forEach(function (p) {
+    var x0 = p[0] - 230, y0 = p[1] - 165, w = 460, h = 330; if (!vis(vr, x0, y0, x0 + w, y0 + h)) return;
+    if (m.b.some(function (b) { return b.gen && Math.abs(b.x - p[0]) < 300 && Math.abs(b.y - p[1]) < 240; })) return;
+    g.fillStyle = '#34402f'; g.fillRect(x0, y0, w, h);
+    g.fillStyle = 'rgba(255,255,255,.04)'; for (var k = 0; k < 7; k++) g.fillRect(x0 + 20 + ((k * 61) % (w - 60)), y0 + 24 + ((k * 97) % (h - 60)), 26, 14);
+    g.fillStyle = '#5a5650'; g.fillRect(p[0] - 22, y0 + h - 110, 44, 110);
+    g.strokeStyle = 'rgba(200,190,170,.45)'; g.lineWidth = 3; g.setLineDash([10, 8]); g.strokeRect(x0 + 4, y0 + 4, w - 8, h - 8); g.setLineDash([]);
+  });
   // water: river and bay
   m.zones.forEach(function (z) {
     if (z.kind !== 'water' || !vis(vr, z.x0, z.y0, z.x1, z.y1)) return;

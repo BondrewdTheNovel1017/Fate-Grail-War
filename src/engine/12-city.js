@@ -38,7 +38,7 @@ MAPS.city = (function () {
   road('street', 200, 4700, 5500, 4700, 130);
   road('street', 200, 6450, 5500, 6450, 130);
   road('street', 1300, 3600, 1300, 6900, 130);
-  road('street', 4400, 1250, 4400, 6900, 130);
+  road('street', 4400, 1250, 4400, 2400, 130); road('street', 4400, 3600, 4400, 6900, 130); // the school grounds sit between
   // Shinto streets
   road('street', 6550, 300, 6550, 6650, 120);
   road('street', 7300, 300, 7300, 6650, 150);
@@ -54,13 +54,13 @@ MAPS.city = (function () {
   road('path', 5350, 2400, 5350, 6950, 80);
   road('path', 3550, 830, 3550, 1250, 70);
   road('path', 5000, 830, 5000, 1250, 70);
-  road('path', 2700, 1800, 3000, 1800, 60);
+  road('path', 2720, 1800, 3000, 1800, 60);
   road('path', 2050, 4700, 2050, 4830, 70);
   road('path', 9800, 2400, 11000, 2400, 110, 'Einzbern forest road');
   road('path', 11000, 1760, 11000, 2400, 110);
   road('path', 9800, 5250, 11700, 5250, 80);
   road('path', 10750, 4600, 10750, 6650, 80);
-  road('rail', 4300, 4050, 11800, 4050, 120, 'Railway');
+  road('rail', 4300, 4050, CW, 4050, 120, 'Railway');
   zone('railbridge', RX0 - 40, 3990, RX1 + 40, 4110);
   B(6000, 2400, 720, 250, 'bridgearch', { walk: true, over: true });
 
@@ -74,7 +74,8 @@ MAPS.city = (function () {
   zone('park', 5000, 2510, RX0, 6950);           // riverside park (west bank)
   zone('sand', 0, 6960, RX0, SEA);               // Fuyuki beach
   zone('plaza', 6650, 3700, 8900, 3970);         // station plaza
-  zone('park', 9050, 4700, 11800, 6560);         // Central Park
+  zone('park', 9050, 4700, CW, 6560);            // Central Park
+  zone('park', 9850, 4150, CW, 4700);            // its wooded north end, along the railway
   zone('forest', 9900, 0, CW, 3980);             // Einzbern forest
   zone('castle', 10300, 600, 11700, 1760);       // castle courtyard
   zone('harbor', 6400, 6760, CW, SEA);           // cargo harbor apron
@@ -108,7 +109,7 @@ MAPS.city = (function () {
   B(1720, 4790, 540, 20, 'wall'); B(2480, 4790, 740, 20, 'wall'); B(1450, 5135, 20, 690, 'wall'); B(2850, 5135, 20, 690, 'wall'); B(2150, 5480, 1400, 20, 'wall');
   B(2050, 4790, 170, 46, 'gate_roof', { walk: true, over: true });
   B(2090, 5320, 260, 130, 'water', { nb: true, hide: true }); B(1810, 5420, 70, 40, 'woodpile');
-  T(1600, 4860, 14, 'lantern'); T(2420, 4860, 14, 'lantern'); T(2210, 5260, 12, 'lantern'); T(1520, 4860, 26, 'pine'); T(2770, 4880, 30, 'pine'); T(1850, 5300, 30, 'persimmon');
+  T(1600, 4860, 14, 'lantern'); T(2420, 4860, 14, 'lantern'); T(2260, 5200, 12, 'lantern'); T(1520, 4860, 26, 'pine'); T(2770, 4880, 30, 'pine'); T(1850, 5300, 30, 'persimmon');
   reserve(1450, 4780, 2860, 5490);
   // Mount Miyama shopping street (covered arcade along H5)
   for (var sx = 3170; sx <= 4250; sx += 135) { B(sx, 4580, 120, 110, 'shop'); B(sx, 4820, 120, 110, 'shop'); }
@@ -118,7 +119,7 @@ MAPS.city = (function () {
   B(7700, 850, 560, 460, 'hotel', { name: 'Hyatt Hotel', home: 'hyatt' }); reserve(7400, 600, 8000, 1220);
   B(8525, 1850, 620, 620, 'center', { name: 'Center Building' }); reserve(8200, 1450, 8850, 2270);
   B(8525, 2850, 640, 380, 'mall', { name: 'Verde' }); reserve(8200, 2530, 8850, 3200);
-  B(7700, 3550, 1000, 230, 'station', { name: 'Fuyuki Station' }); reserve(6650, 3400, 8900, 3990);
+  B(7690, 3530, 560, 210, 'station', { name: 'Fuyuki Station' }); // between the street and the avenue reserve(6650, 3400, 8900, 3990);
   B(4880, 3880, 300, 120, 'station_s', { name: 'Miyama Station' }); reserve(4700, 3800, 5100, 3970);
   // Central Park and the civic hall
   zone('pond', 10150, 5650, 10600, 6050);
@@ -175,6 +176,8 @@ MAPS.city = (function () {
   // Shinto south: apartments, shops (Semina Apartments among them)
   fill(6650, 4150, 7200, 6540, mid, 240, 280, 50); fill(7400, 4150, 8000, 6540, mid, 260, 280, 50); fill(8220, 4150, 8850, 6540, mid, 260, 280, 50);
   B(7700, 4850, 300, 300, 'apt', { name: 'Semina Apartments' });
+  // the last empty Shinto blocks: east of the station and north of the park
+  fill(9050, 3400, 9700, 3990, biz, 280, 260, 50); fill(9050, 4150, 9700, 4600, mid, 260, 200, 50);
   // forests
   function forest(x0, y0, x1, y1, step, keepOut) {
     for (var fx = x0; fx < x1; fx += step) for (var fy = y0; fy < y1; fy += step * 0.92) {
@@ -185,10 +188,11 @@ MAPS.city = (function () {
     }
   }
   forest(60, 60, 2450, 2290, 170);
+  forest(9950, 4200, CW - 80, 4640, 200); // the park's wooded north end
   forest(280, 2540, 2880, 3500, 150);
   forest(9950, 60, CW - 60, 3950, 160, function (x, y) { return Math.abs(y - 2400) < 120 && x < 11060 || Math.abs(x - 11000) < 110 && y > 1700 && y < 2450; });
   // street trees along the avenues
-  [[3000, 2600, 6800, 'v'], [8100, 500, 6500, 'v']].forEach(function (s) { for (var t = s[1]; t < s[2]; t += 300) { [-1, 1].forEach(function (side) { var x = s[0] + side * 128, y = t; if (!hits(x - 14, y - 14, x + 14, y + 14, -40)) T(x, y, 16, 'street'); }); } });
+  [[3000, 2600, 6800, 'v'], [8100, 500, 6500, 'v']].forEach(function (s) { for (var t = s[1]; t < s[2]; t += 300) { [-1, 1].forEach(function (side) { var x = s[0] + side * 128, y = t; if (!hits(x - 14, y - 14, x + 14, y + 14, -40) && !b.some(function (q) { return !q.walk && Math.abs(q.x - x) < q.w / 2 + 16 && Math.abs(q.y - y) < q.h / 2 + 16; })) T(x, y, 16, 'street'); }); } });
 
   /* ---------- labels ---------- */
   labels.push(['MOUNT ENZOU', 900, 2000], ['RYUUDOU TEMPLE', 1500, 220], ['TOHSAKA MANSION', 3550, 280], ['MATOU RESIDENCE', 5000, 280], ['FUYUKI CHURCH', 1450, 2780],
