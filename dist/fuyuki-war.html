@@ -1572,8 +1572,12 @@ function mkF(def, x, y, face, idx) {
     inp: { mx: 0, my: 0, guard: false, heavy: false }, buf: { name: null, t: 0 }, foe: null, hit: 0,
     stat: { dealt: 0, taken: 0, parry: 0, dodge: 0, gbreak: 0, blocks: 0, intr: 0, hits: 0, nps: 0 } };
 }
+/* Arena master duels only: the war keeps MASTERS as tuned by tools/sim.js; these even out masters fighting each other (from master-duel sims) */
+var MDUEL = { sakura: { ls: 0.2, hp: 0.92 }, waver: { hp: 1.2, dmg: 1.2 }, kuzuki: { hp: 1.4, dmg: 1.4 }, illya: { dmg: 1.3 }, irisviel: { hp: 1.1, dmg: 1.22 }, kariya: { dmg: 1.18 }, shirou: { hp: 1.15, dmg: 1.08 }, rin: { dmg: 0.88 }, kayneth: { dmg: 0.88 }, kirei: { hp: 0.9, dmg: 0.88 }, tokiomi: { dmg: 0.96 }, kiritsugu: { dmg: 0.95 } };
+function mduelDef(d) { var t = MDUEL[d.id]; if (!t) return d; var c = Object.assign({}, d); if (t.hp) c.hp = Math.round(d.hp * t.hp); if (t.dmg) c.dmg = (d.dmg || 1) * t.dmg; if (t.ls !== undefined) c.lifesteal = t.ls; return c; }
 function newGame(dA, dB, opts) {
   var defs = Array.isArray(dA) ? dA : [dA, dB]; opts = (Array.isArray(dA) ? dB : opts) || {};
+  if (defs.every(function (d) { return d && d.isMaster; })) defs = defs.map(mduelDef);
   setMap(opts.map || 'arena');
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: opts.mode || 'duel', marble: null };
   var teams = opts.teams || defs.map(function (_, i) { return i; }), used = {};
@@ -2078,6 +2082,9 @@ function aiDayGoal(f) {
   });
   return bs > 0 ? best : null;
 }
+/* support skills with no living servant (a master duel, or an orphaned master) act on the caster */
+var SOLO_HEAL = 0.6, SOLO_GIFT = 15;
+function livePartner(f) { return !!(f.partner && f.partner.st !== 'dead'); }
 /* source: attacker fighter (for facing checks) or projectile. returns outcome string */
 function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
@@ -2274,14 +2281,14 @@ function strikeInit(f) {
   }
   else if (k === 'arm') { f.arm = Math.floor(rnd() * f.A.arms.length); f.armT = a.dur; FX.text(f, f.A.arms[f.arm].name.toUpperCase()); FX.fx('arm', f.x, f.y, f); FX.shake(3); }
   else if (k === 'barrage') { f.barN = 0; f.barT = 0; }
-  else if (k === 'heal') { var ht = a.self ? f : f.partner; if (ht && ht.st !== 'dead' && (a.self || dist(f, ht) <= a.range)) { ht.hp = Math.min(ht.def.hp, ht.hp + a.amount); FX.text(ht, '+' + a.amount); FX.fx('heal', ht.x, ht.y, ht); FX.snd('field', ht); } else FX.text(f, 'TOO FAR'); }
+  else if (k === 'heal') { var ht = a.self || !livePartner(f) ? f : f.partner, ham = ht === f && !a.self ? Math.round(a.amount * SOLO_HEAL) : a.amount; if (ht && ht.st !== 'dead' && (ht === f || dist(f, ht) <= a.range)) { ht.hp = Math.min(ht.def.hp, ht.hp + ham); FX.text(ht, '+' + ham); FX.fx('heal', ht.x, ht.y, ht); FX.snd('field', ht); } else FX.text(f, 'TOO FAR'); }
   else if (k === 'haste') { f.hasteT = a.dur; FX.text(f, 'DOUBLE ACCEL'); FX.fx('heal', f.x, f.y, f); }
   else if (k === 'siphon') { var got = 0; enemiesOf(f).forEach(function (o) { if (dist(f, o) <= a.r + FR) { if (hurt(f, o, { dmg: a.dmg, stag: 0.2, power: 1, unblock: true, spell: true, hs: 0.04, arc: 0, key: 'skill', vsServant: 1 }, 1, f) === 'hit') got += a.dmg; } }); if (got) { f.hp = Math.min(f.def.hp, f.hp + got); FX.text(f, '+' + got); } FX.fx('heal', f.x, f.y, f); FX.text(f, 'IMAGINARY DRAIN'); }
   else if (k === 'shield') { f.shieldN = a.hits; f.shieldT = a.dur; FX.text(f, 'VOLUMEN HYDRARGYRUM'); FX.fx('heal', f.x, f.y, f); }
   else if (k === 'reinforce') { f.reinfT = a.dur; FX.text(f, 'REINFORCEMENT'); FX.fx('heal', f.x, f.y, f); }
-  else if (k === 'buff') { if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
+  else if (k === 'buff') { if (!livePartner(f)) { f.buffT = a.dur; FX.text(f, 'STRATEGY: ADVANCE'); FX.fx('heal', f.x, f.y, f); } else if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
   else if (k === 'drain') { var pd2 = f.partner; if (pd2 && pd2.st !== 'dead' && f.hp > a.selfDmg + 5) { f.hp -= a.selfDmg; pd2.mom = Math.min(100, pd2.mom + a.mom); FX.text(f, '-' + a.selfDmg); FX.text(pd2, 'MANA SURGE'); FX.fx('seal', pd2.x, pd2.y, pd2); } }
-  else if (k === 'gift') { var pg = f.partner; if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
+  else if (k === 'gift') { var pg = f.partner; if (!livePartner(f)) { f.sta = 100; f.hp = Math.min(f.def.hp, f.hp + SOLO_GIFT); f.buffT = Math.max(f.buffT || 0, 4); FX.text(f, 'MANA TRANSFER'); FX.fx('heal', f.x, f.y, f); } else if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
   else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); var gil = G.f.filter(function (o) { return o.def.id === 'gilgamesh' && o.st !== 'dead' && o.inM && o.team !== f.team; })[0]; if (gil) FX.duo(f, 'ubwgil', gil, 'ubwgilR'); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
   else if (k === 'wall') { f.wallT = a.dur; FX.shake(5); }
   else if (k === 'veil') { f.veilT = a.dur; FX.shake(2); FX.fx('veil', f.x, f.y, f); }
@@ -3714,7 +3721,10 @@ function aiTick(ai, dt) {
     if (sr && f.cd <= 0 && d >= sr[0] && d <= sr[1] && losClear(f, o) && Math.random() < 0.04) { press(f, 'skill'); ai.cool = 0.6; return; }
     if (f.def.ranged) {
       if (f.def.field && !f.field && f.stillT <= 0 && d > 260 && d < 560 && o.st !== 'wind' && Math.random() < 0.05) ai.plantT = 1.3;
-      if (d < 230 && f.cd <= 0 && Math.random() < 0.6) { press(f, 'skill'); ai.cool = 0.5; return; }
+      // support skills: heal when hurt, Strategist when the fight is on, servant-only skills never alone
+      var sk0 = A.skill.kind, solo = !livePartner(f);
+      var skWant = sk0 === 'heal' ? (solo || A.skill.self) && f.hp < f.def.hp * 0.6 : sk0 === 'buff' ? d < 640 : (sk0 === 'drain' || sk0 === 'gift') ? !solo : d < 230;
+      if (skWant && f.cd <= 0 && Math.random() < 0.6) { press(f, 'skill'); ai.cool = 0.5; return; }
       // a gun on heavy and a knife on light (Kiritsugu): the burst at range, the blade when they close in
       if (A.light.kind === 'melee' && d <= A.light.reach + FR + 12) { press(f, 'light'); ai.comboLeft = Math.floor(Math.random() * (f.def.combo || 2)); ai.cool = (0.35 + Math.random() * 0.5) * (1.5 - cfg.agg); return; }
       if (A.light.kind === 'melee' && d > 120 && d < 640 && losClear(f, o)) { if (!f.def.mag || f.ammo >= 20) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.45; } ai.cool = (0.7 + Math.random() * 0.8) * (1.5 - cfg.agg); return; }

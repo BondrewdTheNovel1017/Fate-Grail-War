@@ -165,7 +165,10 @@ function aiTick(ai, dt) {
     if (sr && f.cd <= 0 && d >= sr[0] && d <= sr[1] && losClear(f, o) && Math.random() < 0.04) { press(f, 'skill'); ai.cool = 0.6; return; }
     if (f.def.ranged) {
       if (f.def.field && !f.field && f.stillT <= 0 && d > 260 && d < 560 && o.st !== 'wind' && Math.random() < 0.05) ai.plantT = 1.3;
-      if (d < 230 && f.cd <= 0 && Math.random() < 0.6) { press(f, 'skill'); ai.cool = 0.5; return; }
+      // support skills: heal when hurt, Strategist when the fight is on, servant-only skills never alone
+      var sk0 = A.skill.kind, solo = !livePartner(f);
+      var skWant = sk0 === 'heal' ? (solo || A.skill.self) && f.hp < f.def.hp * 0.6 : sk0 === 'buff' ? d < 640 : (sk0 === 'drain' || sk0 === 'gift') ? !solo : d < 230;
+      if (skWant && f.cd <= 0 && Math.random() < 0.6) { press(f, 'skill'); ai.cool = 0.5; return; }
       // a gun on heavy and a knife on light (Kiritsugu): the burst at range, the blade when they close in
       if (A.light.kind === 'melee' && d <= A.light.reach + FR + 12) { press(f, 'light'); ai.comboLeft = Math.floor(Math.random() * (f.def.combo || 2)); ai.cool = (0.35 + Math.random() * 0.5) * (1.5 - cfg.agg); return; }
       if (A.light.kind === 'melee' && d > 120 && d < 640 && losClear(f, o)) { if (!f.def.mag || f.ammo >= 20) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.45; } ai.cool = (0.7 + Math.random() * 0.8) * (1.5 - cfg.agg); return; }

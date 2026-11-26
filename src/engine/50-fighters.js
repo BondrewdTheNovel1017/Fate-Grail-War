@@ -7,8 +7,12 @@ function mkF(def, x, y, face, idx) {
     inp: { mx: 0, my: 0, guard: false, heavy: false }, buf: { name: null, t: 0 }, foe: null, hit: 0,
     stat: { dealt: 0, taken: 0, parry: 0, dodge: 0, gbreak: 0, blocks: 0, intr: 0, hits: 0, nps: 0 } };
 }
+/* Arena master duels only: the war keeps MASTERS as tuned by tools/sim.js; these even out masters fighting each other (from master-duel sims) */
+var MDUEL = { sakura: { ls: 0.2, hp: 0.92 }, waver: { hp: 1.2, dmg: 1.2 }, kuzuki: { hp: 1.4, dmg: 1.4 }, illya: { dmg: 1.3 }, irisviel: { hp: 1.1, dmg: 1.22 }, kariya: { dmg: 1.18 }, shirou: { hp: 1.15, dmg: 1.08 }, rin: { dmg: 0.88 }, kayneth: { dmg: 0.88 }, kirei: { hp: 0.9, dmg: 0.88 }, tokiomi: { dmg: 0.96 }, kiritsugu: { dmg: 0.95 } };
+function mduelDef(d) { var t = MDUEL[d.id]; if (!t) return d; var c = Object.assign({}, d); if (t.hp) c.hp = Math.round(d.hp * t.hp); if (t.dmg) c.dmg = (d.dmg || 1) * t.dmg; if (t.ls !== undefined) c.lifesteal = t.ls; return c; }
 function newGame(dA, dB, opts) {
   var defs = Array.isArray(dA) ? dA : [dA, dB]; opts = (Array.isArray(dA) ? dB : opts) || {};
+  if (defs.every(function (d) { return d && d.isMaster; })) defs = defs.map(mduelDef);
   setMap(opts.map || 'arena');
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: opts.mode || 'duel', marble: null };
   var teams = opts.teams || defs.map(function (_, i) { return i; }), used = {};

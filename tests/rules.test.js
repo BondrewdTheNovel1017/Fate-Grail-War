@@ -860,3 +860,21 @@ test('Einzbern castle: climbing the grand staircase at the end of the hall leads
   for (let i = 0; i < 60 * 3 && f.x > E.MAPS.city.cityW; i++) { f.inp = { mx: 0, my: -1 }; E.simStep(E.STEP); }
   assert.ok(f.x < E.MAPS.city.cityW && Math.abs(f.x - 11000) < 300 && Math.abs(f.y - 1150) < 320, 'out in the courtyard (' + Math.round(f.x) + ',' + Math.round(f.y) + ')');
 });
+test('Support skills act on the caster when no servant is alive (master duels, orphaned masters)', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.MASTERS.irisviel, E.MASTERS.waver, { map: 'arena' }); G.ai = [null, null];
+  const iri = G.f[0], wv = G.f[1]; iri.x = 300; iri.y = 500; wv.x = 1200; wv.y = 500;
+  iri.hp = iri.def.hp * 0.4; const before = iri.hp; iri.mana = 100; wv.mana = 100;
+  E.startAct(iri, 'skill'); E.startAct(wv, 'skill');
+  for (let i = 0; i < 60 * 1.5; i++) E.simStep(E.STEP);
+  assert.ok(iri.hp > before + 10, 'Irisviel healed herself (' + Math.round(before) + ' -> ' + Math.round(iri.hp) + ')');
+  assert.ok(wv.buffT > 0, 'Waver\'s Strategist buffs Waver');
+});
+test('Master-duel tuning applies only when masters fight each other, never to the war roster', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.MASTERS.kuzuki, E.MASTERS.sakura, { map: 'arena' });
+  assert.ok(G.f[0].def.hp > E.MASTERS.kuzuki.hp && G.f[1].def.lifesteal < E.MASTERS.sakura.lifesteal, 'duel copies tuned');
+  assert.strictEqual(E.MASTERS.kuzuki.hp, 120, 'the shared roster is untouched');
+  const W = E.newWar(E.warTeams('richard', 'kuzuki', 2), { nights: 1 });
+  assert.strictEqual(W.f.find((f) => f.def.id === 'kuzuki').def.hp, E.MASTERS.kuzuki.hp, 'war Kuzuki keeps war numbers');
+});

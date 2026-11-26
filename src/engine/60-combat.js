@@ -1,3 +1,6 @@
+/* support skills with no living servant (a master duel, or an orphaned master) act on the caster */
+var SOLO_HEAL = 0.6, SOLO_GIFT = 15;
+function livePartner(f) { return !!(f.partner && f.partner.st !== 'dead'); }
 /* source: attacker fighter (for facing checks) or projectile. returns outcome string */
 function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
@@ -194,14 +197,14 @@ function strikeInit(f) {
   }
   else if (k === 'arm') { f.arm = Math.floor(rnd() * f.A.arms.length); f.armT = a.dur; FX.text(f, f.A.arms[f.arm].name.toUpperCase()); FX.fx('arm', f.x, f.y, f); FX.shake(3); }
   else if (k === 'barrage') { f.barN = 0; f.barT = 0; }
-  else if (k === 'heal') { var ht = a.self ? f : f.partner; if (ht && ht.st !== 'dead' && (a.self || dist(f, ht) <= a.range)) { ht.hp = Math.min(ht.def.hp, ht.hp + a.amount); FX.text(ht, '+' + a.amount); FX.fx('heal', ht.x, ht.y, ht); FX.snd('field', ht); } else FX.text(f, 'TOO FAR'); }
+  else if (k === 'heal') { var ht = a.self || !livePartner(f) ? f : f.partner, ham = ht === f && !a.self ? Math.round(a.amount * SOLO_HEAL) : a.amount; if (ht && ht.st !== 'dead' && (ht === f || dist(f, ht) <= a.range)) { ht.hp = Math.min(ht.def.hp, ht.hp + ham); FX.text(ht, '+' + ham); FX.fx('heal', ht.x, ht.y, ht); FX.snd('field', ht); } else FX.text(f, 'TOO FAR'); }
   else if (k === 'haste') { f.hasteT = a.dur; FX.text(f, 'DOUBLE ACCEL'); FX.fx('heal', f.x, f.y, f); }
   else if (k === 'siphon') { var got = 0; enemiesOf(f).forEach(function (o) { if (dist(f, o) <= a.r + FR) { if (hurt(f, o, { dmg: a.dmg, stag: 0.2, power: 1, unblock: true, spell: true, hs: 0.04, arc: 0, key: 'skill', vsServant: 1 }, 1, f) === 'hit') got += a.dmg; } }); if (got) { f.hp = Math.min(f.def.hp, f.hp + got); FX.text(f, '+' + got); } FX.fx('heal', f.x, f.y, f); FX.text(f, 'IMAGINARY DRAIN'); }
   else if (k === 'shield') { f.shieldN = a.hits; f.shieldT = a.dur; FX.text(f, 'VOLUMEN HYDRARGYRUM'); FX.fx('heal', f.x, f.y, f); }
   else if (k === 'reinforce') { f.reinfT = a.dur; FX.text(f, 'REINFORCEMENT'); FX.fx('heal', f.x, f.y, f); }
-  else if (k === 'buff') { if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
+  else if (k === 'buff') { if (!livePartner(f)) { f.buffT = a.dur; FX.text(f, 'STRATEGY: ADVANCE'); FX.fx('heal', f.x, f.y, f); } else if (f.partner && f.partner.st !== 'dead') { f.partner.buffT = a.dur; FX.text(f.partner, 'STRATEGY: ADVANCE'); FX.fx('heal', f.partner.x, f.partner.y, f.partner); } }
   else if (k === 'drain') { var pd2 = f.partner; if (pd2 && pd2.st !== 'dead' && f.hp > a.selfDmg + 5) { f.hp -= a.selfDmg; pd2.mom = Math.min(100, pd2.mom + a.mom); FX.text(f, '-' + a.selfDmg); FX.text(pd2, 'MANA SURGE'); FX.fx('seal', pd2.x, pd2.y, pd2); } }
-  else if (k === 'gift') { var pg = f.partner; if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
+  else if (k === 'gift') { var pg = f.partner; if (!livePartner(f)) { f.sta = 100; f.hp = Math.min(f.def.hp, f.hp + SOLO_GIFT); f.buffT = Math.max(f.buffT || 0, 4); FX.text(f, 'MANA TRANSFER'); FX.fx('heal', f.x, f.y, f); } else if (pg && pg.st !== 'dead') { pg.sta = 100; pg.mom = Math.min(100, pg.mom + a.mom); FX.text(pg, 'MANA TRANSFER'); FX.fx('heal', pg.x, pg.y, pg); } }
   else if (k === 'ubw') { f.ubwA = a; setMarble('ubw', f); f.ubwT = a.dur; if (f.def.trace) { f.ubwUsed = true; FX.banner('Unlimited Blade Works', 'Trace on', f); var gil = G.f.filter(function (o) { return o.def.id === 'gilgamesh' && o.st !== 'dead' && o.inM && o.team !== f.team; })[0]; if (gil) FX.duo(f, 'ubwgil', gil, 'ubwgilR'); } f.ubwCd = 0.6; FX.text(f, 'UNLIMITED BLADE WORKS'); enemiesOf(f).forEach(function (o) { for (var zi = 0; zi < a.rain; zi++) { var za = zi * 2.1, zr = zi === 0 ? 0 : 70; G.zones.push({ x: clamp(o.x + Math.cos(za) * zr, 40, W - 40), y: clamp(o.y + Math.sin(za) * zr, 40, H - 40), r: 70, delay: 0.7 + zi * 0.12, t: 0, owner: f, a: { dmg: a.rainDmg, zshape: 'sword', key: 'np' }, done: false }); } }); }
   else if (k === 'wall') { f.wallT = a.dur; FX.shake(5); }
   else if (k === 'veil') { f.veilT = a.dur; FX.shake(2); FX.fx('veil', f.x, f.y, f); }
