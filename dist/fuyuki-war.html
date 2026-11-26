@@ -321,7 +321,7 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
 (function () {
 /*ENGINE_START*/
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, turned: function () {}, unturned: function () {}, near: function () { return true; } };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, turned: function () {}, unturned: function () {}, hesitate: function () {}, near: function () { return true; } };
 // hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
 // Hit-stop is per fighter: only the attacker and the one hit freeze, the rest of the war keeps moving.
 function hitPause(att, def, v) { if (att) att.hs = Math.max(att.hs || 0, v); if (def) def.hs = Math.max(def.hs || 0, v); }
@@ -1181,7 +1181,7 @@ function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
   var best = null, bd = 1e9, es = enemiesOf(f);
-  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (inTruce(f, e) ? 5000 : 0) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
+  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (inTruce(f, e) ? 5000 : 0) + (spared(f, e) ? 5000 : 0) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
   if (best) f.foe = best;
 }
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
@@ -1255,7 +1255,7 @@ function kill(f, noRevive) {
   else { G.f.forEach(pickTarget); }
   if (G.tn) traceKill(f);
   if (G.event) { challengeKill(f); bountyKill(f); }
-  if (G.mode === 'war') { if (f.killer && f.killer.st !== 'dead' && f.killer !== f) FX.say(f.killer, 'kill'); if (f.partner && f.partner.st !== 'dead' && f.partner.team === f.team) FX.say(f.partner, f.def.isMaster ? 'masterdown' : 'servantdown'); }
+  if (G.mode === 'war') { if (f.killer && f.killer.st !== 'dead' && f.killer !== f) FX.say(f.killer, 'kill', f); if (f.partner && f.partner.st !== 'dead' && f.partner.team === f.team) FX.say(f.partner, f.def.isMaster ? 'masterdown' : 'servantdown'); }
   FX.snd('kill', f); FX.fx('kill', f.x, f.y, f); if (FX.near(f.x, f.y)) { G.hitstop = 0.35; FX.shake(14); FX.banner(''); FX.slow(1.1); }
 }
 /* ---- mana link: a master's mana feeds their servant ----
@@ -1675,6 +1675,7 @@ function hurt(att, def, a, mult, src) {
   var ar = armored(def), taken = dmg * (ar ? (def.wallT > 0 ? 0.4 : 0.9) : 1);
   if (def.st === 'rec' && def.key === 'counter') taken = dmg;
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
+  if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
@@ -2433,6 +2434,20 @@ function godHandTick(f) {
   if (!f.gh || !f.def.godHand || f.st === 'dead') return;
   if (G.time - Math.max(f.lastHitT || 0, f.lastAtkT || 0, f.ghAt || 0) > GH_REGEN) { f.gh = false; FX.text(f, 'GOD HAND RESTORED'); FX.fx('godhand', f.x, f.y, f); }
 }
+/* ---- family and old bonds: when one of these would land a killing blow on the other, the hand
+   stops the first time. The AI often lets them go; a player can strike again, or walk away. ---- */
+var FAMILY = { 'irisviel|kiritsugu': 1, 'illya|kiritsugu': 1, 'illya|irisviel': 1, 'rin|sakura': 1, 'illya|shirou': 1, 'kariya|sakura': 1, 'sakura|shirou': 1, 'kiritsugu|shirou': 1, 'kariya|rin': 1 };
+var SPARE = { chance: 0.6, dur: 90 };
+function bondKey(a, b) { return [a.def.id, b.def.id].sort().join('|'); }
+function familyHold(att, def) {
+  if (!att || !G || G.mode !== 'war' || !FAMILY[bondKey(att, def)]) return false;
+  G.hesit = G.hesit || {}; var k = att.idx + '>' + def.idx; if (G.hesit[k]) return false;
+  G.hesit[k] = true; att.lock = null;
+  if (G.ai[att.idx] && rnd() < SPARE.chance) { G.spare = G.spare || {}; G.spare[att.team + ':' + def.idx] = G.time + SPARE.dur; }
+  FX.hesitate(att, def);
+  return true;
+}
+function spared(f, e) { return !!(G.spare && G.spare[f.team + ':' + e.idx] > G.time); }
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -3981,7 +3996,7 @@ function enterGame(nTeams, title, sub) {
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
   if (title) { FX.banner(title, sub); return; }
-  NOTES = []; BUB = []; DUO = []; PAIRSEEN = {}; BSCRIPT = null; BANQ_SCRIPTS.forEach(function (s) { s.done = false; }); SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
+  NOTES = []; BUB = []; DUO = []; PAIRSEEN = {}; TRUCESEEN = {}; truceChk = 0; BSCRIPT = null; BANQ_SCRIPTS.forEach(function (s) { s.done = false; }); SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }
@@ -5747,6 +5762,143 @@ function drawTurnedScreen() {
   c.textAlign = 'center'; c.font = '400 ' + (VW < 560 ? 22 : 30) + 'px "Marcellus SC", "Times New Roman", serif'; c.fillStyle = '#d6b4ff'; c.fillText('RULES ARE BROKEN · ' + Math.ceil(me.turnT - G.time), VW / 2, VH * 0.36);
 }
 (function () { var ff0 = drawFighterFx; drawFighterFx = function (g, f) { ff0(g, f); drawTurned(g, f); }; })();
+/* ---- bonds: family and history between characters. Exchanges when they meet as enemies, lines when a
+   truce puts them side by side, a hesitation when one would kill the other, and last words for those kills.
+   All lines are original. ---- */
+var MORE_PAIRS = {
+  // the Einzbern family
+  'kiritsugu>irisviel': ['Iri. Step aside. Please.', 'You would really raise a gun to me, Kiritsugu?'],
+  'irisviel>kiritsugu': ['So the Grail made us enemies after all.', 'It was always going to ask for something.'],
+  'kiritsugu>illya': ['...Illya.', 'You left. You promised you’d come back, and you left!'],
+  'illya>kiritsugu': ['Kiritsugu. Did you come all this way just to lose?', 'I came to end it. I’m sorry, Illya.'],
+  'illya>irisviel': ['Mother? Why are you against me?', 'I’m not against you, Illya. Never you.'],
+  'irisviel>illya': ['Illya... you’ve grown so much.', 'Don’t. Don’t talk like you were there.'],
+  // the Emiya house
+  'shirou>kiritsugu': ['Dad...?', 'Shirou. You shouldn’t be here.'],
+  'kiritsugu>shirou': ['Go home, Shirou.', 'Not until I know what you’re fighting for!'],
+  'shirou>sakura': ['Sakura? Why... why you?', 'I’m sorry, Senpai. I can’t stop anymore.'],
+  'sakura>shirou': ['Senpai... please don’t look at me.', 'Sakura, I’m not leaving you.'],
+  'irisviel>shirou': ['You have his eyes. Kiritsugu’s.', 'You knew my father?'],
+  // the Matou house
+  'kariya>sakura': ['Sakura-chan... I’m sorry. I have to.', 'Uncle Kariya... why?'],
+  'sakura>kariya': ['Uncle... please stop. You’ll die.', 'Then let me die for you.'],
+  // old students, old servants, old masters
+  'iskandar>waver': ['My boy! On the other side, are we?', 'Rider... I don’t want this either.'],
+  'waver>iskandar': ['Rider... it’s really you.', 'Ha! Look at you, standing against a king!'],
+  'kayneth>diarmuid': ['You serve another now, Lancer?', 'My lord... forgive me.'],
+  'diarmuid>kayneth': ['My lord. I would rather this were not so.', 'Spare me your loyalty, traitor.'],
+  'rin>emiya': ['Archer... why are you against me?', 'Sorry, Rin. This is the road I chose.'],
+  'emiya>rin': ['Rin. Go home.', 'Not a chance, Archer!'],
+  'illya>heracles': ['Berserker... you’re on their side?', '...■■■...'],
+  'gilgamesh>kirei': ['Kirei. Entertain me.', 'As you wish, King of Heroes.'],
+  'kirei>gilgamesh': ['Have you grown tired of me, Archer?', 'Not tired. Bored. There’s a difference.'],
+  'medea>kojirou': ['Gatekeeper. Step aside.', 'The gate stands, witch. As do I.'],
+  'caerwyn>shirou': ['Shirou. Do not make me do this.', 'I won’t let you fight alone, Saber. Even like this.'],
+  'shirou>caerwyn': ['Saber...?', 'Shirou. I am sorry. The contract decides.'],
+  'heracles>illya': ['...■■■...', 'Berserker? You remember me... don’t you?'],
+  'sakura>medusa': ['Rider... not you too.', 'Sakura. I will never raise my hand to you.']
+};
+Object.keys(MORE_PAIRS).forEach(function (k) { PAIRS[k] = MORE_PAIRS[k]; });
+// side by side under a truce: the school, the horror, the banquet, the Church
+var TRUCE_PAIRS = {
+  'irisviel|kiritsugu': ['kiritsugu', 'Stay close, Iri. Just for now.', 'Just for now. I know.'],
+  'illya|kiritsugu': ['kiritsugu', 'Illya... are you hurt?', 'Don’t act like a father now. ...But thanks.'],
+  'illya|irisviel': ['irisviel', 'Hold my hand, Illya.', '...Only until this is over, Mother.'],
+  'rin|sakura': ['rin', 'Stay behind me, Sakura.', '...Like when we were little, Nee-san?'],
+  'rin|shirou': ['shirou', 'Tohsaka, cover me!', 'Who said you get to give orders, Emiya?'],
+  'sakura|shirou': ['shirou', 'Sakura, are you okay?', 'I’m fine, Senpai... as long as you’re here.'],
+  'illya|shirou': ['shirou', 'Stay with me, Illya.', 'Hehe. Onii-chan’s protecting me?'],
+  'kariya|sakura': ['kariya', 'Sakura-chan... I’ll get you out of here.', 'Uncle Kariya... you’re hurting.'],
+  'kirei|kiritsugu': ['kirei', 'A truce, Emiya? How fascinating.', 'Don’t mistake this for anything else.'],
+  'kayneth|waver': ['kayneth', 'Stay out of my way, Velvet.', 'Y-yes, Professor! ...Wait, why am I saying yes?'],
+  'kirei|rin': ['rin', 'Don’t think this means I trust you, Kirei.', 'I would never expect such foolishness from you.'],
+  'kiritsugu|shirou': ['kiritsugu', 'Keep your head down, Shirou.', 'I’m not a kid anymore, Dad.'],
+  'caerwyn|gilgamesh': ['caerwyn', 'Do not stand so close, Archer.', 'I’ll stand wherever I please, Saber.'],
+  'cu|emiya': ['emiya', 'Stay out of my line of fire, Lancer.', 'Then aim better!'],
+  'caerwyn|iskandar': ['caerwyn', 'For now, we fight the same foe.', 'Ha! Then show me that sword, little king!'],
+  'caerwyn|lancelot': ['caerwyn', 'Lancelot. Fight beside me, one last time.', '...Arrr...'],
+  'diarmuid|caerwyn': ['diarmuid', 'An honor to stand beside you, King of Knights.', 'Then let us earn it together.'],
+  'gilgamesh|iskandar': ['iskandar', 'Shoulder to shoulder with the King of Heroes!', 'Don’t get used to it.']
+};
+var TRUCESEEN = {}, truceChk = 0;
+function trucePairs() {
+  if (!G || G.mode !== 'war' || INTRO || G.time < truceChk) return; truceChk = G.time + 0.5;
+  for (var i = 0; i < G.f.length; i++) for (var j = i + 1; j < G.f.length; j++) {
+    var a = G.f[i], b = G.f[j]; if (a.st === 'dead' || b.st === 'dead' || a.team === b.team) continue;
+    var k = bondKey(a, b), P = TRUCE_PAIRS[k]; if (!P || TRUCESEEN[k] || dist(a, b) > 450 || !inTruce(a, b) || !FX.near(a.x, a.y)) continue;
+    TRUCESEEN[k] = true; var first = a.def.id === P[0] ? a : b, second = first === a ? b : a;
+    showBubble(first, P[1], 3.2, true); DUO.push({ at: performance.now() + 2800, f: second, text: P[2] }); return;
+  }
+}
+// the hand that will not fall
+var HESIT = {
+  'kiritsugu>illya': ['...My hands won’t move.', '...Why did you stop?'],
+  'kiritsugu>irisviel': ['Iri... I can’t. Not like this.', 'Then go. Before you change your mind.'],
+  'irisviel>kiritsugu': ['No... I won’t be the one.', 'Iri...'],
+  'illya>kiritsugu': ['...Hmph. Not yet. I want you to see me win.', '...Illya.'],
+  'irisviel>illya': ['I can’t hurt you, Illya. I won’t.', '...Mother?'],
+  'illya>irisviel': ['...You’re lucky I’m merciful, Mother.', 'Thank you, Illya.'],
+  'rin>sakura': ['...Sakura. I can’t do it.', 'Nee-san... why are you crying?'],
+  'sakura>rin': ['No... not Nee-san. Not her.', 'Sakura...'],
+  'shirou>illya': ['No. I won’t.', 'Onii-chan... you’re too soft.'],
+  'illya>shirou': ['...I’ll let you go this time, Onii-chan.', 'Illya...'],
+  'shirou>sakura': ['Sakura... I promised I’d protect you.', 'Senpai...'],
+  'sakura>shirou': ['Senpai... run. Please run.', 'I’m not running from you, Sakura.'],
+  'kariya>sakura': ['I can’t... not her...', 'Uncle...'],
+  'shirou>kiritsugu': ['Dad... I can’t.', 'Then you’re a better man than I was.'],
+  'kiritsugu>shirou': ['...Not my son. Not again.', 'Dad...?']
+};
+FX.hesitate = function (a, d) {
+  if (!G.f[MEI] || !FX.near(a.x, a.y)) return; var k = a.def.id + '>' + d.def.id, H = HESIT[k] || ['...I can’t.', '...Why?'];
+  SAYT[a.idx] = performance.now() / 1000; showBubble(a, H[0], 3.2, true); DUO.push({ at: performance.now() + 2400, f: d, text: H[1] });
+  if (a === G.f[MEI]) FX.banner('Your hand stops', 'You cannot bring yourself to finish it. Strike again to end it, or let them go.');
+  else if (d === G.f[MEI]) FX.banner('Spared', shortName(a.def.name) + ' could not finish you.');
+};
+// last words over the fallen, for the kills that mean something
+var KILLQ = {
+  'kiritsugu>irisviel': 'I’m sorry, Iri. Every life I save costs one I love.',
+  'kiritsugu>illya': 'Forgive me, Illya. I chose the world over you. Again.',
+  'irisviel>kiritsugu': 'Wait for me... somewhere the Grail can’t reach.',
+  'illya>kiritsugu': '...You should have come back for me.',
+  'illya>irisviel': 'Goodbye, Mother. ...I wish you had stayed.',
+  'irisviel>illya': 'Sleep, Illya. I’ll hold you this time.',
+  'rin>sakura': 'I’m sorry, Sakura. I should have come for you years ago.',
+  'sakura>rin': 'Nee-san... now you know how it feels.',
+  'shirou>illya': 'Illya... I couldn’t protect you.',
+  'illya>shirou': 'Bye-bye, Onii-chan. ...I really did like you.',
+  'shirou>sakura': 'Sakura... I’m so sorry. I was too late.',
+  'sakura>shirou': 'Senpai... now you’re mine forever.',
+  'kariya>sakura': 'Sakura-chan... I’m sorry. You’re free now.',
+  'sakura>kariya': 'Uncle... rest. You did enough.',
+  'shirou>kiritsugu': 'Dad... I’ll carry your dream. My own way.',
+  'kiritsugu>shirou': 'I wanted you to have an ordinary life, Shirou.',
+  'emiya>shirou': 'That’s the end of your borrowed ideal.',
+  'shirou>emiya': 'I won’t regret it. Not the way you did.',
+  'kirei>kiritsugu': 'So you had no answer after all.',
+  'kiritsugu>kirei': 'There was never anything to understand.',
+  'caerwyn>lancelot': 'Rest, my friend. The fault was mine.',
+  'lancelot>caerwyn': '...Ar... thur...',
+  'gilgamesh>caerwyn': 'Struggle all you like. You were always mine.',
+  'caerwyn>gilgamesh': 'Your treasury could not buy this victory.',
+  'emiya>cu': 'You were a good opponent, Lancer. Annoying, but good.',
+  'cu>emiya': 'Heh. Told you I’d take round two.',
+  'kayneth>waver': 'Know your place, boy.',
+  'waver>kayneth': '...I’m sorry, Professor.',
+  'iskandar>gilgamesh': 'Your treasure could not stop my army!',
+  'gilgamesh>iskandar': 'A worthy conqueror. I’ll remember you, for a while.',
+  'rin>kirei': 'That was for my father.',
+  'kirei>rin': 'Your father would have wept. How delightful.',
+  'diarmuid>kayneth': 'My lord. I am sorry it ended like this.',
+  'heracles>gilgamesh': '■■■■■■—!!!'
+};
+(function () {
+  var say0 = FX.say;
+  FX.say = function (f, key, other) {
+    if (key === 'kill' && f && other && G && G.mode === 'war' && FX.near(f.x, f.y)) { var q = KILLQ[f.def.id + '>' + other.def.id]; if (q) { SAYT[f.idx] = performance.now() / 1000; showBubble(f, q, 3.6, true); return; } }
+    say0(f, key, other);
+  };
+  var db0 = drawBubbles; drawBubbles = function (cx, cy, zoom) { trucePairs(); db0(cx, cy, zoom); };
+})();
 /* ---- multiplayer test: host-authoritative, relayed through the claude.ai room (WebRTC is blocked in artifacts) ---- */
 var NET = { ns: null, R: null, role: null, code: '', me: null, game: null, mirror: false, snapAt: 0, sentAt: 0, lastHost: null, seq: 0, ev: [], lastSeq: 0, prev: {}, cnt: {}, g: 0, h: 0, so: null, lk: -1, msg: '' };
 var NST = ['idle', 'wind', 'act', 'rec', 'stag', 'dodge', 'counter', 'dead'], NKEY = ['light', 'heavy', 'skill', 'np', 'counter', 'dodge'];

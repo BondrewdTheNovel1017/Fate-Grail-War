@@ -483,3 +483,16 @@ test('a turned servant cannot call its Noble Phantasm', () => {
   E.ruleBreak(med, rich); rich.mom = 100; E.press(rich, 'np'); E.simStep(E.STEP); E.simStep(E.STEP);
   assert.notStrictEqual(rich.key, 'np');
 });
+
+test('family: the first killing blow between Kiritsugu and Illya stops short; the second does not', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, seen = [];
+  E.FX.hesitate = (a, d) => seen.push(a.def.id + '>' + d.def.id);
+  const G = E.newWar([{ servant: S.richard, master: M.kiritsugu }, { servant: S.heracles, master: M.illya }, { servant: S.cu, master: M.rin }], { nights: 3 });
+  const kir = G.f.find((f) => f.def.id === 'kiritsugu'), il = G.f.find((f) => f.def.id === 'illya'), rin = G.f.find((f) => f.def.id === 'rin');
+  G.clock.final = true; il.hp = 5;
+  E.hurt(kir, il, { dmg: 50, power: 2, kind: 'proj' }, 1, { x: kir.x, y: kir.y });
+  assert.strictEqual(il.st === 'dead', false); assert.strictEqual(il.hp, 1); assert.deepStrictEqual(seen, ['kiritsugu>illya']);
+  il.iframes = 0; il.st = 'idle'; E.hurt(kir, il, { dmg: 50, power: 2, kind: 'proj' }, 1, { x: kir.x, y: kir.y });
+  assert.ok(il.hp <= 0 || il.st === 'dead', 'the second blow lands');
+  rin.hp = 5; E.hurt(kir, rin, { dmg: 50, power: 2, kind: 'proj' }, 1, { x: kir.x, y: kir.y }); assert.ok(rin.hp <= 0 || rin.st === 'dead', 'no bond with Rin');
+});
