@@ -32,3 +32,5 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [ ] **Fuyuki detail pass:** more props and character per district, more interiors where they matter (`tools/mapcheck.js` and reachability tests after).
 - [ ] **Lore Arena maps** (hand-made in `MAPS` with a `drawFloor` theme): Ryuudou Temple stairs and gate, Einzbern forest clearing, Hyatt rooftop, Matou cellar, Kotomine Church interior, riverside warehouses, Iskandar's desert, the Grail's crater, the Greater Grail cavern. Each with spawns, fair cover and a duel sim.
 - [ ] **New large war maps**, chosen before a war: Snowfield (Fate/strange Fake), Trifas (Apocrypha), Fourth-War Fuyuki (Fate/Zero). Each needs homes with interiors, roads and nav, event and Grail sites, civilian routes and the full sim pass. Start with one.
+
+- [ ] Ryuunosuke war check (Nov 26, 20 seeded wars each, `tools/masterwar.js`): Ryuunosuke 3 wins, Rin 6, Kirei 5; raising his harm income to 0.45/30 did not help (1 win), so income is not the gap. Within noise for now; re-check with more wars after the map overhaul.
