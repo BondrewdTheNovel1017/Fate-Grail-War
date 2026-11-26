@@ -476,6 +476,13 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 .b.sealrdy { border-color: #ff5a6a !important; color: #fff !important; background: radial-gradient(circle at 50% 40%, rgba(255,70,90,.55), rgba(90,10,20,.75)) !important; box-shadow: 0 0 0 2px rgba(255,80,100,.35), 0 0 22px rgba(255,60,80,.55); animation: sealRdy 1.1s ease-in-out infinite; }
 .b.sealrdy::after { content: 'SEAL'; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font: 700 9px var(--f-hud, sans-serif); letter-spacing: .12em; color: #ffd0d6; background: #8a1424; padding: 1px 5px; border-radius: 6px; }
 @keyframes sealRdy { 50% { box-shadow: 0 0 0 4px rgba(255,80,100,.2), 0 0 34px rgba(255,60,80,.8); } }
+
+/* the in-game menu: one button opens sound, full screen, pause and quit */
+.top { align-items: flex-start; }
+.top .tmenu { display: none; position: absolute; top: calc(100% + 4px); right: 0; flex-direction: column; gap: 4px; z-index: 5; }
+.top.open .tmenu { display: flex; }
+.top .tmenu button { min-width: 112px; text-align: right; }
+#menuT { font-size: 15px; line-height: 1; padding: 4px 9px; }
 </style>
 
 <main class="wrap">
@@ -602,7 +609,7 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
   <div class="hud" id="hud"></div>
   <div id="pingTag" hidden></div>
   <div class="stage"><canvas id="cv" width="800" height="500"></canvas>
-    <div class="top"><button type="button" id="snd">Sound on</button><button type="button" id="fs">Full screen</button><button type="button" id="restBtn" hidden>Rest until nightfall</button><button type="button" id="pause">Pause</button><button type="button" id="quit">Quit</button></div>
+    <div class="top"><button type="button" id="restBtn" hidden>Rest until nightfall</button><button type="button" id="menuT" aria-expanded="false" aria-controls="tmenu" aria-label="Game menu">&#9776;</button><div class="tmenu" id="tmenu"><button type="button" id="snd">Sound on</button><button type="button" id="fs">Full screen</button><button type="button" id="pause">Pause</button><button type="button" id="quit">Quit</button></div></div>
     <div class="toast" id="toast"></div></div>
   <div class="pad">
     <div id="stick" aria-label="Movement stick"><div id="knob"></div></div>
@@ -4961,7 +4968,7 @@ function beamFx(f, x, y, sc, life) { var fa2 = f.face, gold = f.def && f.def.id 
 function flashFx(col, a, life) { flashes.push({ col: col, a: a, t: 0, life: life }); }
 FX.slow = function (s) { if (fxPos && !FX.near(fxPos.x, fxPos.y)) return; slowT = Math.max(slowT, s); };
 FX.snd = playSnd;
-FX.banner = function (s, sub, who) { if (!s) return; if (who && G && G.mode === 'war' && who.team !== (G.f[MEI] || {}).team && !(viewDist(who.x, who.y) < 1700 && (!MAP.cityW || zoneOfXY(who.x, who.y) === viewZone()))) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); band = { t: 2.0, text: s, sub: sub || '', col: c }; };
+FX.banner = function (s, sub, who) { if (!s) return; if (who && G && G.mode === 'war' && who.team !== (G.f[MEI] || {}).team && !(viewDist(who.x, who.y) < 1700 && (!MAP.cityW || zoneOfXY(who.x, who.y) === viewZone()))) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); var d = sub ? Math.min(5, 2.4 + sub.length / 60) : 2.2; band = { t: d, d: d, text: s, sub: sub || '', col: c }; };
 function npfireGen(f, x, y) {
   var A = f.A.np, c = f.def.col, fa = f.face;
   if (A.kind === 'charge') {
@@ -5694,14 +5701,7 @@ function draw() {
     ctx.restore(); ctx.globalAlpha = 1;
   });
   if (a.hp < a.def.hp * 0.3 && a.st !== 'dead') { var lv = 0.25 + 0.15 * Math.sin(G.time * 6), vg = ctx.createRadialGradient(VW / 2, VH / 2, VH * 0.35, VW / 2, VH / 2, VW * 0.62); vg.addColorStop(0, 'rgba(180,20,30,0)'); vg.addColorStop(1, 'rgba(180,20,30,' + lv + ')'); ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH); }
-  if (band.t > 0) {
-    var bp = 1 - band.t / 2.0, bs = bp < 0.1 ? bp / 0.1 : bp > 0.82 ? (1 - bp) / 0.18 : 1, by = VH * 0.24, bh = (band.sub ? 88 : 62) * bs;
-    ctx.fillStyle = 'rgba(6,10,16,.8)'; ctx.fillRect(0, by - bh / 2, VW, bh); ctx.fillStyle = band.col; ctx.fillRect(0, by - bh / 2, VW, 3); ctx.fillRect(0, by + bh / 2 - 3, VW, 3);
-    ctx.globalAlpha = bs; ctx.fillStyle = '#e9e4d3'; ctx.textAlign = 'center'; ctx.font = '400 32px "Marcellus SC", "Times New Roman", serif';
-    var tx = VW / 2 + (bp < 0.12 ? (1 - bs) * -140 : bp > 0.78 ? (1 - bs) * 140 : 0); ctx.shadowColor = band.col; ctx.shadowBlur = 14; var fs = 32; ctx.font = '400 ' + fs + 'px "Marcellus SC", "Times New Roman", serif'; while (ctx.measureText(band.text).width > VW - 60 && fs > 18) { fs -= 2; ctx.font = '400 ' + fs + 'px "Marcellus SC", "Times New Roman", serif'; } ctx.fillText(band.text, tx, by + (band.sub ? -2 : 11));
-    if (band.sub) { var ss = 19; ctx.font = 'italic 400 ' + ss + 'px "Times New Roman", serif'; while (ctx.measureText(band.sub).width > VW - 60 && ss > 12) { ss -= 1; ctx.font = 'italic 400 ' + ss + 'px "Times New Roman", serif'; } ctx.fillStyle = band.col; ctx.fillText(band.sub, tx - (bp < 0.1 ? (1 - bs) * 60 : 0), by + 26); }
-    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
-  }
+  if (band.t > 0) drawBanner();
   drawBubbles(cx, cy, zoom);
   if (INTRO) { drawIntro(); return; }
   // off-screen foe pointer
@@ -5722,6 +5722,23 @@ function draw() {
   drawRumors(mx0, my0, mw, mh, MW);
   G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || (MAP.cityW && f.x > MAP.cityW) || !knowsExact(f0, f)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / MW * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
   drawClockHud(mx0, my0, mw, mh);
+}
+
+// the announcement plate: compact, under the health bars and clear of the minimap, its text wrapped to fit
+function wrapText(c, s, w) { var words = s.split(' '), lines = [], cur = ''; words.forEach(function (wd) { var t = cur ? cur + ' ' + wd : wd; if (c.measureText(t).width > w && cur) { lines.push(cur); cur = wd; } else cur = t; }); if (cur) lines.push(cur); return lines; }
+function drawBanner() {
+  var D = band.d || 2, bp = 1 - band.t / D, bs = bp < 0.08 ? bp / 0.08 : bp > 0.85 ? (1 - bp) / 0.15 : 1, small = VW < 700 || VH < 520;
+  var mmL = VW - Math.max(120, Math.min(240, VW * 0.18)) - 20, side = VH < 520 && G && G.clock, areaW = side ? Math.max(220, mmL - 262) : Math.min(small ? mmL - 16 : 640, VW - 32), cxp = side ? 12 + areaW / 2 : small ? Math.max(areaW / 2 + 12, mmL / 2) : VW / 2; // on short screens the clock column sits left of the minimap: the plate takes the space before it
+  var c = ctx, tf = small ? 19 : 25, sf = small ? 12.5 : 15;
+  c.save(); c.globalAlpha = clamp(bs, 0, 1);
+  c.font = '400 ' + tf + 'px "Marcellus SC", "Times New Roman", serif'; while (c.measureText(band.text).width > areaW - 28 && tf > 14) { tf -= 1; c.font = '400 ' + tf + 'px "Marcellus SC", "Times New Roman", serif'; }
+  c.font = 'italic 400 ' + sf + 'px "Times New Roman", serif'; var lines = band.sub ? wrapText(c, band.sub, areaW - 32).slice(0, small ? 2 : 3) : [];
+  var h = tf + 18 + lines.length * (sf + 4), y0 = SAFE.top + 8 + (1 - bs) * -10, x0 = cxp - areaW / 2;
+  c.fillStyle = 'rgba(6,10,16,.78)'; if (c.roundRect) { c.beginPath(); c.roundRect(x0, y0, areaW, h, 8); c.fill(); } else c.fillRect(x0, y0, areaW, h);
+  c.fillStyle = band.col; c.fillRect(x0 + 10, y0, areaW - 20, 2);
+  c.textAlign = 'center'; c.fillStyle = '#e9e4d3'; c.shadowColor = band.col; c.shadowBlur = 8; c.font = '400 ' + tf + 'px "Marcellus SC", "Times New Roman", serif'; c.fillText(band.text, cxp, y0 + tf + 6); c.shadowBlur = 0;
+  c.fillStyle = band.col; c.font = 'italic 400 ' + sf + 'px "Times New Roman", serif'; lines.forEach(function (L, i) { c.fillText(L, cxp, y0 + tf + 12 + (i + 1) * (sf + 4)); });
+  c.restore();
 }
 /* ---- drawing Fuyuki City: ground, roads, bridges, buildings, interiors ----
    Top-down at night, light from the upper left: roofs get a lit and a shaded side, taller buildings cast longer shadows. */
@@ -6445,10 +6462,10 @@ function drawClockHud(mx0, my0, mw, mh) {
   drawTurnedScreen();
   var c = ctx, now = performance.now();
   NOTES = NOTES.filter(function (n) { return now - n.t0 < 6500; });
-  NOTES.forEach(function (n, i) { var age = (now - n.t0) / 1000, al = Math.min(1, age / 0.3, (6.5 - age) / 0.6); c.globalAlpha = clamp(al, 0, 1); c.font = '600 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'center'; var y = SAFE.top + 26 + i * 24, tw = c.measureText(n.s).width + 24; c.fillStyle = 'rgba(6,10,16,.72)'; c.fillRect(VW / 2 - tw / 2, y - 17, tw, 23); c.fillStyle = n.col; c.fillText(n.s, VW / 2, y); });
+  NOTES.forEach(function (n, i) { var age = (now - n.t0) / 1000, al = Math.min(1, age / 0.3, (6.5 - age) / 0.6); c.globalAlpha = clamp(al, 0, 1); c.font = '600 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'center'; var side = VH < 520 && G.clock, nx = side ? Math.min(VW / 2, (VW - Math.max(120, Math.min(240, VW * 0.18)) - 282) / 2 + 12) : VW / 2, y = SAFE.top + 26 + (band.t > 0 ? (side ? 84 : 74) : 0) + i * 24, tw = c.measureText(n.s).width + 24; c.fillStyle = 'rgba(6,10,16,.72)'; c.fillRect(nx - tw / 2, y - 17, tw, 23); c.fillStyle = n.col; c.fillText(n.s, nx, y); }); // below the banner while it shows; left of the clock column on short screens
   c.globalAlpha = 1;
   if (!G.clock) return;
-  var k = G.clock, me = G.f[MEI], left = Math.max(0, k.len - k.t), y = my0 + mh + 20, x = mx0 + mw;
+  var side = VH < 520, k = G.clock, me = G.f[MEI], left = Math.max(0, k.len - k.t), y = side ? my0 + 16 : my0 + mh + 20, x = side ? mx0 - 8 : mx0 + mw;
   var label = k.final ? 'NIGHT ' + k.n + ' · MIDNIGHT' : (k.phase === 'day' ? 'DAY ' : 'NIGHT ') + k.n, tm = k.final ? '' : ' · ' + Math.floor(left / 60) + ':' + ('0' + Math.floor(left % 60)).slice(-2);
   c.textAlign = 'right'; c.font = '700 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif';
   var tw = c.measureText(label + tm).width; c.fillStyle = 'rgba(8,14,20,.72)'; c.fillRect(x - tw - 34, y - 16, tw + 34, 22);
@@ -6551,6 +6568,14 @@ function frame(now) {
   }
   draw(); hud();
 }
+
+// the in-game menu button: open and close the small menu; choosing an item closes it
+(function () { var top = document.querySelector('.top'), bt = document.getElementById('menuT'); if (!top || !bt) return;
+  function set(o) { top.classList.toggle('open', o); bt.setAttribute('aria-expanded', o ? 'true' : 'false'); }
+  bt.addEventListener('click', function (e) { e.stopPropagation(); set(!top.classList.contains('open')); });
+  top.querySelectorAll('.tmenu button').forEach(function (b) { b.addEventListener('click', function () { set(false); }); });
+  document.addEventListener('click', function (e) { if (!top.contains(e.target)) set(false); });
+})();
 /* ---- bounded fields, true names and the day's tasks on screen ---- */
 var FNOTE = {};
 function knownName(f) { return (!f.def.isMaster && G && G.f[MEI] && !trueName(G.f[MEI].team, f)) ? f.def.cls : shortName(f.def.name); }

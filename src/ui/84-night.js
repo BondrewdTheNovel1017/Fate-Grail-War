@@ -71,10 +71,10 @@ function drawClockHud(mx0, my0, mw, mh) {
   drawTurnedScreen();
   var c = ctx, now = performance.now();
   NOTES = NOTES.filter(function (n) { return now - n.t0 < 6500; });
-  NOTES.forEach(function (n, i) { var age = (now - n.t0) / 1000, al = Math.min(1, age / 0.3, (6.5 - age) / 0.6); c.globalAlpha = clamp(al, 0, 1); c.font = '600 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'center'; var y = SAFE.top + 26 + i * 24, tw = c.measureText(n.s).width + 24; c.fillStyle = 'rgba(6,10,16,.72)'; c.fillRect(VW / 2 - tw / 2, y - 17, tw, 23); c.fillStyle = n.col; c.fillText(n.s, VW / 2, y); });
+  NOTES.forEach(function (n, i) { var age = (now - n.t0) / 1000, al = Math.min(1, age / 0.3, (6.5 - age) / 0.6); c.globalAlpha = clamp(al, 0, 1); c.font = '600 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'center'; var side = VH < 520 && G.clock, nx = side ? Math.min(VW / 2, (VW - Math.max(120, Math.min(240, VW * 0.18)) - 282) / 2 + 12) : VW / 2, y = SAFE.top + 26 + (band.t > 0 ? (side ? 84 : 74) : 0) + i * 24, tw = c.measureText(n.s).width + 24; c.fillStyle = 'rgba(6,10,16,.72)'; c.fillRect(nx - tw / 2, y - 17, tw, 23); c.fillStyle = n.col; c.fillText(n.s, nx, y); }); // below the banner while it shows; left of the clock column on short screens
   c.globalAlpha = 1;
   if (!G.clock) return;
-  var k = G.clock, me = G.f[MEI], left = Math.max(0, k.len - k.t), y = my0 + mh + 20, x = mx0 + mw;
+  var side = VH < 520, k = G.clock, me = G.f[MEI], left = Math.max(0, k.len - k.t), y = side ? my0 + 16 : my0 + mh + 20, x = side ? mx0 - 8 : mx0 + mw;
   var label = k.final ? 'NIGHT ' + k.n + ' · MIDNIGHT' : (k.phase === 'day' ? 'DAY ' : 'NIGHT ') + k.n, tm = k.final ? '' : ' · ' + Math.floor(left / 60) + ':' + ('0' + Math.floor(left % 60)).slice(-2);
   c.textAlign = 'right'; c.font = '700 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif';
   var tw = c.measureText(label + tm).width; c.fillStyle = 'rgba(8,14,20,.72)'; c.fillRect(x - tw - 34, y - 16, tw + 34, 22);

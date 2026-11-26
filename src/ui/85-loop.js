@@ -76,3 +76,11 @@ function frame(now) {
   }
   draw(); hud();
 }
+
+// the in-game menu button: open and close the small menu; choosing an item closes it
+(function () { var top = document.querySelector('.top'), bt = document.getElementById('menuT'); if (!top || !bt) return;
+  function set(o) { top.classList.toggle('open', o); bt.setAttribute('aria-expanded', o ? 'true' : 'false'); }
+  bt.addEventListener('click', function (e) { e.stopPropagation(); set(!top.classList.contains('open')); });
+  top.querySelectorAll('.tmenu button').forEach(function (b) { b.addEventListener('click', function () { set(false); }); });
+  document.addEventListener('click', function (e) { if (!top.contains(e.target)) set(false); });
+})();

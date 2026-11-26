@@ -480,14 +480,7 @@ function draw() {
     ctx.restore(); ctx.globalAlpha = 1;
   });
   if (a.hp < a.def.hp * 0.3 && a.st !== 'dead') { var lv = 0.25 + 0.15 * Math.sin(G.time * 6), vg = ctx.createRadialGradient(VW / 2, VH / 2, VH * 0.35, VW / 2, VH / 2, VW * 0.62); vg.addColorStop(0, 'rgba(180,20,30,0)'); vg.addColorStop(1, 'rgba(180,20,30,' + lv + ')'); ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH); }
-  if (band.t > 0) {
-    var bp = 1 - band.t / 2.0, bs = bp < 0.1 ? bp / 0.1 : bp > 0.82 ? (1 - bp) / 0.18 : 1, by = VH * 0.24, bh = (band.sub ? 88 : 62) * bs;
-    ctx.fillStyle = 'rgba(6,10,16,.8)'; ctx.fillRect(0, by - bh / 2, VW, bh); ctx.fillStyle = band.col; ctx.fillRect(0, by - bh / 2, VW, 3); ctx.fillRect(0, by + bh / 2 - 3, VW, 3);
-    ctx.globalAlpha = bs; ctx.fillStyle = '#e9e4d3'; ctx.textAlign = 'center'; ctx.font = '400 32px "Marcellus SC", "Times New Roman", serif';
-    var tx = VW / 2 + (bp < 0.12 ? (1 - bs) * -140 : bp > 0.78 ? (1 - bs) * 140 : 0); ctx.shadowColor = band.col; ctx.shadowBlur = 14; var fs = 32; ctx.font = '400 ' + fs + 'px "Marcellus SC", "Times New Roman", serif'; while (ctx.measureText(band.text).width > VW - 60 && fs > 18) { fs -= 2; ctx.font = '400 ' + fs + 'px "Marcellus SC", "Times New Roman", serif'; } ctx.fillText(band.text, tx, by + (band.sub ? -2 : 11));
-    if (band.sub) { var ss = 19; ctx.font = 'italic 400 ' + ss + 'px "Times New Roman", serif'; while (ctx.measureText(band.sub).width > VW - 60 && ss > 12) { ss -= 1; ctx.font = 'italic 400 ' + ss + 'px "Times New Roman", serif'; } ctx.fillStyle = band.col; ctx.fillText(band.sub, tx - (bp < 0.1 ? (1 - bs) * 60 : 0), by + 26); }
-    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
-  }
+  if (band.t > 0) drawBanner();
   drawBubbles(cx, cy, zoom);
   if (INTRO) { drawIntro(); return; }
   // off-screen foe pointer
@@ -508,4 +501,21 @@ function draw() {
   drawRumors(mx0, my0, mw, mh, MW);
   G.f.forEach(function (f) { if (f.st === 'dead' || !visL(f) || (MAP.cityW && f.x > MAP.cityW) || !knowsExact(f0, f)) return; ctx.beginPath(); ctx.arc(mx0 + f.x / MW * mw, my0 + f.y / H * mh, 3.5, 0, 6.283); ctx.fillStyle = teamCol(f); ctx.fill(); if (f === f0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); } });
   drawClockHud(mx0, my0, mw, mh);
+}
+
+// the announcement plate: compact, under the health bars and clear of the minimap, its text wrapped to fit
+function wrapText(c, s, w) { var words = s.split(' '), lines = [], cur = ''; words.forEach(function (wd) { var t = cur ? cur + ' ' + wd : wd; if (c.measureText(t).width > w && cur) { lines.push(cur); cur = wd; } else cur = t; }); if (cur) lines.push(cur); return lines; }
+function drawBanner() {
+  var D = band.d || 2, bp = 1 - band.t / D, bs = bp < 0.08 ? bp / 0.08 : bp > 0.85 ? (1 - bp) / 0.15 : 1, small = VW < 700 || VH < 520;
+  var mmL = VW - Math.max(120, Math.min(240, VW * 0.18)) - 20, side = VH < 520 && G && G.clock, areaW = side ? Math.max(220, mmL - 262) : Math.min(small ? mmL - 16 : 640, VW - 32), cxp = side ? 12 + areaW / 2 : small ? Math.max(areaW / 2 + 12, mmL / 2) : VW / 2; // on short screens the clock column sits left of the minimap: the plate takes the space before it
+  var c = ctx, tf = small ? 19 : 25, sf = small ? 12.5 : 15;
+  c.save(); c.globalAlpha = clamp(bs, 0, 1);
+  c.font = '400 ' + tf + 'px "Marcellus SC", "Times New Roman", serif'; while (c.measureText(band.text).width > areaW - 28 && tf > 14) { tf -= 1; c.font = '400 ' + tf + 'px "Marcellus SC", "Times New Roman", serif'; }
+  c.font = 'italic 400 ' + sf + 'px "Times New Roman", serif'; var lines = band.sub ? wrapText(c, band.sub, areaW - 32).slice(0, small ? 2 : 3) : [];
+  var h = tf + 18 + lines.length * (sf + 4), y0 = SAFE.top + 8 + (1 - bs) * -10, x0 = cxp - areaW / 2;
+  c.fillStyle = 'rgba(6,10,16,.78)'; if (c.roundRect) { c.beginPath(); c.roundRect(x0, y0, areaW, h, 8); c.fill(); } else c.fillRect(x0, y0, areaW, h);
+  c.fillStyle = band.col; c.fillRect(x0 + 10, y0, areaW - 20, 2);
+  c.textAlign = 'center'; c.fillStyle = '#e9e4d3'; c.shadowColor = band.col; c.shadowBlur = 8; c.font = '400 ' + tf + 'px "Marcellus SC", "Times New Roman", serif'; c.fillText(band.text, cxp, y0 + tf + 6); c.shadowBlur = 0;
+  c.fillStyle = band.col; c.font = 'italic 400 ' + sf + 'px "Times New Roman", serif'; lines.forEach(function (L, i) { c.fillText(L, cxp, y0 + tf + 12 + (i + 1) * (sf + 4)); });
+  c.restore();
 }

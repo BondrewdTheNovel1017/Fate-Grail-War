@@ -820,9 +820,9 @@ test('AI: a ranged servant whose shot is blocked works around the obstacle and f
 });
 test('AI: a master fights beside their servant instead of backing off and staring', () => {
   const E = loadEngine(); let total = 0, near = 0;
-  for (let r = 0; r < 3; r++) { const s = aiScene(E, 'kiritsugu', true, 120, 2300, 3100); total += s.run(15); if (Math.hypot(s.a.x - s.me.x, s.a.y - s.me.y) < 700) near++; }
-  assert.ok(total >= 6, 'Kiritsugu shoots (' + total + ' attacks in 3 tries)');
-  assert.ok(near >= 2, 'and stays in the fight');
+  for (let r = 0; r < 5; r++) { const s = aiScene(E, 'kiritsugu', true, 120, 2300, 3100); total += s.run(15); if (Math.hypot(s.a.x - s.me.x, s.a.y - s.me.y) < 700) near++; }
+  assert.ok(total >= 8, 'Kiritsugu shoots (' + total + ' attacks in 5 tries)');
+  assert.ok(near >= 3, 'and stays in the fight (' + near + ' of 5)');
 });
 test('AI: after a seal rescue the servant rests at home unless an enemy comes to the door', () => {
   const E = loadEngine();

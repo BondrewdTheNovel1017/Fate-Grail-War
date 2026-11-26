@@ -53,7 +53,7 @@ function beamFx(f, x, y, sc, life) { var fa2 = f.face, gold = f.def && f.def.id 
 function flashFx(col, a, life) { flashes.push({ col: col, a: a, t: 0, life: life }); }
 FX.slow = function (s) { if (fxPos && !FX.near(fxPos.x, fxPos.y)) return; slowT = Math.max(slowT, s); };
 FX.snd = playSnd;
-FX.banner = function (s, sub, who) { if (!s) return; if (who && G && G.mode === 'war' && who.team !== (G.f[MEI] || {}).team && !(viewDist(who.x, who.y) < 1700 && (!MAP.cityW || zoneOfXY(who.x, who.y) === viewZone()))) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); band = { t: 2.0, text: s, sub: sub || '', col: c }; };
+FX.banner = function (s, sub, who) { if (!s) return; if (who && G && G.mode === 'war' && who.team !== (G.f[MEI] || {}).team && !(viewDist(who.x, who.y) < 1700 && (!MAP.cityW || zoneOfXY(who.x, who.y) === viewZone()))) return; var c = '#ffd36b'; if (G) G.f.forEach(function (f) { if (f.key === 'np' && f.st === 'wind') c = f.def.col; }); var d = sub ? Math.min(5, 2.4 + sub.length / 60) : 2.2; band = { t: d, d: d, text: s, sub: sub || '', col: c }; };
 function npfireGen(f, x, y) {
   var A = f.A.np, c = f.def.col, fa = f.face;
   if (A.kind === 'charge') {
