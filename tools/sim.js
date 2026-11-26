@@ -17,9 +17,16 @@ for (let n = 0; n < WARS; n++) {
   // STRONG=1: team 0 stands in for two good players hunting together (top AI, tougher, never backs off)
   if (process.env.STRONG) G.f.forEach((f, i) => { if (f.team !== 0) return; f.def = Object.assign({}, f.def, { dmg: f.def.dmg * 1.3, hp: f.def.hp * 1.25 }); f.hp = f.def.hp; f.bold = true; G.ai[i] = E.mkAI(f, E.DIFF.champion); });
   const start = G.f.map((f) => ({ f, id: f.def.id }));
-  let marble = null; noMana = 0;
+  let marble = null; noMana = 0; let ph = G.clock ? G.clock.phase + G.clock.n + (G.clock.final ? 'F' : '') : '', phEv = false, sawGrail = false;
+  const teamsAlive = () => new Set(G.f.filter((f) => f.st !== 'dead' && f.def.isMaster).map((f) => f.team)).size;
   for (let i = 0; i < LIMIT * 60 && !G.over; i++) {
     E.simStep(E.STEP); if (G.marble && G.marble !== marble) { marble = G.marble; tot.marbles++; }
+    if (G.clock) {
+      if (G.event || (G.tasks || []).some((k) => k.kind === 'banquet' || k.kind === 'summons') || G.festival) phEv = true;
+      const p2 = G.clock.phase + G.clock.n + (G.clock.final ? 'F' : '');
+      if (p2 !== ph) { if (!/F$/.test(ph)) { tot.phases = (tot.phases || 0) + 1; tot.phEv = (tot.phEv || 0) + (phEv ? 1 : 0); } phEv = false;
+        if (p2 === 'day2') (tot.aliveD2 = tot.aliveD2 || []).push(teamsAlive()); if (p2 === 'night3') (tot.aliveN3 = tot.aliveN3 || []).push(teamsAlive()); if (/F$/.test(p2)) { sawGrail = true; (tot.aliveF = tot.aliveF || []).push(teamsAlive()); } ph = p2; }
+    }
     // dead time: a living team with no enemy within 1500 at night (days are meant to be quiet)
     if (i % 30 === 0 && (!G.clock || G.clock.phase === 'night')) {
       const alive = G.f.filter((f) => f.st !== 'dead'), teams = [...new Set(alive.map((f) => f.team))];
@@ -27,6 +34,7 @@ for (let n = 0; n < WARS; n++) {
         tot.teamT += 0.5; if (!mine.some((a) => foes.some((b) => Math.hypot(a.x - b.x, a.y - b.y) < 1500))) tot.deadT += 0.5; }
     }
   }
+  tot.grail = (tot.grail || 0) + (sawGrail ? 1 : 0);
   if (G.clock) { tot.nights.push(G.clock.n); tot.expo.push(Math.max(0, ...Object.values(G.expo))); tot.sanctions += Object.keys(G.reveal).length; }
   tot.noMana += noMana;
   if (process.env.STRONG) { tot.strongWin = (tot.strongWin || 0) + (G.over && G.winner && G.winner.team === 0 ? 1 : 0); tot.strongOut = (tot.strongOut || 0) + (G.f.every((f) => f.team !== 0 || f.st === 'dead') ? 1 : 0); }
@@ -58,6 +66,8 @@ console.log(`  sanctions by phase:event ${JSON.stringify(sanc)}`);
 console.log(`  finished ${tot.ended}/${WARS}, length avg ${(avg(tot.len) / 60).toFixed(1)} min (min ${(Math.min(...tot.len) / 60).toFixed(1)}, max ${(Math.max(...tot.len) / 60).toFixed(1)})`);
 console.log(`  per war: ${(tot.nps / WARS).toFixed(1)} NPs, ${(tot.noMana / WARS).toFixed(1)} blocked for mana, ${(tot.contracts / WARS).toFixed(2)} contracts, ${(tot.marbles / WARS).toFixed(2)} marbles`);
 if (process.env.STRONG) console.log(`  strong team: won ${tot.strongWin}/${WARS}, eliminated ${tot.strongOut}/${WARS}`);
+const avgN = (a) => a && a.length ? (a.reduce((x, y) => x + y, 0) / a.length).toFixed(1) : '-';
+console.log(`  pacing: teams with a master alive at Day 2 ${avgN(tot.aliveD2)}, at Night 3 ${avgN(tot.aliveN3)}, when the Grail descends ${avgN(tot.aliveF)}; reached the Grail ${tot.grail || 0}/${WARS}; phases with an event ${tot.phEv || 0}/${tot.phases || 0}`);
 console.log(`  church per war: civilians killed ${(tot.civK / WARS).toFixed(1)}, executors sent ${(tot.exS / WARS).toFixed(1)}, executors slain ${(tot.exK / WARS).toFixed(1)}; wars ended on night ${tot.endN.join(',')}`);
 console.log(`  pacts per war: formed ${((tot.pact.formed || 0) / WARS).toFixed(2)}, broken ${((tot.pact.broken || 0) / WARS).toFixed(2)}; Gilgamesh betrayals ${tot.pact.betray || 0}`);
 console.log(`  seals used per war: NP ${(tot.seals.np / WARS).toFixed(1)}, heal ${(tot.seals.heal / WARS).toFixed(1)}, recall ${(tot.seals.warp / WARS).toFixed(1)}`);
