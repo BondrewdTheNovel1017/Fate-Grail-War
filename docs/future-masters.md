@@ -28,3 +28,6 @@ Rules for every new master: no canon-pairing bonuses (any master can be paired w
 - Skill, Shroud of Magdalene: a bind, 1.6 s on men and 0.8 s on women (needs a male/female flag on every character), tuned so the average hold matches Irisviel's Wire Bind.
 - Signature, Sacrament: heals her and her servant, comparable to Rin's and Irisviel's heals.
 - Story only, not stats: shares the Church with Kirei as family; Gilgamesh is willing to pact with her team; she can host the Overseer's Summons event. No reduced Church heat.
+
+## Ayaka Sajyou (to design)
+- Richard's master in Fate/strange Fake. Not designed yet: research her first (what she can do, how she fights or avoids fighting), then give her one edge, one cost, one skill and one signature within the same rules as everyone above (no canon-pairing bonus, health 85–125, balanced with the sims).

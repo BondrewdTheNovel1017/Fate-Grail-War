@@ -12,3 +12,5 @@
   - Where progress is saved: browser storage is per device and can be wiped; an account-backed store would follow the player (on claude.ai a runtime capability, on the Cloudflare site a small server store).
   - Fairness online: unlocked skills must be balanced sidegrades, not upgrades, so a new player isn't outclassed. Every alternate skill needs the same balance checks (duel and war sims).
   - Design a candidate alternate skill per character before building any of it.
+
+- More Arena maps themed on lore locations (hand-made like the current ones in `MAPS`, `src/engine/10-maps.js`, with a `drawFloor` theme each). Candidates to pick from: the Ryuudou Temple stairs and gate (Kojirou's post), the Einzbern forest clearing, the Fuyuki Hyatt rooftop (Kayneth's hotel), the Matou cellar (the worm pit), the Kotomine Church interior, the riverside warehouse district (where Lancer and Saber first met), Iskandar's desert reality marble, the Grail's crater under the Fuyuki Citizens' Hall, and the Ryuudou cavern (the Greater Grail). Each needs spawns, cover laid out for fair fights, and a duel sim to check fights end in a normal time.
