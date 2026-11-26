@@ -31,7 +31,7 @@ var MASTER_INFO = {
   tokiomi: { style: 'Head of the Tohsaka and a mage of fire. Every flame he casts leaves a burn that keeps eating at its target.', passive: ['Elegance', 'While above 70% health, all his mana costs are a quarter lower: his servant\u2019s Noble Phantasm included.'],
     light: 'A flame bolt from his ruby cane that sets the target burning.', heavy: 'Hold to charge, release: a slow fireball that bursts and burns everyone near it.',
     skill: 'Flame Ward. A ring of fire bursts out around him: burns and staggers everyone within 135.', np: 'Crimson Pillar: a circle of runes under the target, then a column of fire. Heavy burn.' },
-  kuzuki: { style: 'A teacher trained as an assassin. He walks into a servant\u2019s fight with his bare hands, and his strikes curl around a guard.', passive: ['Snake Fist', 'Deals full damage to servants like Shirou, and 35% of every blocked blow still gets through.'],
+  kuzuki: { style: 'A teacher trained as an assassin. He walks into a servant\u2019s fight with his bare hands, and his strikes curl around a guard.', passive: ['Snake Fist', 'Deals full damage to servants like Shirou, and 35% of every blocked blow still gets through. An Outsider with no magecraft: bounded fields cannot feel him, though they still slow him.'],
     light: 'A four-strike chain of very fast jabs.', heavy: 'Hold to charge, release: a lunging elbow that breaks guards.',
     skill: 'Reinforcement. For 5 seconds his fists are hardened with magecraft and hit harder.', np: 'Coiled Strike: a close grip that cannot be blocked or parried.' },
   sakura: { style: 'The Matou heir. Her shadow drinks what it touches and binds servants in place.', passive: ['Imaginary Numbers', 'Half of the damage she deals heals her.'],

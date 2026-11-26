@@ -30,6 +30,8 @@ function inHomeField(F, f) {
   return Math.hypot(f.x - F.x, f.y - F.y) <= fieldR(F);
 }
 function concealed(f) { return !!(f.cnc && f.def.cls === 'Assassin'); }
+// a field senses mana: a concealed Assassin and an Outsider with no magecraft (Kuzuki) pass unfelt, though the field still drags at them
+function unfelt(f) { return concealed(f) || f.def.type === 'Outsider'; }
 function fieldAt(f) { if (!G.fields) return null; for (var t in G.fields) { var F = G.fields[t]; if (+t !== f.team && F.lvl > 0 && inHomeField(F, f)) return F; } return null; }
 function ownField(f) { var F = G.fields && G.fields[f.team]; return F && F.lvl > 0 && inHomeField(F, f) ? F : null; }
 function fieldsTick(dt) {
@@ -42,13 +44,11 @@ function fieldsTick(dt) {
       if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = inHomeField(F, e);
       if (inside && !concealed(e) && !truceZone(e)) {
-        G.seenBy[F.team][e.idx] = G.time + FIELD.seen;
-        if (!F.inside[e.idx]) FX.field('intrude', F, e);
-        intr.push(e);
+        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e); }
         if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }
       }
-      if (inside && !F.inside[e.idx] && e.idx !== undefined && !concealed(e)) FX.field('enter', F, e);
-      F.inside[e.idx] = inside && !concealed(e);
+      if (inside && !F.inside[e.idx] && e.idx !== undefined && !unfelt(e)) FX.field('enter', F, e);
+      F.inside[e.idx] = inside && !unfelt(e);
     });
     // a strong field strikes at intruders who are materialized
     var bt = FIELD.bolt[F.lvl];

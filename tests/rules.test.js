@@ -777,3 +777,13 @@ test('With Tokiomi as Gilgamesh\'s master, the betrayal is Kirei\'s: he cuts Tok
   assert.strictEqual(tok.st, 'dead'); assert.strictEqual(tok.lastHit.by, kir, 'Kirei struck the blow');
   assert.strictEqual(gil.partner, kir, 'Gilgamesh is now Kirei\'s servant');
 });
+test('An Outsider (Kuzuki) crosses a bounded field unfelt, but is still slowed by it', () => {
+  const E = loadEngine();
+  const G = E.newWar([{ servant: E.SERV.richard, master: E.MASTERS.rin }, { servant: E.SERV.cu, master: E.MASTERS.kuzuki }], { nights: 3 });
+  const F = G.fields[0], k = G.f.find((f) => f.def.id === 'kuzuki'), s = G.f.find((f) => f.def.id === 'cu');
+  assert.ok(F, 'Rin has a field');
+  [k, s].forEach((f) => { f.x = F.x; f.y = F.y; f.inM = false; });
+  for (let i = 0; i < 30; i++) E.simStep(E.STEP);
+  assert.ok(!(G.seenBy[0][k.idx] > G.time), 'the field does not feel Kuzuki');
+  assert.ok(G.seenBy[0][s.idx] > G.time, 'it feels his servant');
+});
