@@ -61,9 +61,20 @@ function newWar(teamsIn, opts) {
   G.f.forEach(pickTarget);
   return G;
 }
+// Shirou's Trace grows over a whole city war: a little all the time, more while he fights. Milestones: Trace On,
+// then Rho Aias, then Unlimited Blade Works, which a city war holds back until Night 2 (TRACE.ubwNight).
+var TRACE = { on: 30, rho: 60, ubw: 100, base: 0.055, fight: 0.16, hitMul: 0.22, ubwNight: 2, arenaOn: 40, arenaFight: 0.6 };
+function traceWar() { return !!(G && G.clock); }
 function traceTick(f, dt) {
-  if (!f.ubwUsed) { var foeNear = enemiesOf(f).some(function (e) { return !e.def.isMaster && dist(f, e) < 520; }); if (foeNear) f.mom = Math.min(100, f.mom + 0.6 * dt); }
-  var tier = f.ubwUsed ? 1 : f.mom >= 100 ? 2 : f.mom >= 40 ? 1 : 0;
+  var war = traceWar();
+  if (!f.ubwUsed) {
+    var foeNear = enemiesOf(f).some(function (e) { return !e.def.isMaster && dist(f, e) < 520; });
+    if (war) f.mom = Math.min(100, f.mom + (TRACE.base + (foeNear ? TRACE.fight : 0)) * dt);
+    else if (foeNear) f.mom = Math.min(100, f.mom + TRACE.arenaFight * dt);
+    if (war && f.mom >= TRACE.ubw - 0.01 && G.clock.n < TRACE.ubwNight) f.mom = TRACE.ubw - 0.5;
+  }
+  if (!f.rhoOn && (f.mom >= (war ? TRACE.rho : 70) || f.ubwUsed)) { f.rhoOn = true; f.petals = RHO.shirou; FX.text(f, 'RHO AIAS LEARNED'); FX.fx('heal', f.x, f.y, f); }
+  var tier = f.ubwUsed ? 1 : f.mom >= 100 ? 2 : f.mom >= (war ? TRACE.on : TRACE.arenaOn) ? 1 : 0;
   if (tier > (f.traceTier || 0) || (f.ubwUsed && f.traceTier === 2 && f.st !== 'act' && f.st !== 'wind' && !(f.ubwT > 0))) {
     if (tier === 1 && !f.ubwUsed) { FX.text(f, 'TRACE ON'); FX.fx('heal', f.x, f.y, f); FX.snd('drawBow', f, {}); }
     if (tier === 2) { FX.text(f, 'I AM THE BONE OF MY SWORD'); FX.fx('seal', f.x, f.y, f); f.sigCd = 0; }
@@ -95,7 +106,7 @@ function setStag(f, dur) {
 }
 function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x, f.field.y, f); if (msg) FX.text(f, msg); f.field = null; f.stillT = 0; }
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
-function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {

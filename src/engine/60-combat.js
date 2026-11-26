@@ -43,6 +43,7 @@ function hurt(att, def, a, mult, src) {
     return 'counter';
   }
   var front = Math.abs(angDiff(def.face, angTo(def, s))) < 1.75;
+  if (front && !melee) { var rb = rhoBlock(att, def, a, src); if (rb) return rb; } // Rho Aias takes whole projectiles
   if (def.guarding && front && !a.unblock) {
     if (def.parryOk && def.guardT <= (def.def.parryWin || PARRY) && !a.noParry) {
       def.stat.parry++; gainMom(def, 12); def.ripo = 1.2; FX.text(def, 'PARRY'); FX.spark(def.x, def.y, '#ffffff', 14); FX.shake(6); FX.snd('parry', def); FX.fx('parry', def.x, def.y, def);
@@ -74,11 +75,13 @@ function hurt(att, def, a, mult, src) {
   gainMom(def, taken * 0.35);
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
   if (a.root) { def.rootT = a.root; FX.text(def, 'BOUND'); }
+  if (a.bind && att) enkiduBind(att, def, a);
   if (a.silence && def.def.isMaster) { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); }
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
   def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
   if (a.strip && a.key === 'np' && att && G.mode === 'war') ruleBreak(att, def);
+  if (a.strip && def.wallT > 0) FX.shieldBroken(def, 'wall', att);
   if (a.strip) { breakField(def, 'FIELD BROKEN'); def.wallT = 0; def.veilT = 0; def.bleedT = 0; def.mom = 0; FX.text(def, 'STRIPPED'); FX.spark(def.x, def.y, '#d6b4ff', 14); }
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
@@ -246,6 +249,7 @@ function stepF(f, dt) {
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
+    if (f.def.id === 'emiya' || f.def.trace) rhoTick(f, dt);
     if (f.def.mag) ammoTick(f, dt);
     if (MAP.doors) doorTick(f, dt);
     if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);

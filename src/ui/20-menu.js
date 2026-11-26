@@ -62,8 +62,8 @@ function INFO(d) {
       pname: 'Golden Rule', pdesc: 'His momentum fills 25% faster, so his Noble Phantasm comes around sooner. He also takes 10% less damage from everything.',
       style: 'A king with no weapon in his hands. Golden gates open beside him and fire blades like an archer, then a huge Noble Phantasm ends the exchange. Keep moving, and close in when he is recovering.',
       passives: ['Light shots reach about 640 units and come from different gates each time.', 'Heavy: Triple Gate, a charged fan of three blades that breaks guards.', 'Weak guard: blocks 45%. He relies on distance.'],
-      skill: 'Five gates open and fire a fan of blades. Each blade deals about ' + R(7 * m) + ' damage. All five hit if you stand still in front of him, and only one or two if you are off to the side.',
-      skillBeat: 'Sidestep the fan, or dodge through it. Standing still at medium range is the worst place to be.',
+      skill: 'Enkidu, the Chains of Heaven: after a quick 0.28 second cast, golden chains shoot from a gate up to ' + sk.range + ' units. Whoever they catch is bound in place for about a second (half again as long on a divine servant such as Heracles, Medusa, Cú Chulainn or Iskandar). They cannot be blocked, only dodged. Cooldown ' + sk.cd + ' seconds.',
+      skillBeat: 'Dodge sideways the moment a gate opens close to you; blocking does nothing. Once bound, expect him to step back and open fire.',
       np: 'After a long ' + np.wind + ' second cast he unleashes a ring of destruction ' + np.r + ' units wide around himself. About ' + R(np.dmg * m) + ' damage, cannot be blocked. The ring is shown on the ground while he casts.',
       npBeat: 'You have almost two seconds. Run outside the ring, or dodge at the moment it fires. Hit him during the cast to cancel it.' },
     iskandar: {
@@ -93,7 +93,7 @@ function INFO(d) {
     emiya: {
       pname: "Mind's Eye (True)", pdesc: 'Blocking costs him 25% less stamina, and every hit he blocks builds extra momentum. He reads a fight and wins by outlasting it.',
       style: 'A patient swordsman with the twin falchions Kanshou and Bakuya, black and white. A four-hit chain and a strong guard up close; an exploding arrow from range; and a world of swords to finish.',
-      passives: ['Four-hit chain with 0.22 second wind-ups, reach ' + d.A.light.reach + '.', 'Strong guard: blocks ' + Math.round(d.guard * 100) + '%.'],
+      passives: ['Four-hit chain with 0.22 second wind-ups, reach ' + d.A.light.reach + '.', 'Strong guard: blocks ' + Math.round(d.guard * 100) + '%.', 'Rho Aias: when he guards against a projectile from the front, seven petals take the whole shot, even a Noble Phantasm. Arrows break one petal, charged shots two, a Noble Phantasm four or five. Petals grow back about every 7 seconds while he is not guarding. Rule Breaker dissolves them all.'],
       skill: 'Caladbolg II: he draws a black bow, charges for ' + SERV.emiya.skill.wind + ' seconds and fires a twisted sword-arrow ' + SERV.emiya.skill.range + ' units. It explodes on impact for about ' + R(SERV.emiya.skill.explode.dmg * m) + ' damage within ' + SERV.emiya.skill.explode.r + ' units, breaking guards. Cooldown ' + SERV.emiya.skill.cd + ' seconds.',
       skillBeat: 'The charge is long and easy to see: step out of the line, or close in and hit him while he holds the bow.',
       np: 'Unlimited Blade Works: his reality marble replaces the arena with a burning field of swords for the rest of the match. Swords rain on every enemy, then for ' + SERV.emiya.np.dur + ' seconds blades float around him and fire at the nearest enemy, about ' + R(SERV.emiya.np.sword.dmg * m) + ' damage each.',

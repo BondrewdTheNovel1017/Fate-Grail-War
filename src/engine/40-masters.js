@@ -14,7 +14,7 @@ var MASTERS = {
     skill: { name: 'Time Alter: Double Accel', kind: 'haste', dur: 3, wind: 0.15, act: 0.05, rec: 0.15, cd: 12, cost: 12 },
     np: { name: 'Origin Bullet', kind: 'proj', speed: 2600, range: 950, dmg: 18, rad: 5, silence: 10, vsServant: 0.9, wind: 0.55, act: 0.05, rec: 0.7, cost: 0, shape: 'tracer', cd: 32, aiUse: 'origin' } }),
   shirou: MD({ id: 'shirou', name: 'Shirou Emiya', type: 'Fledgling mage', col: '#d9783a', hp: 115, spd: 212, guard: 0.5, trace: true, fightsServants: true, ranged: false, combo: 3,
-    brief: 'A fledgling who gets up close with a reinforced blade and stands in a servant\u2019s fight: the one master who deals full damage to servants, with the health of a human. Fighting fills his Trace: at 40 he learns Trace On (Kanshou and Bakuya, Overedge), at 100 he can open Unlimited Blade Works once.',
+    brief: 'A fledgling who gets up close with a reinforced blade and stands in a servant\u2019s fight: the one master who deals full damage to servants, with the health of a human. His Trace grows through the whole war: Trace On (Kanshou and Bakuya, Overedge), then a four-petal Rho Aias, and at 100 Unlimited Blade Works, which a Grail War holds back until Night 2.',
     light: { name: 'Reinforced blade', kind: 'melee', dmg: 5, reach: 78, arc: 0.95, wind: 0.24, act: 0.08, rec: 0.22, lunge: 30, cost: 8, stag: 0.3, power: 1 },
     heavy: { name: 'Reinforced cleave', kind: 'melee', dmg: 13, reach: 90, arc: 1.0, wind: 0.42, max: 0.9, act: 0.12, rec: 0.6, lunge: 60, cost: 20, stag: 0.6, power: 2, gb: true },
     skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.3, act: 0.05, rec: 0.2, cd: 14, cost: 12 },

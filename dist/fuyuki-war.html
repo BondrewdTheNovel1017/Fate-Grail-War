@@ -505,7 +505,7 @@ body.calm .lore { animation: none; }
     <div class="rule"><b>Pacts</b>In the Grail War, two teams can agree not to fight until dawn: walk near a rival and press Pact (P), or accept when they offer. Partners cannot hurt each other, share what they see and pass through each other’s fields. One pact per team; none on the final night or once three teams remain. Breaking one (press Pact twice) costs exposure and shows you to everyone. Every character weighs an offer their own way.</div>
     <div class="rule"><b>Master magecraft</b>Every master has a skill and a signature spell on the NP button with its own cooldown. Masters are fragile and deal half damage to servants. Kiritsugu's Origin Bullet burns a master's circuits: no skill or signature for 10 seconds.</div>
     <div class="rule"><b>Reality marbles</b>Unlimited Blade Works and Ionioi Hetairoi pull everyone within range into a sealed world for 25 seconds, keeping where they stood. Outsiders can't see in or reach them. Spirit form escapes the pull, a Command Seal recall pulls a servant out, and Enuma Elish shatters it.</div>
-    <div class="rule"><b>Shirou's Trace</b>Fighting fills his gauge. At 40 he learns Trace On: homing blades and Kanshou and Bakuya. At 100 he can open Unlimited Blade Works once, with homing swords that last longer than EMIYA's.</div>
+    <div class="rule"><b>Shirou's Trace</b>His Trace grows through the whole war, a little all the time and more while he fights. At 30 he learns Trace On: Kanshou and Bakuya and homing blades. At 60, Rho Aias: a four-petal shield against projectiles while he guards. At 100, around the second night, Unlimited Blade Works, once, with homing swords that last longer than EMIYA's.</div><div class="rule"><b>Rho Aias</b>EMIYA's guard opens into seven petals against anything thrown or fired at him from the front, Noble Phantasms included. Arrows break one petal, charged shots two, a Noble Phantasm four or five; when the last breaks he staggers. Petals grow back while he is not guarding. Rule Breaker dissolves the whole shield, and Leonidas's Hot Gates too.</div><div class="rule"><b>Enkidu</b>Gilgamesh's chains fly from a gate and bind whoever they catch for about a second, longer on a divine servant. They cannot be blocked, only dodged.</div>
     <div class="rule"><b>Long fights</b>Servants are much tougher here and Noble Phantasms charge slowly, but hit harder when they land.</div>
     <div class="rule"><b>Target lock</b>Tap or click an enemy to lock on, or press Target to cycle. Tap empty ground to clear.</div>
     <div class="rule"><b>Fuyuki City</b>The Mion River splits Miyama from Shinto, crossed by the red arch of Fuyuki Bridge, the Mion Bridge to the south and the railway bridge. Miyama has Ryuudou Temple on Mount Enzou, the Tohsaka and Matou houses on the hill, the church, Homurahara Academy, the Emiya residence and the shopping street; Shinto has the Hyatt, the Center Building, Verde, the station, Central Park, the harbor and the Einzbern forest. Buildings block movement, sight and shots.</div>
@@ -578,7 +578,7 @@ body.calm .lore { animation: none; }
 (function () {
 /*ENGINE_START*/
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, turned: function () {}, unturned: function () {}, hesitate: function () {}, pact: function () {}, near: function () { return true; } };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, turned: function () {}, unturned: function () {}, hesitate: function () {}, pact: function () {}, shieldBroken: function () {}, enkidu: function () {}, near: function () { return true; } };
 // hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
 // Hit-stop is per fighter: only the attacker and the one hit freeze, the rest of the war keeps moving.
 function hitPause(att, def, v) { if (att) att.hs = Math.max(att.hs || 0, v); if (def) def.hs = Math.max(def.hs || 0, v); }
@@ -1276,7 +1276,7 @@ var SERV = {
     brief: 'A king with no weapon in his hands. Golden gates open around him and rain blades, then a wave of destruction ends the fight.',
     light: { kind: 'proj', gate: true, shape: 'blade', speed: 1050, range: 640, dmg: 6, wind: 0.3, rec: 0.28, reach: 0, lunge: 0, cost: 11 },
     heavy: { name: 'Triple Gate', kind: 'volley', gate: true, shape: 'blade', count: 3, spread: 0.1, speed: 1200, range: 760, dmg: 7, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, stag: 0.4 },
-    skill: { name: 'Gate of Babylon', kind: 'volley', count: 5, spread: 0.2, speed: 1300, range: 820, dmg: 9, wind: 0.55, act: 0.1, rec: 0.5, cd: 6, cost: 14, stag: 0.2, shape: 'blade', gate: true, aiRange: [220, 720], desc: 'Five gates open and fire a fan of blades at the enemy.' },
+    skill: { name: 'Enkidu', sub: 'Chains of Heaven', kind: 'proj', shape: 'chain', gate: true, speed: 1600, range: 520, rad: 10, dmg: 5, wind: 0.28, act: 0.06, rec: 0.4, cd: 9, cost: 12, power: 1, stag: 0, unblock: true, noParry: true, bind: 1.1, aiRange: [0, 460], desc: 'Golden chains shoot from a gate and bind whoever they catch for about a second (half again as long on a divine servant). They cannot be blocked, only dodged. His way of getting a melee fighter off him.' },
     np: { breaksMarble: true, name: 'Enuma Elish', sub: 'The Star of Creation that Split Heaven and Earth', kind: 'aoe', wind: 2.3, act: 0.25, rec: 1.3, dmg: 100, r: 340, stag: 1.2, aiMin: 0, aiMax: 320, desc: 'A ring of destruction around him, with a long cast. Cannot be blocked. Leave the circle or dodge as it lands.' } },
   iskandar: { id: 'iskandar', name: 'Iskandar of Macedon', cls: 'Rider', col: '#c43d3d', wpn: 'sword', hp: 222, spd: 196, dmg: 1.08, guard: 0.7, combo: 2, recMul: 1.05, staRegen: 1.25,
     brief: 'A conqueror who leads from the front. Armored chariot rush and a charge of his whole army.',
@@ -1371,7 +1371,7 @@ var MASTERS = {
     skill: { name: 'Time Alter: Double Accel', kind: 'haste', dur: 3, wind: 0.15, act: 0.05, rec: 0.15, cd: 12, cost: 12 },
     np: { name: 'Origin Bullet', kind: 'proj', speed: 2600, range: 950, dmg: 18, rad: 5, silence: 10, vsServant: 0.9, wind: 0.55, act: 0.05, rec: 0.7, cost: 0, shape: 'tracer', cd: 32, aiUse: 'origin' } }),
   shirou: MD({ id: 'shirou', name: 'Shirou Emiya', type: 'Fledgling mage', col: '#d9783a', hp: 115, spd: 212, guard: 0.5, trace: true, fightsServants: true, ranged: false, combo: 3,
-    brief: 'A fledgling who gets up close with a reinforced blade and stands in a servant\u2019s fight: the one master who deals full damage to servants, with the health of a human. Fighting fills his Trace: at 40 he learns Trace On (Kanshou and Bakuya, Overedge), at 100 he can open Unlimited Blade Works once.',
+    brief: 'A fledgling who gets up close with a reinforced blade and stands in a servant\u2019s fight: the one master who deals full damage to servants, with the health of a human. His Trace grows through the whole war: Trace On (Kanshou and Bakuya, Overedge), then a four-petal Rho Aias, and at 100 Unlimited Blade Works, which a Grail War holds back until Night 2.',
     light: { name: 'Reinforced blade', kind: 'melee', dmg: 5, reach: 78, arc: 0.95, wind: 0.24, act: 0.08, rec: 0.22, lunge: 30, cost: 8, stag: 0.3, power: 1 },
     heavy: { name: 'Reinforced cleave', kind: 'melee', dmg: 13, reach: 90, arc: 1.0, wind: 0.42, max: 0.9, act: 0.12, rec: 0.6, lunge: 60, cost: 20, stag: 0.6, power: 2, gb: true },
     skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.3, act: 0.05, rec: 0.2, cd: 14, cost: 12 },
@@ -1513,9 +1513,20 @@ function newWar(teamsIn, opts) {
   G.f.forEach(pickTarget);
   return G;
 }
+// Shirou's Trace grows over a whole city war: a little all the time, more while he fights. Milestones: Trace On,
+// then Rho Aias, then Unlimited Blade Works, which a city war holds back until Night 2 (TRACE.ubwNight).
+var TRACE = { on: 30, rho: 60, ubw: 100, base: 0.055, fight: 0.16, hitMul: 0.22, ubwNight: 2, arenaOn: 40, arenaFight: 0.6 };
+function traceWar() { return !!(G && G.clock); }
 function traceTick(f, dt) {
-  if (!f.ubwUsed) { var foeNear = enemiesOf(f).some(function (e) { return !e.def.isMaster && dist(f, e) < 520; }); if (foeNear) f.mom = Math.min(100, f.mom + 0.6 * dt); }
-  var tier = f.ubwUsed ? 1 : f.mom >= 100 ? 2 : f.mom >= 40 ? 1 : 0;
+  var war = traceWar();
+  if (!f.ubwUsed) {
+    var foeNear = enemiesOf(f).some(function (e) { return !e.def.isMaster && dist(f, e) < 520; });
+    if (war) f.mom = Math.min(100, f.mom + (TRACE.base + (foeNear ? TRACE.fight : 0)) * dt);
+    else if (foeNear) f.mom = Math.min(100, f.mom + TRACE.arenaFight * dt);
+    if (war && f.mom >= TRACE.ubw - 0.01 && G.clock.n < TRACE.ubwNight) f.mom = TRACE.ubw - 0.5;
+  }
+  if (!f.rhoOn && (f.mom >= (war ? TRACE.rho : 70) || f.ubwUsed)) { f.rhoOn = true; f.petals = RHO.shirou; FX.text(f, 'RHO AIAS LEARNED'); FX.fx('heal', f.x, f.y, f); }
+  var tier = f.ubwUsed ? 1 : f.mom >= 100 ? 2 : f.mom >= (war ? TRACE.on : TRACE.arenaOn) ? 1 : 0;
   if (tier > (f.traceTier || 0) || (f.ubwUsed && f.traceTier === 2 && f.st !== 'act' && f.st !== 'wind' && !(f.ubwT > 0))) {
     if (tier === 1 && !f.ubwUsed) { FX.text(f, 'TRACE ON'); FX.fx('heal', f.x, f.y, f); FX.snd('drawBow', f, {}); }
     if (tier === 2) { FX.text(f, 'I AM THE BONE OF MY SWORD'); FX.fx('seal', f.x, f.y, f); f.sigCd = 0; }
@@ -1547,7 +1558,7 @@ function setStag(f, dur) {
 }
 function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x, f.field.y, f); if (msg) FX.text(f, msg); f.field = null; f.stillT = 0; }
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
-function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {
@@ -1963,6 +1974,7 @@ function hurt(att, def, a, mult, src) {
     return 'counter';
   }
   var front = Math.abs(angDiff(def.face, angTo(def, s))) < 1.75;
+  if (front && !melee) { var rb = rhoBlock(att, def, a, src); if (rb) return rb; } // Rho Aias takes whole projectiles
   if (def.guarding && front && !a.unblock) {
     if (def.parryOk && def.guardT <= (def.def.parryWin || PARRY) && !a.noParry) {
       def.stat.parry++; gainMom(def, 12); def.ripo = 1.2; FX.text(def, 'PARRY'); FX.spark(def.x, def.y, '#ffffff', 14); FX.shake(6); FX.snd('parry', def); FX.fx('parry', def.x, def.y, def);
@@ -1994,11 +2006,13 @@ function hurt(att, def, a, mult, src) {
   gainMom(def, taken * 0.35);
   if (a.bleed && att) { def.bleedT = a.bleed.t; def.bleedDps = a.bleed.dps; def.bleedBy = att; def.burnFx = false; FX.text(def, 'BLEED'); }
   if (a.root) { def.rootT = a.root; FX.text(def, 'BOUND'); }
+  if (a.bind && att) enkiduBind(att, def, a);
   if (a.silence && def.def.isMaster) { def.silenceT = a.silence; FX.text(def, 'MAGIC CIRCUITS BURNED'); }
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
   def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
   if (a.strip && a.key === 'np' && att && G.mode === 'war') ruleBreak(att, def);
+  if (a.strip && def.wallT > 0) FX.shieldBroken(def, 'wall', att);
   if (a.strip) { breakField(def, 'FIELD BROKEN'); def.wallT = 0; def.veilT = 0; def.bleedT = 0; def.mom = 0; FX.text(def, 'STRIPPED'); FX.spark(def.x, def.y, '#d6b4ff', 14); }
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
@@ -2166,6 +2180,7 @@ function stepF(f, dt) {
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.sealOrder > 0) f.sealOrder -= dt;
     if (f.def.trace) traceTick(f, dt);
+    if (f.def.id === 'emiya' || f.def.trace) rhoTick(f, dt);
     if (f.def.mag) ammoTick(f, dt);
     if (MAP.doors) doorTick(f, dt);
     if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);
@@ -2924,6 +2939,51 @@ function pactAim(f, e) {
   if (G.ai[f.idx] && !humanTeam(f.team) && !humanTeam(m) && humanTeam(e.team)) v += 1500;
   return v;
 }
+/* ---- Rho Aias and Enkidu ----
+   EMIYA's guard (and Shirou's, once his Trace reaches RHO.shirouAt) opens into Rho Aias against anything thrown or
+   fired from the front: petals soak whole projectiles, even Noble Phantasms, each breaking a number of petals by
+   how hard it hits. Melee still meets the normal guard. Petals grow back while he is not guarding. Rule Breaker
+   dissolves the whole shield (and Leonidas's Hot Gates) at once.
+   Gilgamesh's skill is Enkidu: chains fly from a gate and bind whoever they catch for a moment, longer for the divine. */
+var RHO = { emiya: 7, shirou: 4, regen: 7, shirouAt: 60, break: 0.6 };
+var DIVINE = { heracles: 1, medusa: 1, cu: 1, gilgamesh: 1, iskandar: 1 };
+function rhoMax(f) { return f.def.id === 'emiya' ? RHO.emiya : (f.def.trace && f.rhoOn) ? RHO.shirou : 0; }
+function rhoPetals(f) { var m = rhoMax(f); if (!m) return 0; if (f.petals === undefined) f.petals = m; return f.petals; }
+// how many petals a shot breaks
+function rhoCost(a) {
+  if (a.noStag) return 0.34;                                     // a bullet
+  if (a.key === 'np') return (a.power >= 3 || (a.explode && a.explode.big) || a.beam) ? 5 : 4;
+  if (a.gb || a.power >= 2 || a.explode) return 2;
+  return 1;
+}
+// called from hurt() for a projectile hitting a guarding fighter from the front; returns a result or null to fall through
+function rhoBlock(att, def, a, src) {
+  if (!src || src === att || !def.guarding || !rhoMax(def) || rhoPetals(def) <= 0) return null;
+  if (a.kind === 'blast' || a.kind === 'aoe' || a.kind === 'rain') return null;
+  if (a.strip) { def.petals = 0; FX.text(def, 'RHO AIAS DISSOLVED'); FX.fx('rhoBreak', def.x, def.y, def); FX.shieldBroken(def, 'rho', att); return null; }
+  var c = rhoCost(a), before = def.petals; def.petals = Math.max(0, def.petals - c);
+  if (src.a) src.exploded = true; // the blast is swallowed with the shot
+  if (!def.rhoSaid) { def.rhoSaid = true; FX.say(def, 'rho'); }
+  var lost = Math.floor(before) - Math.floor(def.petals);
+  FX.fx('rho', def.x, def.y, { f: def, a: a, lost: lost, left: def.petals, src: src });
+  FX.snd(lost > 0 ? 'rhoCrack' : 'block', def, a); gainMom(def, 3 + (def.def.blockMom || 0));
+  hitPause(null, def, a.key === 'np' ? 0.12 : 0.035);
+  if (a.key === 'np' && a.power >= 3) { FX.shake(10); if (humanIn(att, def)) hitstopAt(def, 0.12); FX.text(def, 'RHO AIAS'); }
+  if (def.petals <= 0) { FX.text(def, 'RHO AIAS SHATTERED'); FX.fx('rhoBreak', def.x, def.y, def); setStag(def, RHO.break); def.guarding = false; }
+  def.stat.blocks++;
+  return 'block';
+}
+function rhoTick(f, dt) {
+  var m = rhoMax(f); if (!m) return; if (f.petals === undefined) f.petals = m;
+  if (!f.guarding && f.petals < m) f.petals = Math.min(m, f.petals + dt / RHO.regen);
+}
+// Enkidu: the chains of heaven
+function enkiduBind(att, def, a) {
+  var t = a.bind * (DIVINE[def.def.id] ? 1.5 : 1);
+  setStag(def, t); def.rootT = Math.max(def.rootT || 0, t); def.boundT = G.time + t; def.boundBy = att;
+  FX.text(def, DIVINE[def.def.id] ? 'BOUND BY HEAVEN' : 'BOUND');
+  FX.enkidu(att, def);
+}
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -3626,8 +3686,8 @@ function INFO(d) {
       pname: 'Golden Rule', pdesc: 'His momentum fills 25% faster, so his Noble Phantasm comes around sooner. He also takes 10% less damage from everything.',
       style: 'A king with no weapon in his hands. Golden gates open beside him and fire blades like an archer, then a huge Noble Phantasm ends the exchange. Keep moving, and close in when he is recovering.',
       passives: ['Light shots reach about 640 units and come from different gates each time.', 'Heavy: Triple Gate, a charged fan of three blades that breaks guards.', 'Weak guard: blocks 45%. He relies on distance.'],
-      skill: 'Five gates open and fire a fan of blades. Each blade deals about ' + R(7 * m) + ' damage. All five hit if you stand still in front of him, and only one or two if you are off to the side.',
-      skillBeat: 'Sidestep the fan, or dodge through it. Standing still at medium range is the worst place to be.',
+      skill: 'Enkidu, the Chains of Heaven: after a quick 0.28 second cast, golden chains shoot from a gate up to ' + sk.range + ' units. Whoever they catch is bound in place for about a second (half again as long on a divine servant such as Heracles, Medusa, Cú Chulainn or Iskandar). They cannot be blocked, only dodged. Cooldown ' + sk.cd + ' seconds.',
+      skillBeat: 'Dodge sideways the moment a gate opens close to you; blocking does nothing. Once bound, expect him to step back and open fire.',
       np: 'After a long ' + np.wind + ' second cast he unleashes a ring of destruction ' + np.r + ' units wide around himself. About ' + R(np.dmg * m) + ' damage, cannot be blocked. The ring is shown on the ground while he casts.',
       npBeat: 'You have almost two seconds. Run outside the ring, or dodge at the moment it fires. Hit him during the cast to cancel it.' },
     iskandar: {
@@ -3657,7 +3717,7 @@ function INFO(d) {
     emiya: {
       pname: "Mind's Eye (True)", pdesc: 'Blocking costs him 25% less stamina, and every hit he blocks builds extra momentum. He reads a fight and wins by outlasting it.',
       style: 'A patient swordsman with the twin falchions Kanshou and Bakuya, black and white. A four-hit chain and a strong guard up close; an exploding arrow from range; and a world of swords to finish.',
-      passives: ['Four-hit chain with 0.22 second wind-ups, reach ' + d.A.light.reach + '.', 'Strong guard: blocks ' + Math.round(d.guard * 100) + '%.'],
+      passives: ['Four-hit chain with 0.22 second wind-ups, reach ' + d.A.light.reach + '.', 'Strong guard: blocks ' + Math.round(d.guard * 100) + '%.', 'Rho Aias: when he guards against a projectile from the front, seven petals take the whole shot, even a Noble Phantasm. Arrows break one petal, charged shots two, a Noble Phantasm four or five. Petals grow back about every 7 seconds while he is not guarding. Rule Breaker dissolves them all.'],
       skill: 'Caladbolg II: he draws a black bow, charges for ' + SERV.emiya.skill.wind + ' seconds and fires a twisted sword-arrow ' + SERV.emiya.skill.range + ' units. It explodes on impact for about ' + R(SERV.emiya.skill.explode.dmg * m) + ' damage within ' + SERV.emiya.skill.explode.r + ' units, breaking guards. Cooldown ' + SERV.emiya.skill.cd + ' seconds.',
       skillBeat: 'The charge is long and easy to see: step out of the line, or close in and hit him while he holds the bow.',
       np: 'Unlimited Blade Works: his reality marble replaces the arena with a burning field of swords for the rest of the match. Swords rain on every enemy, then for ' + SERV.emiya.np.dur + ' seconds blades float around him and fire at the nearest enemy, about ' + R(SERV.emiya.np.sword.dmg * m) + ' damage each.',
@@ -3778,7 +3838,7 @@ var MASTER_INFO = {
     light: 'Draws the Calico and fires a quick double tap (2 rounds).', heavy: 'Holds the trigger: a long Calico burst of about twenty rounds that tracks the target. He can barely move while firing.',
     ammo: 'The Calico holds 50 rounds: about two long bursts. Empty, it takes 2.2 seconds to reload, and he tops it up by himself after a few quiet seconds. Time Alter and the Contender work while he reloads.',
     skill: 'Time Alter: Double Accel. Moves almost twice as fast for 3 seconds: escape or close in.', np: 'The Contender’s Origin Bullet. Hits a master for heavy damage and burns their circuits: no skill or signature spell for 10 seconds.' },
-  shirou: { style: 'A fledgling who fights up close with reinforced swords and grows as he fights. Weak at first, frightening by the end.', passive: ['Trace', 'Fighting fills his Trace gauge. At 40: Trace On, swapping his blade for Kanshou and Bakuya and his heavy for Overedge. At 100: Unlimited Blade Works, once per match.'],
+  shirou: { style: 'A fledgling who fights up close with reinforced swords and grows as he fights. Weak at first, frightening by the end.', passive: ['Trace', 'His Trace gauge grows all war, faster while he fights. At 30: Trace On, swapping his blade for Kanshou and Bakuya and his heavy for Overedge. At 60: Rho Aias, a four-petal shield against projectiles while he guards. At 100: Unlimited Blade Works, once per war, and not before Night 2. In Arena the gauge fills only in a fight (40, 70, 100).'],
     light: 'A reinforced blade: a quick three-hit chain. After Trace On, the faster twin blades Kanshou and Bakuya.', heavy: 'Hold to charge, release: a guard-breaking cleave. After Trace On, Overedge: a wide, lunging slash.',
     skill: 'Reinforcement. Takes 40% less damage for 5 seconds.', np: 'Broken Phantasm: a traced arrow that explodes (120). With a full Trace, Unlimited Blade Works instead: a reality marble with homing swords for 11 seconds.' },
   kayneth: { style: 'A Clock Tower lord who trusts his living mercury to protect him. Strong up close, slow on his feet.', passive: ['Volumen Hydrargyrum', 'His shield absorbs whole hits; only an Origin Bullet breaks it outright.'],
@@ -6472,6 +6532,80 @@ function pactHud(a) {
     g.beginPath(); g.arc(f.x, f.y, (f.def.isMaster ? 30 : 40), 0, Math.PI * 2); g.stroke(); g.restore();
   };
 })();
+/* ---- Rho Aias, Enkidu and the shields Rule Breaker dissolves, on screen ---- */
+SND.rhoCrack = function (o, out, t) { shatter(o, out, t, 0.32); ringS(o, out, t, [2200, 3300], 0.4, 0.06); };
+MORE_LINES.emiya.rho = ['Rho Aias. Seven petals. Try them.', 'You aimed at the wrong man.', 'Thrown weapons are my field.'];
+MORE_LINES.shirou = MORE_LINES.shirou || {}; MORE_LINES.shirou.rho = ['Trace on... hold, Rho Aias!', 'I can copy this much!'];
+LINES.emiya = LINES.emiya || {}; LINES.emiya.rho = MORE_LINES.emiya.rho; LINES.shirou = LINES.shirou || {}; LINES.shirou.rho = MORE_LINES.shirou.rho;
+var ENKIDU_LINES = ['Stay down, mongrel.', 'Know your place, mongrel.', 'Kneel, mongrel.', 'Enkidu. Hold them.', 'You came too close, mongrel.'];
+var ENKIDU_DIVINE = ['Even the gods kneel to these chains.', 'Struggle, half-god. They only tighten.'];
+// a petal: the shape of one layer of the shield
+function petal(g, len, w) { g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * 0.45, -w, len, 0); g.quadraticCurveTo(len * 0.45, w, 0, 0); g.closePath(); }
+function drawRho(g, f) {
+  var m = rhoMax(f); if (!m || f.st === 'dead') return;
+  var left = rhoPetals(f), flash = f.rhoFlash && G.time - f.rhoFlash < 0.35 ? 1 - (G.time - f.rhoFlash) / 0.35 : 0;
+  // petals beside the health bar so you can always count them
+  if (f === G.f[MEI] || f.guarding) {
+    g.save(); for (var i = 0; i < m; i++) { var on = i < Math.ceil(left - 0.01), part = i === Math.floor(left) ? left - Math.floor(left) : 1;
+      g.globalAlpha = on ? (i === Math.floor(left) && part < 1 ? 0.35 + 0.5 * part : 0.9) : 0.18; g.fillStyle = on ? '#ffd2dc' : '#6a7486';
+      g.save(); g.translate(f.x - (m - 1) * 5 + i * 10, f.y + 40); g.rotate(-Math.PI / 2); petal(g, 9, 4); g.fill(); g.restore(); }
+    g.restore();
+  }
+  if (!f.guarding || left <= 0) return;
+  // the flower: open in front while guarding, flaring when struck
+  var n = Math.ceil(left - 0.01), R = 56 + flash * 8, cx = f.x + Math.cos(f.face) * 30, cy = f.y + Math.sin(f.face) * 30;
+  g.save(); g.translate(cx, cy); g.rotate(f.face);
+  g.globalCompositeOperation = 'lighter';
+  for (var k = 0; k < m; k++) {
+    var alive = k < n, an = (k - (m - 1) / 2) * (1.6 / Math.max(1, m - 1)) * (m > 4 ? 1 : 0.8);
+    g.save(); g.rotate(an); g.translate(-6, 0);
+    g.globalAlpha = alive ? 0.22 + 0.35 * flash + 0.05 * Math.sin(G.time * 6 + k) : 0.05;
+    var gr = g.createLinearGradient(0, 0, R, 0); gr.addColorStop(0, 'rgba(255,220,230,.2)'); gr.addColorStop(1, 'rgba(255,170,195,.9)');
+    g.fillStyle = gr; petal(g, R, 13); g.fill();
+    g.strokeStyle = 'rgba(255,240,245,.9)'; g.lineWidth = 1.2; g.globalAlpha = alive ? 0.5 + 0.4 * flash : 0.06; petal(g, R, 13); g.stroke();
+    g.restore();
+  }
+  g.restore();
+}
+function drawChains(g, f) {
+  if (!(f.boundT > G.time) || f.st === 'dead') return;
+  var k = Math.min(1, (f.boundT - G.time) * 3), o = f.boundBy;
+  g.save(); g.globalAlpha = k; g.strokeStyle = '#f2cf6a'; g.lineWidth = 3; g.setLineDash([7, 4]); g.lineDashOffset = -G.time * 30;
+  for (var i = 0; i < 3; i++) { g.beginPath(); g.ellipse(f.x, f.y, 30 - i * 3, 16, i * 1.05 + G.time * 0.6, 0, 6.283); g.stroke(); }
+  for (var j = 0; j < 2; j++) { var an = (o ? Math.atan2(f.y - o.y, f.x - o.x) : 0) + (j ? 2.1 : -2.1), ax = f.x + Math.cos(an) * 120, ay = f.y + Math.sin(an) * 120;
+    g.beginPath(); g.moveTo(ax, ay); g.lineTo(f.x, f.y); g.stroke();
+    g.setLineDash([]); g.fillStyle = 'rgba(255,211,107,.25)'; g.beginPath(); g.arc(ax, ay, 14, 0, 6.283); g.fill(); g.strokeStyle = '#ffd36b'; g.lineWidth = 2; g.stroke(); g.setLineDash([7, 4]); g.strokeStyle = '#f2cf6a'; g.lineWidth = 3; }
+  g.restore();
+}
+(function () {
+  var dff0 = drawFighterFx; drawFighterFx = function (g, f) { dff0(g, f); if (!visL(f)) return; drawRho(g, f); drawChains(g, f); };
+  var px0 = drawProjX; drawProjX = function (g, p, a) {
+    if (p.a.shape !== 'chain') return px0(g, p, a);
+    if (!p._o) p._o = { x: p.x - p.vx * 0.016, y: p.y - p.vy * 0.016 };
+    g.save(); g.strokeStyle = '#f2cf6a'; g.lineWidth = 3.2; g.setLineDash([8, 4]); g.lineDashOffset = -p.trav * 0.5;
+    g.beginPath(); g.moveTo(p._o.x, p._o.y); g.lineTo(p.x, p.y); g.stroke(); g.setLineDash([]);
+    g.translate(p.x, p.y); g.rotate(a); g.fillStyle = '#ffe9a8'; g.strokeStyle = '#7a5414'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(12, 0); g.lineTo(-4, -7); g.lineTo(0, 0); g.lineTo(-4, 7); g.closePath(); g.fill(); g.stroke();
+    g.restore(); return true;
+  };
+  var fx0 = fxExtra; fxExtra = function (n, x, y, f) {
+    if (n === 'rho') { var ff = f.f; ff.rhoFlash = G.time; if (f.lost > 0 && FX.near(x, y)) for (var s = 0; s < 6 * f.lost; s++) { var an = ff.face + (Math.random() - 0.5) * 1.8, sp = 120 + Math.random() * 200; parts.push({ x: ff.x + Math.cos(ff.face) * 40, y: ff.y + Math.sin(ff.face) * 40, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, t: 0, life: 0.5, col: Math.random() < 0.5 ? '#ffd2dc' : '#ffffff' }); } return true; }
+    if (n === 'rhoBreak') { ringFx(x, y, 10, 120, '#ffb6c8', 0.45, 6); FX.spark(x, y, '#ffd2dc', 26); flashFx('#ffd2dc', 0.12, 0.2); return true; }
+    return fx0 ? fx0(n, x, y, f) : false;
+  };
+})();
+FX.shieldBroken = function (def, kind, att) {
+  if (!G || !FX.near(def.x, def.y)) return;
+  ringFx(def.x, def.y, 10, 220, '#c89bff', 0.6, 8); FX.spark(def.x, def.y, '#d6b4ff', 24); flashFx('#c89bff', 0.18, 0.3); FX.shake(9);
+  FX.banner('Rules are broken', 'Rule Breaker dissolves ' + (kind === 'rho' ? 'Rho Aias' : 'the Hot Gates') + '.', def);
+  if (att) { SAYT[att.idx] = performance.now() / 1000; showBubble(att, kind === 'rho' ? 'Seven layers, and not one is a rule I cannot break.' : 'A wall of shields is still a spell, dear.', 3, true); }
+};
+FX.enkidu = function (att, def) {
+  FX.snd('chain', def);
+  if (!G || !FX.near(att.x, att.y)) return;
+  var now = performance.now() / 1000; if (SAYT[att.idx] && now - SAYT[att.idx] < 6) return; SAYT[att.idx] = now;
+  var L = DIVINE[def.def.id] && Math.random() < 0.6 ? ENKIDU_DIVINE : ENKIDU_LINES;
+  showBubble(att, L[Math.floor(Math.random() * L.length)], 2.4, true);
+};
 /* ---- multiplayer test: host-authoritative, relayed through the claude.ai room (WebRTC is blocked in artifacts) ---- */
 var NET = { ns: null, R: null, role: null, code: '', me: null, game: null, mirror: false, snapAt: 0, sentAt: 0, lastHost: null, seq: 0, ev: [], lastSeq: 0, prev: {}, cnt: {}, g: 0, h: 0, so: null, lk: -1, msg: '' };
 var NST = ['idle', 'wind', 'act', 'rec', 'stag', 'dodge', 'counter', 'dead'], NKEY = ['light', 'heavy', 'skill', 'np', 'counter', 'dodge'];

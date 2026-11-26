@@ -71,10 +71,10 @@ test('Enuma Elish shatters a reality marble', () => {
   E.breakMarble(G.f[2]); assert.ok(!G.marble);
 });
 
-test('Shirou learns Trace On at 40 and Unlimited Blade Works at 100', () => {
+test('Shirou learns Trace On, then Rho Aias, then Unlimited Blade Works at 100', () => {
   const E = loadEngine();
   const G = pairWar(E, 'richard', 'shirou', 'cu', 'kirei');
-  const sh = G.f[1];
+  const sh = G.f[1]; if (G.clock) G.clock.n = 2;
   sh.mom = 45; run(E, 0.05); assert.strictEqual(sh.traceTier, 1); assert.strictEqual(sh.A.light.name, 'Kanshou & Bakuya'); assert.strictEqual(sh.A.heavy.name, 'Overedge');
   sh.mom = 100; run(E, 0.05); assert.strictEqual(sh.A.np.kind, 'ubw');
 });
@@ -566,4 +566,36 @@ test('every master starts the war inside their own base, with a door out', () =>
       assert.ok(G.fields[m.team].rooms.includes(rm.id), m.def.id + '’s field covers the rooms');
     });
   });
+});
+
+test('Rho Aias: EMIYA guard swallows projectiles, even a Noble Phantasm, petal by petal', () => {
+  const E = loadEngine(), S = E.SERV;
+  const G = E.newGame(S.emiya, S.cu, { map: 'arena' }); G.ai = [];
+  const em = G.f.find((f) => f.def.id === 'emiya'), cu = G.f.find((f) => f.def.id === 'cu');
+  em.x = 500; em.y = 500; cu.x = 800; cu.y = 500; em.face = 0; em.guarding = true;
+  const hp = em.hp, shot = { x: 700, y: 500, a: cu.A.np };
+  assert.strictEqual(E.hurt(cu, em, cu.A.np, 1, shot), 'block'); assert.strictEqual(em.hp, hp, 'no damage through the petals');
+  assert.strictEqual(em.petals, E.RHO.emiya - 5, 'a Noble Phantasm breaks five petals');
+  em.guarding = true; E.hurt(cu, em, cu.A.light, 1, { x: 700, y: 500, a: cu.A.light }); assert.strictEqual(em.petals, 1);
+
+});
+test('Rule Breaker dissolves Rho Aias, and Enkidu binds for a moment', () => {
+  const E = loadEngine(), S = E.SERV, seen = [];
+  E.FX.shieldBroken = (f, kind) => seen.push(kind); E.FX.enkidu = () => seen.push('enkidu');
+  let G = E.newGame(S.medea, S.emiya, { map: 'arena' }); G.ai = [];
+  const md = G.f[0], em = G.f[1]; md.x = 400; md.y = 500; em.x = 700; em.y = 500; em.face = Math.PI; em.guarding = true;
+  const hp = em.hp; E.hurt(md, em, md.A.np, 1, { x: 600, y: 500, a: md.A.np });
+  assert.strictEqual(em.petals, 0); assert.ok(em.hp < hp, 'the dagger goes through'); assert.ok(seen.includes('rho'));
+  G = E.newGame(S.gilgamesh, S.heracles, { map: 'arena' }); G.ai = [];
+  const gil = G.f[0], her = G.f[1]; her.guarding = true; her.face = Math.PI; her.x = gil.x + 200; her.y = gil.y;
+  assert.strictEqual(E.hurt(gil, her, gil.A.skill, 1, { x: gil.x + 100, y: gil.y, a: gil.A.skill }), 'hit', 'chains go past a guard');
+  assert.ok(her.boundT > G.time + 1.5, 'longer on the divine'); assert.ok(seen.includes('enkidu'));
+});
+test('Shirou\'s Trace grows over the war: Rho Aias by the middle, Unlimited Blade Works not before Night 2', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.shirou }, { servant: S.cu, master: M.rin }, { servant: S.medusa, master: M.waver }], { nights: 3 });
+  const sh = G.f.find((f) => f.def.id === 'shirou'); G.f.forEach((f) => { if (f.team !== sh.team) { f.x = sh.x + 5000; } });
+  sh.mom = 99; for (let i = 0; i < 120; i++) E.simStep(E.STEP);
+  assert.ok(sh.mom < 100, 'held back on Night 1'); assert.ok(sh.rhoOn, 'Rho Aias learned at ' + E.TRACE.rho);
+  G.clock.n = 2; for (let i = 0; i < 1500; i++) E.simStep(E.STEP); assert.ok(sh.mom >= 100);
 });
