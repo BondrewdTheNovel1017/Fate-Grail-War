@@ -328,11 +328,11 @@ function courtBase(z) {
     g.fillStyle = 'rgba(120,170,110,.10)'; for (var gs = 0; gs < 60; gs++) g.fillRect(q[0] + rnd2(qi * 999 + gs) * (q[2] - q[0]), q[1] + rnd2(qi * 777 + gs) * (q[3] - q[1]), 14, 3);
     // the flowers: pale blue-white, five petals, almost filling the lawn
     // laid on a jittered grid so they carpet the lawn evenly, with only a little grass showing between
-    var cols = Math.floor((q[2] - q[0] - 8) / 13), rows = Math.floor((q[3] - q[1] - 8) / 13), n = cols * rows;
+    var SP = 7.5, cols = Math.floor((q[2] - q[0] - 6) / SP), rows = Math.floor((q[3] - q[1] - 6) / SP), n = cols * rows;
     for (var f = 0; f < n; f++) {
-      var fx = q[0] + 10 + (f % cols) * 13 + (rnd2(qi * 5000 + f) - 0.5) * 9, fy = q[1] + 10 + Math.floor(f / cols) * 13 + (rnd2(qi * 7000 + f + 0.5) - 0.5) * 9, r = 2.1 + rnd2(qi * 3000 + f) * 1.5, hue = rnd2(f * 13 + qi);
-      if (rnd2(qi * 911 + f) < 0.08) continue;
-      var petal = hue < 0.5 ? '#dff0ff' : hue < 0.8 ? '#bcd8ff' : '#e9f6ff';
+      var fx = q[0] + 7 + (f % cols) * SP + (Math.floor(f / cols) % 2) * SP / 2 + (rnd2(qi * 5000 + f) - 0.5) * 4, fy = q[1] + 7 + Math.floor(f / cols) * SP + (rnd2(qi * 7000 + f + 0.5) - 0.5) * 4, r = 2.5 + rnd2(qi * 3000 + f) * 0.8, hue = rnd2(f * 13 + qi);
+      if (fx > q[2] - 3) continue;
+      var petal = hue < 0.4 ? '#bcd8ff' : hue < 0.75 ? '#c4dcff' : '#b2d0fb'; // all the same pale blue, a shade apart
       g.fillStyle = petal; for (var p5 = 0; p5 < 5; p5++) { var pa = p5 * 1.2566 + f; g.beginPath(); g.arc(fx + Math.cos(pa) * r, fy + Math.sin(pa) * r, r * 0.75, 0, 6.283); g.fill(); }
       g.fillStyle = '#fff8d8'; g.beginPath(); g.arc(fx, fy, r * 0.45, 0, 6.283); g.fill();
     }
