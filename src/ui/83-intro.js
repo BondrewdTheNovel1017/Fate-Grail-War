@@ -8,7 +8,7 @@ var CHANT = [
 ], CHANT_MAD = ['Let madness cloud your sight and chain your reason.', 'Be bound by fury, and fight only at my command.'],
   CHANT_END = 'If you would win the Grail, cross over and come to me!',
   // Ryuunosuke reads from his family's old notes, not quite sure he is doing it right; his circle is drawn in red
-  CHANT_RYU = ['Okay, okay... \u201cSilver for the circle\u201d... I didn\u2019t have silver. This is fine, right?', '\u201cFill and empty, five times over.\u201d Five? Huh. Okay, five.', '\u201cI call upon the Throne of Heroes...\u201d Come on, come on, come on...', 'Hello? Anybody? Come out and play!'];
+  CHANT_RYU = ['Okay, everybody stay nice and still... oh, right. You already are.', 'Okay, okay... \u201cSilver for the circle\u201d... I didn\u2019t have silver. This is fine, right?', '\u201cFill and empty, five times over.\u201d Five? Huh. Okay, five.', '\u201cI call upon the Throne of Heroes...\u201d Come on, come on, come on...', 'Hello? Anybody? Come out and play!'];
 var LINE_T = 2.1;
 function startIntro(nTeams) {
   if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length) return false;
@@ -17,8 +17,19 @@ function startIntro(nTeams) {
   var s = m.partner, ryu = m.def.id === 'ryuunosuke', lines = ryu ? CHANT_RYU : CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
   var t0 = 1.7, reveal = t0 + lines.length * LINE_T + 0.2;
   INTRO = { col: ryu ? '#b3202a' : null, t: 0, m: m, s: s, c: c, lines: lines, t0: t0, reveal: reveal, sl: reveal + 1.0, rp: reveal + 4.0, end: reveal + 6.6, shown: false, said: 0, glow: 0, n: nTeams };
+  if (ryu) ryuScene(c);
   cam.x = c.x; cam.y = c.y + 20; document.body.classList.add('intro');
   return true;
+}
+// Ryuunosuke's storehouse: the people he took lie around the circle he drew in their blood
+function ryuScene(c) {
+  G.bodies = G.bodies || [];
+  for (var k = 0; k < 3; k++) {
+    var a = k * 2.1 + 0.6, bx = c.x + Math.cos(a) * 155, by = c.y + Math.sin(a) * 155;
+    G.bodies.push({ x: Math.round(bx), y: Math.round(by), a: k % 2 ? 0.5 : -0.5, id: 7 + k * 5, t: Math.round(G.time), keep: 1 });
+    for (var s = 0; s <= 4; s++) { var u = s / 4, ex = c.x + Math.cos(a) * 92, ey = c.y + Math.sin(a) * 92; decal('blood', bx + (ex - bx) * u, by + (ey - by) * u, { life: 240 }); }
+  }
+  for (var j = 0; j < 8; j++) { var aj = j * 0.785; decal('blood', c.x + Math.cos(aj) * 88, c.y + Math.sin(aj) * 88, { life: 240 }); }
 }
 function introReveal() {
   var I = INTRO; if (I.shown) return; I.shown = true; var s = I.s, mad = s.def.cls === 'Berserker' || I.m.def.id === 'ryuunosuke';

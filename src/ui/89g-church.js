@@ -2,8 +2,8 @@
 function drawBodies(g) {
   if (!G.bodies || !G.bodies.length) return;
   G.bodies.forEach(function (b) {
-    var age = G.time - b.t; if (age > CHURCH.bodyT + 6) return;
-    var al = clamp((CHURCH.bodyT + 6 - age) / 6, 0, 1), sh = CIV_SHIRT[b.id % CIV_SHIRT.length], a = b.a > 0 ? 0.4 : 2.6;
+    var age = G.time - b.t; if (!b.keep && age > CHURCH.bodyT + 6) return;
+    var al = b.keep ? 1 : clamp((CHURCH.bodyT + 6 - age) / 6, 0, 1), sh = CIV_SHIRT[b.id % CIV_SHIRT.length], a = b.a > 0 ? 0.4 : 2.6;
     g.save(); g.globalAlpha = al * 0.95; g.translate(b.x, b.y); g.rotate(a);
     g.fillStyle = 'rgba(60,10,14,.45)'; g.beginPath(); g.ellipse(-4, 3, 16, 11, 0.3, 0, 6.283); g.fill();
     g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.fillStyle = sh;

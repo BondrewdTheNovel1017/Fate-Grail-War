@@ -22,8 +22,8 @@ FX.church = function (kind, team) {
 SND.bell = function (o, out, t) { ringS(o, out, t, [392, 588, 784, 1176], 2.6, 0.12); tone(o, out, t, 'sine', 196, 194, 2.4, 0.12, 0.01); };
 /* ---- civilians ---- */
 function drawCivs(g) {
+  drawBodies(g); // indoors too: Ryuunosuke's summoning room
   if (!G.civ || !G.civ.length) return; var me = G.f[MEI]; if (MAP.cityW && me.x > MAP.cityW) return;
-  drawBodies(g);
   var vz = VIEW.zoom || 1, x0 = VIEW.cx - VW / 2 / vz - 40, x1 = VIEW.cx + VW / 2 / vz + 40, y0 = VIEW.cy - VH / 2 / vz - 40, y1 = VIEW.cy + VH / 2 / vz + 40, now = G.time;
   G.civ.forEach(function (c) {
     if (c.x < x0 || c.x > x1 || c.y < y0 || c.y > y1) return;

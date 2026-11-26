@@ -164,9 +164,9 @@ function drawWeapon(f) {
     var rc2 = f.st === 'act' ? -4 * (1 - q) : 0;
     putW(f, I, g.x + rc2, g.y, f.st === 'wind' ? -0.2 * p : 0, g.k, false);
   } else if (wp === 'dagger') {
-    var side = [-1, 1];
+    var side = d.single ? [1] : [-1, 1]; // one blade (Hassan, Ryuunosuke) or a pair (EMIYA)
     side.forEach(function (sd) {
-      var mine = (!a || a.key !== 'light') ? true : ((f.combo % 2 === 0) === (sd === -1));
+      var mine = (!a || a.key !== 'light' || d.single) ? true : ((f.combo % 2 === 0) === (sd === -1));
       var rest = 0.35, rt = rest, ex = 0;
       if (inAtk && mine && sweeps) {
         if (f.st === 'wind') rt = rest + 0.9 * p; else if (f.st === 'act') rt = 1.25 - 2.4 * q; else rt = -1.15 * (1 - r) + rest * r;

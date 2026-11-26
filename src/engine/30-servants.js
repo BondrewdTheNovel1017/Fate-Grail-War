@@ -108,7 +108,7 @@ var SERV = {
     light: { reach: 150, wind: 0.26 }, heavy: { reach: 166 },
     skill: { name: 'Iaido Draw', kind: 'melee', wind: 0.16, act: 0.06, rec: 0.5, dmg: 15, reach: 196, arc: 0.35, cd: 4.5, cost: 10, stag: 0.5, desc: 'A lightning draw with a very narrow arc. It reaches far and is very fast.' },
     np: { name: 'Tsubame Gaeshi', sub: 'Secret Sword: Swallow Reversal', kind: 'pulses', wind: 0.7, act: 0.3, rec: 1.0, dmg: 15, pulses: 3, interval: 0.07, r: 150, unblock: true, aiMin: 0, aiMax: 160, desc: 'Three cuts from three directions at once. Cannot be blocked or parried. Your only answers are distance or a dodge.' } },
-  hassan: { id: 'hassan', name: 'Hassan of the Cursed Arm', cls: 'Assassin', col: '#9aa7b3', wpn: 'dagger', hp: 175, spd: 290, dmg: 1.15, guard: 0.5, combo: 5, recMul: 0.9, dodgeMax: 3, dodgeRate: 1.2, backstab: 1.2,
+  hassan: { id: 'hassan', name: 'Hassan of the Cursed Arm', cls: 'Assassin', col: '#9aa7b3', wpn: 'dagger', single: true, hp: 175, spd: 290, dmg: 1.15, guard: 0.5, combo: 5, recMul: 0.9, dodgeMax: 3, dodgeRate: 1.2, backstab: 1.2,
     brief: 'Five-hit chains, fast footwork, and an execution grab.',
     light: { wind: 0.2, rec: 0.14, dmg: 8, reach: 88, arc: 1.0, lunge: 46 }, heavy: { reach: 100, dmg: 19, wind: 0.42, max: 0.85 },
     skill: { name: 'Shadow Step', kind: 'shadow', wind: 0.2, act: 0.05, rec: 0.2, cd: 6, cost: 12, desc: 'Vanish and appear behind the enemy. His next light hit deals extra damage.' },

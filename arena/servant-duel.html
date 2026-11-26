@@ -1430,7 +1430,7 @@ var SERV = {
     light: { reach: 150, wind: 0.26 }, heavy: { reach: 166 },
     skill: { name: 'Iaido Draw', kind: 'melee', wind: 0.16, act: 0.06, rec: 0.5, dmg: 15, reach: 196, arc: 0.35, cd: 4.5, cost: 10, stag: 0.5, desc: 'A lightning draw with a very narrow arc. It reaches far and is very fast.' },
     np: { name: 'Tsubame Gaeshi', sub: 'Secret Sword: Swallow Reversal', kind: 'pulses', wind: 0.7, act: 0.3, rec: 1.0, dmg: 15, pulses: 3, interval: 0.07, r: 150, unblock: true, aiMin: 0, aiMax: 160, desc: 'Three cuts from three directions at once. Cannot be blocked or parried. Your only answers are distance or a dodge.' } },
-  hassan: { id: 'hassan', name: 'Hassan of the Cursed Arm', cls: 'Assassin', col: '#9aa7b3', wpn: 'dagger', hp: 175, spd: 290, dmg: 1.15, guard: 0.5, combo: 5, recMul: 0.9, dodgeMax: 3, dodgeRate: 1.2, backstab: 1.2,
+  hassan: { id: 'hassan', name: 'Hassan of the Cursed Arm', cls: 'Assassin', col: '#9aa7b3', wpn: 'dagger', single: true, hp: 175, spd: 290, dmg: 1.15, guard: 0.5, combo: 5, recMul: 0.9, dodgeMax: 3, dodgeRate: 1.2, backstab: 1.2,
     brief: 'Five-hit chains, fast footwork, and an execution grab.',
     light: { wind: 0.2, rec: 0.14, dmg: 8, reach: 88, arc: 1.0, lunge: 46 }, heavy: { reach: 100, dmg: 19, wind: 0.42, max: 0.85 },
     skill: { name: 'Shadow Step', kind: 'shadow', wind: 0.2, act: 0.05, rec: 0.2, cd: 6, cost: 12, desc: 'Vanish and appear behind the enemy. His next light hit deals extra damage.' },
@@ -1539,7 +1539,7 @@ MASTERS.caren = MD({ id: 'caren', name: 'Caren Hortensia', type: 'Church', col: 
     heavy: { name: 'Shroud whirl', kind: 'melee', dmg: 9, reach: 115, arc: 3.14, wind: 0.45, max: 1.0, act: 0.14, rec: 0.6, lunge: 0, cost: 20, stag: 0.5, power: 2 },
     skill: { name: 'Shroud of Magdalene', kind: 'proj', speed: 1000, range: 560, dmg: 2, root: 1.6, rootF: 0.8, wind: 0.35, act: 0.05, rec: 0.35, cd: 15, cost: 16, shape: 'shroud', size: 9, col: '#c8283a', aiRange: [140, 520] },
     np: { name: 'Sacrament', kind: 'sacrament', self: 34, amount: 40, range: 380, wind: 0.6, act: 0.05, rec: 0.4, cost: 0, cd: 22, aiUse: 'mend' } });
-MASTERS.ryuunosuke = MD({ id: 'ryuunosuke', name: 'Ryuunosuke Uryuu', type: 'Outsider', col: '#e07a3a', wpn: 'dagger', hp: 95, spd: 212, guard: 0.3, ranged: false, combo: 3, harmMana: true,
+MASTERS.ryuunosuke = MD({ id: 'ryuunosuke', name: 'Ryuunosuke Uryuu', type: 'Outsider', col: '#e07a3a', wpn: 'dagger', single: true, hp: 95, spd: 212, guard: 0.3, ranged: false, combo: 3, harmMana: true,
     brief: 'A cheerful killer with no magecraft at all. He earns mana only by doing harm: every wound he or his servant deals pays a little, every kill pays more, and nothing comes back on its own. By day he can vanish into a crowd; his Masterpiece, from behind, finishes a weakened master.',
     light: { name: 'Knife', kind: 'melee', dmg: 5, reach: 70, arc: 0.9, wind: 0.15, act: 0.06, rec: 0.18, lunge: 40, cost: 6, stag: 0.3, power: 1 },
     heavy: { name: 'Lunging stab', kind: 'melee', dmg: 12, reach: 80, arc: 0.7, wind: 0.4, max: 0.9, act: 0.1, rec: 0.55, lunge: 110, cost: 20, stag: 0.6, power: 2, bleed: { dps: 2, t: 3 } },
@@ -4352,7 +4352,7 @@ var ryuunosuke = mkS('ryuunosuke', 'Ryuunosuke Uryuu', 'Master', '#e07a3a', 'A l
 return { ryuunosuke: ryuunosuke, caren: caren, tokiomi: tokiomi, kuzuki: kuzuki, illya: illya, sakura: sakura, rin: rin, kiritsugu: kiritsugu, shirou: shirou, kayneth: kayneth, kirei: kirei, waver: waver, irisviel: irisviel, kariya: kariya, richard: richard, emiya: emiya, cid: cid, leonidas: leonidas, atalanta: atalanta, heracles: heracles, hassan: hassan, caerwyn: caerwyn, diarmuid: diarmuid, cu: cu, gilgamesh: gilgamesh, iskandar: iskandar, gilles: gilles, lancelot: lancelot, medusa: medusa, medea: medea, kojirou: kojirou };
 })();
 
-var GRIP = { ryuunosuke: { x: 20, y: 8, k: 0.95 }, caren: { x: 18, y: 8, k: 0.8 }, kiritsugu_knife: { x: 22, y: 8, k: 1 }, tokiomi: { x: 22, y: 9, k: 1 }, kuzuki: { x: 22, y: 8, k: 1 }, illya: { x: 26, y: 8, k: 0.9 }, sakura: { x: 26, y: 8, k: 0.8 }, rin: { x: 26, y: 8, k: 0.8 }, kiritsugu: { x: 22, y: 8, k: 1 }, shirou: { x: 22, y: 8, k: 1 }, kayneth: { x: 26, y: 8, k: 0.8 }, kirei: { x: 20, y: 8, k: 1 }, waver: { x: 24, y: 8, k: 0.9 }, irisviel: { x: 26, y: 8, k: 0.9 }, kariya: { x: 26, y: 8, k: 0.9 }, richard: { x: 22, y: 9, k: 1.2 }, emiya: { x: 22, y: 10, k: 1.25, twin: true }, emiya_bow: { x: 22, y: 0, k: 1.0 }, cid: { x: 22, y: 9, k: 1.2 }, leonidas: { x: 24, y: 10, k: 1 }, atalanta: { x: 20, y: 0, k: 1.1 }, heracles: { x: 26, y: 16, k: 1.55 }, hassan: { x: 24, y: 9, k: 1.4 }, caerwyn: { x: 22, y: 9, k: 1.2 }, diarmuid: { x: 20, y: 9, k: 1, pair: 'diarmuid_yellow' }, cu: { x: 20, y: 9, k: 0.95 }, gilgamesh: { x: 26, y: -10, k: 0.9 }, iskandar: { x: 22, y: 9, k: 1.2 }, gilles: { x: 22, y: 7, k: 1.05 }, lancelot: { x: 28, y: 0, k: 1.1 }, lancelot_sword: { x: 22, y: 9, k: 1.15 }, lancelot_spear: { x: 24, y: 10, k: 1.0 }, lancelot_hammer: { x: 24, y: 12, k: 1.15 }, lancelot_gun: { x: 14, y: 2, k: 1.0 }, medusa: { x: 20, y: 9, k: 1.0 }, medea: { x: 18, y: 10, k: 1.0 }, kojirou: { x: 20, y: 9, k: 1.0 } };
+var GRIP = { ryuunosuke: { x: 20, y: 8, k: 0.95 }, caren: { x: 18, y: 8, k: 0.8 }, kiritsugu_knife: { x: 22, y: 8, k: 1 }, tokiomi: { x: 22, y: 9, k: 1 }, kuzuki: { x: 22, y: 8, k: 1 }, illya: { x: 26, y: 8, k: 0.9 }, sakura: { x: 26, y: 8, k: 0.8 }, rin: { x: 26, y: 8, k: 0.8 }, kiritsugu: { x: 22, y: 8, k: 1 }, shirou: { x: 22, y: 8, k: 1 }, kayneth: { x: 26, y: 8, k: 0.8 }, kirei: { x: 20, y: 8, k: 1 }, waver: { x: 24, y: 8, k: 0.9 }, irisviel: { x: 26, y: 8, k: 0.9 }, kariya: { x: 26, y: 8, k: 0.9 }, richard: { x: 22, y: 9, k: 1.2 }, emiya: { x: 22, y: 10, k: 1.25, twin: true }, emiya_bow: { x: 22, y: 0, k: 1.0 }, cid: { x: 22, y: 9, k: 1.2 }, leonidas: { x: 24, y: 10, k: 1 }, atalanta: { x: 20, y: 0, k: 1.1 }, heracles: { x: 26, y: 16, k: 1.55 }, hassan: { x: 24, y: 9, k: 1.1 }, caerwyn: { x: 22, y: 9, k: 1.2 }, diarmuid: { x: 20, y: 9, k: 1, pair: 'diarmuid_yellow' }, cu: { x: 20, y: 9, k: 0.95 }, gilgamesh: { x: 26, y: -10, k: 0.9 }, iskandar: { x: 22, y: 9, k: 1.2 }, gilles: { x: 22, y: 7, k: 1.05 }, lancelot: { x: 28, y: 0, k: 1.1 }, lancelot_sword: { x: 22, y: 9, k: 1.15 }, lancelot_spear: { x: 24, y: 10, k: 1.0 }, lancelot_hammer: { x: 24, y: 12, k: 1.15 }, lancelot_gun: { x: 14, y: 2, k: 1.0 }, medusa: { x: 20, y: 9, k: 1.0 }, medea: { x: 18, y: 10, k: 1.0 }, kojirou: { x: 20, y: 9, k: 1.0 } };
 var THUMBN = 0;
 function thumb(id, w) {
   var s = SPR[id], g = GRIP[id], wp = s.weapon(), inner = s.body();
@@ -5538,9 +5538,9 @@ function drawWeapon(f) {
     var rc2 = f.st === 'act' ? -4 * (1 - q) : 0;
     putW(f, I, g.x + rc2, g.y, f.st === 'wind' ? -0.2 * p : 0, g.k, false);
   } else if (wp === 'dagger') {
-    var side = [-1, 1];
+    var side = d.single ? [1] : [-1, 1]; // one blade (Hassan, Ryuunosuke) or a pair (EMIYA)
     side.forEach(function (sd) {
-      var mine = (!a || a.key !== 'light') ? true : ((f.combo % 2 === 0) === (sd === -1));
+      var mine = (!a || a.key !== 'light' || d.single) ? true : ((f.combo % 2 === 0) === (sd === -1));
       var rest = 0.35, rt = rest, ex = 0;
       if (inAtk && mine && sweeps) {
         if (f.st === 'wind') rt = rest + 0.9 * p; else if (f.st === 'act') rt = 1.25 - 2.4 * q; else rt = -1.15 * (1 - r) + rest * r;
@@ -6416,7 +6416,7 @@ var CHANT = [
 ], CHANT_MAD = ['Let madness cloud your sight and chain your reason.', 'Be bound by fury, and fight only at my command.'],
   CHANT_END = 'If you would win the Grail, cross over and come to me!',
   // Ryuunosuke reads from his family's old notes, not quite sure he is doing it right; his circle is drawn in red
-  CHANT_RYU = ['Okay, okay... \u201cSilver for the circle\u201d... I didn\u2019t have silver. This is fine, right?', '\u201cFill and empty, five times over.\u201d Five? Huh. Okay, five.', '\u201cI call upon the Throne of Heroes...\u201d Come on, come on, come on...', 'Hello? Anybody? Come out and play!'];
+  CHANT_RYU = ['Okay, everybody stay nice and still... oh, right. You already are.', 'Okay, okay... \u201cSilver for the circle\u201d... I didn\u2019t have silver. This is fine, right?', '\u201cFill and empty, five times over.\u201d Five? Huh. Okay, five.', '\u201cI call upon the Throne of Heroes...\u201d Come on, come on, come on...', 'Hello? Anybody? Come out and play!'];
 var LINE_T = 2.1;
 function startIntro(nTeams) {
   if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length) return false;
@@ -6425,8 +6425,19 @@ function startIntro(nTeams) {
   var s = m.partner, ryu = m.def.id === 'ryuunosuke', lines = ryu ? CHANT_RYU : CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
   var t0 = 1.7, reveal = t0 + lines.length * LINE_T + 0.2;
   INTRO = { col: ryu ? '#b3202a' : null, t: 0, m: m, s: s, c: c, lines: lines, t0: t0, reveal: reveal, sl: reveal + 1.0, rp: reveal + 4.0, end: reveal + 6.6, shown: false, said: 0, glow: 0, n: nTeams };
+  if (ryu) ryuScene(c);
   cam.x = c.x; cam.y = c.y + 20; document.body.classList.add('intro');
   return true;
+}
+// Ryuunosuke's storehouse: the people he took lie around the circle he drew in their blood
+function ryuScene(c) {
+  G.bodies = G.bodies || [];
+  for (var k = 0; k < 3; k++) {
+    var a = k * 2.1 + 0.6, bx = c.x + Math.cos(a) * 155, by = c.y + Math.sin(a) * 155;
+    G.bodies.push({ x: Math.round(bx), y: Math.round(by), a: k % 2 ? 0.5 : -0.5, id: 7 + k * 5, t: Math.round(G.time), keep: 1 });
+    for (var s = 0; s <= 4; s++) { var u = s / 4, ex = c.x + Math.cos(a) * 92, ey = c.y + Math.sin(a) * 92; decal('blood', bx + (ex - bx) * u, by + (ey - by) * u, { life: 240 }); }
+  }
+  for (var j = 0; j < 8; j++) { var aj = j * 0.785; decal('blood', c.x + Math.cos(aj) * 88, c.y + Math.sin(aj) * 88, { life: 240 }); }
 }
 function introReveal() {
   var I = INTRO; if (I.shown) return; I.shown = true; var s = I.s, mad = s.def.cls === 'Berserker' || I.m.def.id === 'ryuunosuke';
@@ -6571,8 +6582,8 @@ FX.church = function (kind, team) {
 SND.bell = function (o, out, t) { ringS(o, out, t, [392, 588, 784, 1176], 2.6, 0.12); tone(o, out, t, 'sine', 196, 194, 2.4, 0.12, 0.01); };
 /* ---- civilians ---- */
 function drawCivs(g) {
+  drawBodies(g); // indoors too: Ryuunosuke's summoning room
   if (!G.civ || !G.civ.length) return; var me = G.f[MEI]; if (MAP.cityW && me.x > MAP.cityW) return;
-  drawBodies(g);
   var vz = VIEW.zoom || 1, x0 = VIEW.cx - VW / 2 / vz - 40, x1 = VIEW.cx + VW / 2 / vz + 40, y0 = VIEW.cy - VH / 2 / vz - 40, y1 = VIEW.cy + VH / 2 / vz + 40, now = G.time;
   G.civ.forEach(function (c) {
     if (c.x < x0 || c.x > x1 || c.y < y0 || c.y > y1) return;
@@ -8075,8 +8086,8 @@ drawProjX = function (g, p, a) {
 function drawBodies(g) {
   if (!G.bodies || !G.bodies.length) return;
   G.bodies.forEach(function (b) {
-    var age = G.time - b.t; if (age > CHURCH.bodyT + 6) return;
-    var al = clamp((CHURCH.bodyT + 6 - age) / 6, 0, 1), sh = CIV_SHIRT[b.id % CIV_SHIRT.length], a = b.a > 0 ? 0.4 : 2.6;
+    var age = G.time - b.t; if (!b.keep && age > CHURCH.bodyT + 6) return;
+    var al = b.keep ? 1 : clamp((CHURCH.bodyT + 6 - age) / 6, 0, 1), sh = CIV_SHIRT[b.id % CIV_SHIRT.length], a = b.a > 0 ? 0.4 : 2.6;
     g.save(); g.globalAlpha = al * 0.95; g.translate(b.x, b.y); g.rotate(a);
     g.fillStyle = 'rgba(60,10,14,.45)'; g.beginPath(); g.ellipse(-4, 3, 16, 11, 0.3, 0, 6.283); g.fill();
     g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.fillStyle = sh;
