@@ -3,6 +3,7 @@ function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
   if (def.st === 'dead' || G.over) return 'none';
   if (truceStops(att, def)) return 'none';
+  if (att && att.team !== def.team && pactTeams(att.team, def.team)) return 'none';
   if (def.spirit === 2) return 'none';
   if (def.spirit === 1 || def.spirit === 3) { def.spirit = 0; FX.text(def, 'MATERIALIZED'); }
   var s = src || att, melee = !src;
@@ -23,7 +24,8 @@ function hurt(att, def, a, mult, src) {
   if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
-  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; }
+  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; noteFight(att, def); }
+  if (outnumbered(att, def)) dmg *= PACT.outnum; // a lone team against a pact
   if (def.reinfT > 0) dmg *= 0.6;
   if (def.def.isMaster && G.clock && !G.clock.final) { dmg *= MASTER_GUARD; if (att && att.def.isMaster) dmg *= 0.5; } // before the final night masters fight from cover, and rarely duel each other
   if (a.silence && def.shieldT > 0) { def.shieldT = 0; def.shieldN = 0; dmg *= 2; FX.text(def, 'MERCURY SHATTERED'); }
@@ -258,7 +260,7 @@ function stepF(f, dt) {
   if (f.guarding && !was) { f.parryOk = (G.time - f.lastG) > 0.55; f.lastG = G.time; }
   f.guardT = f.guarding ? f.guardT + dt : 0;
   if (f.stDelay > 0) f.stDelay -= dt; else if (f.sta < 100) f.sta = Math.min(100, f.sta + (f.guarding ? 9 : 34 * (f.def.staRegen || 1) * (f.field ? 1.3 : 1)) * dt);
-  var slow = (G.f.some(function (c) { return c.team !== f.team && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
+  var slow = (G.f.some(function (c) { return c.team !== f.team && !pactTeams(c.team, f.team) && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
   var toO = angTo(f, o);
   if (f.st === 'idle') {
     var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.fslowT > G.time ? f.fslowK : 1) * (f.buffT > 0 ? 1.1 : 1);

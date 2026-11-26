@@ -13,8 +13,8 @@ const list = (dir) => fs.readdirSync(path.join(ROOT, dir)).filter((n) => n.endsW
 function engineSource() { return list('src/engine').map(read).join(''); }
 function uiSource() { return list('src/ui').map(read).join(''); }
 
-function buildPage() {
-  const js = '(function () {\n/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
+function buildPage(arena) {
+  const js = '(function () {\n' + (arena ? 'var ARENA_ENTRY = true;\n' : '') + '/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
   const css = read('src/page/style.css').replace(/\n$/, '');
   return read('src/page/template.html').replace('{{CSS}}', () => css).replace('{{JS}}', () => js);
 }
@@ -27,4 +27,7 @@ if (require.main === module) {
   const html = buildPage();
   fs.writeFileSync(out, html);
   console.log('built ' + path.relative(ROOT, out) + ' (' + Math.round(html.length / 1024) + ' KB)');
+  // The Arena entry page: the same game and the same sprites, opening on the Arena setup.
+  fs.writeFileSync(path.join(ROOT, 'arena', 'servant-duel.html'), buildPage(true));
+  console.log('built arena/servant-duel.html');
 }

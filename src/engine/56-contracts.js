@@ -11,8 +11,8 @@ function contractCandidate(f, range) {
   for (var i = 0; i < G.f.length; i++) { var o = G.f[i]; if (contractable(f, o) && !!o.inM === !!f.inM && o.spirit !== 2) { var d = dist(f, o); if (d <= bd) { bd = d; best = o; } } }
   return best;
 }
-function formContract(a, b) {
-  if (!contractable(a, b) || dist(a, b) > CONTRACT_RANGE + 40) return false;
+function formContract(a, b, force) {
+  if (!contractable(a, b) || (!force && dist(a, b) > CONTRACT_RANGE + 40)) return false;
   var m = a.def.isMaster ? a : b, s = a.def.isMaster ? b : a;
   s.team = m.team; s.partner = m; m.partner = s; s.orphanT = 0; s.recover = false; s.lock = null; m.lock = null; s.anchor = null;
   s.isPlayerMate = !!m.isPlayerMate || m === G.f[0]; s.home = m.home;

@@ -496,3 +496,53 @@ test('family: the first killing blow between Kiritsugu and Illya stops short; th
   assert.ok(il.hp <= 0 || il.st === 'dead', 'the second blow lands');
   rin.hp = 5; E.hurt(kir, rin, { dmg: 50, power: 2, kind: 'proj' }, 1, { x: kir.x, y: kir.y }); assert.ok(rin.hp <= 0 || rin.st === 'dead', 'no bond with Rin');
 });
+
+const FIVE = (S, M, a, b) => [{ servant: a[0], master: a[1] }, { servant: b[0], master: b[1] }, { servant: S.cu, master: M.rin }, { servant: S.richard, master: M.waver }, { servant: S.leonidas, master: M.kayneth }];
+test('pacts: partners cannot hurt each other, share sight, and pay for breaking it', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar(FIVE(S, M, [S.iskandar, M.shirou], [S.diarmuid, M.irisviel]), { nights: 3 });
+  const isk = G.f.find((f) => f.def.id === 'iskandar'), dia = G.f.find((f) => f.def.id === 'diarmuid');
+  G.f.forEach((f) => { G.pactHate = {}; });
+  assert.ok(E.pactOpen(isk.team, dia.team));
+  E.formPact(isk.team, dia.team, isk.team);
+  assert.ok(!E.enemiesOf(isk).includes(dia), 'partners are not enemies');
+  const hp = dia.hp; assert.strictEqual(E.hurt(isk, dia, { dmg: 30, power: 1 }), 'none'); assert.strictEqual(dia.hp, hp);
+  assert.ok(!E.pactOpen(isk.team, 2), 'one pact per team');
+  E.breakPact(isk.team, dia);
+  assert.ok(!E.pactTeams(isk.team, dia.team)); assert.ok(G.expo[isk.team] >= E.PACT.breakExpo); assert.ok(G.reveal[isk.team] > G.time, 'the breaker is shown to everyone');
+});
+test('pacts end at dawn, on the final night, and below four teams; the two strongest never ally', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar(FIVE(S, M, [S.iskandar, M.shirou], [S.diarmuid, M.irisviel]), { nights: 3 });
+  E.formPact(0, 1, 0); G.clock.phase = 'day'; G.clock.n = 2; E.pactTick(E.STEP); assert.strictEqual(G.pacts.length, 0, 'dawn');
+  G.clock.phase = 'night'; G.pactCd = {}; E.formPact(0, 1, 0);
+  G.f.filter((f) => f.team >= 3).forEach((f) => { f.hp = 0; f.st = 'dead'; }); E.pactTick(E.STEP); assert.strictEqual(G.pacts.length, 0, 'too few teams');
+  const H = E.newWar(FIVE(S, M, [S.iskandar, M.shirou], [S.diarmuid, M.irisviel]), { nights: 3 });
+  H.f.forEach((f) => { if (f.team >= 2) f.hp = f.def.hp * 0.3; });
+  assert.ok(!E.pactOpen(0, 1), 'the two strongest teams cannot ally');
+  H.clock.final = true; assert.ok(!E.pactOpen(2, 3), 'no pacts on the final night');
+});
+test('character by character: Gilgamesh only for Kirei, Kiritsugu only for his family', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  let G = E.newWar(FIVE(S, M, [S.gilgamesh, M.rin], [S.iskandar, M.waver]), { nights: 3 });
+  assert.strictEqual(E.pactWill(0, 1), 0, 'the King allies with no one');
+  G = E.newWar(FIVE(S, M, [S.gilgamesh, M.rin], [S.hassan, M.kirei]), { nights: 3 });
+  assert.ok(E.pactWill(0, 1) > 0, 'unless Kirei is on the other side');
+  G = E.newWar(FIVE(S, M, [S.caerwyn, M.kiritsugu], [S.iskandar, M.waver]), { nights: 3 });
+  assert.strictEqual(E.pactWill(0, 1), 0, 'the Magus Killer trusts no one');
+  G = E.newWar(FIVE(S, M, [S.caerwyn, M.kiritsugu], [S.heracles, M.illya]), { nights: 3 });
+  assert.ok(E.pactWill(0, 1) > 0.5, 'except his family');
+});
+test('Gilgamesh betrays his master for Kirei when a pact brings them together', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, ev = [];
+  E.FX.pact = (k) => ev.push(k);
+  const G = E.newWar(FIVE(S, M, [S.gilgamesh, M.rin], [S.hassan, M.kirei]), { nights: 3 });
+  G.f.forEach((f, i) => { G.ai[i] = E.mkAI(f, E.DIFF.knight); });
+  const gil = G.f.find((f) => f.def.id === 'gilgamesh'), rin = gil.partner, kirei = G.f.find((f) => f.def.id === 'kirei'), has = kirei.partner;
+  E.formPact(gil.team, kirei.team, kirei.team);
+  has.hp = 0; E.kill(has);
+  kirei.x = gil.x + 200; kirei.y = gil.y; rin.x = gil.x - 100; rin.y = gil.y; gil.st = 'idle';
+  for (let i = 0; i < 200 && !G.gilDone; i++) { G.gilChk = 0; E.gilBetrayTick(); }
+  assert.ok(G.gilDone && ev.includes('betray'));
+  assert.strictEqual(rin.st, 'dead', 'his old master falls'); assert.strictEqual(gil.team, kirei.team); assert.strictEqual(gil.partner, kirei);
+});

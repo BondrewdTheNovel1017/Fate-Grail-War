@@ -7,7 +7,7 @@ const { loadEngine, run, aiWar } = require('../tests/engine.js');
 const WARS = +(process.argv[2] || 20), TEAMS = +(process.argv[3] || 7), LIMIT = 1800;
 const E = loadEngine();
 const S = {}, M = {}, cause = { servant: {}, master: {} };
-const tot = { ended: 0, len: [], contracts: 0, marbles: 0, nps: 0, noMana: 0, seals: { np: 0, heal: 0, warp: 0 }, teamT: 0, deadT: 0, nights: [], expo: [], sanctions: 0 };
+const tot = { ended: 0, len: [], contracts: 0, marbles: 0, nps: 0, noMana: 0, seals: { np: 0, heal: 0, warp: 0 }, teamT: 0, deadT: 0, nights: [], expo: [], sanctions: 0, pact: {} };
 const row = (T, id) => T[id] || (T[id] = { games: 0, wins: 0, kills: 0, deaths: 0, alive: 0 });
 let noMana = 0; const taskN = {}, tnN = { np: 0, trace: 0 }; E.FX.task = (t, k) => { taskN[k.kind] = (taskN[k.kind] || 0) + 1; }; E.FX.truename = (t, s, how) => { tnN[how] = (tnN[how] || 0) + 1; }; const evN = {}, sanc = {}; E.FX.event = (k) => { evN[k] = (evN[k] || 0) + 1; }; E.FX.church = (k) => { if (k !== 'sanction') return; const G = E.G, key = (G.clock ? G.clock.phase : '-') + ':' + (G.event ? G.event.kind : 'none'); sanc[key] = (sanc[key] || 0) + 1; }; const demoN = { done: 0 }, deathAt = {}; const kill0 = E.FX.snd; E.FX.snd = function (n, f) { if (n === 'kill' && E.G.clock && f && !f.def.isMaster) { const c = E.G.clock, k = c.final ? 'final' : c.phase + c.n; deathAt[k] = (deathAt[k] || 0) + 1; } return kill0.apply(this, arguments); }; const ev0 = E.FX.event; E.FX.event = (k, d) => { ev0(k, d); if (k === 'demolished') demoN.done++; }; const text0 = E.FX.text; E.FX.text = function (f, s) { if (s === 'NO MANA') noMana++; return text0.apply(this, arguments); };
 const t0 = Date.now();
@@ -29,6 +29,7 @@ for (let n = 0; n < WARS; n++) {
   tot.noMana += noMana;
   if (G.over) { tot.ended++; tot.len.push(G.time); }
   tot.contracts += G.contracts || 0;
+  if (G.pactLog) ['formed', 'broken', 'betray'].forEach((k) => { tot.pact[k] = (tot.pact[k] || 0) + G.pactLog[k]; });
   const winTeam = G.winner ? G.winner.team : -1;
   for (const { f, id } of start) {
     const T = f.def.isMaster ? M : S, r = row(T, id);
@@ -53,6 +54,7 @@ console.log(`  servant deaths by phase (per war): ${Object.entries(deathAt).map(
 console.log(`  sanctions by phase:event ${JSON.stringify(sanc)}`);
 console.log(`  finished ${tot.ended}/${WARS}, length avg ${(avg(tot.len) / 60).toFixed(1)} min (min ${(Math.min(...tot.len) / 60).toFixed(1)}, max ${(Math.max(...tot.len) / 60).toFixed(1)})`);
 console.log(`  per war: ${(tot.nps / WARS).toFixed(1)} NPs, ${(tot.noMana / WARS).toFixed(1)} blocked for mana, ${(tot.contracts / WARS).toFixed(2)} contracts, ${(tot.marbles / WARS).toFixed(2)} marbles`);
+console.log(`  pacts per war: formed ${((tot.pact.formed || 0) / WARS).toFixed(2)}, broken ${((tot.pact.broken || 0) / WARS).toFixed(2)}; Gilgamesh betrayals ${tot.pact.betray || 0}`);
 console.log(`  seals used per war: NP ${(tot.seals.np / WARS).toFixed(1)}, heal ${(tot.seals.heal / WARS).toFixed(1)}, recall ${(tot.seals.warp / WARS).toFixed(1)}`);
 console.log('  servant deaths: ' + JSON.stringify(cause.servant) + '   master deaths: ' + JSON.stringify(cause.master));
 table('Servants', S); table('Masters', M);

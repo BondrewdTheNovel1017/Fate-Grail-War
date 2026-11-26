@@ -39,7 +39,7 @@ function fieldsTick(dt) {
     if (F.lvl <= 0) continue;
     var intr = [];
     G.f.forEach(function (e) {
-      if (e.team === F.team || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
+      if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = inHomeField(F, e);
       if (inside && !concealed(e) && !truceZone(e)) {
         G.seenBy[F.team][e.idx] = G.time + FIELD.seen;

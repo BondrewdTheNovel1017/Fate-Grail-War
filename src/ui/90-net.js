@@ -35,7 +35,7 @@ function renderNet() {
     html = '<div class="mtag">Room code: <b style="color:var(--bone);font-size:15px;letter-spacing:.2em">' + esc(NET.code.toUpperCase()) + '</b></div><ul class="netlist">' + list + '</ul>';
   }
   el.innerHTML = html + (NET.msg ? '<p class="note">' + esc(NET.msg) + '</p>' : '');
-  var go = $('#go'); if (NET.role === 'client') { go.disabled = true; go.textContent = 'Waiting for host'; } else { go.disabled = false; go.textContent = NET.role === 'host' ? 'Begin the war (' + (netClients().length + 1) + ' players)' : 'Begin the war'; }
+  var go = $('#go'); if (NET.role === 'client') { go.disabled = true; go.textContent = 'Waiting for host'; } else { go.disabled = false; var lb = CFG.game === 'arena' ? 'Start the battle' : 'Begin the war'; go.textContent = NET.role === 'host' ? lb + ' (' + (netClients().length + 1) + ' players)' : lb; }
 }
 function netOnPeers() {
   renderNet();

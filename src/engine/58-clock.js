@@ -51,6 +51,7 @@ function knowsExact(f, e) {
   var r = senseRange();
   if (sameZone(f, e) && dist(f, e) < r) return true;
   var p = f.partner; if (p && p.st !== 'dead' && sameZone(p, e) && dist(p, e) < r) return true;
+  if (G.pacts && G.pacts.length && pactSees(f, e, r)) return true;
   if (f.lastHit && f.lastHit.by === e && G.time - (f.lastHitT || -99) < 8) return true;
   return false;
 }

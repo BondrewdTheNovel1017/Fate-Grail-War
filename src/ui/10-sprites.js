@@ -81,9 +81,9 @@ var atalanta = {
 /* =================== HERACLES =================== */
 var heracles = {
   id: 'heracles', name: 'Heracles', cls: 'Berserker', col: '#e2515c',
-  basis: 'Hero of Greek myth: the Nemean lion pelt worn as a hood and cloak, here dark as a black cuirass, an enormous body, black hair and beard, and an olive-wood club.',
-  pal: [['Skin', '#b57c54'], ['Dark pelt', '#4a4552'], ['Pelt shadow', '#1f1c25'], ['Club wood', '#6b4a2c'], ['Hair and beard', '#1c1511']],
-  notes: ['Widest shoulders in the roster: the first thing you read from above.', 'The lion hood gives him a distinctive top-down head shape with ears.', 'Club is thick and short compared with the other weapons; the weight is the point.'],
+  basis: 'Hero of Greek myth: the Nemean lion pelt worn as a hood and cloak, here dark as a black cuirass, an enormous body, black hair and beard, and a huge axe-sword hewn from temple stone, crude and heavy, with a leather-bound grip.',
+  pal: [['Skin', '#b57c54'], ['Dark pelt', '#4a4552'], ['Pelt shadow', '#1f1c25'], ['Stone', '#7a7672'], ['Hair and beard', '#1c1511']],
+  notes: ['Widest shoulders in the roster: the first thing you read from above.', 'The lion hood gives him a distinctive top-down head shape with ears.', 'His stone axe-sword is a rough slab with a bound grip: crude, huge and heavy; the weight is the point.'],
   body: function () {
     return '<defs>' + grad('hpl', '#4a4552', '#1f1c25') + grad('hsk', '#c58d62', '#9a6643') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
       '<path d="M-2 -30 Q-28 -22 -32 0 Q-28 22 -2 30 L4 14 Q-6 0 4 -14Z" fill="url(#hpl)"/><path d="M-30 -10 L-36 -4 L-30 0 L-36 6 L-30 10" fill="none"/>' +
@@ -94,13 +94,15 @@ var heracles = {
       '<circle cx="2" cy="0" r="14" fill="#1d1a22"/><circle cx="2" cy="0" r="10" fill="url(#hpl)"/><path d="M8 -4 L18 0 L8 4Z" fill="#3a2418"/></g>';
   },
   weapon: function () {
-    return '<g stroke="#0b121a" stroke-width="2.4" stroke-linejoin="round">' +
-      '<path d="M-10 -3.5 L28 -5 Q42 -11 56 -14 Q70 -10 68 0 Q70 10 56 14 Q42 11 28 5 L-10 3.5Z" fill="#6b4a2c"/>' +
-      '<path d="M34 -7 Q48 -9 60 -8 M34 7 Q48 9 60 8" fill="none" stroke-width="1.6" opacity=".5"/>' +
-      '<ellipse cx="50" cy="-4" rx="3.5" ry="2.6" fill="#4b3320" stroke-width="1.4"/><ellipse cx="58" cy="5" rx="3" ry="2.4" fill="#4b3320" stroke-width="1.4"/><ellipse cx="20" cy="1" rx="2.4" ry="2" fill="#4b3320" stroke-width="1.2"/>' +
-      '<rect x="-6" y="-4.5" width="12" height="9" rx="2.5" fill="#5a3a22"/></g>';
+    return '<defs>' + grad('hst', '#8d8a86', '#4a4744') + '</defs><g stroke="#0b121a" stroke-width="2.4" stroke-linejoin="round">' +
+      '<rect x="-14" y="-3.6" width="24" height="7.2" rx="2" fill="#4b3320"/><path d="M-10 -3.6 L-6 3.6 M-4 -3.6 L0 3.6 M2 -3.6 L6 3.6" stroke="#2a1c12" stroke-width="1.3" fill="none"/>' +
+      '<path d="M8 -9 L14 -11 L14 11 L8 9Z" fill="#3e3b38"/>' +
+      '<path d="M14 -8 L30 -11 L38 -9 L50 -13 L62 -11 L70 -14 L80 -8 L84 -2 L82 4 L74 9 L62 10 L52 13 L40 10 L28 11 L14 8Z" fill="url(#hst)"/>' +
+      '<path d="M18 -2 L44 -4 L58 -1 L76 -3 M22 4 L40 3 L56 6" fill="none" stroke="#2d2b29" stroke-width="1.3" opacity=".7"/>' +
+      '<path d="M30 -11 L33 -6 M50 -13 L48 -8 M62 10 L60 5 M70 -14 L69 -9" fill="none" stroke="#2d2b29" stroke-width="1.2"/>' +
+      '<path d="M16 -7 L36 -9 L48 -11 L66 -11" fill="none" stroke="#b9b5ae" stroke-width="1" opacity=".75"/></g>';
   },
-  wvb: '-16 -20 92 40', tdvb: '-50 -50 100 100'
+  wvb: '-16 -18 104 36', tdvb: '-50 -50 100 100'
 };
 
 /* =================== ASSASSIN (Hassan) =================== */

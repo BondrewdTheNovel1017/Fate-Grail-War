@@ -252,6 +252,7 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
     <div class="rule"><b>Command Seals</b>Three seals, each used once: <b>NP</b> charges your servant's Noble Phantasm at once, <b>Heal</b> restores half its health, <b>Recall</b> brings it to your side from anywhere.</div>
     <div class="rule"><b>Mana link</b>Every master has a mana pool that refills over time. A Noble Phantasm costs the master 40 mana (55 for a reality marble), and the master's own skill and signature spell cost some too. A materialized servant slowly drains its master, faster when they are far apart; spirit form costs nothing. A servant whose master runs dry deals less damage. Kariya pays any shortfall with his own blood, and the NP Command Seal pays the full cost.</div>
     <div class="rule"><b>Form Contract</b>A servant who loses their master and a master who loses their servant can bind themselves anew: walk up to them and press Contract (F). Until then they won't fight each other. The new pair fights for the master's team and keeps the master's remaining Command Seals. A masterless servant can still release its Noble Phantasm, but it burns 6 seconds of the time it has left.</div>
+    <div class="rule"><b>Pacts</b>In the Grail War, two teams can agree not to fight until dawn: walk near a rival and press Pact (P), or accept when they offer. Partners cannot hurt each other, share what they see and pass through each other’s fields. One pact per team; none on the final night or once three teams remain. Breaking one (press Pact twice) costs exposure and shows you to everyone. Every character weighs an offer their own way.</div>
     <div class="rule"><b>Master magecraft</b>Every master has a skill and a signature spell on the NP button with its own cooldown. Masters are fragile and deal half damage to servants. Kiritsugu's Origin Bullet burns a master's circuits: no skill or signature for 10 seconds.</div>
     <div class="rule"><b>Reality marbles</b>Unlimited Blade Works and Ionioi Hetairoi pull everyone within range into a sealed world for 25 seconds, keeping where they stood. Outsiders can't see in or reach them. Spirit form escapes the pull, a Command Seal recall pulls a servant out, and Enuma Elish shatters it.</div>
     <div class="rule"><b>Shirou's Trace</b>Fighting fills his gauge. At 40 he learns Trace On: homing blades and Kanshou and Bakuya. At 100 he can open Unlimited Blade Works once, with homing swords that last longer than EMIYA's.</div>
@@ -260,7 +261,7 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
     <div class="rule"><b>Fuyuki City</b>The Mion River splits Miyama from Shinto, crossed by the red arch of Fuyuki Bridge, the Mion Bridge to the south and the railway bridge. Miyama has Ryuudou Temple on Mount Enzou, the Tohsaka and Matou houses on the hill, the church, Homurahara Academy, the Emiya residence and the shopping street; Shinto has the Hyatt, the Center Building, Verde, the station, Central Park, the harbor and the Einzbern forest. Buildings block movement, sight and shots.</div>
     <div class="rule"><b>Homes and interiors</b>Every master starts at their lore home: Rin at the Tohsaka mansion, Sakura and Kariya at the Matou house, Illya and Irisviel at Einzbern Castle, Kirei at the church, Kayneth at the Hyatt, Waver at the Mackenzie house, Shirou at the Emiya residence, Kiritsugu at a safehouse. A second member of the same family gets a new estate somewhere in the city. Walk into the doors of Einzbern Castle, the Tohsaka mansion, the Matou house, the church or the Emiya residence to fight inside.</div>
   </div>
-  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract.</p>
+  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract &middot; <kbd>P</kbd> pact.</p>
   </details>
   </div>
   <div id="arenaSetup" hidden>
@@ -301,6 +302,7 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
     <button type="button" class="b" data-b="spirit">Spirit<small id="spl"></small></button>
     <button type="button" class="b" data-b="target">Target<small id="tgl"></small></button>
     <button type="button" class="b contract" data-b="contract" hidden>Contract<small></small></button>
+    <button type="button" class="b contract pact" data-b="pact" hidden>Pact<small></small></button>
     <button type="button" class="b ui" id="ordBtn" aria-expanded="false" aria-controls="ordPop">Orders<small id="ordL"></small></button>
     <button type="button" class="b ui seal" id="sealBtn" aria-expanded="false" aria-controls="sealPop">Seals<small id="sealL"></small></button>
   </div>
@@ -321,7 +323,7 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
 (function () {
 /*ENGINE_START*/
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, turned: function () {}, unturned: function () {}, hesitate: function () {}, near: function () { return true; } };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, turned: function () {}, unturned: function () {}, hesitate: function () {}, pact: function () {}, near: function () { return true; } };
 // hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
 // Hit-stop is per fighter: only the attacker and the one hit freeze, the rest of the war keeps moving.
 function hitPause(att, def, v) { if (att) att.hs = Math.max(att.hs || 0, v); if (def) def.hs = Math.max(def.hs || 0, v); }
@@ -1176,12 +1178,12 @@ function newGame(dA, dB, opts) {
 }
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
-function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
+function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !pactTeams(e.team, f.team) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
   var best = null, bd = 1e9, es = enemiesOf(f);
-  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (inTruce(f, e) ? 5000 : 0) + (spared(f, e) ? 5000 : 0) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
+  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (inTruce(f, e) ? 5000 : 0) + (spared(f, e) ? 5000 : 0) + pactAim(f, e) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
   if (best) f.foe = best;
 }
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
@@ -1201,7 +1203,7 @@ function newWar(teamsIn, opts) {
     var order = (ti === 0 && opts.playAs === 'master') ? [ms, sv] : [sv, ms];
     order.forEach(function (f) { f.idx = G.f.length; G.f.push(f); G.ai.push(null); });
   });
-  G.homes = homes; initClock(opts); if (MAP.cityW && !G.quick) initFields();
+  G.homes = homes; initClock(opts); if (G.clock) initPacts(); if (MAP.cityW && !G.quick) initFields();
   G.f.forEach(pickTarget);
   return G;
 }
@@ -1306,8 +1308,8 @@ function contractCandidate(f, range) {
   for (var i = 0; i < G.f.length; i++) { var o = G.f[i]; if (contractable(f, o) && !!o.inM === !!f.inM && o.spirit !== 2) { var d = dist(f, o); if (d <= bd) { bd = d; best = o; } } }
   return best;
 }
-function formContract(a, b) {
-  if (!contractable(a, b) || dist(a, b) > CONTRACT_RANGE + 40) return false;
+function formContract(a, b, force) {
+  if (!contractable(a, b) || (!force && dist(a, b) > CONTRACT_RANGE + 40)) return false;
   var m = a.def.isMaster ? a : b, s = a.def.isMaster ? b : a;
   s.team = m.team; s.partner = m; m.partner = s; s.orphanT = 0; s.recover = false; s.lock = null; m.lock = null; s.anchor = null;
   s.isPlayerMate = !!m.isPlayerMate || m === G.f[0]; s.home = m.home;
@@ -1389,6 +1391,7 @@ function knowsExact(f, e) {
   var r = senseRange();
   if (sameZone(f, e) && dist(f, e) < r) return true;
   var p = f.partner; if (p && p.st !== 'dead' && sameZone(p, e) && dist(p, e) < r) return true;
+  if (G.pacts && G.pacts.length && pactSees(f, e, r)) return true;
   if (f.lastHit && f.lastHit.by === e && G.time - (f.lastHitT || -99) < 8) return true;
   return false;
 }
@@ -1519,7 +1522,7 @@ function fieldsTick(dt) {
     if (F.lvl <= 0) continue;
     var intr = [];
     G.f.forEach(function (e) {
-      if (e.team === F.team || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
+      if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = inHomeField(F, e);
       if (inside && !concealed(e) && !truceZone(e)) {
         G.seenBy[F.team][e.idx] = G.time + FIELD.seen;
@@ -1612,6 +1615,7 @@ function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
   if (def.st === 'dead' || G.over) return 'none';
   if (truceStops(att, def)) return 'none';
+  if (att && att.team !== def.team && pactTeams(att.team, def.team)) return 'none';
   if (def.spirit === 2) return 'none';
   if (def.spirit === 1 || def.spirit === 3) { def.spirit = 0; FX.text(def, 'MATERIALIZED'); }
   var s = src || att, melee = !src;
@@ -1632,7 +1636,8 @@ function hurt(att, def, a, mult, src) {
   if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
-  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; }
+  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; noteFight(att, def); }
+  if (outnumbered(att, def)) dmg *= PACT.outnum; // a lone team against a pact
   if (def.reinfT > 0) dmg *= 0.6;
   if (def.def.isMaster && G.clock && !G.clock.final) { dmg *= MASTER_GUARD; if (att && att.def.isMaster) dmg *= 0.5; } // before the final night masters fight from cover, and rarely duel each other
   if (a.silence && def.shieldT > 0) { def.shieldT = 0; def.shieldN = 0; dmg *= 2; FX.text(def, 'MERCURY SHATTERED'); }
@@ -1867,7 +1872,7 @@ function stepF(f, dt) {
   if (f.guarding && !was) { f.parryOk = (G.time - f.lastG) > 0.55; f.lastG = G.time; }
   f.guardT = f.guarding ? f.guardT + dt : 0;
   if (f.stDelay > 0) f.stDelay -= dt; else if (f.sta < 100) f.sta = Math.min(100, f.sta + (f.guarding ? 9 : 34 * (f.def.staRegen || 1) * (f.field ? 1.3 : 1)) * dt);
-  var slow = (G.f.some(function (c) { return c.team !== f.team && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
+  var slow = (G.f.some(function (c) { return c.team !== f.team && !pactTeams(c.team, f.team) && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
   var toO = angTo(f, o);
   if (f.st === 'idle') {
     var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.fslowT > G.time ? f.fslowK : 1) * (f.buffT > 0 ? 1.1 : 1);
@@ -2448,6 +2453,168 @@ function familyHold(att, def) {
   return true;
 }
 function spared(f, e) { return !!(G.spare && G.spare[f.team + ':' + e.idx] > G.time); }
+/* ---- pacts: two teams agree not to fight until dawn ----
+   A pact joins two teams for one night: they cannot hurt each other, they share what they see, and they
+   pass through each other's bounded fields. Nothing else is shared. One pact per team at a time.
+   Pacts end at dawn, on the final night, and once three or fewer teams remain.
+   The two strongest teams never ally; a team the pact leaves alone takes a little less damage while
+   pact partners gang up on it; AI pacts never turn on the player.
+   Breaking a pact raises exposure and shows the breaker to everyone for a while.
+   Every character weighs a pact their own way (PACT_M, PACT_S, pactWill). Gilgamesh allies with nobody,
+   unless Kirei stands on another team; and when a truce puts them together, he may betray his own master to take Kirei. */
+var PACT = { range: 1100, tick: 6, base: 0.22, offerT: 14, askCd: 60, cd: 240, outnum: 0.85, outR: 700, breakExpo: 25, revealT: 40, minTeams: 4, hate: 20, treachT: 5 };
+// willingness to make a pact at all (0 never, 1 eager)
+var PACT_M = { kiritsugu: 0, irisviel: 0.6, illya: 0.3, shirou: 0.85, rin: 0.55, sakura: 0.4, kariya: 0.35, kayneth: 0.25, kirei: 0.3, waver: 0.7 };
+var PACT_S = { gilgamesh: 0, iskandar: 0.95, caerwyn: 0.6, diarmuid: 0.75, cu: 0.6, emiya: 0.45, heracles: 0.6, lancelot: 0.35, medea: 0.55, medusa: 0.5, kojirou: 0.6, hassan: 0.4, gilles: 0.15, richard: 0.7, leonidas: 0.75, atalanta: 0.4 };
+// who turns on a partner when the chance comes
+var TREACH = { medea: 0.3, kiritsugu: 0.35, kirei: 0.25, gilles: 0.3, hassan: 0.2, kayneth: 0.15 };
+// pairs that will not share a night, or barely
+var PACT_FEUD = { 'caerwyn|lancelot': 0, 'kiritsugu|kirei': 0, 'kayneth|waver': 0.3, 'kirei|rin': 0.5, 'emiya|shirou': 0.4, 'cu|emiya': 0.7, 'diarmuid|kayneth': 0.4 };
+
+function pactOf(team) { if (!G.pacts) return null; for (var i = 0; i < G.pacts.length; i++) { var p = G.pacts[i]; if (p.a === team || p.b === team) return p; } return null; }
+function pactMate(team) { var p = pactOf(team); return p ? (p.a === team ? p.b : p.a) : null; }
+function pactTeams(t1, t2) { if (t1 === t2 || !G.pacts || !G.pacts.length) return false; var p = pactOf(t1); return !!p && (p.a === t2 || p.b === t2); }
+function teamFighters(t) { return G.f.filter(function (f) { return f.team === t && f.st !== 'dead'; }); }
+function teamMaster(t) { return G.f.filter(function (f) { return f.team === t && f.def.isMaster && f.st !== 'dead'; })[0] || null; }
+function teamServant(t) { return G.f.filter(function (f) { return f.team === t && !f.def.isMaster && f.st !== 'dead'; })[0] || null; }
+function humanTeam(t) { return G.f.some(function (f) { return f.team === t && f.st !== 'dead' && !G.ai[f.idx]; }); }
+function liveTeams() { var s = {}; G.f.forEach(function (f) { if (f.st !== 'dead' && !f.def.isMaster) s[trueTeamOf(f)] = 1; }); return Object.keys(s).map(Number); }
+function teamPower(t) { var v = 0; G.f.forEach(function (f) { if (f.team === t && f.st !== 'dead') v += (f.def.isMaster ? 0.35 : 1) * f.hp / f.def.hp; }); return v; }
+function teamHas(t, ids) { return G.f.some(function (f) { return f.team === t && f.st !== 'dead' && ids.indexOf(f.def.id) >= 0; }); }
+// how willing team t is to share a night with team o
+function pactWill(t, o) {
+  var m = teamMaster(t), s = teamServant(t); if (!m && !s) return 0;
+  var wm = m ? (PACT_M[m.def.id] === undefined ? 0.5 : PACT_M[m.def.id]) : null, ws = s ? (PACT_S[s.def.id] === undefined ? 0.5 : PACT_S[s.def.id]) : null;
+  if (m && m.def.id === 'kiritsugu') wm = teamHas(o, ['illya', 'irisviel', 'shirou']) ? 0.9 : 0; // the Magus Killer trusts only his family
+  if (m && m.def.id === 'illya' && teamHas(o, ['shirou'])) wm = 0.8;
+  if (m && (m.def.id === 'sakura' || m.def.id === 'rin') && teamHas(o, ['shirou', 'rin', 'sakura'])) wm = Math.max(wm, 0.8);
+  if (s && s.def.id === 'gilgamesh') ws = (!m || m.def.id !== 'kirei') && teamHas(o, ['kirei']) ? 0.85 : 0; // the King allies with no one, unless it brings him Kirei
+  var w = wm === null ? ws : ws === null ? wm : Math.sqrt(wm * ws);
+  teamFighters(t).forEach(function (a) { teamFighters(o).forEach(function (b) { var k = bondKey(a, b); if (PACT_FEUD[k] !== undefined) w *= PACT_FEUD[k]; if (FAMILY[k]) w *= 1.5; if (G.hesit && (G.hesit[a.idx + '>' + b.idx] || G.hesit[b.idx + '>' + a.idx])) w *= 1.6; }); });
+  return clamp(w, 0, 1);
+}
+// can these two teams make a pact right now (the rules, not the will)
+function pactOpen(t1, t2) {
+  if (!G.clock || G.clock.final || G.quick || G.over || t1 === t2) return false;
+  if (pactOf(t1) || pactOf(t2) || (G.pactCd[t1] || 0) > G.time || (G.pactCd[t2] || 0) > G.time) return false;
+  var lt = liveTeams(); if (lt.length < PACT.minTeams || lt.indexOf(t1) < 0 || lt.indexOf(t2) < 0) return false;
+  var rank = lt.slice().sort(function (a, b) { return teamPower(b) - teamPower(a); }); if (((rank[0] === t1 && rank[1] === t2) || (rank[0] === t2 && rank[1] === t1)) && teamPower(rank[1]) - teamPower(rank[2]) > 0.15) return false; // the two strongest never ally
+  if (G.pactMax !== undefined && G.pacts.length >= (lt.length >= 6 ? 2 : 1)) return false;
+  if ((G.pactHate[Math.min(t1, t2) + '|' + Math.max(t1, t2)] || -99) > G.time - PACT.hate) return false; // they just fought
+  return true;
+}
+function teamsMeet(t1, t2) {
+  var A = teamFighters(t1), B = teamFighters(t2);
+  for (var i = 0; i < A.length; i++) for (var j = 0; j < B.length; j++) if (sameZone(A[i], B[j]) && dist(A[i], B[j]) < PACT.range && knowsExact(A[i], B[j])) return [A[i], B[j]];
+  return null;
+}
+function initPacts() { G.pacts = []; G.pactCd = {}; G.pactHate = {}; G.pactAsk = {}; G.pactT = 0; G.pactMax = 1; G.pactLog = { formed: 0, broken: 0, betray: 0, offers: 0 }; G.offer = null; }
+function formPact(t1, t2, by) {
+  var c = G.clock; var p = { a: t1, b: t2, night: c.n, t0: G.time, by: by };
+  G.pacts.push(p); G.pactLog.formed++; G.offer = null;
+  G.f.forEach(function (f) { if ((f.team === t1 || f.team === t2) && f.lock && (f.lock.team === t1 || f.lock.team === t2)) f.lock = null; });
+  G.f.forEach(pickTarget); FX.pact('formed', t1, t2); return p;
+}
+function endPact(p, why) { var i = G.pacts.indexOf(p); if (i < 0) return; G.pacts.splice(i, 1); G.pactCd[p.a] = G.pactCd[p.b] = G.time + PACT.cd; G.f.forEach(pickTarget); FX.pact(why || 'ended', p.a, p.b); }
+// the breaker pays for it: the Church hears, and every team sees them for a while
+function breakPact(team, victim) {
+  var p = pactOf(team); if (!p) return false; var other = p.a === team ? p.b : p.a;
+  G.pacts.splice(G.pacts.indexOf(p), 1); G.pactCd[team] = G.pactCd[other] = G.time + PACT.cd; G.pactLog.broken++;
+  G.expo[team] = (G.expo[team] || 0) + PACT.breakExpo; G.reveal[team] = Math.max(G.reveal[team] || 0, G.time + PACT.revealT);
+  G.f.forEach(pickTarget); FX.pact('broken', team, other, victim); return true;
+}
+function noteFight(att, def) { if (!G.pactHate || !att || att.team === def.team) return; G.pactHate[Math.min(att.team, def.team) + '|' + Math.max(att.team, def.team)] = G.time; }
+// a lone team that a pact gangs up on takes a little less from each blow
+function outnumbered(att, def) {
+  if (!G.pacts || !G.pacts.length || !att || pactOf(def.team)) return false; var m = pactMate(att.team); if (m === null) return false;
+  return G.f.some(function (o) { return o.team === m && o.st !== 'dead' && dist(o, def) < PACT.outR; });
+}
+// sight is shared between pact partners
+function pactSees(f, e, r) {
+  var m = pactMate(f.team); if (m === null || e.team === m) return false;
+  if (G.seenBy && G.seenBy[m] && G.seenBy[m][e.idx] > G.time) return true;
+  return G.f.some(function (o) { return o.team === m && o.st !== 'dead' && sameZone(o, e) && dist(o, e) < r; });
+}
+// the player asks: a nearby team that could share the night
+function pactCandidate(f) {
+  if (!G.pacts || G.mode !== 'war') return null; var best = null, bd = PACT.range * 0.7;
+  G.f.forEach(function (o) { if (o.team !== f.team && o.st !== 'dead' && o.spirit !== 2 && sameZone(o, f) && dist(o, f) < bd && knowsExact(f, o) && pactOpen(f.team, o.team)) { bd = dist(o, f); best = o; } });
+  return best;
+}
+function pactButton(f) {
+  if (!G.pacts) return;
+  if (G.offer && G.offer.to === f.team && G.offer.until > G.time) { var fr = G.offer.from; if (pactOpen(fr, f.team)) formPact(fr, f.team, f.team); else G.offer = null; return; }
+  var p = pactOf(f.team);
+  if (p) { if (f.breakAsk > G.time) { f.breakAsk = 0; breakPact(f.team, null); } else { f.breakAsk = G.time + 3; FX.pact('confirmBreak', f.team, pactMate(f.team)); } return; }
+  var c = pactCandidate(f); if (!c) { FX.pact('nobody', f.team, -1); return; }
+  var t = c.team, k = f.team + '>' + t; if ((G.pactAsk[k] || 0) > G.time) { FX.pact('askedRecently', f.team, t); return; }
+  G.pactAsk[k] = G.time + PACT.askCd; G.pactLog.offers++;
+  if (humanTeam(t)) { G.offer = { from: f.team, to: t, until: G.time + PACT.offerT }; FX.pact('offer', f.team, t); return; }
+  // an AI team weighs it; being outmatched makes any team listen
+  var w = pactWill(t, f.team), lt = liveTeams(), weak = teamPower(t) < teamPower(f.team) ? 1.25 : 1;
+  G.pactPending = { from: f.team, to: t, at: G.time + 1.2, yes: Math.random() < Math.min(0.95, w * 1.1 * weak) && lt.length >= PACT.minTeams };
+  FX.pact('asked', f.team, t);
+}
+function pactTick(dt) {
+  if (!G.pacts || !G.clock) return;
+  var c = G.clock, lt = liveTeams();
+  // dawn, the final night or too few teams end every pact
+  for (var i = G.pacts.length - 1; i >= 0; i--) { var p = G.pacts[i]; if (c.final || lt.length < PACT.minTeams || lt.indexOf(p.a) < 0 || lt.indexOf(p.b) < 0 || (c.phase === 'day' && c.n > p.night)) endPact(p, c.final ? 'final' : lt.length < PACT.minTeams ? 'few' : 'dawn'); }
+  if (G.pactPending && G.time >= G.pactPending.at) { var q = G.pactPending; G.pactPending = null; if (q.yes && pactOpen(q.from, q.to)) formPact(q.from, q.to, q.from); else FX.pact('declined', q.from, q.to); }
+  if (G.offer && G.offer.until <= G.time) { FX.pact('expired', G.offer.from, G.offer.to); G.offer = null; }
+  gilBetrayTick();
+  G.pactT -= dt; if (G.pactT > 0) return; G.pactT = PACT.tick;
+  if (c.final) return;
+  treacheryTick();
+  // two teams meet and weigh a pact; by day only inside a truce
+  for (var a = 0; a < lt.length; a++) for (var b = a + 1; b < lt.length; b++) {
+    var t1 = lt[a], t2 = lt[b]; if (!pactOpen(t1, t2)) continue;
+    var meet = teamsMeet(t1, t2); if (!meet) continue;
+    var tr = inTruce(meet[0], meet[1]); if (c.phase === 'day' && !tr) continue;
+    var h1 = humanTeam(t1), h2 = humanTeam(t2); if (h1 && h2) continue;
+    var third = G.f.some(function (o) { return o.st !== 'dead' && o.team !== t1 && o.team !== t2 && !o.def.isMaster && dist(o, meet[0]) < 1400; });
+    var P = PACT.base * (tr ? 1.6 : 1) * (third ? 1.6 : 1);
+    if (h1 || h2) {
+      var ai = h1 ? t2 : t1, hu = h1 ? t1 : t2; if (G.offer || (G.pactAsk[ai + '>' + hu] || 0) > G.time) continue;
+      if (Math.random() < P * pactWill(ai, hu)) { G.pactAsk[ai + '>' + hu] = G.time + PACT.askCd * 2; G.offer = { from: ai, to: hu, until: G.time + PACT.offerT }; G.pactLog.offers++; FX.pact('offer', ai, hu); return; }
+      continue;
+    }
+    if (Math.random() < P * pactWill(t1, t2) * pactWill(t2, t1)) { formPact(t1, t2, t1); return; }
+  }
+}
+// a partner left weak and alone is a temptation for some
+function treacheryTick() {
+  G.pacts.slice().forEach(function (p) {
+    [p.a, p.b].forEach(function (t) {
+      if (!pactOf(t) || humanTeam(t)) return; var o = t === p.a ? p.b : p.a, tv = 0;
+      teamFighters(t).forEach(function (f) { tv = Math.max(tv, TREACH[f.def.id] || 0.01); });
+      var prey = teamFighters(o).filter(function (e) { return e.hp < e.def.hp * 0.35 && teamFighters(t).some(function (f) { return !f.def.isMaster && dist(f, e) < 500; }); })[0];
+      if (prey && !humanTeam(o) && Math.random() < tv * 0.5) { breakPact(t, prey); teamFighters(t).forEach(function (f) { if (!f.def.isMaster) f.lock = prey; }); }
+    });
+  });
+}
+// the King of Heroes and his chosen master. Only when a truce or a pact puts them together, once a war.
+function gilBetrayTick() {
+  if (G.gilDone || (G.gilChk || 0) > G.time) return; G.gilChk = G.time + 2;
+  var gil = G.f.filter(function (f) { return f.def.id === 'gilgamesh' && f.st !== 'dead' && f.trueTeam === undefined; })[0]; if (!gil || !G.ai[gil.idx]) return;
+  var gm = gil.partner, k = G.f.filter(function (f) { return f.def.id === 'kirei' && f.st !== 'dead'; })[0];
+  if (!gm || gm.st === 'dead' || gm.team !== gil.team || !k || k === gm || k.team === gil.team || !isFreeMaster(k)) return;
+  if (!(pactTeams(gil.team, k.team) || inTruce(gil, k)) || dist(gil, k) > 900 || dist(gil, gm) > 1400) return;
+  if (gil.st !== 'idle' && gil.st !== 'move' && gil.st !== 'rec') return;
+  if (Math.random() > 0.35) return;
+  G.gilDone = true; G.pactLog.betray++;
+  var p = pactOf(gil.team); if (p) { G.pacts.splice(G.pacts.indexOf(p), 1); G.f.forEach(pickTarget); }
+  FX.pact('betray', gil.team, k.team, gm);
+  gm.lastHit = { by: gil, key: 'betray' }; gm.lastHitT = G.time; gm.cause = 'betrayed'; gm.hp = 0; kill(gm);
+  formContract(gil, k, true);
+}
+// targeting: help a partner with their fight, and an AI pact never closes in on the player together
+function pactAim(f, e) {
+  if (!G.pacts || !G.pacts.length) return 0; var m = pactMate(f.team); if (m === null) return 0; var v = 0;
+  if (G.f.some(function (o) { return o.team === m && o.st !== 'dead' && o.foe === e && dist(o, e) < PACT.outR; })) v -= 300;
+  if (G.ai[f.idx] && !humanTeam(f.team) && !humanTeam(m) && humanTeam(e.team)) v += 1500;
+  return v;
+}
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -2770,7 +2937,7 @@ function aiMaster(ai, dt) {
 }
 function simStep(dt) {
   if (G.hitstop > 0) { G.hitstop -= dt; return; }
-  G.time += dt; if (G.clock) clockTick(dt); if (G.fields) fieldsTick(dt); if (G.clock) eventsTick(dt); if (G.dimT > 0) G.dimT -= dt; if (G.marble) { G.marble.t += dt; if (G.mode === 'war' && (G.marble.t > G.marble.life || G.marble.owner.st === 'dead')) endMarble(null, false); }
+  G.time += dt; if (G.clock) clockTick(dt); if (G.fields) fieldsTick(dt); if (G.clock) eventsTick(dt); if (G.pacts) pactTick(dt); if (G.dimT > 0) G.dimT -= dt; if (G.marble) { G.marble.t += dt; if (G.mode === 'war' && (G.marble.t > G.marble.life || G.marble.owner.st === 'dead')) endMarble(null, false); }
   G.f.forEach(function (f) { if (f.st !== 'dead' && (!f.foe || f.foe.st === 'dead' || G.f.length > 2)) pickTarget(f); });
   turnTick();
   for (var i = 0; i < G.f.length; i++) if (G.ai[i]) { if (G.ai[i].f.trueTeam !== undefined) aiTurned(G.ai[i], dt); else if (G.mode === 'war') aiWar(G.ai[i], dt); else aiTick(G.ai[i], dt); }
@@ -2783,7 +2950,7 @@ function simStep(dt) {
 var $ = function (s) { return document.querySelector(s); };
 var CFG = { game: 'war', servant: 'richard', master: 'rin', playAs: 'servant', teams: 7, nights: 3, diff: 'knight', speed: 1, arena: null };
 try { var sv = JSON.parse(localStorage.getItem('war2.cfg') || 'null'); if (sv) Object.keys(CFG).forEach(function (k) { if (sv[k] !== undefined) CFG[k] = sv[k]; }); } catch (e) {}
-if (!SERV[CFG.servant]) CFG.servant = 'richard'; if (!MASTERS[CFG.master]) CFG.master = 'rin'; if ([3, 4, 7].indexOf(CFG.teams) < 0) CFG.teams = 7; if (CFG.game !== 'arena') CFG.game = 'war';
+if (!SERV[CFG.servant]) CFG.servant = 'richard'; if (!MASTERS[CFG.master]) CFG.master = 'rin'; if ([3, 4, 7].indexOf(CFG.teams) < 0) CFG.teams = 7; if (CFG.game !== 'arena') CFG.game = 'war'; if (typeof ARENA_ENTRY !== 'undefined') CFG.game = 'arena';
 var FFA_COL = ['#3fb3c4', '#cf4a52', '#e0b04a', '#a77be0'];
 function slotCol(i) { return CFG.mode === 'teams' ? (CFG.slots[i].team === CFG.slots[0].team ? '#3fb3c4' : '#cf4a52') : CFG.mode === 'duel' ? (i ? '#cf4a52' : '#3fb3c4') : FFA_COL.at(i); }
 var WAR_COL = ['#e2515c', '#f0a93b', '#a77ae6', '#5bc47a', '#e07ab8', '#d8c9a0'];
@@ -2873,9 +3040,9 @@ var atalanta = {
 /* =================== HERACLES =================== */
 var heracles = {
   id: 'heracles', name: 'Heracles', cls: 'Berserker', col: '#e2515c',
-  basis: 'Hero of Greek myth: the Nemean lion pelt worn as a hood and cloak, here dark as a black cuirass, an enormous body, black hair and beard, and an olive-wood club.',
-  pal: [['Skin', '#b57c54'], ['Dark pelt', '#4a4552'], ['Pelt shadow', '#1f1c25'], ['Club wood', '#6b4a2c'], ['Hair and beard', '#1c1511']],
-  notes: ['Widest shoulders in the roster: the first thing you read from above.', 'The lion hood gives him a distinctive top-down head shape with ears.', 'Club is thick and short compared with the other weapons; the weight is the point.'],
+  basis: 'Hero of Greek myth: the Nemean lion pelt worn as a hood and cloak, here dark as a black cuirass, an enormous body, black hair and beard, and a huge axe-sword hewn from temple stone, crude and heavy, with a leather-bound grip.',
+  pal: [['Skin', '#b57c54'], ['Dark pelt', '#4a4552'], ['Pelt shadow', '#1f1c25'], ['Stone', '#7a7672'], ['Hair and beard', '#1c1511']],
+  notes: ['Widest shoulders in the roster: the first thing you read from above.', 'The lion hood gives him a distinctive top-down head shape with ears.', 'His stone axe-sword is a rough slab with a bound grip: crude, huge and heavy; the weight is the point.'],
   body: function () {
     return '<defs>' + grad('hpl', '#4a4552', '#1f1c25') + grad('hsk', '#c58d62', '#9a6643') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
       '<path d="M-2 -30 Q-28 -22 -32 0 Q-28 22 -2 30 L4 14 Q-6 0 4 -14Z" fill="url(#hpl)"/><path d="M-30 -10 L-36 -4 L-30 0 L-36 6 L-30 10" fill="none"/>' +
@@ -2886,13 +3053,15 @@ var heracles = {
       '<circle cx="2" cy="0" r="14" fill="#1d1a22"/><circle cx="2" cy="0" r="10" fill="url(#hpl)"/><path d="M8 -4 L18 0 L8 4Z" fill="#3a2418"/></g>';
   },
   weapon: function () {
-    return '<g stroke="#0b121a" stroke-width="2.4" stroke-linejoin="round">' +
-      '<path d="M-10 -3.5 L28 -5 Q42 -11 56 -14 Q70 -10 68 0 Q70 10 56 14 Q42 11 28 5 L-10 3.5Z" fill="#6b4a2c"/>' +
-      '<path d="M34 -7 Q48 -9 60 -8 M34 7 Q48 9 60 8" fill="none" stroke-width="1.6" opacity=".5"/>' +
-      '<ellipse cx="50" cy="-4" rx="3.5" ry="2.6" fill="#4b3320" stroke-width="1.4"/><ellipse cx="58" cy="5" rx="3" ry="2.4" fill="#4b3320" stroke-width="1.4"/><ellipse cx="20" cy="1" rx="2.4" ry="2" fill="#4b3320" stroke-width="1.2"/>' +
-      '<rect x="-6" y="-4.5" width="12" height="9" rx="2.5" fill="#5a3a22"/></g>';
+    return '<defs>' + grad('hst', '#8d8a86', '#4a4744') + '</defs><g stroke="#0b121a" stroke-width="2.4" stroke-linejoin="round">' +
+      '<rect x="-14" y="-3.6" width="24" height="7.2" rx="2" fill="#4b3320"/><path d="M-10 -3.6 L-6 3.6 M-4 -3.6 L0 3.6 M2 -3.6 L6 3.6" stroke="#2a1c12" stroke-width="1.3" fill="none"/>' +
+      '<path d="M8 -9 L14 -11 L14 11 L8 9Z" fill="#3e3b38"/>' +
+      '<path d="M14 -8 L30 -11 L38 -9 L50 -13 L62 -11 L70 -14 L80 -8 L84 -2 L82 4 L74 9 L62 10 L52 13 L40 10 L28 11 L14 8Z" fill="url(#hst)"/>' +
+      '<path d="M18 -2 L44 -4 L58 -1 L76 -3 M22 4 L40 3 L56 6" fill="none" stroke="#2d2b29" stroke-width="1.3" opacity=".7"/>' +
+      '<path d="M30 -11 L33 -6 M50 -13 L48 -8 M62 10 L60 5 M70 -14 L69 -9" fill="none" stroke="#2d2b29" stroke-width="1.2"/>' +
+      '<path d="M16 -7 L36 -9 L48 -11 L66 -11" fill="none" stroke="#b9b5ae" stroke-width="1" opacity=".75"/></g>';
   },
-  wvb: '-16 -20 92 40', tdvb: '-50 -50 100 100'
+  wvb: '-16 -18 104 36', tdvb: '-50 -50 100 100'
 };
 
 /* =================== ASSASSIN (Hassan) =================== */
@@ -4022,6 +4191,7 @@ function btnDown(b) {
 function doButton(f, b) {
   if (f.turnT > G.time) return; // Rule Breaker: this servant is not yours right now
   if (b === 'target') { cycleTarget(f); return; }
+  if (b === 'pact') { pactButton(f); return; }
   if (b === 'contract') { var cc = contractCandidate(f, CONTRACT_RANGE + 40); if (!cc || !formContract(f, cc)) FX.text(f, 'NOBODY TO CONTRACT WITH'); return; }
   if (b.indexOf('seal_') === 0) { if (f.def.isMaster) { if (!useSeal(f, b.slice(5))) FX.text(f, f.sealUsed[b.slice(5)] ? 'SEAL ALREADY USED' : 'NO SERVANT'); } return; }
   if (b === 'block') f.inp.guard = true;
@@ -4047,7 +4217,7 @@ stick.addEventListener('pointerdown', function (e) { e.preventDefault(); stickId
 stick.addEventListener('pointermove', function (e) { if (e.pointerId === stickId) stickMove(e); });
 var stickUp = function (e) { if (e.pointerId !== stickId) return; stickId = null; knob.style.transform = ''; held.mx = 0; held.my = 0; };
 stick.addEventListener('pointerup', stickUp); stick.addEventListener('pointercancel', stickUp); stick.addEventListener('lostpointercapture', stickUp);
-var KM = { f: 'contract', '7': 'seal_np', '8': 'seal_heal', '9': 'seal_warp', u: 'spirit', tab: 'target', j: 'light', z: 'light', k: 'heavy', x: 'heavy', l: 'block', c: 'block', shift: 'block', ' ': 'dodge', i: 'skill', v: 'skill', o: 'np', b: 'np' };
+var KM = { f: 'contract', p: 'pact', '7': 'seal_np', '8': 'seal_heal', '9': 'seal_warp', u: 'spirit', tab: 'target', j: 'light', z: 'light', k: 'heavy', x: 'heavy', l: 'block', c: 'block', shift: 'block', ' ': 'dodge', i: 'skill', v: 'skill', o: 'np', b: 'np' };
 window.addEventListener('keydown', function (e) {
   if (!running) return; var k = e.key.toLowerCase();
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab'].indexOf(k) >= 0) e.preventDefault();
@@ -5246,7 +5416,7 @@ function hud() {
   document.querySelector('.b[data-b="dodge"]').classList.toggle('off', a.dodges === 0);
   var np = document.querySelector('.b[data-b="np"]'), npReady = a.def.isMaster ? (a.sigCd <= 0 && !(a.silenceT > 0) && canPay(a, MANA.sigCost)) : (a.mom >= 100 && canNP(a)); np.classList.toggle('rdy', npReady); np.classList.toggle('off', !npReady); np.firstChild.textContent = a.def.isMaster ? (a.silenceT > 0 ? 'Burned ' + Math.ceil(a.silenceT) : a.sigCd > 0 ? (a.A.np.short || a.A.np.name.split(' ')[0]) + ' ' + Math.ceil(a.sigCd) : (a.A.np.short || a.A.np.name.split(' ')[0])) : (a.mom >= 100 && !canNP(a) ? 'No mana' : 'NP');
   if (a.def.isMaster) { document.querySelectorAll('.b.seal[data-b]').forEach(function (el) { el.classList.toggle('used', !!a.sealUsed[el.dataset.b.slice(5)] || !a.partner || a.partner.st === 'dead'); }); var sl = sealsLeft(a); $('#sealL').textContent = sl; $('#sealBtn').classList.toggle('used', sl === 0); }
-  var ctb = document.querySelector('.b[data-b="contract"]'), cand = contractCandidate(a, CONTRACT_RANGE + 40); ctb.hidden = !cand; if (cand) ctb.lastChild.textContent = cand.def.isMaster ? shortName(cand.def.name) : shortName(cand.def.name);
+  var ctb = document.querySelector('.b[data-b="contract"]'), cand = contractCandidate(a, CONTRACT_RANGE + 40); ctb.hidden = !cand; pactHud(a); if (cand) ctb.lastChild.textContent = cand.def.isMaster ? shortName(cand.def.name) : shortName(cand.def.name);
   $('#spl').textContent = a.cnc ? 'hidden' : a.def.cls === 'Assassin' && a.cncCd > G.time ? Math.ceil(a.cncCd - G.time) + 's' : a.spirit === 2 ? 'unseen' : a.spirit ? '...' : ''; $('#tgl').textContent = a.lock ? 'locked' : 'auto'; document.querySelector('.b[data-b="target"]').classList.toggle('locked', !!a.lock);
   var sk = document.querySelector('.b[data-b="skill"]'); sk.classList.toggle('off', a.cd > 0 || (a.def.isMaster && a.silenceT > 0));
   var ls = a.A.lightSeq, lt = $('#lightSp'), ht = $('#heavySp');
@@ -5899,6 +6069,97 @@ var KILLQ = {
   };
   var db0 = drawBubbles; drawBubbles = function (cx, cy, zoom) { trucePairs(); db0(cx, cy, zoom); };
 })();
+/* ---- pacts on screen: offers, answers, broken promises and the King's choice. All lines are original. ---- */
+var PACT_LINES = {
+  iskandar: { offer: 'Ha! Fight beside me tonight, and we settle things tomorrow!', yes: 'A fine alliance! Drink with me when it’s over!', no: 'Pity. I’d have liked you in my army.', brk: 'Forgive me, friend. A conqueror takes what is in reach.' },
+  caerwyn: { offer: 'Until dawn, our swords need not cross.', yes: 'Then I give you my word as a knight.', no: 'So be it. We meet as enemies.', brk: '...' },
+  diarmuid: { offer: 'Stand with me tonight. I swear it on my lances.', yes: 'An honor. I will guard your back.', no: 'Then I shall face you honorably.', brk: '...' },
+  cu: { offer: 'Truce for tonight? I’d rather fight the other guys anyway.', yes: 'Heh. Don’t slow me down.', no: 'Suits me. More fun this way.', brk: 'Sorry. Got bored.' },
+  emiya: { offer: 'A practical arrangement. One night only.', yes: 'Fine. Don’t get in my line of fire.', no: 'Expected as much.', brk: 'Nothing personal. It was always going to end like this.' },
+  heracles: { offer: '...■■■...', yes: '...■■...', no: '■■■■—!!', brk: '■■■■■—!!' },
+  lancelot: { offer: '...rrr...', yes: '...rrr...', no: '■■■■!!', brk: '■■■■■!!' },
+  medea: { offer: 'Shall we be friends tonight? I can be very helpful.', yes: 'How lovely. I’ll remember this kindness.', no: 'Your loss, dear.', brk: 'Did you really trust a witch? How sweet.' },
+  medusa: { offer: 'A truce. For tonight.', yes: 'Understood.', no: 'Then stay out of my way.', brk: '...Sorry.' },
+  kojirou: { offer: 'The moon is too fine for a pointless duel. Walk with me tonight.', yes: 'Splendid. Let us enjoy the night.', no: 'Then let our blades speak instead.', brk: 'A swordsman cannot resist a fine opening.' },
+  hassan: { offer: 'The shadows can share their work tonight.', yes: 'Agreed.', no: 'As you wish.', brk: 'An assassin keeps no promise past its use.' },
+  gilles: { offer: 'Let us be companions in this splendid darkness!', yes: 'Oh, how delightful!', no: 'You disappoint me terribly!', brk: 'Cool! Cool! Did you truly believe me?' },
+  richard: { offer: 'Ride with me tonight, and tomorrow we fight fair.', yes: 'Then we are brothers in arms until dawn.', no: 'Then we settle it now.', brk: '...' },
+  leonidas: { offer: 'Hold the line with me tonight.', yes: 'Good. Shields together.', no: 'Then come and take it.', brk: '...' },
+  atalanta: { offer: 'One night. Then I hunt you again.', yes: 'Keep up, then.', no: 'Better. I prefer the hunt.', brk: 'The hunt resumes.' },
+  gilgamesh: { offer: 'You may stand near me tonight. Consider it an honor.', yes: 'Hmph. Amuse me.', no: 'You presume too much, mongrel.', brk: '...' },
+  shirou: { offer: 'We don’t have to fight tonight. Let’s work together.', yes: 'Thanks. I mean it.', no: 'I understand. But I won’t give up on talking.', brk: '...' },
+  rin: { offer: 'A temporary alliance. Strictly business.', yes: 'Good. Don’t make me regret it.', no: 'Fine. Your funeral.', brk: 'Sorry. It’s nothing personal. Mostly.' },
+  sakura: { offer: 'Um... could we not fight tonight?', yes: 'Thank you...', no: 'I see...', brk: 'I’m sorry. I couldn’t stop it.' },
+  waver: { offer: 'H-hey! How about a truce? Just for tonight!', yes: 'Really? Great! I mean, good. Acceptable.', no: 'Why does nobody ever listen to me?!', brk: 'I— I didn’t want to do that!' },
+  irisviel: { offer: 'There’s no need for us to fight tonight.', yes: 'Thank you. Let’s both see the morning.', no: 'I’m sorry to hear that.', brk: 'Forgive me...' },
+  illya: { offer: 'You can play with me tonight. Just don’t bore me.', yes: 'Hehe. Don’t disappoint me.', no: 'Fine. Berserker can play with you instead.', brk: 'Playtime’s over.' },
+  kiritsugu: { offer: 'Tonight we cover each other. Nothing more.', yes: 'Fine.', no: 'No deals.', brk: 'It was always the plan.' },
+  kirei: { offer: 'Perhaps we can be of use to one another tonight.', yes: 'How interesting. I accept.', no: 'A shame. I’d hoped to watch you a while longer.', brk: 'Did you think a priest would keep his word?' },
+  kayneth: { offer: 'I will permit you to stand beside me tonight.', yes: 'Know that this is a favor.', no: 'How dare you refuse me!', brk: 'An agreement with a lesser magus means nothing.' },
+  kariya: { offer: 'I’m not after you. Just... let me through tonight.', yes: 'Thanks...', no: 'Then get out of my way.', brk: '...I have no choice.' }
+};
+var PACT_DEF = { offer: 'A truce, until dawn?', yes: 'Agreed. Until dawn.', no: 'No deal.', brk: 'Our pact is over.' };
+function pactSpeaker(t) { return teamServant(t) || teamMaster(t); }
+function pactLine(t, k) { var f = pactSpeaker(t); if (!f || !FX.near(f.x, f.y)) return; var L = PACT_LINES[f.def.id] || PACT_DEF; SAYT[f.idx] = performance.now() / 1000; showBubble(f, L[k] || PACT_DEF[k], 3, true); }
+FX.pact = function (kind, t1, t2, x) {
+  if (!G || !G.f[MEI]) return; var me1 = G.f[MEI], mt = me1.team, mine = t1 === mt || t2 === mt, other = t1 === mt ? t2 : t1;
+  if (kind === 'nobody') { FX.text(me1, 'NO ONE TO MAKE A PACT WITH'); return; }
+  if (kind === 'askedRecently') { FX.text(me1, 'THEY ALREADY ANSWERED'); return; }
+  if (kind === 'confirmBreak') { FX.text(me1, 'PRESS PACT AGAIN TO BREAK IT'); return; }
+  if (kind === 'asked') { pactLine(t1, 'offer'); note('You offer ' + teamName(t2) + ' a pact until dawn...', '#9fe6b0'); return; }
+  if (kind === 'offer') {
+    pactLine(t1, 'offer');
+    if (t2 === mt) { FX.banner(teamName(t1) + ' offers a pact', 'No fighting until dawn, shared sight. Press Pact (P) to accept.'); FX.snd('bell', me1, {}); }
+    else if (t1 === mt) note('Waiting for ' + teamName(t2) + ' to answer...', '#9fe6b0');
+    return;
+  }
+  if (kind === 'declined') { pactLine(t2, 'no'); if (t1 === mt) note(teamName(t2) + ' refuses the pact.', '#f0a85a'); return; }
+  if (kind === 'expired') { if (mine) note('The pact offer lapses.', '#c9c3b0'); return; }
+  if (kind === 'formed') {
+    pactLine(t2, 'yes');
+    if (mine) FX.banner('Pact with ' + teamName(other), 'Until dawn you cannot hurt each other and you share what you see. Breaking it has a price.');
+    else note(teamName(t1) + ' and ' + teamName(t2) + ' have made a pact.', '#e9e4d3');
+    return;
+  }
+  if (kind === 'broken') {
+    pactLine(t1, 'brk');
+    if (t1 === mt) FX.banner('You broke the pact', 'The Church hears of it, and every team can see you for ' + PACT.revealT + ' seconds.');
+    else if (t2 === mt) { FX.banner('Betrayed!', teamName(t1) + ' broke your pact.'); FX.shake(8); }
+    else note(teamName(t1) + ' betrayed ' + teamName(t2) + '!', '#f0a85a');
+    return;
+  }
+  if (kind === 'dawn' || kind === 'final' || kind === 'few') { if (mine) note(kind === 'dawn' ? 'Dawn: your pact with ' + teamName(other) + ' ends.' : kind === 'final' ? 'The final night: every pact is void.' : 'Too few teams remain: the pact is void.', '#c9c3b0'); return; }
+  if (kind === 'betray') {
+    var gil = G.f.filter(function (f) { return f.def.id === 'gilgamesh' && f.st !== 'dead'; })[0], k = G.f.filter(function (f) { return f.def.id === 'kirei'; })[0], gm = x;
+    FX.banner('The King chooses', 'Gilgamesh cuts down ' + shortName(gm.def.name) + ' and takes Kirei as his master.');
+    if (gil && FX.near(gil.x, gil.y)) {
+      SAYT[gil.idx] = performance.now() / 1000; showBubble(gil, 'You were never worthy of me, ' + shortName(gm.def.name) + '. Kirei — you will be my master now.', 3.6, true);
+      if (gm && gm.st !== 'dead') DUO.push({ at: performance.now() + 1800, f: gm, text: 'Archer...? Why...' });
+      if (k) DUO.push({ at: performance.now() + 3600, f: k, text: 'Then I accept, King of Heroes. Let us see what you show me.' });
+      FX.shake(12);
+    }
+  }
+};
+// the HUD button: Pact (ask), Accept (an offer is waiting), Break (in a pact)
+function pactHud(a) {
+  var b = document.querySelector('.b[data-b="pact"]'); if (!b) return;
+  if (!G.pacts || G.mode !== 'war' || a.st === 'dead') { b.hidden = true; return; }
+  var sm = b.lastChild, off = G.offer && G.offer.to === a.team && G.offer.until > G.time, p = pactOf(a.team), c = !off && !p && pactCandidate(a);
+  b.hidden = !(off || p || c); b.classList.toggle('rdy', !!off);
+  if (off) { b.firstChild.textContent = 'Accept'; sm.textContent = teamName(G.offer.from).replace('’s team', ''); }
+  else if (p) { b.firstChild.textContent = a.breakAsk > G.time ? 'Break?' : 'Pact'; sm.textContent = 'ally: ' + teamName(pactMate(a.team)).replace('’s team', ''); }
+  else if (c) { b.firstChild.textContent = 'Pact'; sm.textContent = teamName(c.team).replace('’s team', ''); }
+}
+// a green ring under pact partners
+(function () {
+  var dff0 = drawFighterFx;
+  drawFighterFx = function (g, f) {
+    dff0(g, f);
+    if (!G || !G.pacts || !G.pacts.length || !G.f[MEI] || f.st === 'dead' || f.team === G.f[MEI].team || !pactTeams(f.team, G.f[MEI].team) || !visL(f)) return;
+    g.save(); g.setLineDash([8, 7]); g.lineDashOffset = -G.time * 20; g.strokeStyle = 'rgba(159,230,176,.75)'; g.lineWidth = 2.5;
+    g.beginPath(); g.arc(f.x, f.y, (f.def.isMaster ? 30 : 40), 0, Math.PI * 2); g.stroke(); g.restore();
+  };
+})();
 /* ---- multiplayer test: host-authoritative, relayed through the claude.ai room (WebRTC is blocked in artifacts) ---- */
 var NET = { ns: null, R: null, role: null, code: '', me: null, game: null, mirror: false, snapAt: 0, sentAt: 0, lastHost: null, seq: 0, ev: [], lastSeq: 0, prev: {}, cnt: {}, g: 0, h: 0, so: null, lk: -1, msg: '' };
 var NST = ['idle', 'wind', 'act', 'rec', 'stag', 'dodge', 'counter', 'dead'], NKEY = ['light', 'heavy', 'skill', 'np', 'counter', 'dodge'];
@@ -5936,7 +6197,7 @@ function renderNet() {
     html = '<div class="mtag">Room code: <b style="color:var(--bone);font-size:15px;letter-spacing:.2em">' + esc(NET.code.toUpperCase()) + '</b></div><ul class="netlist">' + list + '</ul>';
   }
   el.innerHTML = html + (NET.msg ? '<p class="note">' + esc(NET.msg) + '</p>' : '');
-  var go = $('#go'); if (NET.role === 'client') { go.disabled = true; go.textContent = 'Waiting for host'; } else { go.disabled = false; go.textContent = NET.role === 'host' ? 'Begin the war (' + (netClients().length + 1) + ' players)' : 'Begin the war'; }
+  var go = $('#go'); if (NET.role === 'client') { go.disabled = true; go.textContent = 'Waiting for host'; } else { go.disabled = false; var lb = CFG.game === 'arena' ? 'Start the battle' : 'Begin the war'; go.textContent = NET.role === 'host' ? lb + ' (' + (netClients().length + 1) + ' players)' : lb; }
 }
 function netOnPeers() {
   renderNet();
@@ -6077,6 +6338,6 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet();
 requestAnimationFrame(frame);
-window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, ev: { startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
 </script>
