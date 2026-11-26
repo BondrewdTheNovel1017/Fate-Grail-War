@@ -131,17 +131,17 @@ var hassan = {
 /* =================== CAERWYN (original) =================== */
 var caerwyn = {
   id: 'caerwyn', name: 'King Arthur', cls: 'Saber', col: '#dfeaf4',
-  basis: 'The king of Arthurian legend, imagined as a woman and drawn our own way: a white wool cloak, hammered bronze plate, a plain bronze circlet and a long honey-blonde braid. Her blade is bright silver with a gold line down its middle, set in a gold hilt.',
-  pal: [['Cloak', '#e6edf2'], ['Bronze', '#b98a4a'], ['Hair', '#e3c06a'], ['Steel', '#dfe7ea'], ['Gem', '#dfeaf4']],
-  notes: ['A white cloak with bronze plate: the lightest silhouette in the roster. Change the palette strings at the top of this entry to recolor her.', 'The long blonde braid trails behind her in the arena, next to the cloak, so facing is easy to read.', 'The circlet ring is the one detail that marks her as royalty from above.'],
+  basis: 'The king of Arthurian legend, imagined as a woman and drawn our own way: a deep blue dress and cloak under bright silver plate, a gold-trimmed breastplate and a long honey-blonde braid. Her blade is bright silver with a gold line down its middle, set in a gold hilt.',
+  pal: [['Dress', '#2f56a8'], ['Silver plate', '#e9eff4'], ['Trim', '#d9ad3c'], ['Hair', '#e3c06a'], ['Steel', '#dfe7ea']],
+  notes: ['Blue cloth under silver plate: the blue reads first from above, the silver marks her as a knight.', 'The long blonde braid trails behind her next to the cloak, so facing is easy to read.', 'Gold trim on the breastplate matches the hilt of her sword.'],
   body: function () {
-    return '<defs>' + grad('qbr', '#dcae6a', '#8a5f2a') + grad('qcl', '#f6f9fb', '#aebcc8') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
-      '<path d="M-6 -24 Q-36 -20 -42 0 Q-36 20 -6 24Z" fill="url(#qcl)"/><path d="M-6 -24 Q-24 -20 -34 -6 L-8 -4Z" ' + SH + '/>' +
+    return '<defs>' + grad('qsv', '#ffffff', '#a9b8c6') + grad('qbl', '#4a74c8', '#1f3a7a') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
+      '<path d="M-6 -24 Q-36 -20 -42 0 Q-36 20 -6 24Z" fill="url(#qbl)"/><path d="M-6 -24 Q-24 -20 -34 -6 L-8 -4Z" ' + SH + '/>' +
       '<path d="M-8 -3 Q-24 -8 -38 -2 Q-26 0 -38 6 Q-22 6 -8 4Z" fill="#e3c06a"/><path d="M-14 0 L-34 1" stroke="#a77f2c" stroke-width="1.2" fill="none"/>' +
-      '<path d="M4 -17 L26 -11 L26 -5 L2 -9Z" fill="url(#qbr)"/><path d="M4 17 L26 11 L26 5 L2 9Z" fill="url(#qbr)"/><circle cx="27" cy="-8" r="3.2" fill="#d9a98a"/><circle cx="27" cy="8" r="3.2" fill="#d9a98a"/>' +
-      '<ellipse cx="0" cy="0" rx="13" ry="22" fill="#e6edf2"/><ellipse cx="1" cy="0" rx="9" ry="17" fill="url(#qbr)"/><path d="M-4 -12 L-4 12 M4 -10 L4 10" stroke="#7c5a2a" stroke-width="1.3" fill="none"/>' +
-      '<ellipse cx="0" cy="-20" rx="8" ry="6.5" fill="url(#qbr)"/><ellipse cx="0" cy="20" rx="8" ry="6.5" fill="url(#qbr)"/><circle cx="-1" cy="-20" r="1.6" fill="#7c5a2a" stroke="none"/><circle cx="-1" cy="20" r="1.6" fill="#7c5a2a" stroke="none"/>' +
-      '<circle cx="2" cy="0" r="10" fill="#e3c06a"/><ellipse cx="6" cy="0" rx="5" ry="7" fill="#d9a98a" stroke="none"/><path d="M-1 -9 Q8 -10 11 -4 M-1 9 Q8 10 11 4" stroke="#b98a4a" stroke-width="2.2" fill="none"/><path d="M10 -3 L14 0 L10 3Z" fill="#d9a98a" stroke-width="1.4"/><circle cx="5" cy="0" r="1.8" fill="#dfeaf4" stroke-width="1"/></g>';
+      '<path d="M4 -17 L26 -11 L26 -5 L2 -9Z" fill="url(#qsv)"/><path d="M4 17 L26 11 L26 5 L2 9Z" fill="url(#qsv)"/><circle cx="27" cy="-8" r="3.2" fill="#d9a98a"/><circle cx="27" cy="8" r="3.2" fill="#d9a98a"/>' +
+      '<ellipse cx="0" cy="0" rx="13" ry="22" fill="#2f56a8"/><ellipse cx="1" cy="0" rx="9" ry="17" fill="url(#qsv)"/><path d="M-4 -12 L-4 12 M4 -10 L4 10" stroke="#d9ad3c" stroke-width="1.4" fill="none"/>' +
+      '<ellipse cx="0" cy="-20" rx="8" ry="6.5" fill="url(#qsv)"/><ellipse cx="0" cy="20" rx="8" ry="6.5" fill="url(#qsv)"/><circle cx="-1" cy="-20" r="1.6" fill="#d9ad3c" stroke="none"/><circle cx="-1" cy="20" r="1.6" fill="#d9ad3c" stroke="none"/>' +
+      '<circle cx="2" cy="0" r="10" fill="#e3c06a"/><ellipse cx="6" cy="0" rx="5" ry="7" fill="#d9a98a" stroke="none"/><path d="M-1 -9 Q8 -10 11 -4 M-1 9 Q8 10 11 4" stroke="#2f56a8" stroke-width="2.2" fill="none"/><path d="M10 -3 L14 0 L10 3Z" fill="#d9a98a" stroke-width="1.4"/><circle cx="5" cy="0" r="1.8" fill="#dfeaf4" stroke-width="1"/></g>';
   },
   weapon: function () {
     return '<defs>' + grad('qw', '#fbfdfe', '#a9b6bf') + grad('qh', '#f4d77a', '#a8781e') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round">' +
@@ -275,10 +275,13 @@ return { illya: illya, sakura: sakura, rin: rin, kiritsugu: kiritsugu, shirou: s
 })();
 
 var GRIP = { illya: { x: 26, y: 8, k: 0.9 }, sakura: { x: 26, y: 8, k: 0.8 }, rin: { x: 26, y: 8, k: 0.8 }, kiritsugu: { x: 22, y: 8, k: 1 }, shirou: { x: 22, y: 8, k: 1 }, kayneth: { x: 26, y: 8, k: 0.8 }, kirei: { x: 20, y: 8, k: 1 }, waver: { x: 24, y: 8, k: 0.9 }, irisviel: { x: 26, y: 8, k: 0.9 }, kariya: { x: 26, y: 8, k: 0.9 }, richard: { x: 22, y: 9, k: 1.2 }, emiya: { x: 22, y: 10, k: 1.25, twin: true }, emiya_bow: { x: 22, y: 0, k: 1.0 }, cid: { x: 22, y: 9, k: 1.2 }, leonidas: { x: 24, y: 10, k: 1 }, atalanta: { x: 20, y: 0, k: 1.1 }, heracles: { x: 26, y: 16, k: 1.55 }, hassan: { x: 24, y: 9, k: 1.4 }, caerwyn: { x: 22, y: 9, k: 1.2 }, diarmuid: { x: 20, y: 9, k: 1 }, cu: { x: 20, y: 9, k: 0.95 }, gilgamesh: { x: 26, y: -10, k: 0.9 }, iskandar: { x: 22, y: 9, k: 1.2 }, gilles: { x: 22, y: 7, k: 1.05 }, lancelot: { x: 28, y: 0, k: 1.1 }, lancelot_sword: { x: 22, y: 9, k: 1.15 }, lancelot_spear: { x: 24, y: 10, k: 1.0 }, lancelot_hammer: { x: 24, y: 12, k: 1.15 }, lancelot_gun: { x: 14, y: 2, k: 1.0 }, medusa: { x: 20, y: 9, k: 1.0 }, medea: { x: 18, y: 10, k: 1.0 }, kojirou: { x: 20, y: 9, k: 1.0 } };
+var THUMBN = 0;
 function thumb(id, w) {
   var s = SPR[id], g = GRIP[id], wp = s.weapon(), inner = s.body();
   if (g.twin) inner += '<g transform="translate(' + g.x + ',' + (-g.y) + ') scale(' + g.k + ',' + (-g.k) + ')">' + (SPR_EXTRA[id + '_white'] ? SPR_EXTRA[id + '_white'].weapon() : wp) + '</g><g transform="translate(' + g.x + ',' + g.y + ') scale(' + g.k + ')">' + wp + '</g>';
   else inner += '<g transform="translate(' + g.x + ',' + g.y + ') scale(' + g.k + ')">' + wp + '</g>';
+  // every inline copy gets its own gradient ids: a copy inside a hidden panel would otherwise blank out the others
+  var u = '_t' + (++THUMBN); inner = inner.replace(/id="([^"]+)"/g, 'id="$1' + u + '"').replace(/url\(#([^)]+)\)/g, 'url(#$1' + u + ')');
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + (s.cls === 'Master' ? '-50 -32 128 64' : '-48 -50 200 100') + '" width="' + w + '" height="' + (w / 2) + '">' + inner + '</svg>';
 }
 var IMG = {};
