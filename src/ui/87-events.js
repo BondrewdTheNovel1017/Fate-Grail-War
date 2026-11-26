@@ -60,6 +60,7 @@ function drawEventsGround(g, vr, t) {
 function drawMobs(g) {
   if (!G.mobs || !G.mobs.length) return;
   G.mobs.forEach(function (m) {
+    if (m.exec) { if (!m.dead) drawExec(g, m); return; }
     var sw = G.time - (m.swing || -9) < 0.25, a = m.face || 0, bob = Math.sin(m.t * 10) * 1.5;
     g.save(); g.translate(m.x, m.y); g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(3, 5, 13, 9, 0, 0, 6.283); g.fill(); g.rotate(a);
     g.strokeStyle = '#d8d2bc'; g.lineWidth = 3; g.beginPath(); for (var r = -8; r <= 8; r += 5) { g.moveTo(-4, r); g.lineTo(4, r); } g.stroke();

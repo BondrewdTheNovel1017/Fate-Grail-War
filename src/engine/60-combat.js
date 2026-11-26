@@ -146,7 +146,7 @@ function turnToward(f, ang, rate, dt) {
   f.face += clamp(d, -m, m);
 }
 function meleeCheck(f, a, mult) {
-  hitMobsArc(f, a, mult);
+  hitMobsArc(f, a, mult); hitCivsArc(f, a);
   var o = f.foe;
   var rmul = f.def.hiddenReach ? (f.veilT > 0 ? f.A.skill.reachMul : f.def.hiddenReach) : 1;
   var res = 'miss', es = enemiesOf(f);
@@ -353,7 +353,7 @@ function stepF(f, dt) {
   var dec = Math.exp(-9 * dt); f.kx *= dec; f.ky *= dec;
 }
 function explode(p) {
-  var e = p.a.explode; p.exploded = true; hitMobsAt(p.x, p.y, e.r, e.dmg, p.owner.team);
+  var e = p.a.explode; p.exploded = true; hitMobsAt(p.x, p.y, e.r, e.dmg, p.owner.team); hitCivsAt(p.x, p.y, e.r, p.owner);
   FX.fx('explode', p.x, p.y, { def: p.owner.def, r: e.r, big: e.big }); FX.snd(e.big ? 'boomBig' : 'boom', { x: p.x, y: p.y, idx: -1 }); FX.shake(e.big ? 16 : 9);
   enemiesOf(p.owner).forEach(function (o) { if (Math.hypot(o.x - p.x, o.y - p.y) <= e.r + FR) { var r = hurt(p.owner, o, { dmg: e.dmg, stag: e.stag || 0.7, power: e.big ? 3 : 2, gb: true, unblock: !!e.unblock, noParry: true, arc: 0, key: p.a.key, kind: 'blast', spell: true, hs: 0.08 }, p.mult, { x: p.x, y: p.y }); if (r === 'hit') { var an = Math.atan2(o.y - p.y, o.x - p.x); o.kx = Math.cos(an) * 300; o.ky = Math.sin(an) * 300; } } });
 }
@@ -368,6 +368,7 @@ function stepProj(dt) {
     if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
     var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
     for (var wi = 0; wi < es.length && !p.dead; wi++) { var we = es[wi]; if ((!p.a.wave || p.a.beam || p.a.key === 'np') && !p.a.strip && we.wallT > 0 && dist(p, we) < 190) { p.dead = true; FX.spark(p.x, p.y, '#ffd36b', 8); if (p.a.key === 'np') { FX.text(we, 'NP BLOCKED'); FX.fx('wallBlock', p.x, p.y, we); } } }
+    if (!p.dead && G.civ && G.civ.length && p.x < (MAP.cityW || 0) && hitCivsAt(p.x, p.y, p.a.rad || 6, p.owner)) p.dead = !p.a.beam && !p.a.wave;
     if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg, p.owner.team)) p.dead = !p.a.beam && !p.a.wave;
     for (var ti = 0; ti < es.length && !p.dead; ti++) {
       tgt = es[ti];

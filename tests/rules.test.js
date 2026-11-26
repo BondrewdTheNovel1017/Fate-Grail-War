@@ -615,3 +615,33 @@ test('a pact offer holds: both sides parley, and Accept works even after blows w
   E.hurt(me, G.f.find((f) => f.team === 2), { dmg: 2, power: 1 });
   assert.strictEqual(G.offer, null, 'the player striking them withdraws the offer');
 });
+test('the Church: killing a civilian exposes the team, and Executors come from out of sight to hunt its master', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 4), { nights: 3 });
+  G.f.forEach((f, i) => { G.ai[i] = i === 0 ? null : E.mkAI(f, E.DIFF.knight); });
+  G.clock.t = G.clock.len - 0.01; E.simStep(E.STEP); assert.ok(E.isDay());
+  const me = G.f[0], c = G.civ.find((q) => q.on);
+  me.x = c.x - 30; me.y = c.y; me.face = 0; G.f.forEach((f) => { if (f !== me && f !== me.partner && f.x < G.f[0].x + 2000) { f.x += 0; } });
+  E.hitCivsArc(me, me.A.light);
+  assert.ok(c.dead, 'the blow kills the civilian');
+  assert.ok(G.expo[me.team] >= E.CHURCH.civExpo || G.reveal[me.team] > G.time, 'the team is exposed');
+  assert.ok(G.reveal[me.team] > G.time, 'and shown to every team');
+  const ex = E.liveExecs(me.team);
+  assert.ok(ex.length >= 2, 'Executors are sent at once');
+  ex.forEach((m) => assert.ok(Math.hypot(m.x - me.x, m.y - me.y) > E.CHURCH.farFromHumans - 1, 'never in sight of the player'));
+  // they reach and wound the master
+  const rin = me.partner; rin.x = c.x; rin.y = c.y; rin.st = 'idle'; const hp0 = rin.hp; ex.forEach((m, i) => { m.x = rin.x + 160 + i * 30; m.y = rin.y; m.tx = rin.x; m.ty = rin.y; });
+  for (let i = 0; i < 60 * 25 && rin.hp >= hp0; i++) { G.f.forEach((f) => { if (f !== rin) f.st = f.st; }); E.execTick(E.STEP); }
+  assert.ok(rin.hp < hp0, 'the Executors strike the master');
+});
+test('civilians walk home at dusk instead of vanishing where they stand', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 3), { nights: 3 });
+  G.clock.t = G.clock.len - 0.01; E.simStep(E.STEP);
+  for (let i = 0; i < 120; i++) E.simStep(E.STEP);
+  const before = G.civ.filter((c) => c.on).length;
+  G.clock.phase = 'night'; E.civShift();
+  const going = G.civ.filter((c) => c.going);
+  assert.ok(going.length > before / 2, 'most head for a doorway');
+  assert.ok(going.every((c) => c.on), 'and are still in the street for now');
+});

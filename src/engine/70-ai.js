@@ -212,6 +212,15 @@ function aiWar(ai, dt) {
   }
   var EH = G.event; if (EH && EH.kind === 'horror' && !EH.boss.dead && f.team !== EH.culprit && !f.isPlayerMate && f.hp > f.def.hp * 0.45 && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) < 3200 && !(near && nd < 300 && !inTruce(f, near))) { if (f.spirit === 2) press(f, 'spirit'); var bx = clamp(EH.boss.x, 5720, 6280), by = EH.boss.y < 3300 ? 2440 : 5560; if (Math.hypot(f.x - bx, f.y - by) > 60) moveTo(f, bx, by, 1); else { f.inp.mx = 0; f.inp.my = 0; } if (f.st === 'idle' && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) - EH.boss.r < (f.A.light.reach || 80) + 20) press(f, 'light'); return; }
   var gps = grailPull(f); if (gps && !f.isPlayerMate && Math.hypot(f.x - gps.x, f.y - gps.y) > gps.r - 200 && !(near && nd < 300)) { if (f.spirit === 2) press(f, 'spirit'); moveTo(f, gps.x, gps.y, 1); return; }
+  // Church Executors hunting this team: servants cut them down, a master alone runs to the servant
+  var exn = G.mobs && G.mobs.length ? execNear(f, 380) : null;
+  if (exn && f.spirit !== 2 && !(near && nd < 200)) {
+    var sv = f.def.isMaster ? f.partner : null;
+    if (sv && sv.st !== 'dead' && dist(f, sv) > 160 && f.hp < f.def.hp * 0.8) { moveTo(f, sv.x, sv.y, 1); noOffense(f); return; }
+    var ed = Math.hypot(exn.x - f.x, exn.y - f.y);
+    if (ed - 15 > (f.A.light.reach || 80) * 0.85) moveTo(f, exn.x, exn.y, 1); else { f.inp.mx = 0; f.inp.my = 0; f.face = Math.atan2(exn.y - f.y, exn.x - f.x); if (f.st === 'idle') press(f, 'light'); }
+    return;
+  }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
   if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
   if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';

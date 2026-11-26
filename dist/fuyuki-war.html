@@ -1716,9 +1716,9 @@ function ammoTick(f, dt) {
    Civilians are witnesses, never targets: fighting where they can see raises the team's exposure,
    and the Church answers with rumors, a warning, and finally a sanction that shows the team to everyone. */
 var MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
-var CLOCK = { night: 360, day: 240, nights: 3, fade: 18 };
+var CLOCK = { night: 300, day: 150, nights: 3, fade: 18 };
 var CIV = { day: 140, night: 22, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
-var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 1.6, after: 30 };
+var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 2.6, after: 30 };
 var BUSY = [[3700, 4700], [7700, 3400], [8525, 1450], [4050, 2650], [10400, 4780], [6000, 2400], [9300, 6600], [2050, 4880]];
 function clockOn() { return !!(G && G.clock); }
 function isDay() { return clockOn() && G.clock.phase === 'day'; }
@@ -1751,7 +1751,7 @@ function clockTick(dt) {
   // resting at home by day: wounds close, mana returns
   if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700 && !inOwnHome(f))) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
-  civTick(dt); tasksTick(dt);
+  civTick(dt); tasksTick(dt); execTick(dt);
 }
 /* ---- what a fighter knows: at night only what is close, what hit them, what rumor or the Church reveals ---- */
 function knowsExact(f, e) {
@@ -1789,9 +1789,10 @@ function huntPoint(f) {
 function expose(team, v) {
   if (!clockOn() || team === undefined || v <= 0) return;
   var o = G.expo[team] || 0, n = Math.min(EXPO.max, o + v); G.expo[team] = n;
-  if (o < EXPO.rumor && n >= EXPO.rumor) FX.church('rumor', team);
-  if (o < EXPO.warn && n >= EXPO.warn) FX.church('warn', team);
-  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.after; FX.church('sanction', team); }
+  var quiet = G.expoQuiet; // a killing says it all in one notice
+  if (o < EXPO.rumor && n >= EXPO.rumor && !quiet) FX.church('rumor', team);
+  if (o < EXPO.warn && n >= EXPO.warn && !quiet) FX.church('warn', team);
+  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.after; if (!quiet) FX.church('sanction', team); churchHeat(team, CHURCH.sanctionHeat); }
 }
 // a fight at (x, y): civilians close enough see it, flee, and each one counts once
 function witness(x, y, teams, k) {
@@ -1805,7 +1806,7 @@ function witness(x, y, teams, k) {
   if (n) { var v = n * (day ? EXPO.perD : EXPO.perN) * k * (inFestival(x, y) ? EVT2.festival.mult : 1); teams.forEach(function (t, i) { expose(t, i ? v * 0.5 : v); }); }
   return n;
 }
-function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
+function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; if (witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1)) churchDayFight(att); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
 // the clash of a fight carries: AI teams within earshot that know of nobody else come to look
 function fightNoise(x, y, r) {
   if (!clockOn()) return; G.noise = G.noise || [];
@@ -1831,13 +1832,29 @@ function initCivs() {
   for (var i = 0; i < CIV.day; i++) { var n = civSpawnNode(); G.civ.push({ id: i, x: n.x + (rnd() - 0.5) * 60, y: n.y + (rnd() - 0.5) * 60, node: n.id, to: -1, off: (rnd() - 0.5) * 70, flee: 0, saw: -99, on: i < CIV.night, onT: -99, spd: CIV.walk * (0.8 + rnd() * 0.4), wait: 0 }); }
 }
 function civShift() {
+  // at dusk most people walk to the nearest doorway and go inside; at dawn they come back out of one
   var want = isDay() ? CIV.day : CIV.night;
-  G.civ.forEach(function (c, i) { var on = i < want; if (on && !c.on) { var n = civSpawnNode(); c.x = n.x; c.y = n.y; c.node = n.id; c.to = -1; c.onT = G.time; } if (!on && c.on) c.offT = G.time; c.on = on; c.flee = 0; });
+  G.civ.forEach(function (c, i) {
+    if (c.dead) return; var on = i < want;
+    if (on && !c.on) { var n = civSpawnNode(), dp = civDoorway(n.x, n.y); c.x = dp.x; c.y = dp.y; c.node = n.id; c.to = -1; c.onT = G.time; c.going = null; c.out = { x: n.x, y: n.y }; c.on = true; }
+    else if (!on && c.on && !c.going) { c.going = civDoorway(c.x, c.y); c.goT = G.time + 28; }
+    c.flee = 0;
+  });
+}
+// a point just outside the nearest building wall: where someone steps in or out of a house
+function civDoorway(x, y) {
+  var rs = rectsIn(x - 420, y - 420, x + 420, y + 420), best = null, bd = 1e9;
+  rs.forEach(function (r) { if (r.x1 - r.x0 < 50 || r.y1 - r.y0 < 50) return; var cx = clamp(x, r.x0 + 12, r.x1 - 12), cy = clamp(y, r.y0 + 12, r.y1 - 12), d0 = [cx - r.x0, r.x1 - cx, cy - r.y0, r.y1 - cy], m = Math.min.apply(null, d0), px = cx, py = cy;
+    if (m === d0[0]) px = r.x0 - 10; else if (m === d0[1]) px = r.x1 + 10; else if (m === d0[2]) py = r.y0 - 10; else py = r.y1 + 10;
+    var d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = { x: px, y: py }; } });
+  return best || { x: x, y: y };
 }
 function civTick(dt) {
   var N = MAP.nav.nodes;
   for (var i = 0; i < G.civ.length; i++) {
     var c = G.civ[i]; if (!c.on) continue;
+    if (c.going) { var gx = c.going.x - c.x, gy = c.going.y - c.y, gd = Math.hypot(gx, gy); if (gd < 14 || G.time > c.goT) { c.on = false; c.offT = G.time; c.going = null; continue; } var gs = Math.min(gd, CIV.walk * 1.3 * dt) / gd; c.x += gx * gs; c.y += gy * gs; c.vx = gx / gd; c.vy = gy / gd; rectsIn(c.x - 12, c.y - 12, c.x + 12, c.y + 12).forEach(function (r) { pushOutRect(c, r, 8); }); continue; }
+    if (c.out) { var ox = c.out.x - c.x, oy = c.out.y - c.y, od = Math.hypot(ox, oy); if (od < 20) c.out = null; else { var os = Math.min(od, c.spd * dt) / od; c.x += ox * os; c.y += oy * os; c.vx = ox / od; c.vy = oy / od; continue; } }
     if (c.flee > 0) {
       c.flee -= dt; var a = Math.atan2(c.y - c.fy, c.x - c.fx), sp = CIV.run * dt; c.x += Math.cos(a) * sp; c.y += Math.sin(a) * sp; c.vx = Math.cos(a); c.vy = Math.sin(a);
       rectsIn(c.x - 12, c.y - 12, c.x + 12, c.y + 12).forEach(function (r) { pushOutRect(c, r, 8); });
@@ -2132,7 +2149,7 @@ function turnToward(f, ang, rate, dt) {
   f.face += clamp(d, -m, m);
 }
 function meleeCheck(f, a, mult) {
-  hitMobsArc(f, a, mult);
+  hitMobsArc(f, a, mult); hitCivsArc(f, a);
   var o = f.foe;
   var rmul = f.def.hiddenReach ? (f.veilT > 0 ? f.A.skill.reachMul : f.def.hiddenReach) : 1;
   var res = 'miss', es = enemiesOf(f);
@@ -2339,7 +2356,7 @@ function stepF(f, dt) {
   var dec = Math.exp(-9 * dt); f.kx *= dec; f.ky *= dec;
 }
 function explode(p) {
-  var e = p.a.explode; p.exploded = true; hitMobsAt(p.x, p.y, e.r, e.dmg, p.owner.team);
+  var e = p.a.explode; p.exploded = true; hitMobsAt(p.x, p.y, e.r, e.dmg, p.owner.team); hitCivsAt(p.x, p.y, e.r, p.owner);
   FX.fx('explode', p.x, p.y, { def: p.owner.def, r: e.r, big: e.big }); FX.snd(e.big ? 'boomBig' : 'boom', { x: p.x, y: p.y, idx: -1 }); FX.shake(e.big ? 16 : 9);
   enemiesOf(p.owner).forEach(function (o) { if (Math.hypot(o.x - p.x, o.y - p.y) <= e.r + FR) { var r = hurt(p.owner, o, { dmg: e.dmg, stag: e.stag || 0.7, power: e.big ? 3 : 2, gb: true, unblock: !!e.unblock, noParry: true, arc: 0, key: p.a.key, kind: 'blast', spell: true, hs: 0.08 }, p.mult, { x: p.x, y: p.y }); if (r === 'hit') { var an = Math.atan2(o.y - p.y, o.x - p.x); o.kx = Math.cos(an) * 300; o.ky = Math.sin(an) * 300; } } });
 }
@@ -2354,6 +2371,7 @@ function stepProj(dt) {
     if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
     var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
     for (var wi = 0; wi < es.length && !p.dead; wi++) { var we = es[wi]; if ((!p.a.wave || p.a.beam || p.a.key === 'np') && !p.a.strip && we.wallT > 0 && dist(p, we) < 190) { p.dead = true; FX.spark(p.x, p.y, '#ffd36b', 8); if (p.a.key === 'np') { FX.text(we, 'NP BLOCKED'); FX.fx('wallBlock', p.x, p.y, we); } } }
+    if (!p.dead && G.civ && G.civ.length && p.x < (MAP.cityW || 0) && hitCivsAt(p.x, p.y, p.a.rad || 6, p.owner)) p.dead = !p.a.beam && !p.a.wave;
     if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg, p.owner.team)) p.dead = !p.a.beam && !p.a.wave;
     for (var ti = 0; ti < es.length && !p.dead; ti++) {
       tgt = es[ti];
@@ -2469,7 +2487,7 @@ function startNight(k) {
   if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk(); else if (k === 'demo') startDemolition(); else if (k === 'shadow') startShadow();
   if (!G.event) G.clock.evDone = true;
 }
-function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = []; if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
+function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = (G.mobs || []).filter(function (m) { return m.exec; }); if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
 function masterOf(team) { return G.f.filter(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead'; })[0]; }
 function regainSeal(team) {
   var m = masterOf(team); if (!m) return false;
@@ -2513,7 +2531,7 @@ function bountyKill(f) {
    Every team near it is in truce. Bring it down before dawn, or the whole city sees it. ---- */
 function startHorror() {
   var H = EVT.horror, cul = loreHost('gilles') || loreHost('medea'), m = { boss: true, x: H.path[0][0], y: H.path[0][1], r: H.r, hp: H.hp, max: H.hp, t: 0, leg: 1, slamT: 3, slams: [], dmgBy: {}, team: cul ? cul.team : undefined };
-  G.mobs = [m]; G.event = { kind: 'horror', boss: m, culprit: cul ? cul.team : -1, t: 0 }; fightNoise(m.x, m.y, 20000); FX.event('horror', G.event);
+  G.mobs = (G.mobs || []).filter(function (q) { return q.exec; }).concat([m]); G.event = { kind: 'horror', boss: m, culprit: cul ? cul.team : -1, t: 0 }; fightNoise(m.x, m.y, 20000); FX.event('horror', G.event);
 }
 function horrorTick(E, dt) {
   var H = EVT.horror, m = E.boss;
@@ -2571,7 +2589,7 @@ function startSchool() {
   var E = { kind: 'school', x: S.x, y: S.y, r: S.r, dur: S.dur, t: 0, culprit: culprit, circles: S.circles.map(function (p) { return { x: p[0], y: p[1], r: 75, prog: {}, up: true, by: -1 }; }), allowed: {}, broken: {}, mobT: 2, students: [] };
   G.f.forEach(function (f) { if (f.st !== 'dead' && (Math.hypot(f.x - E.x, f.y - E.y) < E.r || f.team === culprit)) E.allowed[f.idx] = true; });
   for (var i = 0; i < 26; i++) { var a = rnd() * 6.283, d = 120 + rnd() * (E.r - 220); E.students.push({ x: E.x + Math.cos(a) * d, y: E.y + Math.sin(a) * d * 0.7, down: 0, id: i }); }
-  G.mobs = []; G.event = E; FX.event('school', E);
+  G.mobs = (G.mobs || []).filter(function (m) { return m.exec; }); G.event = E; FX.event('school', E);
 }
 function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && f.x < MAP.cityW && Math.hypot(f.x - E.x, f.y - E.y) < E.r); }
 function schoolTick(E, dt) {
@@ -2610,14 +2628,14 @@ function endSchool(E, broken) {
 }
 function mobsTick(E, dt) {
   G.mobs.forEach(function (m) {
-    if (m.dead || m.boss) return; m.t += dt; m.atkT -= dt;
+    if (m.dead || m.boss || m.exec) return; m.t += dt; m.atkT -= dt;
     var tg = null, bd = 900; G.f.forEach(function (f) { if (f.st === 'dead' || f.team === E.culprit || f.spirit === 2 || !inSchool(f)) return; var d = Math.hypot(f.x - m.x, f.y - m.y); if (d < bd) { bd = d; tg = f; } });
     if (!tg) { m.vx = m.vy = 0; return; }
     var a = Math.atan2(tg.y - m.y, tg.x - m.x); m.face = a;
     if (bd > 34) { m.x += Math.cos(a) * 140 * dt; m.y += Math.sin(a) * 140 * dt; m.vx = Math.cos(a); m.vy = Math.sin(a); rectsIn(m.x - 14, m.y - 14, m.x + 14, m.y + 14).forEach(function (r) { pushOutRect(m, r, 12); }); }
     else if (m.atkT <= 0) { m.atkT = 1.2; m.swing = G.time; hurt(null, tg, { dmg: 5, power: 1, stag: 0.12, kind: 'melee', key: 'mob', hs: 0.03 }, 1, { x: m.x, y: m.y }); }
   });
-  G.mobs = G.mobs.filter(function (m) { return !m.dead; });
+  G.mobs = G.mobs.filter(function (m) { return !m.dead || m.exec; });
 }
 // fighters' blows and shots also strike familiars
 function hitMobsArc(f, a, mult) { if (!G.mobs || !G.mobs.length) return; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) <= (a.reach || 60) + 20) mobHurt(m, a.dmg * (mult || 1) * f.def.dmg * (f.def.isMaster ? 2 : 1), f.team); }); }
@@ -2637,7 +2655,7 @@ function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.
 function truceStops(att, def) {
   if (!att || !inTruce(att, def)) return false;
   if (G.ai[att.idx]) return true;
-  G.oath = G.oath || {}; G.oath[att.team] = true; expose(att.team, 60); G.reveal[att.team] = G.time + 60; FX.event('oath', { team: att.team });
+  G.oath = G.oath || {}; G.oath[att.team] = true; expose(att.team, 60); churchHeat(att.team, CHURCH.sendAt); G.reveal[att.team] = G.time + 60; FX.event('oath', { team: att.team });
   return false;
 }
 /* ---- the King's Banquet: Iskandar hosts if he lives, else the most kingly servant; with no king left, the Church holds a meeting instead ---- */
@@ -3054,6 +3072,165 @@ function enkiduBind(att, def, a) {
   FX.text(def, DIVINE[def.def.id] ? 'BOUND BY HEAVEN' : 'BOUND');
   FX.enkidu(att, def);
 }
+/* ---- the Church keeps the war hidden ----
+   Civilians can be struck down, and it costs: a killing is seen, the team is exposed and shown to everyone, and
+   the Church's patience (G.church.heat) runs out. Fighting in daylight in front of witnesses wears it down too.
+   When a team's heat reaches CHURCH.sendAt, Executors leave Kotomine Church (or come in from the edge of the city
+   when a player is near the Church) and walk the roads to hunt that team, masters first. They never appear in
+   sight of a player. Executors are mobs (G.mobs, exec: true), so blows, shots and online sync already reach them. */
+var CHURCH = {
+  civExpo: 45, civReveal: 60, civHeat: 4, dayHeat: 1, dayHeatCd: 4, sanctionHeat: 4, execKillHeat: 2, sendAt: 4,
+  cd: 70, squad: 2, squadMax: 4, liveMax: 8,
+  hp: 130, spd: 238, r: 15, reach: 50, dmg: 10, swing: 0.95, throwR: 460, throwCd: 3.0, keyDmg: 7, keySpd: 950, keyN: 3, keySpread: 0.07,
+  servantMul: 0.5, seeR: 650, repath: 2.5, track: 2, leaveAfter: 260, farFromHumans: 1500, bodyT: 90
+};
+function churchSt() { if (!G.church) G.church = { heat: {}, cd: {}, waves: {}, kills: {}, dayT: {}, keys: [], sent: 0, slain: 0 }; return G.church; }
+function churchOn() { return clockOn() && G.mode === 'war' && !G.quick && !!MAP.cityW; }
+/* ---- civilians struck down ---- */
+function civStruck(c, f) {
+  if (!c || c.dead || !c.on || !churchOn()) return;
+  var C = churchSt(), t = f.team, before = C.waves[t] || 0;
+  c.dead = true; c.on = false; c.offT = G.time; c.flee = 0; c.going = null;
+  G.bodies = G.bodies || []; G.bodies.push({ x: Math.round(c.x), y: Math.round(c.y), a: Math.round((c.vx || 0) * 100) / 100, id: c.id, t: Math.round(G.time) }); if (G.bodies.length > 30) G.bodies.shift();
+  C.kills[t] = (C.kills[t] || 0) + 1;
+  G.expoQuiet = true; witness(c.x, c.y, [t], 3); fightNoise(c.x, c.y, 2600);
+  expose(t, CHURCH.civExpo * (C.kills[t] > 1 ? 1.5 : 1)); G.expoQuiet = false;
+  G.reveal[t] = Math.max(G.reveal[t] || 0, G.time + CHURCH.civReveal);
+  G.expoQuiet = true; churchHeat(t, CHURCH.civHeat * (C.kills[t] > 1 ? 1.5 : 1)); G.expoQuiet = false;
+  FX.church('civKill', t, { x: Math.round(c.x), y: Math.round(c.y), n: C.kills[t], sent: (C.waves[t] || 0) > before ? 1 : 0 });
+}
+// a melee blow sweeps its arc; shots and blasts strike where they land
+function hitCivsArc(f, a) {
+  if (!G.civ || !churchOn() || f.inM || f.x > MAP.cityW) return;
+  var R = (a.reach || 60) + 14, half = (a.arc || 1.2) / 2 + 0.35;
+  for (var i = 0; i < G.civ.length; i++) {
+    var c = G.civ[i]; if (!c.on || c.dead || Math.abs(c.x - f.x) > R || Math.abs(c.y - f.y) > R) continue;
+    if (Math.hypot(c.x - f.x, c.y - f.y) > R) continue;
+    var d = Math.atan2(c.y - f.y, c.x - f.x) - f.face; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) <= half) civStruck(c, f);
+  }
+}
+function hitCivsAt(x, y, r, owner) {
+  if (!G.civ || !owner || !churchOn() || owner.inM || x > MAP.cityW) return false; var hit = false;
+  for (var i = 0; i < G.civ.length; i++) { var c = G.civ[i]; if (!c.on || c.dead || Math.abs(c.x - x) > r + 10 || Math.abs(c.y - y) > r + 10) continue; if (Math.hypot(c.x - x, c.y - y) <= r + 10) { civStruck(c, owner); hit = true; } }
+  return hit;
+}
+/* ---- the Church's patience ---- */
+function churchHeat(t, v) {
+  if (!churchOn() || t === undefined || t < 0 || v <= 0 || finalNight()) return;
+  var C = churchSt(); C.heat[t] = (C.heat[t] || 0) + v;
+  if (C.heat[t] >= CHURCH.sendAt && (C.cd[t] || 0) <= G.time && teamFighters(t).length) sendExecutors(t);
+}
+// a fight seen in daylight: the Church notices, a little at a time
+function churchDayFight(att) {
+  if (!att || !isDay() || !churchOn()) return; var C = churchSt();
+  if ((C.dayT[att.team] || 0) > G.time) return; C.dayT[att.team] = G.time + CHURCH.dayHeatCd;
+  churchHeat(att.team, CHURCH.dayHeat);
+}
+function humansAlive() { return G.f.filter(function (f) { return !G.ai[f.idx] && f.st !== 'dead'; }); }
+function churchEntrances() {
+  var out = [], d = (MAP.doors || []).filter(function (q) { return q.room === 'church' && !q.ruined; })[0];
+  if (d) out.push({ x: d.out.x, y: d.out.y + 40, from: 'church' });
+  var ns = civNodes(); if (ns.length) {
+    var by = function (k, s) { return ns.slice().sort(function (p, q) { return s * (p[k] - q[k]); })[0]; };
+    [[by('x', 1), 'west'], [by('x', -1), 'east'], [by('y', 1), 'north'], [by('y', -1), 'south']].forEach(function (q) { out.push({ x: q[0].x, y: q[0].y, from: q[1] }); });
+  }
+  return out;
+}
+// Executors set out from a place no player can see, the Church first, as close to their quarry as that allows
+function execSpawn(t) {
+  var hs = humansAlive(), tf = teamFighters(t), tx = tf.length ? tf[0].x : MAP.cityW / 2, ty = tf.length ? tf[0].y : H / 2;
+  var far = function (p) { var m = 1e9; hs.forEach(function (f) { m = Math.min(m, Math.hypot(f.x - p.x, f.y - p.y)); }); return m; };
+  var cand = churchEntrances(); if (!cand.length) return null;
+  var ok = cand.filter(function (p) { return far(p) > CHURCH.farFromHumans; });
+  if (ok.length) { var ch = ok.filter(function (p) { return p.from === 'church'; })[0]; if (ch) return ch; return ok.sort(function (p, q) { return Math.hypot(p.x - tx, p.y - ty) - Math.hypot(q.x - tx, q.y - ty); })[0]; }
+  return cand.sort(function (p, q) { return far(q) - far(p); })[0];
+}
+function liveExecs(t) { return (G.mobs || []).filter(function (m) { return m.exec && !m.dead && (t === undefined || m.tgt === t); }); }
+function sendExecutors(t) {
+  var C = churchSt(); if (liveExecs(t).length >= CHURCH.squadMax || liveExecs().length >= CHURCH.liveMax) return;
+  var p = execSpawn(t); if (!p) return;
+  var n = Math.min(CHURCH.squadMax - liveExecs(t).length, CHURCH.squad + Math.min(2, C.waves[t] || 0));
+  G.mobs = G.mobs || [];
+  for (var i = 0; i < n; i++) G.mobs.push({ exec: true, team: -2, tgt: t, x: p.x + (i - (n - 1) / 2) * 34, y: p.y + (i % 2) * 20, r: CHURCH.r, hp: CHURCH.hp, max: CHURCH.hp, t: 0, face: 0, atkT: 0.5, thrT: 1 + i * 0.7, path: null, pathT: 0, tx: p.x, ty: p.y, trackT: 0, born: G.time, home: { x: p.x, y: p.y }, zone: 0 });
+  C.waves[t] = (C.waves[t] || 0) + 1; C.cd[t] = G.time + CHURCH.cd; C.heat[t] = 0; C.sent += n;
+  if (!G.expoQuiet) FX.church('dispatch', t, { x: Math.round(p.x), y: Math.round(p.y), from: p.from, n: n, wave: C.waves[t] });
+}
+/* ---- the hunt ---- */
+function execQuarry(m) {
+  var tf = teamFighters(m.tgt).filter(function (f) { return f.spirit !== 2; }); if (!tf.length) return null;
+  var ms = tf.filter(function (f) { return f.def.isMaster; })[0], best = null, bd = 1e9;
+  tf.forEach(function (f) { var d = Math.hypot(f.x - m.x, f.y - m.y) - (f === ms ? 400 : 0); if (d < bd) { bd = d; best = f; } });
+  return best;
+}
+function execTick(dt) {
+  if (!G.mobs || !G.mobs.length) return; var C = churchSt();
+  G.mobs.forEach(function (m) {
+    if (!m.exec || m.dead) return; m.t += dt; m.atkT -= dt; m.thrT -= dt;
+    var q = execQuarry(m);
+    if (!q || G.time - m.born > CHURCH.leaveAfter || finalNight()) { m.leaving = true; }
+    if (m.leaving) { execWalk(m, m.home.x, m.home.y, dt, 0.8); if (Math.hypot(m.x - m.home.x, m.y - m.home.y) < 60) { m.dead = true; m.gone = true; } return; }
+    // the Church's informants keep them close behind their quarry
+    m.trackT -= dt; if (m.trackT <= 0) { m.trackT = CHURCH.track; m.tx = q.x; m.ty = q.y; }
+    var d = Math.hypot(q.x - m.x, q.y - m.y), sees = d < CHURCH.seeR && (m.x > MAP.cityW) === (q.x > MAP.cityW) && !segBlocked(m.x, m.y, q.x, q.y);
+    var mul = q.def.isMaster ? 1 : CHURCH.servantMul;
+    if (sees) {
+      m.face = Math.atan2(q.y - m.y, q.x - m.x);
+      if (d > CHURCH.reach + 22) execStep(m, m.face, CHURCH.spd * dt);
+      else if (m.atkT <= 0) { m.atkT = CHURCH.swing; m.swing = G.time; hurt(null, q, { dmg: CHURCH.dmg, power: 1, stag: 0.25, kind: 'melee', key: 'exec', hs: 0.04 }, mul, { x: m.x, y: m.y }); }
+      if (d > 130 && d < CHURCH.throwR && m.thrT <= 0) { m.thrT = CHURCH.throwCd; execThrow(m, q); }
+    } else execWalk(m, m.tx, m.ty, dt, 1);
+  });
+  // executors keep a little apart
+  var ex = G.mobs.filter(function (m) { return m.exec && !m.dead; });
+  for (var i = 0; i < ex.length; i++) for (var j = i + 1; j < ex.length; j++) { var a = ex[i], b = ex[j], dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy); if (L > 0 && L < 30) { var k = (30 - L) / 2 / L; a.x -= dx * k; a.y -= dy * k; b.x += dx * k; b.y += dy * k; } }
+  keysTick(dt);
+  // the fallen are counted, and whoever cut them down pays for it
+  G.mobs.forEach(function (m) {
+    if (!m.exec || !m.dead || m.counted || m.gone) return; m.counted = true; C.slain++;
+    var by = -1, bv = 0; Object.keys(m.dmgBy || {}).forEach(function (k) { if (m.dmgBy[k] > bv) { bv = m.dmgBy[k]; by = +k; } });
+    if (by >= 0) { expose(by, 10); churchHeat(by, CHURCH.execKillHeat); }
+    FX.church('execDown', m.tgt, { x: Math.round(m.x), y: Math.round(m.y), by: by });
+  });
+  G.mobs = G.mobs.filter(function (m) { return !(m.exec && m.dead && (m.counted || m.gone)); });
+}
+function segBlocked(ax, ay, bx, by) { var rs = rectsIn(Math.min(ax, bx), Math.min(ay, by), Math.max(ax, bx), Math.max(ay, by)); for (var i = 0; i < rs.length; i++) if (segRect(ax, ay, bx, by, rs[i], 4)) return true; return false; }
+function execStep(m, a, s) {
+  m.x += Math.cos(a) * s; m.y += Math.sin(a) * s; m.vx = Math.cos(a); m.vy = Math.sin(a);
+  rectsIn(m.x - 18, m.y - 18, m.x + 18, m.y + 18).forEach(function (r) { pushOutRect(m, r, 13); });
+}
+// along the road graph (doors included) to where their quarry was last reported
+function execWalk(m, tx, ty, dt, k) {
+  m.pathT -= dt;
+  if (!m.path || m.pathT <= 0 || Math.hypot((m.pgx || 0) - tx, (m.pgy || 0) - ty) > 300) { m.path = navPath(m.x, m.y, tx, ty) || []; m.pathT = CHURCH.repath; m.pgx = tx; m.pgy = ty; m.pi = 0;
+    // a new route starts at the nearest road node, often behind: skip what is already passed
+    var P0 = m.path; while (m.pi < P0.length - 1 && !P0[m.pi].door && Math.hypot(P0[m.pi + 1].x - m.x, P0[m.pi + 1].y - m.y) <= Math.hypot(P0[m.pi + 1].x - P0[m.pi].x, P0[m.pi + 1].y - P0[m.pi].y) + 30) m.pi++; }
+  var p = m.path, sp = CHURCH.spd * k * dt;
+  while (p.length && m.pi < p.length && Math.hypot(p[m.pi].x - m.x, p[m.pi].y - m.y) < 36) {
+    var cur = p[m.pi], nx = p[m.pi + 1];
+    // a door joins the street and a room far apart on the map: step through it
+    if (nx && Math.hypot(nx.x - cur.x, nx.y - cur.y) > 900) { m.x = nx.x; m.y = nx.y; m.pi++; }
+    m.pi++;
+  }
+  var goal = m.pi < p.length ? p[m.pi] : { x: tx, y: ty }, a = Math.atan2(goal.y - m.y, goal.x - m.x);
+  if (Math.hypot(goal.x - m.x, goal.y - m.y) > 8) { m.face = a; execStep(m, a, sp); }
+}
+// three Black Keys in a tight line; the UI draws their flight from the executor's last throw
+function execThrow(m, q) {
+  var a = Math.atan2(q.y - m.y, q.x - m.x); m.face = a; m.thA = Math.round(a * 1000) / 1000; m.thX = Math.round(m.x); m.thY = Math.round(m.y); m.thT = G.time;
+  var C = churchSt(); for (var i = 0; i < CHURCH.keyN; i++) { var b = a + (i - (CHURCH.keyN - 1) / 2) * CHURCH.keySpread; C.keys.push({ x: m.x, y: m.y, vx: Math.cos(b) * CHURCH.keySpd, vy: Math.sin(b) * CHURCH.keySpd, life: CHURCH.throwR / CHURCH.keySpd + 0.1, tgt: m.tgt }); }
+}
+function keysTick(dt) {
+  var C = churchSt(); if (!C.keys.length) return;
+  C.keys.forEach(function (k) {
+    k.life -= dt; if (k.life <= 0) { k.dead = true; return; }
+    k.x += k.vx * dt; k.y += k.vy * dt;
+    if (rectsIn(k.x - 2, k.y - 2, k.x + 2, k.y + 2).some(function (r) { return inRect(r, k.x, k.y); })) { k.dead = true; return; }
+    for (var i = 0; i < G.f.length; i++) { var f = G.f[i]; if (f.team !== k.tgt || f.st === 'dead' || f.spirit === 2 || Math.hypot(f.x - k.x, f.y - k.y) > FR + 4) continue; hurt(null, f, { dmg: CHURCH.keyDmg, power: 1, stag: 0.15, kind: 'proj', key: 'exec' }, f.def.isMaster ? 1 : CHURCH.servantMul, { x: k.x - k.vx * 0.02, y: k.y - k.vy * 0.02 }); k.dead = true; return; }
+  });
+  C.keys = C.keys.filter(function (k) { return !k.dead; });
+}
+// nearest executor hunting this fighter's team (the AI turns to face them)
+function execNear(f, r) { var best = null, bd = r; (G.mobs || []).forEach(function (m) { if (!m.exec || m.dead || m.tgt !== f.team) return; var d = Math.hypot(m.x - f.x, m.y - f.y); if (d < bd) { bd = d; best = m; } }); return best; }
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -3268,6 +3445,15 @@ function aiWar(ai, dt) {
   }
   var EH = G.event; if (EH && EH.kind === 'horror' && !EH.boss.dead && f.team !== EH.culprit && !f.isPlayerMate && f.hp > f.def.hp * 0.45 && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) < 3200 && !(near && nd < 300 && !inTruce(f, near))) { if (f.spirit === 2) press(f, 'spirit'); var bx = clamp(EH.boss.x, 5720, 6280), by = EH.boss.y < 3300 ? 2440 : 5560; if (Math.hypot(f.x - bx, f.y - by) > 60) moveTo(f, bx, by, 1); else { f.inp.mx = 0; f.inp.my = 0; } if (f.st === 'idle' && Math.hypot(f.x - EH.boss.x, f.y - EH.boss.y) - EH.boss.r < (f.A.light.reach || 80) + 20) press(f, 'light'); return; }
   var gps = grailPull(f); if (gps && !f.isPlayerMate && Math.hypot(f.x - gps.x, f.y - gps.y) > gps.r - 200 && !(near && nd < 300)) { if (f.spirit === 2) press(f, 'spirit'); moveTo(f, gps.x, gps.y, 1); return; }
+  // Church Executors hunting this team: servants cut them down, a master alone runs to the servant
+  var exn = G.mobs && G.mobs.length ? execNear(f, 380) : null;
+  if (exn && f.spirit !== 2 && !(near && nd < 200)) {
+    var sv = f.def.isMaster ? f.partner : null;
+    if (sv && sv.st !== 'dead' && dist(f, sv) > 160 && f.hp < f.def.hp * 0.8) { moveTo(f, sv.x, sv.y, 1); noOffense(f); return; }
+    var ed = Math.hypot(exn.x - f.x, exn.y - f.y);
+    if (ed - 15 > (f.A.light.reach || 80) * 0.85) moveTo(f, exn.x, exn.y, 1); else { f.inp.mx = 0; f.inp.my = 0; f.face = Math.atan2(exn.y - f.y, exn.x - f.x); if (f.st === 'idle') press(f, 'light'); }
+    return;
+  }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
   if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
   if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
@@ -5758,6 +5944,7 @@ function drawBubbles(cx, cy, zoom) {
 }
 /* ---- nights and days on screen: darkness with pools of light, civilians, the clock, exposure, Church notices ---- */
 var NIGHT = { c: null }, NOTES = [];
+var CIV_SKIN = ['#e8c4a6', '#d9a98a', '#c58d62', '#f0d6c2', '#a8714c', '#eed6c2'];
 var CIV_SHIRT = ['#c9563a', '#3a6ab8', '#e0c060', '#5a9a5a', '#d8d4c8', '#7a4ab0', '#2f3138', '#e08a9a', '#4a8a9a', '#a87a4a'], CIV_HAIR = ['#1a1614', '#2a2018', '#4a3020', '#6a4a2a', '#1c1c22', '#8a7a6a'];
 function note(s, col) { NOTES.push({ s: s, col: col || '#e9e4d3', t0: performance.now() }); if (NOTES.length > 3) NOTES.shift(); }
 function teamName(t) { var m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0] || G.f.filter(function (f) { return f.team === t; })[0]; return m ? shortName(m.def.name) + '’s team' : 'a team'; }
@@ -5777,20 +5964,27 @@ SND.bell = function (o, out, t) { ringS(o, out, t, [392, 588, 784, 1176], 2.6, 0
 /* ---- civilians ---- */
 function drawCivs(g) {
   if (!G.civ || !G.civ.length) return; var me = G.f[MEI]; if (MAP.cityW && me.x > MAP.cityW) return;
+  drawBodies(g);
   var vz = VIEW.zoom || 1, x0 = VIEW.cx - VW / 2 / vz - 40, x1 = VIEW.cx + VW / 2 / vz + 40, y0 = VIEW.cy - VH / 2 / vz - 40, y1 = VIEW.cy + VH / 2 / vz + 40, now = G.time;
   G.civ.forEach(function (c) {
     if (c.x < x0 || c.x > x1 || c.y < y0 || c.y > y1) return;
     var al = c.on ? clamp((now - c.onT) / 1.5, 0, 1) : clamp(1 - (now - (c.offT === undefined ? -99 : c.offT)) / 1.5, 0, 1); if (al <= 0) return;
     var run = c.flee > 0, a = Math.atan2(c.vy || 0.01, c.vx || 0), bob = Math.sin(now * (run ? 18 : 9) + c.id) * (run ? 2.2 : 1.2);
     g.save(); g.globalAlpha = al; g.translate(c.x, c.y);
-    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(2, 4, 9, 7, 0, 0, 6.283); g.fill();
+    // townsfolk, a little smaller than a master: arms swinging, a shirt, hair
+    var sh = CIV_SHIRT[c.id % CIV_SHIRT.length], sk = CIV_SKIN[c.id % CIV_SKIN.length], sw = Math.sin(now * (run ? 16 : 8) + c.id) * (run ? 7 : 4);
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(3, 5, 13, 10, 0, 0, 6.283); g.fill();
     g.rotate(a);
-    g.strokeStyle = '#0b121a'; g.lineWidth = 1.4;
-    if (run) { g.strokeStyle = CIV_SHIRT[c.id % CIV_SHIRT.length]; g.lineWidth = 3; g.beginPath(); g.moveTo(0, -6); g.lineTo(6, -11 + bob); g.moveTo(0, 6); g.lineTo(6, 11 - bob); g.stroke(); g.strokeStyle = '#0b121a'; g.lineWidth = 1.4; }
-    g.fillStyle = CIV_SHIRT[c.id % CIV_SHIRT.length]; g.beginPath(); g.ellipse(bob * 0.3, 0, 6, 10, 0, 0, 6.283); g.fill(); g.stroke();
-    g.fillStyle = CIV_HAIR[(c.id * 7) % CIV_HAIR.length]; g.beginPath(); g.arc(1, 0, 4.6, 0, 6.283); g.fill(); g.stroke();
+    g.strokeStyle = '#0b121a'; g.lineWidth = 1.6;
+    g.fillStyle = sh; g.beginPath(); g.moveTo(2, -10); g.lineTo(14 + sw * 0.6, -9 - (run ? 3 : 0)); g.lineTo(14 + sw * 0.6, -5); g.lineTo(2, -6); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(2, 10); g.lineTo(14 - sw * 0.6, 9 + (run ? 3 : 0)); g.lineTo(14 - sw * 0.6, 5); g.lineTo(2, 6); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = sk; g.beginPath(); g.arc(15 + sw * 0.6, -7 - (run ? 1.5 : 0), 2.6, 0, 6.283); g.arc(15 - sw * 0.6, 7 + (run ? 1.5 : 0), 2.6, 0, 6.283); g.fill();
+    g.fillStyle = sh; g.beginPath(); g.ellipse(bob * 0.3, 0, 10, 16, 0, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.ellipse(bob * 0.3 + 2, 0, 6, 11, 0, 0, 6.283); g.fill();
+    g.fillStyle = sk; g.beginPath(); g.ellipse(7, 0, 4, 5.4, 0, 0, 6.283); g.fill();
+    g.fillStyle = CIV_HAIR[(c.id * 7) % CIV_HAIR.length]; g.beginPath(); g.arc(0.5, 0, 7.6, 0, 6.283); g.fill(); g.stroke();
     g.restore();
-    if (run && c.flee > 3.2) { g.save(); g.globalAlpha = al; g.fillStyle = '#ffe08a'; g.font = '700 16px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText('!', c.x, c.y - 16); g.restore(); }
+    if (run && c.flee > 3.2) { g.save(); g.globalAlpha = al; g.fillStyle = '#ffe08a'; g.font = '700 18px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText('!', c.x, c.y - 24); g.restore(); }
   });
 }
 /* ---- darkness: a dim layer with holes cut for the viewer's sight, street lamps, doors and lit fighters ---- */
@@ -5835,7 +6029,7 @@ function drawClockHud(mx0, my0, mw, mh) {
   c.fillStyle = rv ? '#ff5a5a' : ex >= EXPO.warn ? '#e8583a' : ex >= EXPO.rumor ? '#f0a85a' : '#7ac08a'; c.fillRect(x - bw + 50, by + 7, (bw - 56) * Math.min(1, ex / EXPO.max), 6);
   c.fillStyle = 'rgba(255,255,255,.5)'; [EXPO.rumor, EXPO.warn].forEach(function (v) { c.fillRect(x - bw + 50 + (bw - 56) * v / EXPO.max, by + 5, 1.5, 10); });
   c.textAlign = 'left'; c.font = '600 12px "Barlow Condensed", sans-serif'; c.fillStyle = rv ? '#ff8a8a' : '#c9c3b0'; c.fillText(rv ? 'EXPOSED ' + Math.ceil(G.reveal[me.team] - G.time) : 'SEEN', x - bw + 6, by + 14);
-  var eh = drawEventHud(x, by + 36, mx0, my0, mw, mh); drawDayHud(x, by + 36 + eh, mx0, my0, mw, mh);
+  execMinimap(ctx, mx0, my0, mw, mh); var eh = drawEventHud(x, by + 36, mx0, my0, mw, mh); drawDayHud(x, by + 36 + eh, mx0, my0, mw, mh);
 }
 // rumors on the minimap: a pulsing area, not a position
 function drawRumors(mx0, my0, mw, mh, MW) {
@@ -6040,6 +6234,7 @@ function drawEventsGround(g, vr, t) {
 function drawMobs(g) {
   if (!G.mobs || !G.mobs.length) return;
   G.mobs.forEach(function (m) {
+    if (m.exec) { if (!m.dead) drawExec(g, m); return; }
     var sw = G.time - (m.swing || -9) < 0.25, a = m.face || 0, bob = Math.sin(m.t * 10) * 1.5;
     g.save(); g.translate(m.x, m.y); g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(3, 5, 13, 9, 0, 0, 6.283); g.fill(); g.rotate(a);
     g.strokeStyle = '#d8d2bc'; g.lineWidth = 3; g.beginPath(); for (var r = -8; r <= 8; r += 5) { g.moveTo(-4, r); g.lineTo(4, r); } g.stroke();
@@ -6696,6 +6891,76 @@ FX.enkidu = function (att, def) {
   var L = DIVINE[def.def.id] && Math.random() < 0.6 ? ENKIDU_DIVINE : ENKIDU_LINES;
   showBubble(att, L[Math.floor(Math.random() * L.length)], 2.4, true);
 };
+/* ---- the Church's reach, drawn: the fallen in the street, Executors and their Black Keys, and the notices ---- */
+function drawBodies(g) {
+  if (!G.bodies || !G.bodies.length) return;
+  G.bodies.forEach(function (b) {
+    var age = G.time - b.t; if (age > CHURCH.bodyT + 6) return;
+    var al = clamp((CHURCH.bodyT + 6 - age) / 6, 0, 1), sh = CIV_SHIRT[b.id % CIV_SHIRT.length], a = b.a > 0 ? 0.4 : 2.6;
+    g.save(); g.globalAlpha = al * 0.95; g.translate(b.x, b.y); g.rotate(a);
+    g.fillStyle = 'rgba(60,10,14,.45)'; g.beginPath(); g.ellipse(-4, 3, 16, 11, 0.3, 0, 6.283); g.fill();
+    g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.fillStyle = sh;
+    g.beginPath(); g.ellipse(0, 0, 9, 15, 0, 0, 6.283); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(-2, -11); g.lineTo(-14, -16); g.moveTo(2, 11); g.lineTo(12, 18); g.lineWidth = 4; g.strokeStyle = sh; g.stroke();
+    g.fillStyle = CIV_HAIR[(b.id * 7) % CIV_HAIR.length]; g.strokeStyle = '#0b121a'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, -19, 6.5, 0, 6.283); g.fill(); g.stroke();
+    g.restore();
+  });
+}
+// an Executor: black cassock, a violet stole, Black Keys between the fingers
+function drawExec(g, m) {
+  var sw = G.time - (m.swing || -9) < 0.25, a = m.face || 0, walk = Math.sin((m.t || 0) * 11) * 3;
+  g.save(); g.translate(m.x, m.y);
+  g.fillStyle = 'rgba(0,0,0,.32)'; g.beginPath(); g.ellipse(3, 5, 17, 12, 0, 0, 6.283); g.fill();
+  g.rotate(a); g.strokeStyle = '#0b121a'; g.lineWidth = 1.8;
+  g.fillStyle = '#16171c'; g.beginPath(); g.moveTo(-6, -20); g.quadraticCurveTo(-26, -12, -28, 0); g.quadraticCurveTo(-26, 12, -6, 20); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#1d1f25'; g.beginPath(); g.moveTo(3, -16); g.lineTo(22 + (sw ? 8 : walk), -10); g.lineTo(22 + (sw ? 8 : walk), -5); g.lineTo(1, -8); g.closePath(); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(3, 16); g.lineTo(22 - walk, 10); g.lineTo(22 - walk, 5); g.lineTo(1, 8); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = '#e6ecf2'; g.lineWidth = 2.2; g.beginPath(); for (var k = -1; k <= 1; k++) { var hx = 24 + (sw ? 8 : walk), hy = -7.5; g.moveTo(hx, hy); g.lineTo(hx + 22, hy + k * 4); } g.stroke();
+  g.strokeStyle = '#0b121a'; g.lineWidth = 1.8;
+  g.fillStyle = '#202228'; g.beginPath(); g.ellipse(0, 0, 13, 21, 0, 0, 6.283); g.fill(); g.stroke();
+  g.strokeStyle = '#6a3a9a'; g.lineWidth = 3; g.beginPath(); g.moveTo(-3, -15); g.lineTo(-3, 15); g.moveTo(3, -15); g.lineTo(3, 15); g.stroke();
+  g.strokeStyle = '#d8c070'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(9, -3); g.lineTo(9, 3); g.moveTo(6, 0); g.lineTo(12, 0); g.stroke();
+  g.strokeStyle = '#0b121a'; g.lineWidth = 1.6; g.fillStyle = '#d9b496'; g.beginPath(); g.ellipse(8, 0, 4.6, 6, 0, 0, 6.283); g.fill();
+  g.fillStyle = '#2a2420'; g.beginPath(); g.arc(-0.5, 0, 9, 0, 6.283); g.fill(); g.stroke();
+  g.restore();
+  if (m.hp < m.max) { g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(m.x - 18, m.y - 34, 36, 4); g.fillStyle = '#c9b8e0'; g.fillRect(m.x - 18, m.y - 34, 36 * clamp(m.hp / m.max, 0, 1), 4); }
+}
+// the Black Keys in flight, retraced from the last throw so guests see them too
+function drawExecKeys(g) {
+  (G.mobs || []).forEach(function (m) {
+    if (!m.exec || m.thT === undefined) return; var age = G.time - m.thT, L = CHURCH.throwR / CHURCH.keySpd; if (age < 0 || age > L) return;
+    for (var i = 0; i < CHURCH.keyN; i++) {
+      var b = m.thA + (i - (CHURCH.keyN - 1) / 2) * CHURCH.keySpread, x = m.thX + Math.cos(b) * CHURCH.keySpd * age, y = m.thY + Math.sin(b) * CHURCH.keySpd * age;
+      g.save(); g.translate(x, y); g.rotate(b); g.strokeStyle = '#e6ecf2'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(-16, 0); g.lineTo(8, 0); g.stroke(); g.fillStyle = '#2a2c30'; g.fillRect(-20, -3, 5, 6); g.restore();
+    }
+  });
+}
+(function () { var dm0 = drawMobs; drawMobs = function (g) { dm0(g); drawExecKeys(g); }; })();
+// the notices
+(function () {
+  var ch0 = FX.church;
+  FX.church = function (kind, team, d) {
+    if (kind !== 'civKill' && kind !== 'dispatch' && kind !== 'execDown') return ch0(kind, team, d);
+    if (!G || !G.f[MEI]) return;
+    var me = G.f[MEI], mine = team === me.team, who = mine ? 'Your team' : teamName(team);
+    if (kind === 'civKill') {
+      if (mine) { FX.banner('An innocent is dead', (d && d.n > 1 ? 'Again. ' : '') + 'Every team can see you' + (d && d.sent ? ', and the Church has sent Executors after you.' : '. The Church will not forgive another.')); FX.shake(6); SFX('bell'); }
+      else note('A civilian was killed by ' + teamName(team) + '. They are marked on the map' + (d && d.sent ? ', and Executors are hunting them.' : '.'), '#f0a85a');
+    } else if (kind === 'dispatch') {
+      var whence = d && d.from === 'church' ? 'from Kotomine Church' : 'into the city from the ' + (d ? d.from : 'edge');
+      if (mine) { FX.banner('The Church sends Executors', (d ? d.n : 2) + ' Executors are coming ' + whence + '. They hunt your master first.'); SFX('bell'); }
+      else note('Executors set out ' + whence + ' to hunt ' + who + '.', '#c9b8e0');
+    } else if (kind === 'execDown') {
+      if (d && d.by === me.team) note('An Executor falls. The Church will remember it.', '#c9b8e0');
+    }
+  };
+})();
+function SFX(n) { try { if (SND[n] && FX.near(G.f[MEI].x, G.f[MEI].y)) FX.snd(n, G.f[MEI]); } catch (e) {} }
+// Executors hunting you show on your minimap; the Church tells you where they are
+function execMinimap(c, mx0, my0, mw, mh) {
+  if (!G || !G.mobs || !MAP.cityW) return; var me = G.f[MEI], MW = MAP.cityW;
+  G.mobs.forEach(function (m) { if (!m.exec || m.dead || m.tgt !== me.team || m.x > MW) return; var x = mx0 + m.x / MW * mw, y = my0 + m.y / H * mh; c.fillStyle = '#c9b8e0'; c.strokeStyle = '#1a1020'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, y - 5); c.lineTo(x + 4, y); c.lineTo(x, y + 5); c.lineTo(x - 4, y); c.closePath(); c.fill(); c.stroke(); });
+}
 /* ---- online play on the hosted site: rooms over the game's own WebSocket relay (server/hub.js) ----
    The same calls as the claude.ai room (join, presence, peers, onPeers, onConnection, leave), so the lobby and
    netsync work unchanged. One socket per game code carries all of its rooms; presence patches are coalesced and
@@ -7560,6 +7825,6 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet(); shellBoot();
 requestAnimationFrame(frame);
-window.__duel = { thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { civStruck: civStruck, sendExecutors: sendExecutors, formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
 </script>

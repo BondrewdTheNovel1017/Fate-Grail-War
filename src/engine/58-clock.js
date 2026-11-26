@@ -4,9 +4,9 @@
    Civilians are witnesses, never targets: fighting where they can see raises the team's exposure,
    and the Church answers with rumors, a warning, and finally a sanction that shows the team to everyone. */
 var MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
-var CLOCK = { night: 360, day: 240, nights: 3, fade: 18 };
+var CLOCK = { night: 300, day: 150, nights: 3, fade: 18 };
 var CIV = { day: 140, night: 22, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
-var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 1.6, after: 30 };
+var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 2.6, after: 30 };
 var BUSY = [[3700, 4700], [7700, 3400], [8525, 1450], [4050, 2650], [10400, 4780], [6000, 2400], [9300, 6600], [2050, 4880]];
 function clockOn() { return !!(G && G.clock); }
 function isDay() { return clockOn() && G.clock.phase === 'day'; }
@@ -39,7 +39,7 @@ function clockTick(dt) {
   // resting at home by day: wounds close, mana returns
   if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700 && !inOwnHome(f))) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
-  civTick(dt); tasksTick(dt);
+  civTick(dt); tasksTick(dt); execTick(dt);
 }
 /* ---- what a fighter knows: at night only what is close, what hit them, what rumor or the Church reveals ---- */
 function knowsExact(f, e) {
@@ -77,9 +77,10 @@ function huntPoint(f) {
 function expose(team, v) {
   if (!clockOn() || team === undefined || v <= 0) return;
   var o = G.expo[team] || 0, n = Math.min(EXPO.max, o + v); G.expo[team] = n;
-  if (o < EXPO.rumor && n >= EXPO.rumor) FX.church('rumor', team);
-  if (o < EXPO.warn && n >= EXPO.warn) FX.church('warn', team);
-  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.after; FX.church('sanction', team); }
+  var quiet = G.expoQuiet; // a killing says it all in one notice
+  if (o < EXPO.rumor && n >= EXPO.rumor && !quiet) FX.church('rumor', team);
+  if (o < EXPO.warn && n >= EXPO.warn && !quiet) FX.church('warn', team);
+  if (n >= EXPO.max) { G.reveal[team] = G.time + EXPO.sanction; G.expo[team] = EXPO.after; if (!quiet) FX.church('sanction', team); churchHeat(team, CHURCH.sanctionHeat); }
 }
 // a fight at (x, y): civilians close enough see it, flee, and each one counts once
 function witness(x, y, teams, k) {
@@ -93,7 +94,7 @@ function witness(x, y, teams, k) {
   if (n) { var v = n * (day ? EXPO.perD : EXPO.perN) * k * (inFestival(x, y) ? EVT2.festival.mult : 1); teams.forEach(function (t, i) { expose(t, i ? v * 0.5 : v); }); }
   return n;
 }
-function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
+function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; if (witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1)) churchDayFight(att); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
 // the clash of a fight carries: AI teams within earshot that know of nobody else come to look
 function fightNoise(x, y, r) {
   if (!clockOn()) return; G.noise = G.noise || [];
@@ -119,13 +120,29 @@ function initCivs() {
   for (var i = 0; i < CIV.day; i++) { var n = civSpawnNode(); G.civ.push({ id: i, x: n.x + (rnd() - 0.5) * 60, y: n.y + (rnd() - 0.5) * 60, node: n.id, to: -1, off: (rnd() - 0.5) * 70, flee: 0, saw: -99, on: i < CIV.night, onT: -99, spd: CIV.walk * (0.8 + rnd() * 0.4), wait: 0 }); }
 }
 function civShift() {
+  // at dusk most people walk to the nearest doorway and go inside; at dawn they come back out of one
   var want = isDay() ? CIV.day : CIV.night;
-  G.civ.forEach(function (c, i) { var on = i < want; if (on && !c.on) { var n = civSpawnNode(); c.x = n.x; c.y = n.y; c.node = n.id; c.to = -1; c.onT = G.time; } if (!on && c.on) c.offT = G.time; c.on = on; c.flee = 0; });
+  G.civ.forEach(function (c, i) {
+    if (c.dead) return; var on = i < want;
+    if (on && !c.on) { var n = civSpawnNode(), dp = civDoorway(n.x, n.y); c.x = dp.x; c.y = dp.y; c.node = n.id; c.to = -1; c.onT = G.time; c.going = null; c.out = { x: n.x, y: n.y }; c.on = true; }
+    else if (!on && c.on && !c.going) { c.going = civDoorway(c.x, c.y); c.goT = G.time + 28; }
+    c.flee = 0;
+  });
+}
+// a point just outside the nearest building wall: where someone steps in or out of a house
+function civDoorway(x, y) {
+  var rs = rectsIn(x - 420, y - 420, x + 420, y + 420), best = null, bd = 1e9;
+  rs.forEach(function (r) { if (r.x1 - r.x0 < 50 || r.y1 - r.y0 < 50) return; var cx = clamp(x, r.x0 + 12, r.x1 - 12), cy = clamp(y, r.y0 + 12, r.y1 - 12), d0 = [cx - r.x0, r.x1 - cx, cy - r.y0, r.y1 - cy], m = Math.min.apply(null, d0), px = cx, py = cy;
+    if (m === d0[0]) px = r.x0 - 10; else if (m === d0[1]) px = r.x1 + 10; else if (m === d0[2]) py = r.y0 - 10; else py = r.y1 + 10;
+    var d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = { x: px, y: py }; } });
+  return best || { x: x, y: y };
 }
 function civTick(dt) {
   var N = MAP.nav.nodes;
   for (var i = 0; i < G.civ.length; i++) {
     var c = G.civ[i]; if (!c.on) continue;
+    if (c.going) { var gx = c.going.x - c.x, gy = c.going.y - c.y, gd = Math.hypot(gx, gy); if (gd < 14 || G.time > c.goT) { c.on = false; c.offT = G.time; c.going = null; continue; } var gs = Math.min(gd, CIV.walk * 1.3 * dt) / gd; c.x += gx * gs; c.y += gy * gs; c.vx = gx / gd; c.vy = gy / gd; rectsIn(c.x - 12, c.y - 12, c.x + 12, c.y + 12).forEach(function (r) { pushOutRect(c, r, 8); }); continue; }
+    if (c.out) { var ox = c.out.x - c.x, oy = c.out.y - c.y, od = Math.hypot(ox, oy); if (od < 20) c.out = null; else { var os = Math.min(od, c.spd * dt) / od; c.x += ox * os; c.y += oy * os; c.vx = ox / od; c.vy = oy / od; continue; } }
     if (c.flee > 0) {
       c.flee -= dt; var a = Math.atan2(c.y - c.fy, c.x - c.fx), sp = CIV.run * dt; c.x += Math.cos(a) * sp; c.y += Math.sin(a) * sp; c.vx = Math.cos(a); c.vy = Math.sin(a);
       rectsIn(c.x - 12, c.y - 12, c.x + 12, c.y + 12).forEach(function (r) { pushOutRect(c, r, 8); });
