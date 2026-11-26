@@ -68,7 +68,7 @@ MASTERS.tokiomi = MD({ id: 'tokiomi', name: 'Tokiomi Tohsaka', type: 'Mage famil
     heavy: { name: 'Fireball', kind: 'proj', speed: 820, range: 640, dmg: 8, rad: 12, burn: { dps: 3, t: 3 }, explode: { r: 90, dmg: 8 }, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'flame', size: 12, col: '#ff5a1a' },
     skill: { name: 'Flame Ward', kind: 'aoe', r: 135, dmg: 5, burn: { dps: 3, t: 4 }, stag: 0.4, power: 1, wind: 0.35, act: 0.1, rec: 0.35, cd: 11, cost: 14 },
     np: { name: 'Crimson Pillar', kind: 'rain', count: 1, spread: 0, zr: 105, delay: 0.75, dmg: 15, burn: { dps: 4, t: 4 }, zshape: 'pillar', range: 640, wind: 0.55, act: 0.1, rec: 0.5, cost: 0, cd: 20, aiUse: 'ranged' } });
-MASTERS.kuzuki = MD({ id: 'kuzuki', name: 'Souichirou Kuzuki', type: 'Assassin', col: '#5b6b7c', wpn: 'fist', hp: 120, spd: 228, guard: 0.55, ranged: false, fightsServants: true, guardPierce: 0.35, combo: 4,
+MASTERS.kuzuki = MD({ id: 'kuzuki', name: 'Souichirou Kuzuki', type: 'Outsider', col: '#5b6b7c', wpn: 'fist', hp: 120, spd: 228, guard: 0.55, ranged: false, fightsServants: true, guardPierce: 0.35, combo: 4,
     brief: 'A quiet teacher who was trained as an assassin. His Snake Fist strikes curl around a guard, and like Shirou he stands in a servant\u2019s fight at full damage. Reinforcement hardens his fists; Coiled Strike is a grip no guard can stop.',
     light: { name: 'Snake Fist', kind: 'melee', dmg: 4.5, reach: 74, arc: 0.85, wind: 0.16, act: 0.06, rec: 0.16, lunge: 38, cost: 7, stag: 0.28, power: 1 },
     heavy: { name: 'Coiled elbow', kind: 'melee', dmg: 12, reach: 82, arc: 0.9, wind: 0.4, max: 0.85, act: 0.1, rec: 0.55, lunge: 70, cost: 20, stag: 0.7, power: 2, gb: true },
