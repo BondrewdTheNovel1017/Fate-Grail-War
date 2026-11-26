@@ -1766,10 +1766,10 @@ function ammoTick(f, dt) {
    Night: dark streets, short sight, few people about. Day: crowded streets, teams rest at home.
    Civilians are witnesses, never targets: fighting where they can see raises the team's exposure,
    and the Church answers with rumors, a warning, and finally a sanction that shows the team to everyone. */
-var HOME_WARD = 0.5, MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
-var CLOCK = { night: 300, day: 150, nights: 3, fade: 18 };
-var CIV = { day: 140, night: 22, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
-var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 2.6, after: 30 };
+var NIGHT1_EAR = 0.4, HOME_REGEN = { day: 0.012, night: 0.006 }, HOME_WARD = 0.5, MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
+var CLOCK = { night: 300, day: 150, lastNight: 200, nights: 3, fade: 18 };
+var CIV = { day: 140, night: 0, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
+var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.05, duskMark: 90, sanction: 50, perN: 1.2, perD: 2.6, after: 30 };
 var BUSY = [[3700, 4700], [7700, 3400], [8525, 1450], [4050, 2650], [10400, 4780], [6000, 2400], [9300, 6600], [2050, 4880]];
 function clockOn() { return !!(G && G.clock); }
 function isDay() { return clockOn() && G.clock.phase === 'day'; }
@@ -1795,12 +1795,15 @@ function clockTick(dt) {
   var c = G.clock; if (!c) return;
   c.t += dt;
   if (!c.final && c.t >= c.len) {
-    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); newPhaseEvents(); FX.phase('day', c.n, false); }
-    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; scoutsReport(); G.tasks = []; c.final = c.n >= c.nights; newPhaseEvents(); FX.phase('night', c.n, c.final); }
+    // the last night runs its course, and at midnight the Grail descends: no dawn in between
+    if (c.phase === 'night' && c.n >= c.nights) { c.final = true; c.t = 0; c.midnight = true; newPhaseEvents(); FX.phase('grail', c.n, true); }
+    else if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); newPhaseEvents(); FX.phase('day', c.n, false); }
+    else { c.phase = 'night'; c.t = 0; c.len = c.n >= c.nights ? CLOCK.lastNight : CLOCK.night; c.fromDay = true; scoutsReport(); G.tasks = []; duskSightings(); newPhaseEvents(); FX.phase('night', c.n, false); }
     civShift();
   }
   // resting at home by day: wounds close, mana returns
-  if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700 && !inOwnHome(f))) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
+  // in one's own home wounds close at any hour (faster by day, when the whole yard counts)
+  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day') return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
   civTick(dt); tasksTick(dt); execTick(dt); scoutsTick(dt); rescueTick(dt);
 }
@@ -1829,7 +1832,8 @@ function huntPoint(f) {
   var E = G.event;
   if (E && E.kind === 'challenge' && (E.host === f || E.goers[f.idx])) return { x: E.x, y: E.y };
   if (E && E.kind === 'horror' && !f.def.isMaster && f.team !== E.culprit && f.hp > f.def.hp * 0.5) return { x: E.boss.x, y: 2430 };
-  var nz = null, nd = 1e9; (G.noise || []).forEach(function (q) { var d = Math.hypot(q.x - f.x, q.y - f.y); if (G.time - q.t < 15 && d < q.r && d < nd && d > 150) { nd = d; nz = q; } });
+  // on the first night teams scout: only a fight close by draws them in
+  var nk = G.clock.n <= 1 && !finalNight() ? NIGHT1_EAR : 1, nz = null, nd = 1e9; (G.noise || []).forEach(function (q) { var d = Math.hypot(q.x - f.x, q.y - f.y); if (G.time - q.t < 15 && d < q.r * nk && d < nd && d > 150) { nd = d; nz = q; } });
   if (nz) { f.hunt = { x: nz.x, y: nz.y }; f.huntT = G.time + 20; return f.hunt; }
   if (f.hunt && G.time < f.huntT && dist(f, f.hunt) > 220) return f.hunt;
   var c = BUSY.map(function (p) { return { x: p[0], y: p[1] }; });
@@ -1860,6 +1864,8 @@ function witness(x, y, teams, k) {
 }
 function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; if (witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1)) churchDayFight(att); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
 // the clash of a fight carries: AI teams within earshot that know of nobody else come to look
+// at dusk the day's sightings are on everyone's lips: a team the town saw misbehave is marked on every map for a while
+function duskSightings() { for (var t in G.expo) if (G.expo[t] >= EXPO.rumor) { G.reveal[t] = Math.max(G.reveal[t] || 0, G.time + EXPO.duskMark); FX.church('dusk', +t); } }
 function fightNoise(x, y, r) {
   if (!clockOn()) return; G.noise = G.noise || [];
   for (var i = 0; i < G.noise.length; i++) { var q = G.noise[i]; if (G.time - q.t < 3 && Math.abs(q.x - x) < 400 && Math.abs(q.y - y) < 400) { q.r = Math.max(q.r, r); return; } }
@@ -2474,7 +2480,7 @@ function separate() {
    Berserker Unchained. Days (about 60%): the Sealed School, the King's Banquet, the Overseer's Summons.
    The final night: the Grail descends on one of Fuyuki's three ley lines, pure or corrupted. ---- */
 var EVT = {
-  nightAt: 45, dayAt: 35, dayChance: 0.6, quietChance: 0.35,
+  nightAt: 45, dayAt: 35, dayChance: 1, quietChance: 0.35,
   challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.65, acceptHp: 0.6 },
   school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 7, mobEvery: 7, mobHp: 24, contest: 95 },
   banquet: { x: 11000, y: 1820, r: 320, need: 20 },
@@ -2697,7 +2703,7 @@ function mobsTick(E, dt) {
 // fighters' blows and shots also strike familiars
 function hitMobsArc(f, a, mult) { if (!G.mobs || !G.mobs.length) return; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) <= (a.reach || 60) + 20) mobHurt(m, a.dmg * (mult || 1) * f.def.dmg * (f.def.isMaster ? 2 : 1), f.team); }); }
 function hitMobsAt(x, y, r, dmg, team) { if (!G.mobs || !G.mobs.length) return false; var hit = false; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - x, m.y - y) <= r + (m.r || 16)) { mobHurt(m, dmg, team); hit = true; } }); return hit; }
-function mobHurt(m, d, team) { if (m.team !== undefined && m.team === team) return; d = Math.max(4, d); m.hp -= d; if (team !== undefined) { m.dmgBy = m.dmgBy || {}; m.dmgBy[team] = (m.dmgBy[team] || 0) + d; } FX.spark(m.x, m.y, m.boss ? '#7a3a8a' : '#e8e2d0', 5); if (m.hp <= 0) { m.dead = true; FX.fx(m.boss ? 'bossDie' : 'mobDie', m.x, m.y, null); } }
+function mobHurt(m, d, team) { if (m.team !== undefined && m.team === team) return; d = Math.max(4, d); m.hp -= d; if (m.scout) m.stunT = 0.9; if (team !== undefined) { m.dmgBy = m.dmgBy || {}; m.dmgBy[team] = (m.dmgBy[team] || 0) + d; } FX.spark(m.x, m.y, m.boss ? '#7a3a8a' : '#e8e2d0', 5); if (m.hp <= 0) { m.dead = true; FX.fx(m.boss ? 'bossDie' : 'mobDie', m.x, m.y, null); } }
 /* ---- truce: the sealed school (and a moment after), the horror in the river, the banquet table, the Church's summons ---- */
 function truceZone(f) {
   var E = G.event;
@@ -3351,7 +3357,7 @@ function rescueTick(dt) {
    Battle site: three clues lie hidden around the site; get close to see a glint, stand over it to read it.
    Scouts: AI masters send a familiar to watch a rival home by day; shoot it down to learn whose it was, or its
    master knows where you are when night falls. The AI walks the same steps (daySpot). */
-var DAYP = { carryR: 55, wardR: 75, wispSpd: 125, wispNear: 230, wispBack: 30, clueR: 55, clueT: 1.6, clueSee: 300, scoutHp: 24, scoutSpd: 230, scoutFlee: 260, scoutChance: 0.6, intelT: 75 };
+var DAYP = { carryR: 55, wardR: 75, wispSpd: 125, wispNear: 230, wispBack: 30, clueR: 55, clueT: 1.6, clueSee: 300, scoutHp: 24, scoutSpd: 230, scoutFlee: 240, hopMin: 260, hopMax: 420, hopTired: 3, scoutChance: 0.6, intelT: 75 };
 var LEYP = {}; // ley paths (host side only): task name -> { pts, len }
 function dayNodes(cx, cy, d0, d1, n, sep) {
   var ns = civNodes().filter(function (q) { var d = Math.hypot(q.x - cx, q.y - cy); return d > d0 && d < d1; }), out = [];
@@ -3366,8 +3372,10 @@ function openSpot(cx, cy, d0, d1) {
 function dayActivities() {
   G.tasks.forEach(function (k) {
     if (k.kind === 'fortify') {
-      var F = G.fields[k.team], wards = dayNodes(F.x, F.y, 200, 800, 3, 260), stones = dayNodes(F.x, F.y, 700, 1700, 3, 420);
-      if (wards.length < 3 || stones.length < 3) return; // nowhere sensible: it stays a circle
+      // the stones wait inside the workshop, around the summoning circle; the ward points ring the house outside
+      var F = G.fields[k.team], wards = dayNodes(F.x, F.y, 200, 800, 3, 260), circ = (G.circles || []).filter(function (q) { return q.team === k.team; })[0];
+      if (wards.length < 3 || !circ) return; // nowhere sensible: it stays a circle
+      var stones = [0, 1, 2].map(function (i) { var a = -1.2 + i * 1.2; return { x: Math.round(circ.x + Math.cos(a) * 130), y: Math.round(circ.y + 90 + Math.sin(a) * 50) }; });
       k.act = 'stones'; k.stones = stones.map(function (p, i) { return { x: p.x, y: p.y, c: -1, ok: 0, tx: wards[i].x, ty: wards[i].y }; });
     } else if (k.kind === 'ley') {
       var ends = dayNodes(k.x, k.y, 1300, 2200, 1, 0), e = ends[0]; if (!e) return;
@@ -3397,12 +3405,12 @@ function dayActiveTick(k, dt) {
       if (s.ok) return;
       if (s.c >= 0) {
         var f = G.f[s.c];
-        if (!f || f.st === 'dead' || f.st === 'stag' || f.spirit === 2 || f.x > MAP.cityW) { s.c = -1; return; }
+        if (!f || f.st === 'dead' || f.st === 'stag' || f.spirit === 2 || f.resc) { s.c = -1; return; }
         s.x = Math.round(f.x - Math.cos(f.face) * 18); s.y = Math.round(f.y - Math.sin(f.face) * 18);
         if (Math.hypot(s.x - s.tx, s.y - s.ty) < DAYP.wardR) { s.ok = 1; s.c = -1; s.x = s.tx; s.y = s.ty; FX.task(t, k, 'A ward stone is set: ' + k.stones.filter(function (q) { return q.ok; }).length + ' of 3', true); }
         return;
       }
-      G.f.forEach(function (f) { if (s.c >= 0 || f.team !== t || f.st === 'dead' || f.spirit === 2 || f.x > MAP.cityW || Math.hypot(f.x - s.x, f.y - s.y) > DAYP.carryR) return; if (k.stones.some(function (q) { return q.c === f.idx; })) return; s.c = f.idx; });
+      G.f.forEach(function (f) { if (s.c >= 0 || f.team !== t || f.st === 'dead' || f.spirit === 2 || f.resc || Math.hypot(f.x - s.x, f.y - s.y) > DAYP.carryR) return; if (k.stones.some(function (q) { return q.c === f.idx; })) return; s.c = f.idx; });
     });
     var n = k.stones.filter(function (q) { return q.ok; }).length; k.prog[t] = k.need * n / 3;
     if (n === 3) { k.done[t] = true; finishTask(t, k); }
@@ -3467,10 +3475,11 @@ function scoutsTick(dt) {
   G.mobs.forEach(function (m) {
     if (!m.scout || m.dead) return; m.t += dt;
     var thr = null, td = DAYP.scoutFlee; G.f.forEach(function (f) { if (f.team !== m.tgt || f.st === 'dead' || f.spirit === 2) return; var d = Math.hypot(f.x - m.x, f.y - m.y); if (d < td) { td = d; thr = f; } });
-    if (thr) m.fleeT = 1.6;
-    var tx = m.px, ty = m.py; if (m.fleeT > 0) { m.fleeT -= dt; var a0 = thr ? Math.atan2(m.y - thr.y, m.x - thr.x) : m.face; tx = m.x + Math.cos(a0) * 200; ty = m.y + Math.sin(a0) * 200; }
-    var dx = tx - m.x, dy = ty - m.y, L = Math.hypot(dx, dy), sp = DAYP.scoutSpd * (m.fleeT > 0 ? 0.85 : 1) * dt;
-    if (L > 6) { m.face = Math.atan2(dy, dx); m.x += dx / L * Math.min(L, sp); m.y += dy / L * Math.min(L, sp); }
+    // spooked, it hops to a new perch a little way off; after a few hops it tires and only flutters
+    if (thr && !m.hop && (m.stunT || 0) <= 0) { var tired = (m.hops || 0) >= DAYP.hopTired, a0 = Math.atan2(m.y - thr.y, m.x - thr.x) + (rnd() - 0.5) * 1.2, d0 = tired ? 140 : DAYP.hopMin + rnd() * (DAYP.hopMax - DAYP.hopMin); m.hop = { x: clamp(m.x + Math.cos(a0) * d0, 40, MAP.cityW - 40), y: clamp(m.y + Math.sin(a0) * d0, 40, H - 40), sp: tired ? 150 : DAYP.scoutSpd }; m.hops = (m.hops || 0) + 1; }
+    if (m.stunT > 0) { m.stunT -= dt; return; }
+    var tx = m.hop ? m.hop.x : m.px, ty = m.hop ? m.hop.y : m.py, sp = (m.hop ? m.hop.sp : DAYP.scoutSpd * 0.7) * dt, dx = tx - m.x, dy = ty - m.y, L = Math.hypot(dx, dy);
+    if (L > 6) { m.face = Math.atan2(dy, dx); m.x += dx / L * Math.min(L, sp); m.y += dy / L * Math.min(L, sp); } else if (m.hop) { m.px = m.hop.x; m.py = m.hop.y; m.hop = null; }
     m.x = clamp(m.x, 20, MAP.cityW - 20); m.y = clamp(m.y, 20, H - 20);
   });
   G.mobs.forEach(function (m) {
@@ -5645,6 +5654,7 @@ function draw() {
     var ang = Math.atan2(f1.y - f0.y, f1.x - f0.x), px = clamp(sxp, 24, VW - 24), py = clamp(syp, SAFE.top + 16, Math.max(SAFE.top + 40, VH - SAFE.bottom - 16));
     ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.fillStyle = '#e2515c'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.fill(); ctx.restore();
   }
+  drawDayArrow(cx, cy, zoom);
   // minimap (the city only, never the interiors strip)
   var MW = MAP.cityW || W;
   var my0 = SAFE.topR, mw = Math.max(70, Math.min(clamp(VW * 0.18, VW < 560 ? 112 : 120, 240), (VH - SAFE.bottom - my0 - 10) * MW / H)), mh = mw * H / MW, mx0 = VW - mw - 10;
@@ -6253,12 +6263,15 @@ function note(s, col) { NOTES.push({ s: s, col: col || '#e9e4d3', t0: performanc
 function teamName(t) { var m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0] || G.f.filter(function (f) { return f.team === t; })[0]; return m ? shortName(m.def.name) + '’s team' : 'a team'; }
 FX.phase = function (kind, n, fin) {
   if (kind === 'day') FX.banner('Day ' + n, 'Morning in Fuyuki. Crowds fill the streets: rest at home, or fight where nobody sees.');
-  else if (fin) FX.banner('The Final Night', 'The Grail is close. Every master can feel where the others are.');
+  else if (kind === 'grail') FX.banner('Midnight: the Grail descends', 'No more Command Seal escapes. Every master can feel where the others are. Only one team leaves this night.');
+  else if (fin) FX.banner('The Grail descends', 'Every master can feel where the others are. Only one team leaves this night.');
+  else if (G.clock && n >= G.clock.nights) FX.banner('Night ' + n + ': the last night', 'At midnight the Grail descends. Until then, seals still save lives.');
   else FX.banner('Night ' + n, 'The streets empty. Hunt, or hide.');
   FX.snd('bell');
 };
 FX.church = function (kind, team) {
   var mine = team === G.f[MEI].team, who = mine ? 'your team' : teamName(team);
+  if (kind === 'dusk') { note(mine ? 'Night falls, but the town talks: what you did by day has you marked on every map for a while.' : 'The town talks of ' + who + ': marked on the map as night falls.', mine ? '#f0a85a' : '#e9e4d3'); return; }
   if (kind === 'rumor') note(mine ? 'Rumors spread about strange events near you. Rivals can guess where you are.' : 'Rumors of strange sightings point to ' + who + '. Marked on the map.', mine ? '#f0a85a' : '#e9e4d3');
   else if (kind === 'warn') { note('The Church warns ' + who + ': keep the Mystery hidden.', '#f0a85a'); if (mine) FX.banner('The Church warns you', 'Too many people have seen your fights.'); }
   else if (kind === 'sanction') FX.banner('The Church exposes ' + (mine ? 'you' : who), 'Every team can see ' + (mine ? 'you' : 'them') + ' for ' + EXPO.sanction + ' seconds.');
@@ -6319,7 +6332,7 @@ function drawClockHud(mx0, my0, mw, mh) {
   c.globalAlpha = 1;
   if (!G.clock) return;
   var k = G.clock, me = G.f[MEI], left = Math.max(0, k.len - k.t), y = my0 + mh + 20, x = mx0 + mw;
-  var label = k.final ? 'FINAL NIGHT' : (k.phase === 'day' ? 'DAY ' : 'NIGHT ') + k.n, tm = k.final ? '' : ' · ' + Math.floor(left / 60) + ':' + ('0' + Math.floor(left % 60)).slice(-2);
+  var label = k.final ? 'NIGHT ' + k.n + ' · MIDNIGHT' : (k.phase === 'day' ? 'DAY ' : 'NIGHT ') + k.n, tm = k.final ? '' : ' · ' + Math.floor(left / 60) + ':' + ('0' + Math.floor(left % 60)).slice(-2);
   c.textAlign = 'right'; c.font = '700 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif';
   var tw = c.measureText(label + tm).width; c.fillStyle = 'rgba(8,14,20,.72)'; c.fillRect(x - tw - 34, y - 16, tw + 34, 22);
   c.fillStyle = k.phase === 'day' && !k.final ? '#f0c060' : '#b8c8f0'; c.beginPath(); if (k.phase === 'day' && !k.final) c.arc(x - tw - 18, y - 5, 6, 0, 6.283); else { c.arc(x - tw - 18, y - 5, 6, 0, 6.283); } c.fill();
@@ -6470,7 +6483,8 @@ function drawTasks(g, vr, t) {
 function drawDayHud(x, y, mx0, my0, mw, mh) {
   if (!isDay() || !G.tasks || !G.tasks.length) return; var my = G.f[MEI].team, c = ctx, MW = MAP.cityW || W;
   var list = G.tasks.filter(function (k) { return taskFor(my, k) || k.done[my]; });
-  list.forEach(function (k) { var px = mx0 + k.x / MW * mw, py = my0 + k.y / H * mh; c.save(); c.translate(px, py); c.rotate(0.785); c.fillStyle = k.done[my] ? 'rgba(200,200,200,.4)' : TASK_COL[k.kind]; c.fillRect(-3.5, -3.5, 7, 7); c.restore(); });
+  list.forEach(function (k) { var px = mx0 + k.x / MW * mw, py = my0 + k.y / H * mh; c.save(); c.translate(px, py); c.rotate(0.785); c.fillStyle = k.done[my] ? 'rgba(200,200,200,.4)' : TASK_COL[k.kind]; c.fillRect(-3.5, -3.5, 7, 7); c.restore(); if (!k.done[my]) dayMiniMarks(c, k, my, mx0, my0, mw, mh, MW); });
+  scoutMiniMarks(c, my, mx0, my0, mw, mh, MW);
   c.font = '600 ' + (VW < 560 ? 12 : 14) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right';
   list.slice(0, 7).forEach(function (k, i) {
     var done = k.done[my], s = (done ? '✓ ' : '') + k.name + (done ? '' : '  ' + taskProgText(k, my)), tw = c.measureText(s).width + 16, yy = y + i * 20;
@@ -6540,6 +6554,43 @@ function drawScout(g, m) {
     else if (kind === 'scoutReport') { if (d.tgt === my) note('A familiar watched you all day: ' + teamName(d.owner) + ' knows where you are.', '#f0a85a'); else if (d.owner === my) note('Your familiar reports where ' + teamName(d.tgt) + ' is.', '#c9b8e0'); }
   };
 })();
+
+/* ---- finding the day's work: minimap marks for each step, and an arrow at the screen edge to the current one ---- */
+function miniDot(c, x, y, mx0, my0, mw, mh, MW, col, r, ring) { if (x > MW) return; var px = mx0 + x / MW * mw, py = my0 + y / H * mh; c.beginPath(); c.arc(px, py, r, 0, 6.283); if (ring) { c.strokeStyle = col; c.lineWidth = 1.5; c.stroke(); } else { c.fillStyle = col; c.fill(); } }
+function dayMiniMarks(c, k, my, mx0, my0, mw, mh, MW) {
+  var col = TASK_COL[k.kind], pul = 0.6 + 0.4 * Math.sin(G.time * 5);
+  if (k.act === 'stones') k.stones.forEach(function (s) { if (!s.ok) miniDot(c, s.tx, s.ty, mx0, my0, mw, mh, MW, col, 3.2, true); });
+  if (k.act === 'wisp') { var wp = k.wp && k.wp[my]; c.globalAlpha = pul; miniDot(c, wp ? wp[0] : k.x, wp ? wp[1] : k.y, mx0, my0, mw, mh, MW, '#efe8ff', 3, false); c.globalAlpha = 1; if (k.ex !== undefined) miniDot(c, k.ex, k.ey, mx0, my0, mw, mh, MW, col, 3, true); }
+  if (k.act === 'clues') miniDot(c, k.x, k.y, mx0, my0, mw, mh, MW, col, 5, true);
+}
+// a familiar watching your home is felt by your bounded field; one near your fighters is seen
+function scoutSeen(m, my) {
+  var F = G.fields && G.fields[my]; if (F && Math.hypot(m.x - F.x, m.y - F.y) < fieldR(F) + 500) return true;
+  return G.f.some(function (f) { return f.team === my && f.st !== 'dead' && f.x < (MAP.cityW || W) && Math.hypot(f.x - m.x, f.y - m.y) < 900; });
+}
+function scoutMiniMarks(c, my, mx0, my0, mw, mh, MW) {
+  (G.mobs || []).forEach(function (m) { if (!m.scout || m.dead || m.team === my || !scoutSeen(m, my)) return; var px = mx0 + m.x / MW * mw, py = my0 + m.y / H * mh; c.save(); c.translate(px, py); c.fillStyle = '#ff8a6a'; c.beginPath(); c.moveTo(0, -4); c.lineTo(4, 2); c.lineTo(-4, 2); c.closePath(); c.fill(); c.restore(); });
+}
+// where my next step is, in my own space (outside or inside): through my door when it is on the other side
+function dayObjective() {
+  if (!isDay() || !G.tasks) return null; var me = G.f[MEI], my = me.team, best = null, bd = 1e9, inside = me.x > (MAP.cityW || W);
+  var consider = function (x, y, k, lab) { var p = { x: x, y: y }, pin = x > MAP.cityW; if (pin !== inside) { var F = G.fields[my], d = (MAP.doors || []).filter(function (q) { return F && F.rooms && F.rooms.indexOf(q.room) >= 0 && !q.ruined; })[0]; if (!d) return; p = inside ? { x: d.in.x, y: d.in.y } : { x: d.out.x, y: d.out.y }; lab = inside ? 'OUT' : 'HOME'; } var dd = Math.hypot(p.x - me.x, p.y - me.y); if (dd < bd) { bd = dd; best = { x: p.x, y: p.y, col: TASK_COL[k.kind], lab: lab }; } };
+  G.tasks.forEach(function (k) {
+    if (k.done[my] || !taskFor(my, k)) return;
+    if (k.act === 'stones') { var mine = k.stones.filter(function (s) { return s.c === me.idx; })[0]; if (mine) { bd = -1; best = null; consider(mine.tx, mine.ty, k, 'WARD'); bd = -1; return; } k.stones.forEach(function (s) { if (!s.ok && s.c < 0) consider(s.x, s.y, k, 'STONE'); }); }
+    else if (k.act === 'wisp') { var wp = k.wp && k.wp[my]; consider(wp ? wp[0] : k.x, wp ? wp[1] : k.y, k, 'WISP'); }
+    else if (k.act === 'clues') consider(k.x, k.y, k, 'CLUES');
+    else if (bd >= 0) consider(k.x, k.y, k, k.name.toUpperCase());
+  });
+  return best;
+}
+function drawDayArrow(cx, cy, zoom) {
+  var o = dayObjective(); if (!o) return; var me = G.f[MEI], sx = (o.x - cx) * zoom + VW / 2, sy = (o.y - cy) * zoom + VH / 2;
+  if (sx > 30 && sx < VW - 30 && sy > SAFE.top + 30 && sy < VH - SAFE.bottom - 30) return;
+  var ang = Math.atan2(o.y - me.y, o.x - me.x), px = clamp(sx, 34, VW - 34), py = clamp(sy, SAFE.top + 34, Math.max(SAFE.top + 60, VH - SAFE.bottom - 34));
+  ctx.save(); ctx.translate(px, py); ctx.globalAlpha = 0.9; ctx.rotate(ang); ctx.fillStyle = o.col; ctx.strokeStyle = 'rgba(8,14,20,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -10); ctx.lineTo(-3, 0); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.rotate(-ang);
+  ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = o.col; ctx.fillText(o.lab, -Math.cos(ang) * 22, -Math.sin(ang) * 22 + 4); ctx.restore();
+}
 /* ---- events on screen: headlines, the harbor beacon, the sealed school, skeleton familiars, the Grail's light ---- */
 FX.event = function (kind, d, msg) {
   if (!G || !G.f[MEI]) return; var my = G.f[MEI].team, mine = d && d.team === my;
@@ -8097,7 +8148,7 @@ function warCardHTML() {
   var s = SERV[CFG.servant], m = MASTERS[CFG.master], home = MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : (CFG.master === 'kiritsugu' ? 'Einzbern Castle or a safehouse' : 'a safehouse');
   return '<div class="pc-k">The contract</div><div class="pc-pair"><div>' + thumb(s.id, 150) + '<b>' + esc(shortName(s.name)) + '</b><small>' + s.cls + '</small></div><div class="pc-x">' + '<svg viewBox="0 0 120 60" aria-hidden="true"><path d="M60 8 C48 20 48 34 60 44 C72 34 72 20 60 8Z M60 44 C44 46 28 40 16 28 C30 34 44 36 54 32 M60 44 C76 46 92 40 104 28 C90 34 76 36 66 32 M60 44 L60 56" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>' + '</div><div>' + thumb(m.id, 150) + '<b>' + esc(m.name) + '</b><small>' + esc(m.type) + '</small></div></div>' +
     '<p>You play the <b>' + CFG.playAs + '</b>. The war begins at ' + esc(home) + ', where ' + esc(m.name.split(' ')[0]) + ' completes the summoning.</p>' +
-    '<ul><li>' + CFG.teams + ' teams fight for the Grail</li><li>' + (CFG.nights || 3) + ' nights, then the final night</li><li>Opponents: ' + DIFF[CFG.diff].name + '</li></ul>';
+    '<ul><li>' + CFG.teams + ' teams fight for the Grail</li><li>' + (CFG.nights || 3) + ' nights; at midnight of the last the Grail descends</li><li>Opponents: ' + DIFF[CFG.diff].name + '</li></ul>';
 }
 /* ---- settings ---- */
 function renderSettings() {

@@ -47,7 +47,8 @@ function drawTasks(g, vr, t) {
 function drawDayHud(x, y, mx0, my0, mw, mh) {
   if (!isDay() || !G.tasks || !G.tasks.length) return; var my = G.f[MEI].team, c = ctx, MW = MAP.cityW || W;
   var list = G.tasks.filter(function (k) { return taskFor(my, k) || k.done[my]; });
-  list.forEach(function (k) { var px = mx0 + k.x / MW * mw, py = my0 + k.y / H * mh; c.save(); c.translate(px, py); c.rotate(0.785); c.fillStyle = k.done[my] ? 'rgba(200,200,200,.4)' : TASK_COL[k.kind]; c.fillRect(-3.5, -3.5, 7, 7); c.restore(); });
+  list.forEach(function (k) { var px = mx0 + k.x / MW * mw, py = my0 + k.y / H * mh; c.save(); c.translate(px, py); c.rotate(0.785); c.fillStyle = k.done[my] ? 'rgba(200,200,200,.4)' : TASK_COL[k.kind]; c.fillRect(-3.5, -3.5, 7, 7); c.restore(); if (!k.done[my]) dayMiniMarks(c, k, my, mx0, my0, mw, mh, MW); });
+  scoutMiniMarks(c, my, mx0, my0, mw, mh, MW);
   c.font = '600 ' + (VW < 560 ? 12 : 14) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right';
   list.slice(0, 7).forEach(function (k, i) {
     var done = k.done[my], s = (done ? '✓ ' : '') + k.name + (done ? '' : '  ' + taskProgText(k, my)), tw = c.measureText(s).width + 16, yy = y + i * 20;
@@ -117,3 +118,40 @@ function drawScout(g, m) {
     else if (kind === 'scoutReport') { if (d.tgt === my) note('A familiar watched you all day: ' + teamName(d.owner) + ' knows where you are.', '#f0a85a'); else if (d.owner === my) note('Your familiar reports where ' + teamName(d.tgt) + ' is.', '#c9b8e0'); }
   };
 })();
+
+/* ---- finding the day's work: minimap marks for each step, and an arrow at the screen edge to the current one ---- */
+function miniDot(c, x, y, mx0, my0, mw, mh, MW, col, r, ring) { if (x > MW) return; var px = mx0 + x / MW * mw, py = my0 + y / H * mh; c.beginPath(); c.arc(px, py, r, 0, 6.283); if (ring) { c.strokeStyle = col; c.lineWidth = 1.5; c.stroke(); } else { c.fillStyle = col; c.fill(); } }
+function dayMiniMarks(c, k, my, mx0, my0, mw, mh, MW) {
+  var col = TASK_COL[k.kind], pul = 0.6 + 0.4 * Math.sin(G.time * 5);
+  if (k.act === 'stones') k.stones.forEach(function (s) { if (!s.ok) miniDot(c, s.tx, s.ty, mx0, my0, mw, mh, MW, col, 3.2, true); });
+  if (k.act === 'wisp') { var wp = k.wp && k.wp[my]; c.globalAlpha = pul; miniDot(c, wp ? wp[0] : k.x, wp ? wp[1] : k.y, mx0, my0, mw, mh, MW, '#efe8ff', 3, false); c.globalAlpha = 1; if (k.ex !== undefined) miniDot(c, k.ex, k.ey, mx0, my0, mw, mh, MW, col, 3, true); }
+  if (k.act === 'clues') miniDot(c, k.x, k.y, mx0, my0, mw, mh, MW, col, 5, true);
+}
+// a familiar watching your home is felt by your bounded field; one near your fighters is seen
+function scoutSeen(m, my) {
+  var F = G.fields && G.fields[my]; if (F && Math.hypot(m.x - F.x, m.y - F.y) < fieldR(F) + 500) return true;
+  return G.f.some(function (f) { return f.team === my && f.st !== 'dead' && f.x < (MAP.cityW || W) && Math.hypot(f.x - m.x, f.y - m.y) < 900; });
+}
+function scoutMiniMarks(c, my, mx0, my0, mw, mh, MW) {
+  (G.mobs || []).forEach(function (m) { if (!m.scout || m.dead || m.team === my || !scoutSeen(m, my)) return; var px = mx0 + m.x / MW * mw, py = my0 + m.y / H * mh; c.save(); c.translate(px, py); c.fillStyle = '#ff8a6a'; c.beginPath(); c.moveTo(0, -4); c.lineTo(4, 2); c.lineTo(-4, 2); c.closePath(); c.fill(); c.restore(); });
+}
+// where my next step is, in my own space (outside or inside): through my door when it is on the other side
+function dayObjective() {
+  if (!isDay() || !G.tasks) return null; var me = G.f[MEI], my = me.team, best = null, bd = 1e9, inside = me.x > (MAP.cityW || W);
+  var consider = function (x, y, k, lab) { var p = { x: x, y: y }, pin = x > MAP.cityW; if (pin !== inside) { var F = G.fields[my], d = (MAP.doors || []).filter(function (q) { return F && F.rooms && F.rooms.indexOf(q.room) >= 0 && !q.ruined; })[0]; if (!d) return; p = inside ? { x: d.in.x, y: d.in.y } : { x: d.out.x, y: d.out.y }; lab = inside ? 'OUT' : 'HOME'; } var dd = Math.hypot(p.x - me.x, p.y - me.y); if (dd < bd) { bd = dd; best = { x: p.x, y: p.y, col: TASK_COL[k.kind], lab: lab }; } };
+  G.tasks.forEach(function (k) {
+    if (k.done[my] || !taskFor(my, k)) return;
+    if (k.act === 'stones') { var mine = k.stones.filter(function (s) { return s.c === me.idx; })[0]; if (mine) { bd = -1; best = null; consider(mine.tx, mine.ty, k, 'WARD'); bd = -1; return; } k.stones.forEach(function (s) { if (!s.ok && s.c < 0) consider(s.x, s.y, k, 'STONE'); }); }
+    else if (k.act === 'wisp') { var wp = k.wp && k.wp[my]; consider(wp ? wp[0] : k.x, wp ? wp[1] : k.y, k, 'WISP'); }
+    else if (k.act === 'clues') consider(k.x, k.y, k, 'CLUES');
+    else if (bd >= 0) consider(k.x, k.y, k, k.name.toUpperCase());
+  });
+  return best;
+}
+function drawDayArrow(cx, cy, zoom) {
+  var o = dayObjective(); if (!o) return; var me = G.f[MEI], sx = (o.x - cx) * zoom + VW / 2, sy = (o.y - cy) * zoom + VH / 2;
+  if (sx > 30 && sx < VW - 30 && sy > SAFE.top + 30 && sy < VH - SAFE.bottom - 30) return;
+  var ang = Math.atan2(o.y - me.y, o.x - me.x), px = clamp(sx, 34, VW - 34), py = clamp(sy, SAFE.top + 34, Math.max(SAFE.top + 60, VH - SAFE.bottom - 34));
+  ctx.save(); ctx.translate(px, py); ctx.globalAlpha = 0.9; ctx.rotate(ang); ctx.fillStyle = o.col; ctx.strokeStyle = 'rgba(8,14,20,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -10); ctx.lineTo(-3, 0); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.rotate(-ang);
+  ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = o.col; ctx.fillText(o.lab, -Math.cos(ang) * 22, -Math.sin(ang) * 22 + 4); ctx.restore();
+}

@@ -4,7 +4,7 @@
    Battle site: three clues lie hidden around the site; get close to see a glint, stand over it to read it.
    Scouts: AI masters send a familiar to watch a rival home by day; shoot it down to learn whose it was, or its
    master knows where you are when night falls. The AI walks the same steps (daySpot). */
-var DAYP = { carryR: 55, wardR: 75, wispSpd: 125, wispNear: 230, wispBack: 30, clueR: 55, clueT: 1.6, clueSee: 300, scoutHp: 24, scoutSpd: 230, scoutFlee: 260, scoutChance: 0.6, intelT: 75 };
+var DAYP = { carryR: 55, wardR: 75, wispSpd: 125, wispNear: 230, wispBack: 30, clueR: 55, clueT: 1.6, clueSee: 300, scoutHp: 24, scoutSpd: 230, scoutFlee: 240, hopMin: 260, hopMax: 420, hopTired: 3, scoutChance: 0.6, intelT: 75 };
 var LEYP = {}; // ley paths (host side only): task name -> { pts, len }
 function dayNodes(cx, cy, d0, d1, n, sep) {
   var ns = civNodes().filter(function (q) { var d = Math.hypot(q.x - cx, q.y - cy); return d > d0 && d < d1; }), out = [];
@@ -19,8 +19,10 @@ function openSpot(cx, cy, d0, d1) {
 function dayActivities() {
   G.tasks.forEach(function (k) {
     if (k.kind === 'fortify') {
-      var F = G.fields[k.team], wards = dayNodes(F.x, F.y, 200, 800, 3, 260), stones = dayNodes(F.x, F.y, 700, 1700, 3, 420);
-      if (wards.length < 3 || stones.length < 3) return; // nowhere sensible: it stays a circle
+      // the stones wait inside the workshop, around the summoning circle; the ward points ring the house outside
+      var F = G.fields[k.team], wards = dayNodes(F.x, F.y, 200, 800, 3, 260), circ = (G.circles || []).filter(function (q) { return q.team === k.team; })[0];
+      if (wards.length < 3 || !circ) return; // nowhere sensible: it stays a circle
+      var stones = [0, 1, 2].map(function (i) { var a = -1.2 + i * 1.2; return { x: Math.round(circ.x + Math.cos(a) * 130), y: Math.round(circ.y + 90 + Math.sin(a) * 50) }; });
       k.act = 'stones'; k.stones = stones.map(function (p, i) { return { x: p.x, y: p.y, c: -1, ok: 0, tx: wards[i].x, ty: wards[i].y }; });
     } else if (k.kind === 'ley') {
       var ends = dayNodes(k.x, k.y, 1300, 2200, 1, 0), e = ends[0]; if (!e) return;
@@ -50,12 +52,12 @@ function dayActiveTick(k, dt) {
       if (s.ok) return;
       if (s.c >= 0) {
         var f = G.f[s.c];
-        if (!f || f.st === 'dead' || f.st === 'stag' || f.spirit === 2 || f.x > MAP.cityW) { s.c = -1; return; }
+        if (!f || f.st === 'dead' || f.st === 'stag' || f.spirit === 2 || f.resc) { s.c = -1; return; }
         s.x = Math.round(f.x - Math.cos(f.face) * 18); s.y = Math.round(f.y - Math.sin(f.face) * 18);
         if (Math.hypot(s.x - s.tx, s.y - s.ty) < DAYP.wardR) { s.ok = 1; s.c = -1; s.x = s.tx; s.y = s.ty; FX.task(t, k, 'A ward stone is set: ' + k.stones.filter(function (q) { return q.ok; }).length + ' of 3', true); }
         return;
       }
-      G.f.forEach(function (f) { if (s.c >= 0 || f.team !== t || f.st === 'dead' || f.spirit === 2 || f.x > MAP.cityW || Math.hypot(f.x - s.x, f.y - s.y) > DAYP.carryR) return; if (k.stones.some(function (q) { return q.c === f.idx; })) return; s.c = f.idx; });
+      G.f.forEach(function (f) { if (s.c >= 0 || f.team !== t || f.st === 'dead' || f.spirit === 2 || f.resc || Math.hypot(f.x - s.x, f.y - s.y) > DAYP.carryR) return; if (k.stones.some(function (q) { return q.c === f.idx; })) return; s.c = f.idx; });
     });
     var n = k.stones.filter(function (q) { return q.ok; }).length; k.prog[t] = k.need * n / 3;
     if (n === 3) { k.done[t] = true; finishTask(t, k); }
@@ -120,10 +122,11 @@ function scoutsTick(dt) {
   G.mobs.forEach(function (m) {
     if (!m.scout || m.dead) return; m.t += dt;
     var thr = null, td = DAYP.scoutFlee; G.f.forEach(function (f) { if (f.team !== m.tgt || f.st === 'dead' || f.spirit === 2) return; var d = Math.hypot(f.x - m.x, f.y - m.y); if (d < td) { td = d; thr = f; } });
-    if (thr) m.fleeT = 1.6;
-    var tx = m.px, ty = m.py; if (m.fleeT > 0) { m.fleeT -= dt; var a0 = thr ? Math.atan2(m.y - thr.y, m.x - thr.x) : m.face; tx = m.x + Math.cos(a0) * 200; ty = m.y + Math.sin(a0) * 200; }
-    var dx = tx - m.x, dy = ty - m.y, L = Math.hypot(dx, dy), sp = DAYP.scoutSpd * (m.fleeT > 0 ? 0.85 : 1) * dt;
-    if (L > 6) { m.face = Math.atan2(dy, dx); m.x += dx / L * Math.min(L, sp); m.y += dy / L * Math.min(L, sp); }
+    // spooked, it hops to a new perch a little way off; after a few hops it tires and only flutters
+    if (thr && !m.hop && (m.stunT || 0) <= 0) { var tired = (m.hops || 0) >= DAYP.hopTired, a0 = Math.atan2(m.y - thr.y, m.x - thr.x) + (rnd() - 0.5) * 1.2, d0 = tired ? 140 : DAYP.hopMin + rnd() * (DAYP.hopMax - DAYP.hopMin); m.hop = { x: clamp(m.x + Math.cos(a0) * d0, 40, MAP.cityW - 40), y: clamp(m.y + Math.sin(a0) * d0, 40, H - 40), sp: tired ? 150 : DAYP.scoutSpd }; m.hops = (m.hops || 0) + 1; }
+    if (m.stunT > 0) { m.stunT -= dt; return; }
+    var tx = m.hop ? m.hop.x : m.px, ty = m.hop ? m.hop.y : m.py, sp = (m.hop ? m.hop.sp : DAYP.scoutSpd * 0.7) * dt, dx = tx - m.x, dy = ty - m.y, L = Math.hypot(dx, dy);
+    if (L > 6) { m.face = Math.atan2(dy, dx); m.x += dx / L * Math.min(L, sp); m.y += dy / L * Math.min(L, sp); } else if (m.hop) { m.px = m.hop.x; m.py = m.hop.y; m.hop = null; }
     m.x = clamp(m.x, 20, MAP.cityW - 20); m.y = clamp(m.y, 20, H - 20);
   });
   G.mobs.forEach(function (m) {

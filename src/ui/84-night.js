@@ -6,12 +6,15 @@ function note(s, col) { NOTES.push({ s: s, col: col || '#e9e4d3', t0: performanc
 function teamName(t) { var m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0] || G.f.filter(function (f) { return f.team === t; })[0]; return m ? shortName(m.def.name) + '’s team' : 'a team'; }
 FX.phase = function (kind, n, fin) {
   if (kind === 'day') FX.banner('Day ' + n, 'Morning in Fuyuki. Crowds fill the streets: rest at home, or fight where nobody sees.');
-  else if (fin) FX.banner('The Final Night', 'The Grail is close. Every master can feel where the others are.');
+  else if (kind === 'grail') FX.banner('Midnight: the Grail descends', 'No more Command Seal escapes. Every master can feel where the others are. Only one team leaves this night.');
+  else if (fin) FX.banner('The Grail descends', 'Every master can feel where the others are. Only one team leaves this night.');
+  else if (G.clock && n >= G.clock.nights) FX.banner('Night ' + n + ': the last night', 'At midnight the Grail descends. Until then, seals still save lives.');
   else FX.banner('Night ' + n, 'The streets empty. Hunt, or hide.');
   FX.snd('bell');
 };
 FX.church = function (kind, team) {
   var mine = team === G.f[MEI].team, who = mine ? 'your team' : teamName(team);
+  if (kind === 'dusk') { note(mine ? 'Night falls, but the town talks: what you did by day has you marked on every map for a while.' : 'The town talks of ' + who + ': marked on the map as night falls.', mine ? '#f0a85a' : '#e9e4d3'); return; }
   if (kind === 'rumor') note(mine ? 'Rumors spread about strange events near you. Rivals can guess where you are.' : 'Rumors of strange sightings point to ' + who + '. Marked on the map.', mine ? '#f0a85a' : '#e9e4d3');
   else if (kind === 'warn') { note('The Church warns ' + who + ': keep the Mystery hidden.', '#f0a85a'); if (mine) FX.banner('The Church warns you', 'Too many people have seen your fights.'); }
   else if (kind === 'sanction') FX.banner('The Church exposes ' + (mine ? 'you' : who), 'Every team can see ' + (mine ? 'you' : 'them') + ' for ' + EXPO.sanction + ' seconds.');
@@ -72,7 +75,7 @@ function drawClockHud(mx0, my0, mw, mh) {
   c.globalAlpha = 1;
   if (!G.clock) return;
   var k = G.clock, me = G.f[MEI], left = Math.max(0, k.len - k.t), y = my0 + mh + 20, x = mx0 + mw;
-  var label = k.final ? 'FINAL NIGHT' : (k.phase === 'day' ? 'DAY ' : 'NIGHT ') + k.n, tm = k.final ? '' : ' · ' + Math.floor(left / 60) + ':' + ('0' + Math.floor(left % 60)).slice(-2);
+  var label = k.final ? 'NIGHT ' + k.n + ' · MIDNIGHT' : (k.phase === 'day' ? 'DAY ' : 'NIGHT ') + k.n, tm = k.final ? '' : ' · ' + Math.floor(left / 60) + ':' + ('0' + Math.floor(left % 60)).slice(-2);
   c.textAlign = 'right'; c.font = '700 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif';
   var tw = c.measureText(label + tm).width; c.fillStyle = 'rgba(8,14,20,.72)'; c.fillRect(x - tw - 34, y - 16, tw + 34, 22);
   c.fillStyle = k.phase === 'day' && !k.final ? '#f0c060' : '#b8c8f0'; c.beginPath(); if (k.phase === 'day' && !k.final) c.arc(x - tw - 18, y - 5, 6, 0, 6.283); else { c.arc(x - tw - 18, y - 5, 6, 0, 6.283); } c.fill();

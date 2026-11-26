@@ -5,7 +5,7 @@
    Berserker Unchained. Days (about 60%): the Sealed School, the King's Banquet, the Overseer's Summons.
    The final night: the Grail descends on one of Fuyuki's three ley lines, pure or corrupted. ---- */
 var EVT = {
-  nightAt: 45, dayAt: 35, dayChance: 0.6, quietChance: 0.35,
+  nightAt: 45, dayAt: 35, dayChance: 1, quietChance: 0.35,
   challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.65, acceptHp: 0.6 },
   school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 7, mobEvery: 7, mobHp: 24, contest: 95 },
   banquet: { x: 11000, y: 1820, r: 320, need: 20 },
@@ -228,7 +228,7 @@ function mobsTick(E, dt) {
 // fighters' blows and shots also strike familiars
 function hitMobsArc(f, a, mult) { if (!G.mobs || !G.mobs.length) return; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) <= (a.reach || 60) + 20) mobHurt(m, a.dmg * (mult || 1) * f.def.dmg * (f.def.isMaster ? 2 : 1), f.team); }); }
 function hitMobsAt(x, y, r, dmg, team) { if (!G.mobs || !G.mobs.length) return false; var hit = false; G.mobs.forEach(function (m) { if (!m.dead && Math.hypot(m.x - x, m.y - y) <= r + (m.r || 16)) { mobHurt(m, dmg, team); hit = true; } }); return hit; }
-function mobHurt(m, d, team) { if (m.team !== undefined && m.team === team) return; d = Math.max(4, d); m.hp -= d; if (team !== undefined) { m.dmgBy = m.dmgBy || {}; m.dmgBy[team] = (m.dmgBy[team] || 0) + d; } FX.spark(m.x, m.y, m.boss ? '#7a3a8a' : '#e8e2d0', 5); if (m.hp <= 0) { m.dead = true; FX.fx(m.boss ? 'bossDie' : 'mobDie', m.x, m.y, null); } }
+function mobHurt(m, d, team) { if (m.team !== undefined && m.team === team) return; d = Math.max(4, d); m.hp -= d; if (m.scout) m.stunT = 0.9; if (team !== undefined) { m.dmgBy = m.dmgBy || {}; m.dmgBy[team] = (m.dmgBy[team] || 0) + d; } FX.spark(m.x, m.y, m.boss ? '#7a3a8a' : '#e8e2d0', 5); if (m.hp <= 0) { m.dead = true; FX.fx(m.boss ? 'bossDie' : 'mobDie', m.x, m.y, null); } }
 /* ---- truce: the sealed school (and a moment after), the horror in the river, the banquet table, the Church's summons ---- */
 function truceZone(f) {
   var E = G.event;

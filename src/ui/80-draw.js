@@ -495,6 +495,7 @@ function draw() {
     var ang = Math.atan2(f1.y - f0.y, f1.x - f0.x), px = clamp(sxp, 24, VW - 24), py = clamp(syp, SAFE.top + 16, Math.max(SAFE.top + 40, VH - SAFE.bottom - 16));
     ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.fillStyle = '#e2515c'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.fill(); ctx.restore();
   }
+  drawDayArrow(cx, cy, zoom);
   // minimap (the city only, never the interiors strip)
   var MW = MAP.cityW || W;
   var my0 = SAFE.topR, mw = Math.max(70, Math.min(clamp(VW * 0.18, VW < 560 ? 112 : 120, 240), (VH - SAFE.bottom - my0 - 10) * MW / H)), mh = mw * H / MW, mx0 = VW - mw - 10;

@@ -3,10 +3,10 @@
    Night: dark streets, short sight, few people about. Day: crowded streets, teams rest at home.
    Civilians are witnesses, never targets: fighting where they can see raises the team's exposure,
    and the Church answers with rumors, a warning, and finally a sanction that shows the team to everyone. */
-var HOME_WARD = 0.5, MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
-var CLOCK = { night: 300, day: 150, nights: 3, fade: 18 };
-var CIV = { day: 140, night: 22, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
-var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 2.6, after: 30 };
+var NIGHT1_EAR = 0.4, HOME_REGEN = { day: 0.012, night: 0.006 }, HOME_WARD = 0.5, MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
+var CLOCK = { night: 300, day: 150, lastNight: 200, nights: 3, fade: 18 };
+var CIV = { day: 140, night: 0, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
+var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.05, duskMark: 90, sanction: 50, perN: 1.2, perD: 2.6, after: 30 };
 var BUSY = [[3700, 4700], [7700, 3400], [8525, 1450], [4050, 2650], [10400, 4780], [6000, 2400], [9300, 6600], [2050, 4880]];
 function clockOn() { return !!(G && G.clock); }
 function isDay() { return clockOn() && G.clock.phase === 'day'; }
@@ -32,12 +32,15 @@ function clockTick(dt) {
   var c = G.clock; if (!c) return;
   c.t += dt;
   if (!c.final && c.t >= c.len) {
-    if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); newPhaseEvents(); FX.phase('day', c.n, false); }
-    else { c.phase = 'night'; c.t = 0; c.len = CLOCK.night; c.fromDay = true; scoutsReport(); G.tasks = []; c.final = c.n >= c.nights; newPhaseEvents(); FX.phase('night', c.n, c.final); }
+    // the last night runs its course, and at midnight the Grail descends: no dawn in between
+    if (c.phase === 'night' && c.n >= c.nights) { c.final = true; c.t = 0; c.midnight = true; newPhaseEvents(); FX.phase('grail', c.n, true); }
+    else if (c.phase === 'night') { c.phase = 'day'; c.n++; c.t = 0; c.len = CLOCK.day; startDay(); newPhaseEvents(); FX.phase('day', c.n, false); }
+    else { c.phase = 'night'; c.t = 0; c.len = c.n >= c.nights ? CLOCK.lastNight : CLOCK.night; c.fromDay = true; scoutsReport(); G.tasks = []; duskSightings(); newPhaseEvents(); FX.phase('night', c.n, false); }
     civShift();
   }
   // resting at home by day: wounds close, mana returns
-  if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700 && !inOwnHome(f))) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
+  // in one's own home wounds close at any hour (faster by day, when the whole yard counts)
+  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day') return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
   civTick(dt); tasksTick(dt); execTick(dt); scoutsTick(dt); rescueTick(dt);
 }
@@ -66,7 +69,8 @@ function huntPoint(f) {
   var E = G.event;
   if (E && E.kind === 'challenge' && (E.host === f || E.goers[f.idx])) return { x: E.x, y: E.y };
   if (E && E.kind === 'horror' && !f.def.isMaster && f.team !== E.culprit && f.hp > f.def.hp * 0.5) return { x: E.boss.x, y: 2430 };
-  var nz = null, nd = 1e9; (G.noise || []).forEach(function (q) { var d = Math.hypot(q.x - f.x, q.y - f.y); if (G.time - q.t < 15 && d < q.r && d < nd && d > 150) { nd = d; nz = q; } });
+  // on the first night teams scout: only a fight close by draws them in
+  var nk = G.clock.n <= 1 && !finalNight() ? NIGHT1_EAR : 1, nz = null, nd = 1e9; (G.noise || []).forEach(function (q) { var d = Math.hypot(q.x - f.x, q.y - f.y); if (G.time - q.t < 15 && d < q.r * nk && d < nd && d > 150) { nd = d; nz = q; } });
   if (nz) { f.hunt = { x: nz.x, y: nz.y }; f.huntT = G.time + 20; return f.hunt; }
   if (f.hunt && G.time < f.huntT && dist(f, f.hunt) > 220) return f.hunt;
   var c = BUSY.map(function (p) { return { x: p[0], y: p[1] }; });
@@ -97,6 +101,8 @@ function witness(x, y, teams, k) {
 }
 function witnessHit(att, def, a) { if (!clockOn() || !att || att.inM || def.inM) return; if (witness(def.x, def.y, [att.team, def.team], a.power >= 3 ? 3 : 1)) churchDayFight(att); fightNoise(def.x, def.y, a.key === 'np' ? 4500 : 2400); }
 // the clash of a fight carries: AI teams within earshot that know of nobody else come to look
+// at dusk the day's sightings are on everyone's lips: a team the town saw misbehave is marked on every map for a while
+function duskSightings() { for (var t in G.expo) if (G.expo[t] >= EXPO.rumor) { G.reveal[t] = Math.max(G.reveal[t] || 0, G.time + EXPO.duskMark); FX.church('dusk', +t); } }
 function fightNoise(x, y, r) {
   if (!clockOn()) return; G.noise = G.noise || [];
   for (var i = 0; i < G.noise.length; i++) { var q = G.noise[i]; if (G.time - q.t < 3 && Math.abs(q.x - x) < 400 && Math.abs(q.y - y) < 400) { q.r = Math.max(q.r, r); return; } }

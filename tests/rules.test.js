@@ -278,7 +278,7 @@ test('hit-stop freezes only the two fighters in a hit; the rest of the war moves
   const t0 = G.time; E.simStep(E.STEP); assert.ok(G.time > t0, 'the war keeps running');
 });
 
-test('nights and days: the war runs night, day, night... and ends on a final night', () => {
+test('nights and days: the war runs night, day, night... and the Grail descends at midnight of the last', () => {
   const E = loadEngine();
   const G = E.newWar(E.warTeams('richard', 'rin', 3), { nights: 3 });
   assert.strictEqual(G.clock.phase, 'night'); assert.strictEqual(G.clock.n, 1);
@@ -288,7 +288,9 @@ test('nights and days: the war runs night, day, night... and ends on a final nig
   E.skipDay(); for (let i = 0; i < E.CLOCK.fade * 60 + 5; i++) E.simStep(E.STEP);
   assert.strictEqual(G.clock.phase, 'night'); assert.ok(!G.clock.final);
   G.clock.t = G.clock.len; E.simStep(E.STEP); G.clock.t = G.clock.len; E.simStep(E.STEP);
-  assert.ok(G.clock.final, 'night 3 is the final night'); assert.ok(G.civ.length > 0, 'civilians walk the city');
+  assert.strictEqual(G.clock.n, 3); assert.strictEqual(G.clock.phase, 'night'); assert.ok(!G.clock.final, 'night 3 begins as a normal night');
+  G.clock.t = G.clock.len; E.simStep(E.STEP);
+  assert.ok(G.clock.final && G.clock.phase === 'night' && G.clock.n === 3, 'at its midnight the Grail descends, with no dawn between'); assert.ok(G.civ.length > 0, 'civilians walk the city');
 });
 
 test('at night a fighter only knows what is close; on the final night everyone knows', () => {

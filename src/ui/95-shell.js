@@ -79,7 +79,7 @@ function warCardHTML() {
   var s = SERV[CFG.servant], m = MASTERS[CFG.master], home = MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : (CFG.master === 'kiritsugu' ? 'Einzbern Castle or a safehouse' : 'a safehouse');
   return '<div class="pc-k">The contract</div><div class="pc-pair"><div>' + thumb(s.id, 150) + '<b>' + esc(shortName(s.name)) + '</b><small>' + s.cls + '</small></div><div class="pc-x">' + '<svg viewBox="0 0 120 60" aria-hidden="true"><path d="M60 8 C48 20 48 34 60 44 C72 34 72 20 60 8Z M60 44 C44 46 28 40 16 28 C30 34 44 36 54 32 M60 44 C76 46 92 40 104 28 C90 34 76 36 66 32 M60 44 L60 56" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>' + '</div><div>' + thumb(m.id, 150) + '<b>' + esc(m.name) + '</b><small>' + esc(m.type) + '</small></div></div>' +
     '<p>You play the <b>' + CFG.playAs + '</b>. The war begins at ' + esc(home) + ', where ' + esc(m.name.split(' ')[0]) + ' completes the summoning.</p>' +
-    '<ul><li>' + CFG.teams + ' teams fight for the Grail</li><li>' + (CFG.nights || 3) + ' nights, then the final night</li><li>Opponents: ' + DIFF[CFG.diff].name + '</li></ul>';
+    '<ul><li>' + CFG.teams + ' teams fight for the Grail</li><li>' + (CFG.nights || 3) + ' nights; at midnight of the last the Grail descends</li><li>Opponents: ' + DIFF[CFG.diff].name + '</li></ul>';
 }
 /* ---- settings ---- */
 function renderSettings() {
