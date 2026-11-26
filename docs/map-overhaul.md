@@ -65,3 +65,6 @@ This is the largest change since the city map itself: expect two or three sessio
   - Mage killer (Kiritsugu): bounded fields do not slow him and their bolts deal half (they still sense him), and +10% damage to masters in the war only. Different from Outsiders, who are not sensed at all but are slowed.
   - Church (Kirei, Caren): the Church is their home and they can share it; its interior is a sanctuary (no one can deal damage inside, like a truce zone). Limits: no bounded field there, sanctuary does not protect anyone who dealt damage in the last 20 s, and it ends when the Grail descends. Church heat is not reduced.
   - Outsider: not felt by bounded fields (as now).
+
+## Draft 1 (Nov 26)
+`docs/map-draft-1.png` (drawn by `tools/mapdraft.py`, which also prints base spacing): closest rival bases 2,300 (today 1,423), average nearest 2,656. Mount Enzou is a north-west lobe with the lake behind the temple and the cave on its far west slope on a hidden trail; the Uryuu storehouse sits at the edge of Miyama south.
