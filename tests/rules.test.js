@@ -546,3 +546,13 @@ test('Gilgamesh betrays his master for Kirei when a pact brings them together', 
   assert.ok(G.gilDone && ev.includes('betray'));
   assert.strictEqual(rin.st, 'dead', 'his old master falls'); assert.strictEqual(gil.team, kirei.team); assert.strictEqual(gil.partner, kirei);
 });
+test('a player in the war never targets or turns toward an enemy across the city', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.cu, master: M.waver }, { servant: S.medusa, master: M.shirou }], { nights: 3 });
+  const me = G.f[0], foe = G.f.find((f) => f.team !== me.team && !f.def.isMaster);
+  me.x = 3300; me.y = 4300; G.f.forEach((f) => { if (f.team !== me.team) { f.x = me.x + 3000; f.y = me.y; } }); E.pickTarget(me);
+  assert.strictEqual(E.aimFoe(me), null, 'nothing to aim at across the map');
+  me.face = 1; E.simStep(E.STEP); assert.ok(Math.abs(me.face - 1) < 0.01, 'an idle player keeps their facing');
+  foe.x = me.x + 300; foe.y = me.y; E.pickTarget(me);
+  assert.strictEqual(E.aimFoe(me), foe, 'a nearby enemy is the target');
+});

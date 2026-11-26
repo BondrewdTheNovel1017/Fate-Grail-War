@@ -125,7 +125,7 @@ function startDodge(f) {
   if (f.dodges <= 0) { FX.snd('nodge', f); return; }
   if (f.sta <= 0 || f.exh > 0) return;
   var mx = f.inp.mx, my = f.inp.my, L = Math.hypot(mx, my);
-  if (L < 0.2) { var back = angTo(f, f.foe) + Math.PI; mx = Math.cos(back); my = Math.sin(back); L = 1; }
+  if (L < 0.2) { var af = aimFoe(f), back = (af ? angTo(f, af) : f.face) + Math.PI; mx = Math.cos(back); my = Math.sin(back); L = 1; }
   f.dodgeX = mx / L; f.dodgeY = my / L;
   f.sta -= 12 * (f.def.dodgeCost || 1); f.stDelay = 0.6; if (f.sta <= 0) { f.sta = 0; f.exh = 0.8; }
   f.dodges--; FX.snd('dodge', f); FX.fx('dodge', f.x, f.y, f);
@@ -261,7 +261,7 @@ function stepF(f, dt) {
   f.guardT = f.guarding ? f.guardT + dt : 0;
   if (f.stDelay > 0) f.stDelay -= dt; else if (f.sta < 100) f.sta = Math.min(100, f.sta + (f.guarding ? 9 : 34 * (f.def.staRegen || 1) * (f.field ? 1.3 : 1)) * dt);
   var slow = (G.f.some(function (c) { return c.team !== f.team && !pactTeams(c.team, f.team) && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
-  var toO = angTo(f, o);
+  var ao = aimFoe(f), toO = ao ? angTo(f, ao) : (Math.hypot(f.inp.mx, f.inp.my) > 0.2 ? Math.atan2(f.inp.my, f.inp.mx) : f.face); // a player only turns toward an enemy they can perceive
   if (f.st === 'idle') {
     var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.fslowT > G.time ? f.fslowK : 1) * (f.buffT > 0 ? 1.1 : 1);
     var L = Math.hypot(f.inp.mx, f.inp.my); if (L > 1) L = 1;

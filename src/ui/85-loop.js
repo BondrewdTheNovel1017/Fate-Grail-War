@@ -20,7 +20,7 @@ function miniMap(mw, mh) {
 }
 function hud() {
   var a = G.f[MEI]; var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !NET.mirror && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
-  if (a.foe !== hudTarget || a.partner !== hudPartner) buildHud();
+  if (aimFoe(a) !== hudTarget || a.partner !== hudPartner) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';
     h.bm.classList.toggle('full', f.mom >= 100); h.hp.textContent = Math.max(0, Math.ceil(f.hp)); h.c.classList.toggle('dead', f.st === 'dead'); if (h.bma && f.manaMax) { h.bma.style.transform = 'scaleX(' + clamp(f.mana / f.manaMax, 0, 1) + ')'; h.bma.parentNode.classList.toggle('low', f.mana < MANA.npCost); } if (!f.def.isMaster) h.bm.classList.toggle('nomana', f.mom >= 100 && !canNP(f)); });

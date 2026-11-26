@@ -2,7 +2,7 @@ var HUD = [];
 function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(knownName(f)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
 var hudTarget = null, hudPartner = null;
 function buildHud() {
-  var me0 = G.f[MEI], tg = me0.foe, list;
+  var me0 = G.f[MEI], tg = aimFoe(me0), list;
   if (G.mode === 'war') { list = [[me0, 'You']]; if (me0.partner) list.push([me0.partner, me0.def.isMaster ? 'Servant' : 'Master']); if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']); }
   else list = G.f.map(function (f, i) { return [f, i === MEI ? 'You' : (f.team === me0.team ? 'Ally' : 'CPU ' + i)]; });
   hudTarget = tg; hudPartner = me0.partner; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];

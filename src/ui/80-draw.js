@@ -442,7 +442,7 @@ function draw() {
   var chh = cv.clientHeight || Math.round(cw * 0.625); VW = Math.max(1, cw); VH = Math.max(1, chh);
   if (cv.width !== Math.round(VW * dpr) || cv.height !== Math.round(VH * dpr)) { cv.width = Math.round(VW * dpr); cv.height = Math.round(VH * dpr); }
   var k = cv.width / VW; ctx.setTransform(k, 0, 0, k, 0, 0);
-  var a = G.f[MEI], b = a.foe || G.f[1], dd = Math.max(1, dist(a, b)), wb = a.st === 'dead' ? 1 : Math.min(G.mode === 'war' ? 0.3 : 0.38, (G.mode === 'war' ? 200 : 260) / dd), tx = a.x + (b.x - a.x) * wb, ty = a.y + (b.y - a.y) * wb;
+  var a = G.f[MEI], b = aimFoe(a) || (G.mode === 'war' ? a : G.f[1]), dd = Math.max(1, dist(a, b)), wb = a.st === 'dead' ? 1 : Math.min(G.mode === 'war' ? 0.3 : 0.38, (G.mode === 'war' ? 200 : 260) / dd), tx = a.x + (b.x - a.x) * wb, ty = a.y + (b.y - a.y) * wb;
   if (INTRO) { tx = INTRO.c.x; ty = INTRO.c.y + 20; }
   cam.x += (tx - cam.x) * 0.14; cam.y += (ty - cam.y) * 0.14;
   var zoom = clamp(Math.min(VW, VH) / (G.mode === 'war' ? 900 : 640), 0.55, 1.4), np = G.f.filter(function (f) { return f.key === 'np' && (f.st === 'act'); })[0]; if (np) zoom *= 1.12; if (INTRO) zoom *= 1.35;
@@ -480,8 +480,8 @@ function draw() {
   drawBubbles(cx, cy, zoom);
   if (INTRO) { drawIntro(); return; }
   // off-screen foe pointer
-  var f0 = G.f[MEI], f1 = f0.foe || G.f[1], sxp = (f1.x - cx) * zoom + VW / 2, syp = (f1.y - cy) * zoom + VH / 2;
-  if ((sxp < 20 || sxp > VW - 20 || syp < 20 || syp > VH - 20) && knowsExact(f0, f1)) {
+  var f0 = G.f[MEI], f1 = aimFoe(f0) || f0, sxp = (f1.x - cx) * zoom + VW / 2, syp = (f1.y - cy) * zoom + VH / 2;
+  if ((sxp < 20 || sxp > VW - 20 || syp < 20 || syp > VH - 20) && f1 !== f0 && knowsExact(f0, f1)) {
     var ang = Math.atan2(f1.y - f0.y, f1.x - f0.x), px = clamp(sxp, 24, VW - 24), py = clamp(syp, SAFE.top + 16, Math.max(SAFE.top + 40, VH - SAFE.bottom - 16));
     ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.fillStyle = '#e2515c'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.fill(); ctx.restore();
   }

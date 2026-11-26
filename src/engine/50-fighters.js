@@ -24,6 +24,15 @@ function newGame(dA, dB, opts) {
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
 function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !pactTeams(e.team, f.team) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
+// What a human player perceives as their target in the war: known, in the same place and within sight.
+// Their auto-facing, the HUD target card, the camera lean and the off-screen arrow all follow this, so they never point across the city.
+var AIM_R = 1300;
+function aimFoe(f) {
+  var o = f && f.foe; if (!o || o.st === 'dead') return null;
+  if (G.mode !== 'war' || G.ai[f.idx]) return o;
+  if (!sameZone(f, o) || dist(f, o) > AIM_R || !knowsExact(f, o)) return null;
+  return o;
+}
 function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }

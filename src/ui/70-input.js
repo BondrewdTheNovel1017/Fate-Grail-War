@@ -1,7 +1,7 @@
 /* ---- input ---- */
 var held = { mx: 0, my: 0 }, keys = {};
 function me() { return G && G.f[MEI]; }
-function cycleTarget(f) { if (NET.mirror) { var me1 = me(); if (!me1) return; var es1 = enemiesOf(me1).filter(function (e) { return dist(me1, e) < 900; }).sort(function (a, b) { return dist(me1, a) - dist(me1, b); }); var cur = G.f[NET.lk]; var nx = es1.length ? es1.at((es1.indexOf(cur) + 1) % es1.length) : null; NET.lk = nx ? G.f.indexOf(nx) : -1; return; } f = f || me(); if (!f) return; var es = enemiesOf(f).filter(function (e) { return dist(f, e) < 900; }).sort(function (a, b) { return dist(f, a) - dist(f, b); }); if (!es.length) { f.lock = null; return; } var i = es.indexOf(f.lock); f.lock = es.at((i + 1) % es.length); }
+function cycleTarget(f) { if (NET.mirror) { var me1 = me(); if (!me1) return; var es1 = enemiesOf(me1).filter(function (e) { return dist(me1, e) < 900 && sameZone(me1, e) && knowsExact(me1, e); }).sort(function (a, b) { return dist(me1, a) - dist(me1, b); }); var cur = G.f[NET.lk]; var nx = es1.length ? es1.at((es1.indexOf(cur) + 1) % es1.length) : null; NET.lk = nx ? G.f.indexOf(nx) : -1; return; } f = f || me(); if (!f) return; var es = enemiesOf(f).filter(function (e) { return dist(f, e) < 900 && sameZone(f, e) && knowsExact(f, e); }).sort(function (a, b) { return dist(f, a) - dist(f, b); }); if (!es.length) { f.lock = null; return; } var i = es.indexOf(f.lock); f.lock = es.at((i + 1) % es.length); }
 function btnDown(b) {
   if (NET.mirror) { if (!G.over) netButton(b, true); return; }
   var f = me(); if (!f || paused || G.over) return;

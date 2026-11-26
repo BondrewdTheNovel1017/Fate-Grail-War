@@ -1180,6 +1180,15 @@ function newGame(dA, dB, opts) {
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
 function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !pactTeams(e.team, f.team) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
+// What a human player perceives as their target in the war: known, in the same place and within sight.
+// Their auto-facing, the HUD target card, the camera lean and the off-screen arrow all follow this, so they never point across the city.
+var AIM_R = 1300;
+function aimFoe(f) {
+  var o = f && f.foe; if (!o || o.st === 'dead') return null;
+  if (G.mode !== 'war' || G.ai[f.idx]) return o;
+  if (!sameZone(f, o) || dist(f, o) > AIM_R || !knowsExact(f, o)) return null;
+  return o;
+}
 function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
@@ -1738,7 +1747,7 @@ function startDodge(f) {
   if (f.dodges <= 0) { FX.snd('nodge', f); return; }
   if (f.sta <= 0 || f.exh > 0) return;
   var mx = f.inp.mx, my = f.inp.my, L = Math.hypot(mx, my);
-  if (L < 0.2) { var back = angTo(f, f.foe) + Math.PI; mx = Math.cos(back); my = Math.sin(back); L = 1; }
+  if (L < 0.2) { var af = aimFoe(f), back = (af ? angTo(f, af) : f.face) + Math.PI; mx = Math.cos(back); my = Math.sin(back); L = 1; }
   f.dodgeX = mx / L; f.dodgeY = my / L;
   f.sta -= 12 * (f.def.dodgeCost || 1); f.stDelay = 0.6; if (f.sta <= 0) { f.sta = 0; f.exh = 0.8; }
   f.dodges--; FX.snd('dodge', f); FX.fx('dodge', f.x, f.y, f);
@@ -1874,7 +1883,7 @@ function stepF(f, dt) {
   f.guardT = f.guarding ? f.guardT + dt : 0;
   if (f.stDelay > 0) f.stDelay -= dt; else if (f.sta < 100) f.sta = Math.min(100, f.sta + (f.guarding ? 9 : 34 * (f.def.staRegen || 1) * (f.field ? 1.3 : 1)) * dt);
   var slow = (G.f.some(function (c) { return c.team !== f.team && !pactTeams(c.team, f.team) && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
-  var toO = angTo(f, o);
+  var ao = aimFoe(f), toO = ao ? angTo(f, ao) : (Math.hypot(f.inp.mx, f.inp.my) > 0.2 ? Math.atan2(f.inp.my, f.inp.mx) : f.face); // a player only turns toward an enemy they can perceive
   if (f.st === 'idle') {
     var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.fslowT > G.time ? f.fslowK : 1) * (f.buffT > 0 ? 1.1 : 1);
     var L = Math.hypot(f.inp.mx, f.inp.my); if (L > 1) L = 1;
@@ -3143,10 +3152,10 @@ var cu = mkS('cu', 'Cú Chulainn', 'Lancer', '#3f86d9',
   '-22 -14 162 28');
 
 var gilgamesh = mkS('gilgamesh', 'Gilgamesh of Uruk', 'Archer', '#e8bf4a',
-  'The king of Uruk from Mesopotamian myth: golden armor over a lapis-blue cloak, golden hair under a crown of divine horns, and no weapon at all. He fights through golden gates that open in the air and fire blades.',
-  [['Gold armor', '#d9a73a'], ['Gold plate', '#f2cc60'], ['Hair', '#f0c64a'], ['Lapis cloak', '#2f5fa0'], ['Gate light', '#ffd36b']],
-  ['Gold armor and gold hair over a blue cloak: the brightest silhouette in the roster.', 'The two horns on the crown are visible from straight above.', 'No weapon in his hands. Round golden gates open beside and behind him instead, and the blades come out of them.'],
-  function () { return HB('gilgamesh', { cloak: '#2f5fa0', cw: 26, cl: 38, t1: '#d9a73a', t2: '#f2cf6a', torso: '<ellipse cx="0" cy="0" rx="12" ry="19" fill="none" stroke="#a8761f" stroke-width="3"/><path d="M-4 -9 L-4 9 M4 -9 L4 9" stroke="#a8761f" stroke-width="1.2" fill="none"/>', sh: '#f2cc60', shw: 9, arm: '#e0b04a', hair: '#f0c64a', head: '<path d="M-1 -10 Q-9 -20 2 -23 Q-3 -16 4 -10Z" fill="#fff0b0"/><path d="M-1 10 Q-9 20 2 23 Q-3 16 4 10Z" fill="#fff0b0"/>' }); },
+  'The king of Uruk from Mesopotamian myth: golden armor over a crimson cloak, golden hair under a crown of divine horns, and no weapon at all. He fights through golden gates that open in the air and fire blades.',
+  [['Gold armor', '#d9a73a'], ['Gold plate', '#f2cc60'], ['Hair', '#f0c64a'], ['Crimson cloak', '#b3202a'], ['Gate light', '#ffd36b']],
+  ['Gold armor and gold hair over a red cloak: the brightest silhouette in the roster.', 'The two horns on the crown are visible from straight above.', 'No weapon in his hands. Round golden gates open beside and behind him instead, and the blades come out of them.'],
+  function () { return HB('gilgamesh', { cloak: '#b3202a', cw: 26, cl: 38, t1: '#d9a73a', t2: '#f2cf6a', torso: '<ellipse cx="0" cy="0" rx="12" ry="19" fill="none" stroke="#a8761f" stroke-width="3"/><path d="M-4 -9 L-4 9 M4 -9 L4 9" stroke="#a8761f" stroke-width="1.2" fill="none"/>', sh: '#f2cc60', shw: 9, arm: '#e0b04a', hair: '#f0c64a', head: '<path d="M-1 -10 Q-9 -20 2 -23 Q-3 -16 4 -10Z" fill="#fff0b0"/><path d="M-1 10 Q-9 20 2 23 Q-3 16 4 10Z" fill="#fff0b0"/>' }); },
   function () { return '<defs>' + grad('gsw', '#fff6d0', '#e0a830') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round"><ellipse cx="8" cy="0" rx="9" ry="22" fill="rgba(255,211,107,.35)" stroke="#f2c14e" stroke-width="3.5"/><ellipse cx="8" cy="0" rx="4.5" ry="13" fill="none" stroke="#ffe9a0" stroke-width="1.6"/><path d="M10 -3 L44 -3 L54 0 L44 3 L10 3Z" fill="url(#gsw)"/><path d="M12 0 L50 0" stroke="#b88a2a" stroke-width="1.2" fill="none"/></g>'; },
   '-6 -26 66 52');
 
@@ -4138,7 +4147,7 @@ var HUD = [];
 function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(knownName(f)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
 var hudTarget = null, hudPartner = null;
 function buildHud() {
-  var me0 = G.f[MEI], tg = me0.foe, list;
+  var me0 = G.f[MEI], tg = aimFoe(me0), list;
   if (G.mode === 'war') { list = [[me0, 'You']]; if (me0.partner) list.push([me0.partner, me0.def.isMaster ? 'Servant' : 'Master']); if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']); }
   else list = G.f.map(function (f, i) { return [f, i === MEI ? 'You' : (f.team === me0.team ? 'Ally' : 'CPU ' + i)]; });
   hudTarget = tg; hudPartner = me0.partner; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
@@ -4186,7 +4195,7 @@ document.addEventListener('visibilitychange', function () { if (document.hidden 
 /* ---- input ---- */
 var held = { mx: 0, my: 0 }, keys = {};
 function me() { return G && G.f[MEI]; }
-function cycleTarget(f) { if (NET.mirror) { var me1 = me(); if (!me1) return; var es1 = enemiesOf(me1).filter(function (e) { return dist(me1, e) < 900; }).sort(function (a, b) { return dist(me1, a) - dist(me1, b); }); var cur = G.f[NET.lk]; var nx = es1.length ? es1.at((es1.indexOf(cur) + 1) % es1.length) : null; NET.lk = nx ? G.f.indexOf(nx) : -1; return; } f = f || me(); if (!f) return; var es = enemiesOf(f).filter(function (e) { return dist(f, e) < 900; }).sort(function (a, b) { return dist(f, a) - dist(f, b); }); if (!es.length) { f.lock = null; return; } var i = es.indexOf(f.lock); f.lock = es.at((i + 1) % es.length); }
+function cycleTarget(f) { if (NET.mirror) { var me1 = me(); if (!me1) return; var es1 = enemiesOf(me1).filter(function (e) { return dist(me1, e) < 900 && sameZone(me1, e) && knowsExact(me1, e); }).sort(function (a, b) { return dist(me1, a) - dist(me1, b); }); var cur = G.f[NET.lk]; var nx = es1.length ? es1.at((es1.indexOf(cur) + 1) % es1.length) : null; NET.lk = nx ? G.f.indexOf(nx) : -1; return; } f = f || me(); if (!f) return; var es = enemiesOf(f).filter(function (e) { return dist(f, e) < 900 && sameZone(f, e) && knowsExact(f, e); }).sort(function (a, b) { return dist(f, a) - dist(f, b); }); if (!es.length) { f.lock = null; return; } var i = es.indexOf(f.lock); f.lock = es.at((i + 1) % es.length); }
 function btnDown(b) {
   if (NET.mirror) { if (!G.over) netButton(b, true); return; }
   var f = me(); if (!f || paused || G.over) return;
@@ -4686,7 +4695,7 @@ function draw() {
   var chh = cv.clientHeight || Math.round(cw * 0.625); VW = Math.max(1, cw); VH = Math.max(1, chh);
   if (cv.width !== Math.round(VW * dpr) || cv.height !== Math.round(VH * dpr)) { cv.width = Math.round(VW * dpr); cv.height = Math.round(VH * dpr); }
   var k = cv.width / VW; ctx.setTransform(k, 0, 0, k, 0, 0);
-  var a = G.f[MEI], b = a.foe || G.f[1], dd = Math.max(1, dist(a, b)), wb = a.st === 'dead' ? 1 : Math.min(G.mode === 'war' ? 0.3 : 0.38, (G.mode === 'war' ? 200 : 260) / dd), tx = a.x + (b.x - a.x) * wb, ty = a.y + (b.y - a.y) * wb;
+  var a = G.f[MEI], b = aimFoe(a) || (G.mode === 'war' ? a : G.f[1]), dd = Math.max(1, dist(a, b)), wb = a.st === 'dead' ? 1 : Math.min(G.mode === 'war' ? 0.3 : 0.38, (G.mode === 'war' ? 200 : 260) / dd), tx = a.x + (b.x - a.x) * wb, ty = a.y + (b.y - a.y) * wb;
   if (INTRO) { tx = INTRO.c.x; ty = INTRO.c.y + 20; }
   cam.x += (tx - cam.x) * 0.14; cam.y += (ty - cam.y) * 0.14;
   var zoom = clamp(Math.min(VW, VH) / (G.mode === 'war' ? 900 : 640), 0.55, 1.4), np = G.f.filter(function (f) { return f.key === 'np' && (f.st === 'act'); })[0]; if (np) zoom *= 1.12; if (INTRO) zoom *= 1.35;
@@ -4724,8 +4733,8 @@ function draw() {
   drawBubbles(cx, cy, zoom);
   if (INTRO) { drawIntro(); return; }
   // off-screen foe pointer
-  var f0 = G.f[MEI], f1 = f0.foe || G.f[1], sxp = (f1.x - cx) * zoom + VW / 2, syp = (f1.y - cy) * zoom + VH / 2;
-  if ((sxp < 20 || sxp > VW - 20 || syp < 20 || syp > VH - 20) && knowsExact(f0, f1)) {
+  var f0 = G.f[MEI], f1 = aimFoe(f0) || f0, sxp = (f1.x - cx) * zoom + VW / 2, syp = (f1.y - cy) * zoom + VH / 2;
+  if ((sxp < 20 || sxp > VW - 20 || syp < 20 || syp > VH - 20) && f1 !== f0 && knowsExact(f0, f1)) {
     var ang = Math.atan2(f1.y - f0.y, f1.x - f0.x), px = clamp(sxp, 24, VW - 24), py = clamp(syp, SAFE.top + 16, Math.max(SAFE.top + 40, VH - SAFE.bottom - 16));
     ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.fillStyle = '#e2515c'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.fill(); ctx.restore();
   }
@@ -5412,7 +5421,7 @@ function miniMap(mw, mh) {
 }
 function hud() {
   var a = G.f[MEI]; var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !NET.mirror && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
-  if (a.foe !== hudTarget || a.partner !== hudPartner) buildHud();
+  if (aimFoe(a) !== hudTarget || a.partner !== hudPartner) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';
     h.bm.classList.toggle('full', f.mom >= 100); h.hp.textContent = Math.max(0, Math.ceil(f.hp)); h.c.classList.toggle('dead', f.st === 'dead'); if (h.bma && f.manaMax) { h.bma.style.transform = 'scaleX(' + clamp(f.mana / f.manaMax, 0, 1) + ')'; h.bma.parentNode.classList.toggle('low', f.mana < MANA.npCost); } if (!f.def.isMaster) h.bm.classList.toggle('nomana', f.mom >= 100 && !canNP(f)); });

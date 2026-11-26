@@ -183,10 +183,10 @@ var cu = mkS('cu', 'Cú Chulainn', 'Lancer', '#3f86d9',
   '-22 -14 162 28');
 
 var gilgamesh = mkS('gilgamesh', 'Gilgamesh of Uruk', 'Archer', '#e8bf4a',
-  'The king of Uruk from Mesopotamian myth: golden armor over a lapis-blue cloak, golden hair under a crown of divine horns, and no weapon at all. He fights through golden gates that open in the air and fire blades.',
-  [['Gold armor', '#d9a73a'], ['Gold plate', '#f2cc60'], ['Hair', '#f0c64a'], ['Lapis cloak', '#2f5fa0'], ['Gate light', '#ffd36b']],
-  ['Gold armor and gold hair over a blue cloak: the brightest silhouette in the roster.', 'The two horns on the crown are visible from straight above.', 'No weapon in his hands. Round golden gates open beside and behind him instead, and the blades come out of them.'],
-  function () { return HB('gilgamesh', { cloak: '#2f5fa0', cw: 26, cl: 38, t1: '#d9a73a', t2: '#f2cf6a', torso: '<ellipse cx="0" cy="0" rx="12" ry="19" fill="none" stroke="#a8761f" stroke-width="3"/><path d="M-4 -9 L-4 9 M4 -9 L4 9" stroke="#a8761f" stroke-width="1.2" fill="none"/>', sh: '#f2cc60', shw: 9, arm: '#e0b04a', hair: '#f0c64a', head: '<path d="M-1 -10 Q-9 -20 2 -23 Q-3 -16 4 -10Z" fill="#fff0b0"/><path d="M-1 10 Q-9 20 2 23 Q-3 16 4 10Z" fill="#fff0b0"/>' }); },
+  'The king of Uruk from Mesopotamian myth: golden armor over a crimson cloak, golden hair under a crown of divine horns, and no weapon at all. He fights through golden gates that open in the air and fire blades.',
+  [['Gold armor', '#d9a73a'], ['Gold plate', '#f2cc60'], ['Hair', '#f0c64a'], ['Crimson cloak', '#b3202a'], ['Gate light', '#ffd36b']],
+  ['Gold armor and gold hair over a red cloak: the brightest silhouette in the roster.', 'The two horns on the crown are visible from straight above.', 'No weapon in his hands. Round golden gates open beside and behind him instead, and the blades come out of them.'],
+  function () { return HB('gilgamesh', { cloak: '#b3202a', cw: 26, cl: 38, t1: '#d9a73a', t2: '#f2cf6a', torso: '<ellipse cx="0" cy="0" rx="12" ry="19" fill="none" stroke="#a8761f" stroke-width="3"/><path d="M-4 -9 L-4 9 M4 -9 L4 9" stroke="#a8761f" stroke-width="1.2" fill="none"/>', sh: '#f2cc60', shw: 9, arm: '#e0b04a', hair: '#f0c64a', head: '<path d="M-1 -10 Q-9 -20 2 -23 Q-3 -16 4 -10Z" fill="#fff0b0"/><path d="M-1 10 Q-9 20 2 23 Q-3 16 4 10Z" fill="#fff0b0"/>' }); },
   function () { return '<defs>' + grad('gsw', '#fff6d0', '#e0a830') + '</defs><g stroke="#0b121a" stroke-width="2" stroke-linejoin="round"><ellipse cx="8" cy="0" rx="9" ry="22" fill="rgba(255,211,107,.35)" stroke="#f2c14e" stroke-width="3.5"/><ellipse cx="8" cy="0" rx="4.5" ry="13" fill="none" stroke="#ffe9a0" stroke-width="1.6"/><path d="M10 -3 L44 -3 L54 0 L44 3 L10 3Z" fill="url(#gsw)"/><path d="M12 0 L50 0" stroke="#b88a2a" stroke-width="1.2" fill="none"/></g>'; },
   '-6 -26 66 52');
 
