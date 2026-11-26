@@ -158,18 +158,50 @@ function keysTick(dt) {
 // nearest executor hunting this fighter's team (the AI turns to face them)
 function execNear(f, r) { var best = null, bd = r; (G.mobs || []).forEach(function (m) { if (!m.exec || m.dead || m.tgt !== f.team) return; var d = Math.hypot(m.x - f.x, m.y - f.y); if (d < bd) { bd = d; best = m; } }); return best; }
 
-/* ---- the emergency Command Seal: before the final night, the first killing blow on a servant whose master lives and
-   still holds a seal is cheated: the master spends a seal and the servant is pulled home at the brink of death ---- */
-function sealRescue(sv) {
-  if (!sv || sv.def.isMaster || !clockOn() || finalNight() || G.quick || sv.rescued) return false;
-  var m = sv.partner; if (!m || m.st === 'dead' || !m.sealUsed) return false;
-  var k = ['warp', 'heal', 'np'].filter(function (q) { return !m.sealUsed[q]; })[0]; if (!k) return false;
-  sv.rescued = true; m.sealUsed[k] = true;
-  // home to the summoning circle (the master's workshop), or to the master if the master is already there
-  var circ = (G.circles || []).filter(function (q) { return q.team === m.team; })[0], hx = circ ? circ.x : m.x, hy = circ ? circ.y : m.y;
-  if (!circ || inOwnHome(m)) { hx = m.x; hy = m.y; }
-  FX.fx('spiritOut', sv.x, sv.y, sv);
-  sv.hp = Math.max(1, sv.def.hp * 0.12); sv.x = hx + 50; sv.y = hy; sv.kx = sv.ky = 0; sv.st = 'idle'; sv.t = 0; sv.act = null; sv.iframes = 1.5; sv.spirit = 0; sv.lock = null; sv.recover = true;
-  FX.church('rescue', m.team, { s: sv.idx, k: k });
+/* ---- Command Seals as lives: before the Grail descends, a killing blow on a servant or a master whose master still
+   holds a seal burns one instead. A red light takes the fallen; the servant sweeps to the master (or the master is
+   pulled to the servant), both dissolve and appear together in their workshop, badly hurt. The team is marked for a
+   while and whoever won the fight learns the servant's true name and catches their breath. With no seals left, death
+   is death. Timeline (RESCUE): glow, swoop, dissolve, arrive. ---- */
+var RESCUE = { swoop: 0.55, gone: 1.05, arrive: 1.35, hpS: 0.18, hpM: 0.3, mark: 75, guard: 2.5, winHeal: 0.12 };
+function rescueOn() { return clockOn() && !finalNight() && !G.quick && G.mode === 'war'; }
+function teamHome(team, m) {
+  var circ = (G.circles || []).filter(function (q) { return q.team === team; })[0];
+  if (circ) return { x: circ.x, y: circ.y };
+  return m && m.home ? { x: m.home[0], y: m.home[1] } : { x: m ? m.x : 0, y: m ? m.y : 0 };
+}
+function sealRescue(def, att) {
+  if (!def || !rescueOn() || def.resc) return false;
+  var m = def.def.isMaster ? def : def.partner; if (!m || m.st === 'dead' || m.resc || sealsLeft(m) <= 0) return false;
+  var sv = m.partner && m.partner.st !== 'dead' ? m.partner : null; if (!def.def.isMaster && def !== sv) return false;
+  m.seals = sealsLeft(m) - 1; m.sealUsed.life = (m.sealUsed.life || 0) + 1;
+  var home = teamHome(m.team, m), who = [m]; if (sv) who.push(sv);
+  who.forEach(function (f) { f.resc = { t0: G.time, home: home, fell: f === def }; f.st = 'idle'; f.act = null; f.t = 0; f.kx = f.ky = 0; f.spirit = 0; f.lock = null; f.inp.mx = f.inp.my = 0; });
+  def.hp = 1;
+  // the partner sweeps to the fallen one: from wherever it is, through a red trail
+  var other = def === m ? sv : m; if (other) { other.resc.fromX = other.x; other.resc.fromY = other.y; other.resc.toX = def.x + 40; other.resc.toY = def.y; other.resc.inM = def.inM; }
+  G.rescues = G.rescues || []; G.rescues.push({ t0: G.time, team: m.team, m: m.idx, s: sv ? sv.idx : -1, fell: def.idx, x: Math.round(def.x), y: Math.round(def.y), hx: Math.round(home.x), hy: Math.round(home.y), done: false });
+  // the winner: the true name, and a breath of strength; the beaten team is marked on every map for a while
+  if (att && att.team !== m.team) { if (sv) learnName(att.team, sv, 'rescue'); att.hp = Math.min(att.def.hp, att.hp + att.def.hp * RESCUE.winHeal); if (att.manaMax) att.mana = Math.min(att.manaMax, att.mana + att.manaMax * 0.15); }
+  G.reveal[m.team] = Math.max(G.reveal[m.team] || 0, G.time + RESCUE.mark);
+  FX.church('rescue', m.team, { s: sv ? sv.idx : -1, m: m.idx, fell: def.idx, x: Math.round(def.x), y: Math.round(def.y), hx: Math.round(home.x), hy: Math.round(home.y), left: sealsLeft(m), by: att ? att.team : -1 });
   return true;
+}
+function rescueTick(dt) {
+  if (!G.rescues || !G.rescues.length) return;
+  G.rescues.forEach(function (R) {
+    var age = G.time - R.t0, m = G.f[R.m], sv = R.s >= 0 ? G.f[R.s] : null;
+    [m, sv].forEach(function (f) {
+      if (!f || !f.resc || f.resc.t0 !== R.t0) return;
+      // the swoop: the one still standing flies to the fallen
+      if (f.resc.fromX !== undefined && age < RESCUE.swoop) { var u = age / RESCUE.swoop, e = u * u * (3 - 2 * u); if (f.resc.inM !== undefined) f.inM = f.resc.inM; f.x = f.resc.fromX + (f.resc.toX - f.resc.fromX) * e; f.y = f.resc.fromY + (f.resc.toY - f.resc.fromY) * e; }
+      if (age >= RESCUE.gone && !f.resc.moved) { f.resc.moved = true; f.inM = 0; f.x = R.hx + (f.def.isMaster ? -30 : 34); f.y = R.hy + (f.def.isMaster ? 0 : 10); }
+      if (age >= RESCUE.arrive) {
+        if (f.resc.fell) f.hp = f.def.hp * (f.def.isMaster ? RESCUE.hpM : RESCUE.hpS);
+        f.resc = null; f.iframes = RESCUE.guard; f.ghT = Math.max(f.ghT || 0, RESCUE.guard); f.recover = true; if (f.def.isMaster) f.fleeing = true;
+      }
+    });
+    if (age >= RESCUE.arrive) R.done = true;
+  });
+  G.rescues = G.rescues.filter(function (R) { return !R.done; });
 }

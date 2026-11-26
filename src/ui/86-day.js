@@ -11,7 +11,7 @@ FX.field = function (kind, F, e) {
 };
 FX.truename = function (team, s, how) {
   if (!G.f[MEI] || team !== G.f[MEI].team) return;
-  note('True name: the ' + s.def.cls + ' is ' + s.def.name + (how === 'np' ? ', revealed by its Noble Phantasm' : how === 'banquet' ? ', named at the King\u2019s table' : how === 'church' ? ', told to you by the overseer' : ', read from the battle site'), '#ffd36b');
+  note('True name: the ' + s.def.cls + ' is ' + s.def.name + (how === 'np' ? ', revealed by its Noble Phantasm' : how === 'banquet' ? ', named at the King\u2019s table' : how === 'church' ? ', told to you by the overseer' : how === 'rescue' ? ', glimpsed as a Command Seal carried it away' : ', read from the battle site'), '#ffd36b');
   buildHud();
 };
 FX.task = function (t, k, msg, step) { if (!G.f[MEI] || t !== G.f[MEI].team) return; if (step) { note(msg, TASK_COL[k.kind]); return; } FX.banner(k.name, msg); FX.snd('chant', G.f[MEI]); };

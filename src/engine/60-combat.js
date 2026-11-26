@@ -1,7 +1,7 @@
 /* source: attacker fighter (for facing checks) or projectile. returns outcome string */
 function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
-  if (def.st === 'dead' || G.over) return 'none';
+  if (def.st === 'dead' || G.over || def.resc) return 'none';
   if (truceStops(att, def)) return 'none';
   if (att && att.team !== def.team && pactTeams(att.team, def.team)) return 'none';
   if (def.spirit === 2) return 'none';
@@ -72,7 +72,7 @@ function hurt(att, def, a, mult, src) {
   if (def.st === 'rec' && def.key === 'counter') taken = dmg;
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
-  if (def.hp - taken <= 0 && sealRescue(def)) return 'hit'; // the master spends a Command Seal to pull the servant out
+  if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
   def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
@@ -219,6 +219,7 @@ function strikeInit(f) {
   if (a.kind !== 'pulses' && a.kind !== 'charge') f.hitDone = true;
 }
 function stepF(f, dt) {
+  if (f.resc) return; // being carried home by a Command Seal
   if (f.hs > 0) { f.hs -= dt; return; }
   var o = f.foe, a = f.act, vx = 0, vy = 0;
   f.iframes = (f.ghT > 0 || (f.st === 'act' && f.act && f.act.diveI && f.t < f.act.diveI) || (f.st === 'dodge' && f.t > 0.03 && f.t < 0.27) || (f.st === 'wind' && f.act && f.act.hop && f.t > 0.03 && f.t < 0.2)) ? 1 : 0;

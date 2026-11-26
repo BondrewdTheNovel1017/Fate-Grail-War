@@ -273,11 +273,12 @@ function aiMaster(ai, dt) {
   var reserve = (s && s.mom > 55 && !s.sealFree) ? npManaCost(s) : 0, sigOk = canPay(f, MANA.sigCost + reserve), skOk = canPay(f, MANA.skillCost + reserve) || (sk === 'heal' && s && s.hp < s.def.hp * 0.4 && canPay(f, MANA.skillCost));
   // Command Seals
   if (s && sealsLeft(f) > 0) {
-    if (!f.sealUsed.heal && s.hp < s.def.hp * 0.3 && s.foe && dist(s, s.foe) < 500) useSeal(f, 'heal');
-    else if (!f.sealUsed.warp && thr && td < 420 && dist(f, s) > 600) useSeal(f, 'warp');
-    // a servant losing badly is pulled out of the fight to the master's side (before the final night)
-    else if (!f.sealUsed.warp && clockOn() && !finalNight() && s.hp < s.def.hp * 0.3 && s.foe && !s.foe.def.isMaster && dist(s, s.foe) < 320 && dist(f, s) > 650 && !(thr && td < 650)) useSeal(f, 'warp');
-    else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && !s.foe.def.isMaster && Math.random() < 0.00025) useSeal(f, 'np');
+    // every seal is also a life before the Grail descends: an AI master keeps the last ones for rescues
+    var spare = sealsLeft(f) - (rescueOn() ? (G.clock.n <= 1 ? 2 : 1) : 0);
+    if (spare > 0 && s.hp < s.def.hp * 0.3 && s.foe && dist(s, s.foe) < 500 && !(f.sealUsed.heal >= 2)) useSeal(f, 'heal');
+    else if (spare > 0 && thr && td < 420 && dist(f, s) > 600) useSeal(f, 'warp');
+    // a seal-forced NP when it can end the fight (and, at the Grail, freely)
+    else if ((spare > 1 || (!rescueOn() && sealsLeft(f) > 0)) && !s.sealFree && s.foe && !s.foe.def.isMaster && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp < s.foe.def.hp * 0.6 && Math.random() < (rescueOn() ? 0.0004 : 0.002)) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
     var haven = MAP.haven ? MAP.haven : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };

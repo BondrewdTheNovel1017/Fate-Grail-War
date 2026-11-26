@@ -47,7 +47,7 @@ function drawExecKeys(g) {
 (function () {
   var ch0 = FX.church;
   FX.church = function (kind, team, d) {
-    if (kind !== 'civKill' && kind !== 'dispatch' && kind !== 'execDown' && kind !== 'rescue') return ch0(kind, team, d);
+    if (kind !== 'civKill' && kind !== 'dispatch' && kind !== 'execDown' && kind !== 'rescue' && kind !== 'sealNP') return ch0(kind, team, d);
     if (!G || !G.f[MEI]) return;
     var me = G.f[MEI], mine = team === me.team, who = mine ? 'Your team' : teamName(team);
     if (kind === 'civKill') {
@@ -58,9 +58,17 @@ function drawExecKeys(g) {
       if (mine) { FX.banner('The Church sends Executors', (d ? d.n : 2) + ' Executors are coming ' + whence + '. They hunt your master first.'); SFX('bell'); }
       else note('Executors set out ' + whence + ' to hunt ' + who + '.', '#c9b8e0');
     } else if (kind === 'rescue') {
-      var sv = G.f[d.s]; if (!sv) return;
-      if (mine) { FX.banner('A Command Seal burns', (sv.idx === MEI ? 'Your master' : 'You') + ' pulled ' + (sv.idx === MEI ? 'you' : shortName(sv.def.name)) + ' home from the brink of death. That seal is spent.'); SFX('bell'); }
-      else if (FX.near(sv.x, sv.y)) note(knownName(sv) + ' vanished at the last moment: a Command Seal.', '#c9c3b0');
+      var sv = d.s >= 0 ? G.f[d.s] : null, ms = G.f[d.m], fell = G.f[d.fell]; if (!ms) return;
+      RESC_FX.push({ t0: G.time, x: d.x, y: d.y, hx: d.hx, hy: d.hy, s: d.s, m: d.m, fell: d.fell });
+      if (FX.near(d.x, d.y) || mine) { FX.snd('godhand', fell || ms); FX.shake(5); }
+      var left = d.left === 1 ? 'one seal left' : d.left === 0 ? 'no seals left: the next death is final' : d.left + ' seals left';
+      if (mine) FX.banner('A Command Seal burns', (fell === ms ? 'Your master was' : (sv ? shortName(sv.def.name) : 'Your servant') + ' was') + ' carried home from the brink of death: ' + left + '.');
+      else if (d.by === me.team) FX.banner('They escaped by a Command Seal', 'A seal burned to save ' + (fell ? knownName(fell) : 'them') + '. They are marked on your map for a while.');
+      else if (FX.near(d.x, d.y)) note((fell ? knownName(fell) : 'Someone') + ' vanished in red light: a Command Seal.', '#ff7a7a');
+    } else if (kind === 'sealNP') {
+      var s2 = G.f[d.s]; if (!s2) return;
+      if (s2.idx === MEI) FX.banner('Command Seal: ' + s2.def.np, 'Your Noble Phantasm is charged and cannot be stopped. Release it when you are ready.');
+      else if (mine) note('Your Command Seal charges ' + shortName(s2.def.name) + '\u2019s Noble Phantasm.', '#ff7a7a');
     } else if (kind === 'execDown') {
       if (d && d.by === me.team) note('An Executor falls. The Church will remember it.', '#c9b8e0');
     }
@@ -71,4 +79,49 @@ function SFX(n) { try { if (SND[n] && FX.near(G.f[MEI].x, G.f[MEI].y)) FX.snd(n,
 function execMinimap(c, mx0, my0, mw, mh) {
   if (!G || !G.mobs || !MAP.cityW) return; var me = G.f[MEI], MW = MAP.cityW;
   G.mobs.forEach(function (m) { if (!m.exec || m.dead || m.tgt !== me.team || m.x > MW) return; var x = mx0 + m.x / MW * mw, y = my0 + m.y / H * mh; c.fillStyle = '#c9b8e0'; c.strokeStyle = '#1a1020'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, y - 5); c.lineTo(x + 4, y); c.lineTo(x, y + 5); c.lineTo(x - 4, y); c.closePath(); c.fill(); c.stroke(); });
+}
+
+/* ---- the Command Seal rescue, drawn: a red pillar over the fallen, the partner's swoop as a red streak, both dissolving
+   upward, then a red burst in the workshop. Driven by RESC_FX (from the FX call, so guests see it too) and the
+   fighters' own rescue state. ---- */
+var RESC_FX = [];
+function drawRescues(g) {
+  if (!RESC_FX.length || !G) return; var now = G.time;
+  RESC_FX = RESC_FX.filter(function (R) { return now - R.t0 < 2.4; });
+  RESC_FX.forEach(function (R) {
+    var age = now - R.t0, fell = G.f[R.fell], other = G.f[R.fell === R.m ? R.s : R.m];
+    g.save(); g.globalCompositeOperation = 'lighter';
+    // the seal flares at the scene: a column of red light and the mark on the ground
+    if (age < RESCUE.gone + 0.35) {
+      var a1 = age < 0.15 ? age / 0.15 : age > RESCUE.gone ? Math.max(0, 1 - (age - RESCUE.gone) / 0.35) : 1;
+      var gr = g.createLinearGradient(R.x, R.y - 260, R.x, R.y + 30); gr.addColorStop(0, 'rgba(255,40,60,0)'); gr.addColorStop(0.7, 'rgba(255,50,70,' + 0.45 * a1 + ')'); gr.addColorStop(1, 'rgba(255,90,90,' + 0.7 * a1 + ')');
+      g.fillStyle = gr; g.fillRect(R.x - 34, R.y - 260, 68, 290);
+      g.strokeStyle = 'rgba(255,70,90,' + 0.8 * a1 + ')'; g.lineWidth = 3; g.beginPath(); g.arc(R.x, R.y, 46 + 30 * Math.min(1, age * 2), 0, 6.283); g.stroke();
+      sealGlyph(g, R.x, R.y, 30, now * 2, 'rgba(255,90,110,' + 0.9 * a1 + ')');
+      for (var i = 0; i < 10; i++) { var u = (age * 1.4 + i / 10) % 1; g.fillStyle = 'rgba(255,120,130,' + (1 - u) * a1 + ')'; g.beginPath(); g.arc(R.x + Math.sin(i * 7.1 + now * 3) * 26, R.y - u * 220, 3, 0, 6.283); g.fill(); }
+    }
+    // the swoop: a red streak trailing the partner while it flies in
+    if (other && other.resc && age < RESCUE.swoop + 0.1 && other.resc.fromX !== undefined) {
+      g.strokeStyle = 'rgba(255,60,80,.75)'; g.lineWidth = 14; g.lineCap = 'round'; g.beginPath(); g.moveTo(other.resc.fromX, other.resc.fromY); g.lineTo(other.x, other.y); g.stroke();
+      g.strokeStyle = 'rgba(255,200,200,.8)'; g.lineWidth = 4; g.beginPath(); g.moveTo(other.x - (other.x - other.resc.fromX) * 0.4, other.y - (other.y - other.resc.fromY) * 0.4); g.lineTo(other.x, other.y); g.stroke();
+    }
+    // the arrival: a red burst in the workshop
+    if (age >= RESCUE.gone - 0.05 && age < RESCUE.gone + 1) {
+      var u2 = (age - RESCUE.gone + 0.05) / 1.05;
+      g.strokeStyle = 'rgba(255,70,90,' + (1 - u2) + ')'; g.lineWidth = 6 * (1 - u2) + 1; g.beginPath(); g.arc(R.hx, R.hy, 30 + 160 * u2, 0, 6.283); g.stroke();
+      sealGlyph(g, R.hx, R.hy, 40, -now * 2, 'rgba(255,90,110,' + (1 - u2) + ')');
+    }
+    g.restore();
+  });
+}
+function sealGlyph(g, x, y, r, rot, col) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.strokeStyle = col; g.lineWidth = 3; g.beginPath();
+  g.moveTo(0, -r); g.quadraticCurveTo(r * 0.5, -r * 0.2, 0, r * 0.35); g.quadraticCurveTo(-r * 0.5, -r * 0.2, 0, -r);
+  g.moveTo(-r, r * 0.2); g.quadraticCurveTo(0, r * 0.9, r, r * 0.2); g.moveTo(-r * 0.6, -r * 0.5); g.lineTo(-r * 0.95, -r * 0.8); g.moveTo(r * 0.6, -r * 0.5); g.lineTo(r * 0.95, -r * 0.8);
+  g.stroke(); g.restore();
+}
+// fighters inside a rescue glow red and dissolve upward
+function rescueAlpha(f) {
+  if (!f.resc) return 1; var age = G.time - f.resc.t0;
+  if (age < RESCUE.swoop) return 1; if (age < RESCUE.gone) return 1 - (age - RESCUE.swoop) / (RESCUE.gone - RESCUE.swoop); return Math.min(1, (age - RESCUE.gone) / (RESCUE.arrive - RESCUE.gone));
 }

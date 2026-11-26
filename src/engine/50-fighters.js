@@ -3,7 +3,7 @@ function mkF(def, x, y, face, idx) {
   return { idx: idx, def: def, A: def.A, x: x, y: y, face: face, kx: 0, ky: 0, hp: def.hp, sta: 100, stDelay: 0, exh: 0, mom: 0,
     st: 'idle', t: 0, key: null, act: null, combo: 0, curWind: 0, windTotal: 0, recDur: 0, goal: 0, chg: 0, atkId: 0,
     cd: 0, ripo: 0, crit: 0, wallT: 0, veilT: 0, gh: false, ghT: 0, bleedT: 0, bleedDps: 0, bleedBy: null, iframes: 0, dodges: def.dodgeMax || 2, dodgeMax: def.dodgeMax || 2, dodgeRe: 0, guarding: false, guardT: 0, parryOk: true, lastG: -9, dodgeX: 0, dodgeY: 0, dur: 0,
-    pulseN: 0, pulseT: 0, cx: 0, cy: 0, chargeHit: false, hitDone: false, field: null, stillT: 0, quietT: 0, hid: false, hidAct: false, arm: -1, armT: 0, pull: 0, barN: 0, barT: 0, brokenT: 0, ubwT: 0, ubwCd: 0, spirit: 0, spT: 0, partner: null, orphanT: 0, seals: 3, sealUsed: { np: false, heal: false, warp: false }, sigCd: 0, silenceT: 0, shieldN: 0, shieldT: 0, rootT: 0, buffT: 0, reinfT: 0, hasteT: 0, lock: null, stance: 'charge', anchor: null,
+    pulseN: 0, pulseT: 0, cx: 0, cy: 0, chargeHit: false, hitDone: false, field: null, stillT: 0, quietT: 0, hid: false, hidAct: false, arm: -1, armT: 0, pull: 0, barN: 0, barT: 0, brokenT: 0, ubwT: 0, ubwCd: 0, spirit: 0, spT: 0, partner: null, orphanT: 0, seals: 3, sealUsed: { np: 0, heal: 0, warp: 0 }, seals: SEALS, sigCd: 0, silenceT: 0, shieldN: 0, shieldT: 0, rootT: 0, buffT: 0, reinfT: 0, hasteT: 0, lock: null, stance: 'charge', anchor: null,
     inp: { mx: 0, my: 0, guard: false, heavy: false }, buf: { name: null, t: 0 }, foe: null, hit: 0,
     stat: { dealt: 0, taken: 0, parry: 0, dodge: 0, gbreak: 0, blocks: 0, intr: 0, hits: 0, nps: 0 } };
 }
@@ -23,7 +23,7 @@ function newGame(dA, dB, opts) {
 }
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
-function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !pactTeams(e.team, f.team) && !(G.ai[f.idx] && pactParley(e.team, f.team)) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
+function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !e.resc && !pactTeams(e.team, f.team) && !(G.ai[f.idx] && pactParley(e.team, f.team)) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 // What a human player perceives as their target in the war: known, in the same place and within sight.
 // Their auto-facing, the HUD target card, the camera lean and the off-screen arrow all follow this, so they never point across the city.
 var AIM_R = 1300;
@@ -82,11 +82,14 @@ function traceTick(f, dt) {
     if (f.ubwUsed && tier === 1) { f.mom = 0; f.sigCd = Math.max(f.sigCd, 20); }
   }
 }
-function sealsLeft(f) { return f.sealUsed ? ['np', 'heal', 'warp'].filter(function (k) { return !f.sealUsed[k]; }).length : 0; }
+// Command Seals: one pool of three, spent on any order (NP, heal, recall) and, before the Grail descends, on a rescue from death
+var SEALS = 3;
+function sealsLeft(f) { return f.def && f.def.isMaster ? Math.max(0, f.seals === undefined ? SEALS : f.seals) : 0; }
 function useSeal(f, kind) {
-  var sv = f.partner; if (!f.def.isMaster || f.st === 'dead' || !sv || sv.st === 'dead' || f.sealUsed[kind]) return false;
-  f.sealUsed[kind] = true; f.seals = sealsLeft(f);
-  if (kind === 'np') { sv.mom = 100; sv.sealOrder = 6; sv.sealFree = true; FX.text(sv, 'BY MY COMMAND SEAL: RELEASE IT'); }
+  var sv = f.partner; if (!f.def.isMaster || f.st === 'dead' || f.resc || !sv || sv.st === 'dead' || sv.resc || sealsLeft(f) <= 0) return false;
+  if (kind === 'np' && sv.sealFree) return false;
+  f.seals = sealsLeft(f) - 1; f.sealUsed[kind] = (f.sealUsed[kind] || 0) + 1;
+  if (kind === 'np') { sv.mom = 100; sv.sealOrder = 6; sv.sealFree = true; FX.text(sv, 'BY MY COMMAND SEAL: RELEASE IT'); FX.church('sealNP', f.team, { s: sv.idx }); }
   else if (kind === 'heal') { sv.hp = Math.min(sv.def.hp, sv.hp + sv.def.hp * 0.5); sv.bleedT = 0; FX.text(sv, 'BY MY COMMAND SEAL: ENDURE'); }
   else if (kind === 'warp') { var a0 = Math.random() * 6.283; sv.x = clamp(f.x + Math.cos(a0) * 60, FR, W - FR); sv.y = clamp(f.y + Math.sin(a0) * 60, FR, H - FR); sv.kx = sv.ky = 0; sv.spirit = 0; sv.inM = f.inM; if (G.event && G.event.kind === 'school') G.event.allowed[sv.idx] = true; if (sv.st !== 'stag') { sv.st = 'idle'; sv.act = null; } FX.text(sv, 'BY MY COMMAND SEAL: COME TO ME'); }
   FX.text(f, 'COMMAND SEAL'); FX.fx('seal', f.x, f.y, f); FX.fx('seal', sv.x, sv.y, sv); FX.snd('godhand', f);
@@ -95,6 +98,7 @@ function useSeal(f, kind) {
 function press(f, name) { f.buf.name = name; f.buf.t = 0.18; }
 function armored(f) {
   if (f.wallT > 0) return true;
+  if (f.sealArm && f.key === 'np' && (f.st === 'wind' || f.st === 'act' || f.st === 'rec')) return true; // a seal-forced NP cannot be stopped
   return !!(f.act && f.act.armor && (f.st === 'wind' || f.st === 'act' || f.st === 'rec'));
 }
 function setStag(f, dur) {

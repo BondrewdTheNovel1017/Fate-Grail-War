@@ -19,7 +19,7 @@ function payMana(m, cost) {
 function canNP(s) { if (G.mode !== 'war' || s.sealFree) return true; var m = livingMaster(s); return !m || canPay(m, npManaCost(s)); }
 function spendNP(s) {
   if (G.mode !== 'war') return;
-  if (s.sealFree) { s.sealFree = false; return; }
+  if (s.sealFree) { s.sealFree = false; s.sealArm = true; return; }
   var m = livingMaster(s);
   if (m) payMana(m, npManaCost(s));
   else if (s.orphanT > 0) { s.orphanT = Math.max(2, s.orphanT - MANA.orphanNp); FX.text(s, 'BURNING ITS OWN EXISTENCE'); }

@@ -23,13 +23,13 @@ test('full war: one team per class, each with its own master', () => {
   assert.strictEqual(new Set(teams.map((t) => t.master.id)).size, 7);
 });
 
-test('Command Seals: three separate seals, each usable once', () => {
+test('Command Seals: one pool of three, spent on any order', () => {
   const E = loadEngine();
   const G = pairWar(E, 'richard', 'rin', 'cu', 'kirei');
   const m = G.f[1], s = G.f[0];
   assert.strictEqual(E.sealsLeft(m), 3);
   s.hp = 100; assert.ok(E.useSeal(m, 'heal')); assert.ok(s.hp > 100, 'heal restores health');
-  assert.ok(!E.useSeal(m, 'heal'), 'heal seal is single use');
+  s.hp = 100; assert.ok(E.useSeal(m, 'heal'), 'heal can be used again while seals remain'); m.seals = 2;
   s.mom = 0; assert.ok(E.useSeal(m, 'np')); assert.strictEqual(s.mom, 100);
   s.x = m.x + 3000; assert.ok(E.useSeal(m, 'warp')); assert.ok(E.dist(s, m) < 100, 'recall brings the servant');
   assert.strictEqual(E.sealsLeft(m), 0);
@@ -378,11 +378,11 @@ test('the Challenge and the Church\'s bounty give a Command Seal back; an unansw
   const rin = G.f.find((f) => f.def.id === 'rin'), rich = rin.partner, dia = G.f.find((f) => f.def.id === 'diarmuid'), kay = dia.partner, gil = G.f.find((f) => f.def.id === 'gilles');
   E.startChallenge(); assert.strictEqual(G.event.host, dia, 'Diarmuid issues the challenge');
   E.useSeal(kay, 'heal'); dia.x = G.event.x; dia.y = G.event.y; G.event.t = G.event.dur; E.eventsTick(0.01);
-  assert.ok(!kay.sealUsed.heal, 'nobody answered: the host regains a seal');
+  assert.strictEqual(E.sealsLeft(kay), 3, 'nobody answered: the host regains a seal');
   E.useSeal(rin, 'heal'); E.startChallenge(); const C = G.event; dia.x = C.x; dia.y = C.y; dia.lastHit = { by: rich, key: 'light' }; E.kill(dia, true);
-  assert.ok(!rin.sealUsed.heal, 'winning the challenge restores a seal');
+  assert.strictEqual(E.sealsLeft(rin), 3, 'winning the challenge restores a seal');
   E.useSeal(rin, 'heal'); E.startBounty(); assert.strictEqual(G.event.team, gil.team, 'the Church hunts Gilles first');
-  gil.lastHit = { by: rich, key: 'light' }; E.kill(gil, true); assert.ok(!rin.sealUsed.heal, 'the bounty pays a seal');
+  gil.lastHit = { by: rich, key: 'light' }; E.kill(gil, true); assert.strictEqual(E.sealsLeft(rin), 3, 'the bounty pays a seal');
 });
 
 test('the Horror in the River, the False Death and Berserker Unchained', () => {
@@ -645,18 +645,26 @@ test('civilians walk home at dusk instead of vanishing where they stand', () => 
   assert.ok(going.length > before / 2, 'most head for a doorway');
   assert.ok(going.every((c) => c.on), 'and are still in the street for now');
 });
-test('before the final night a Command Seal pulls a servant home from a killing blow, once', () => {
-  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+test('Command Seals are lives: before the Grail descends a killing blow burns one and carries master and servant home', () => {
+  const E = loadEngine();
   const G = E.newWar(E.warTeams('richard', 'rin', 4), { nights: 3 });
-  const sv = G.f[0], foe = G.f.find((f) => f.team !== sv.team && !f.def.isMaster);
-  sv.x = 3000; sv.y = 3600; sv.hp = 5; sv.iframes = 0; sv.st = 'idle';
-  E.hurt(foe, sv, { dmg: 80, power: 2, kind: 'melee' }, 1, { x: sv.x - 30, y: sv.y });
-  assert.ok(sv.st !== 'dead' && sv.hp > 0, 'the servant survives');
-  assert.ok(Object.values(sv.partner.sealUsed).some(Boolean), 'a seal is spent');
-  assert.ok(Math.hypot(sv.x - 3000, sv.y - 3600) > 400, 'and is pulled away from the fight');
-  sv.hp = 5; sv.iframes = 0; sv.st = 'idle';
-  E.hurt(foe, sv, { dmg: 80, power: 2, kind: 'melee' }, 1, { x: sv.x - 30, y: sv.y });
-  assert.ok(sv.st === 'dead', 'only once');
+  const sv = G.f[0], rin = sv.partner, foe = G.f.find((f) => f.team !== sv.team && !f.def.isMaster);
+  const run = (s) => { for (let i = 0; i < s * 60; i++) { G.time += E.STEP; E.rescueTick(E.STEP); } };
+  const strike = (v) => { v.iframes = 0; v.ghT = 0; v.st = 'idle'; v.hp = 5; v.x = 3000; v.y = 3600; return E.hurt(foe, v, { dmg: 90, power: 2, kind: 'melee' }, 1, { x: v.x - 30, y: v.y }); };
+  // the servant falls: a seal burns, both are carried home
+  rin.x = 3400; rin.y = 3600; strike(sv);
+  assert.ok(sv.st !== 'dead' && sv.resc && rin.resc, 'the seal takes both');
+  assert.strictEqual(E.sealsLeft(rin), 2, 'one seal spent');
+  run(E.RESCUE.arrive + 0.1);
+  const home = E.teamHome(rin.team, rin);
+  assert.ok(Math.hypot(sv.x - home.x, sv.y - home.y) < 120 && Math.hypot(rin.x - home.x, rin.y - home.y) < 120, 'both arrive in the workshop');
+  assert.ok(!sv.resc && !rin.resc && sv.hp > 1, 'hurt, but standing');
+  assert.ok(G.tn[foe.team].richard, 'the winner learns the true name');
+  // the master falls: the same
+  run(3); strike(rin); assert.ok(rin.st !== 'dead' && E.sealsLeft(rin) === 1, 'the master escapes too'); run(2);
+  // seals are any order, and each one is a life
+  run(3); assert.ok(E.useSeal(rin, 'heal')); assert.strictEqual(E.sealsLeft(rin), 0);
+  run(3); strike(sv); assert.strictEqual(sv.st, 'dead', 'with no seals left, death is death');
 });
 test('day activities: carry ward stones home, walk with the ley wisp, read the clues', () => {
   const E = loadEngine();

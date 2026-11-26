@@ -80,8 +80,7 @@ function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.
 function masterOf(team) { return G.f.filter(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead'; })[0]; }
 function regainSeal(team) {
   var m = masterOf(team); if (!m) return false;
-  var k = ['warp', 'heal', 'np'].filter(function (q) { return m.sealUsed[q]; })[0];
-  if (k) { m.sealUsed[k] = false; m.seals = sealsLeft(m); FX.text(m, 'COMMAND SEAL RESTORED'); FX.fx('seal', m.x, m.y, m); }
+  if (sealsLeft(m) < SEALS) { m.seals = sealsLeft(m) + 1; FX.text(m, 'COMMAND SEAL RESTORED'); FX.fx('seal', m.x, m.y, m); }
   else { m.manaBonus = (m.manaBonus || 0) + 40; FX.text(m, 'MANA GRANTED'); }
   return true;
 }
