@@ -454,6 +454,11 @@ h3.nmode { margin: 0 0 4px; font-family: var(--f-title); color: #fff2cf; font-we
 .nact { display: flex; gap: 8px; flex-wrap: wrap; } .nact .note { width: 100%; margin: 0 0 6px; }
 .btn:disabled { opacity: .5; cursor: default; filter: none; }
 .hc .ptag { font-family: var(--f-hud); color: var(--gold2); margin-left: 4px; }
+
+/* the online screen when claude.ai keeps this view out of rooms */
+.nblock { margin: 0 0 14px; padding: 14px 16px; border: 1px solid rgba(255, 110, 120, .55); background: rgba(60, 14, 22, .55); border-radius: 10px; color: #f1e4d8; font-size: 14px; line-height: 1.45; }
+.nblock b { color: #ffd0b0; } .nblock p { margin: 6px 0 0; } .nblock ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+.netgrid.off .btn, .netgrid.off .netin { opacity: .45; pointer-events: none; }
 </style>
 
 <main class="wrap">
@@ -6716,7 +6721,7 @@ function localRoomNs() {
 }
 (function findRoom(n) {
   if (NET.local) { NET.ns = localRoomNs(); renderNet(); return; }
-  if (window.claude && window.claude.use) { window.claude.use('room').then(function (ns) { NET.ns = ns || null; if (!ns) NET.err = 'This view cannot reach the room (the page has to be open on claude.ai, signed in).'; renderNet(); }, function (e) { NET.err = 'Room unavailable: ' + ((e && e.code) || 'error'); renderNet(); }); return; }
+  if (window.claude && window.claude.use) { window.claude.use('room').then(function (ns) { NET.ns = ns || null; if (!ns) NET.err = 'claude.ai did not open the room service for this view (signed out, opened from a public link, or not invited).'; renderNet(); }, function (e) { NET.err = 'Room unavailable: ' + ((e && e.code) || 'error'); renderNet(); }); return; }
   if (n < 40) setTimeout(function () { findRoom(n + 1); }, 100); else { NET.err = 'Not on claude.ai: online play needs the published page, opened while signed in.'; renderNet(); }
 })(0);
 function netSay(s) { NET.msg = s; renderNet(); }
@@ -6730,8 +6735,10 @@ function netMyPresence(extra) { if (!NET.R) return; var base = { v: NET_V, nick:
 function netJoin(code, host) {
   if (!NET.ns) { NET.err = NET.err || 'The room is not available in this view.'; renderNet(); return; }
   code = String(code || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8); if (!code) return netSay('Type a room code first.');
-  netSay('Connecting…'); NET.err = '';
-  NET.ns.join('fgw-' + code).then(function (R) {
+  netSay('Connecting…'); NET.err = ''; var tok = NET.joinTok = (NET.joinTok || 0) + 1;
+  // a join that never answers is reported instead of leaving the screen silent
+  setTimeout(function () { if (NET.joinTok === tok && !NET.R) { netSay(''); NET.err = 'No answer from the room service after 12 seconds. Check that you are signed in to claude.ai and were invited to this page, then reload.'; renderNet(); } }, 12000);
+  NET.ns.join('fgw-' + code).then(function (R) { if (NET.joinTok !== tok) { try { R.leave(); } catch (x) {} return; }
     NET.R = R; NET.code = code; NET.role = host ? 'host' : 'client'; NET.joinedAt = Date.now(); NET.req = { slot: -1, id: 'random' }; NET.ready = false;
     if (host) { NET.lob = netDefaultLobby(); netHostResolve(); }
     else netMyPresence({ req: NET.req, ready: false, ing: null, inp: null });
@@ -6740,6 +6747,7 @@ function netJoin(code, host) {
     // the fast-moving parts of the war travel in rooms of their own
     ['f', 'm', 's0', 's1', 's2', 'c', 'e'].forEach(function (k) { NET.ns.join('fgw-' + code + '-' + k).then(function (X) { NET.X[k] = X; }, function (e) { NET.err = 'Could not open channel ' + k + ' (' + ((e && e.code) || 'error') + ')'; renderNet(); }); });
     netSay(host ? 'Room open. Share the code with your friends.' : 'Joined. Take a seat and wait for the host to begin.');
+    if (!host) setTimeout(function () { if (NET.R === R && !netHostPeer()) { NET.err = 'No host in room ' + code.toUpperCase() + '. Check the code, and that the host still has the lobby open. If the host is there, they may be in a different organization: see Share and invites.'; renderNet(); } }, 8000);
   }, function (e) { netSay(''); NET.err = 'Could not join the room (' + ((e && e.code) || 'error') + ').'; renderNet(); });
 }
 function netLeave() {
@@ -7114,7 +7122,9 @@ function renderNet() {
   var el = $('#netPanel'); if (!el) return; if (running && netInMatch()) return;
   $('#netCodeTag').innerHTML = NET.R ? 'Room <b>' + esc(NET.code.toUpperCase()) + '</b>' : '';
   if (!NET.R) {
-    el.innerHTML = '<div class="netgrid"><div class="ncard"><div class="lbl">Your name</div><input class="netin wide" id="netNick" maxlength="20" placeholder="Player" value="' + esc(NET.nick) + '" autocomplete="off">' +
+    var blocked = !NET.ns && NET.err;
+    var why = blocked ? '<div class="nblock"><b>Online play can\u2019t start on this screen.</b><p>claude.ai only lets people into a game room when they are signed in to claude.ai and are either in the same organization as the page\u2019s owner or have been invited to the page. Anyone who opens it from a public link is turned away.</p><ol><li>The page\u2019s owner opens the page on claude.ai, presses <b>Share</b> and invites each friend by their claude.ai email.</li><li>Each friend signs in to claude.ai and opens the page from that invite (not from a public link), then reloads it.</li><li>One person hosts, the others type the code.</li></ol><p class="note">If the Share menu has no way to invite people from outside, the organization\u2019s settings don\u2019t allow outside guests, and only its members can play together.</p><p class="note">Details: ' + esc(NET.err) + '</p></div>' : '';
+    el.innerHTML = why + '<div class="netgrid' + (blocked ? ' off' : '') + '"><div class="ncard"><div class="lbl">Your name</div><input class="netin wide" id="netNick" maxlength="20" placeholder="Player" value="' + esc(NET.nick) + '" autocomplete="off">' +
       '<div class="lbl" style="margin-top:16px">Host a room</div><p class="note">Your page runs the war; friends join with the code. The strongest computer should host.</p><button type="button" class="btn seal" id="netHostBtn">Host a room</button>' +
       '<div class="lbl" style="margin-top:18px">Join a room</div><div class="joinrow"><input class="netin" id="netCodeIn" maxlength="8" placeholder="Room code" autocomplete="off"><button type="button" class="btn" id="netJoinBtn">Join</button></div>' +
       (NET.msg ? '<p class="note">' + esc(NET.msg) + '</p>' : '') + '</div>' +
@@ -7293,7 +7303,7 @@ document.addEventListener('click', function (e) {
   if (t.closest('.rt, .mode, .chip, .mapc, .slot')) uiSnd('uiSelect');
 });
 document.addEventListener('pointerover', function (e) { if (running || !e.target.closest) return; var el = e.target.closest('.mmi'); if (el && SHELL.scr === 'main') { var items = [].slice.call(document.querySelectorAll('.mmi')), i = items.indexOf(el); if (i !== SHELL.cur) { setCur(i); uiSnd('uiMove'); } } });
-document.addEventListener('pointermove', function (e) { SHELL.mx = e.clientX / window.innerWidth - 0.5; SHELL.my = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+document.addEventListener('pointermove', function (e) { SHELL.tx = e.clientX / window.innerWidth - 0.5; SHELL.ty = e.clientY / window.innerHeight - 0.5; }, { passive: true });
 $('#prevBtn').addEventListener('click', back);
 $('#nextBtn').addEventListener('click', function () { var k = SHELL.scr; if (SHELL.page[k] < 2) { SHELL.page[k]++; applySteps(); uiSnd('uiSelect'); window.scrollTo(0, 0); } });
 window.addEventListener('keydown', function (e) {
@@ -7315,11 +7325,11 @@ function beginFlourish(fn) {
 }
 
 /* ---- the night behind the menus: sky, moon, Fuyuki's skyline, a turning summoning circle and rising motes ---- */
-var BG = { c: $('#menuBg'), w: 0, h: 0, dpr: 1, stars: [], far: [], near: [], motes: [], cx: 0.5, cy: 0.42, R: 0.36, A: 0.5, t0: performance.now() };
+var BG = { P: 1.6, c: $('#menuBg'), w: 0, h: 0, dpr: 1, stars: [], far: [], near: [], motes: [], cx: 0.5, cy: 0.42, R: 0.36, A: 0.5, t0: performance.now() };
 function bgSeed() {
   var r = 12345, R = function () { r = (r * 16807) % 2147483647; return r / 2147483647; };
   BG.stars = []; for (var i = 0; i < 170; i++) BG.stars.push([R(), R() * 0.62, R() * 1.4 + 0.3, R() * 6.28]);
-  function sky(arr, n, hmin, hmax, wmin, wmax) { var x = -0.05; while (x < 1.1) { var w = wmin + R() * (wmax - wmin), h = hmin + R() * (hmax - hmin); var win = []; for (var k = 0; k < 6; k++) if (R() < 0.5) win.push([R(), R()]); arr.push([x, w, h, R() < 0.18 ? 1 : 0, win]); x += w + R() * 0.006; } }
+  function sky(arr, n, hmin, hmax, wmin, wmax) { var x = 0; while (x < BG.P - wmax) { var w = wmin + R() * (wmax - wmin), h = hmin + R() * (hmax - hmin); var win = []; for (var k = 0; k < 6; k++) if (R() < 0.5) win.push([R(), R()]); arr.push([x, w, h, R() < 0.18 ? 1 : 0, win]); x += w + R() * 0.006; } arr.end = x; }
   BG.far = []; BG.near = []; sky(BG.far, 0, 0.06, 0.2, 0.02, 0.05); sky(BG.near, 0, 0.03, 0.13, 0.025, 0.07);
   BG.motes = []; for (var j = 0; j < 70; j++) BG.motes.push({ x: R(), y: R(), s: 0.004 + R() * 0.012, r: 0.6 + R() * 1.8, ph: R() * 6.28, red: R() < 0.3 });
 }
@@ -7344,6 +7354,9 @@ function bgFrame(now) {
   requestAnimationFrame(bgFrame);
   if (running || $('#setup').style.display === 'none') return;
   if (SHELL.calm && BG.drawn && !SHELL.flare && BG.drawnScr === SHELL.scr && BG.w === window.innerWidth && BG.h === window.innerHeight) return;
+  // the parallax follows the pointer gently, framerate-independent
+  var dtb = Math.min(0.1, ((now - (BG.last || now)) / 1000)); BG.last = now; var ease = SHELL.calm ? 1 : 1 - Math.exp(-dtb * 3);
+  SHELL.mx += ((SHELL.tx || 0) - SHELL.mx) * ease; SHELL.my += ((SHELL.ty || 0) - SHELL.my) * ease;
   bgSize(); var g = BG.c.getContext('2d'), W = BG.w, H = BG.h, t = SHELL.calm ? 40 : (now - BG.t0) / 1000;
   g.setTransform(BG.dpr, 0, 0, BG.dpr, 0, 0);
   var T = bgTarget(), k = SHELL.calm ? 1 : 0.05; BG.cx += (T[0] - BG.cx) * k; BG.cy += (T[1] - BG.cy) * k; BG.R += (T[2] - BG.R) * k; BG.A += (T[3] - BG.A) * k;
@@ -7354,20 +7367,23 @@ function bgFrame(now) {
   var mg = g.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 4.5); mg.addColorStop(0, 'rgba(240,232,210,.28)'); mg.addColorStop(1, 'rgba(240,232,210,0)'); g.fillStyle = mg; g.fillRect(mx - mr * 5, my - mr * 5, mr * 10, mr * 10);
   g.fillStyle = '#f2ecd8'; g.beginPath(); g.arc(mx, my, mr, 0, 6.283); g.fill(); g.fillStyle = 'rgba(180,170,150,.25)'; g.beginPath(); g.arc(mx - mr * 0.3, my - mr * 0.2, mr * 0.22, 0, 6.283); g.arc(mx + mr * 0.25, my + mr * 0.3, mr * 0.14, 0, 6.283); g.fill();
   drawCircleBg(g, BG.cx * W + SHELL.mx * 14, BG.cy * H + SHELL.my * 10, Math.min(W, H) * BG.R * (1 + SHELL.flare * 0.25), t, Math.min(1, BG.A + SHELL.flare * 0.6));
-  function layer(arr, base, col, par, lit) {
-    var off = SHELL.mx * par + (SHELL.calm ? 0 : (t * 0.0015 * par) % 0.02);
+  // the skyline drifts slowly and loops without a seam: each building is drawn at its place in a band BG.P screens wide
+  function layer(arr, base, col, par, speed, lit) {
+    var P = BG.P, sc = P / arr.end, drift = SHELL.calm ? 0 : t * speed, sh = SHELL.mx * par * 0.01;
+    var at = function (b) { var x = ((b[0] * sc - drift) % P + P) % P - 0.1 + sh; return x; };
     g.fillStyle = col;
-    arr.forEach(function (b) { var x = (b[0] + off) * W, w = b[1] * W, h = b[2] * H, y = H * base - h; g.fillRect(x, y, w + 1, H - y); if (b[3]) g.fillRect(x + w * 0.45, y - h * 0.25, w * 0.1, h * 0.25); });
-    if (lit) arr.forEach(function (b) { var x = (b[0] + off) * W, w = b[1] * W, h = b[2] * H, y = H * base - h; b[4].forEach(function (q, i) { g.fillStyle = i % 3 ? 'rgba(255,196,110,.55)' : 'rgba(255,150,90,.4)'; g.fillRect(x + 4 + q[0] * (w - 10), y + 6 + q[1] * (h - 12), 3, 4); }); });
+    arr.forEach(function (b) { var x0 = at(b), w = b[1] * sc * W, h = b[2] * H, y = H * base - h; [x0, x0 - P].forEach(function (xx) { var x = xx * W; if (x > W || x + w < 0) return; g.fillRect(x, y, w + 1, H - y); if (b[3]) g.fillRect(x + w * 0.45, y - h * 0.25, w * 0.1, h * 0.25); }); });
+    if (lit) arr.forEach(function (b) { var x0 = at(b), w = b[1] * sc * W, h = b[2] * H, y = H * base - h; [x0, x0 - P].forEach(function (xx) { var x = xx * W; if (x > W || x + w < 0) return; b[4].forEach(function (q, i) { g.fillStyle = i % 3 ? 'rgba(255,196,110,.55)' : 'rgba(255,150,90,.4)'; g.fillRect(x + 4 + q[0] * (w - 10), y + 6 + q[1] * (h - 12), 3, 4); }); }); });
   }
-  layer(BG.far, 0.86, '#0d1830', 6, false);
+  layer(BG.far, 0.86, '#0d1830', 6, 0.0035, false);
   var mist = g.createLinearGradient(0, H * 0.7, 0, H * 0.9); mist.addColorStop(0, 'rgba(120,80,120,0)'); mist.addColorStop(1, 'rgba(70,40,70,.35)'); g.fillStyle = mist; g.fillRect(0, H * 0.7, W, H * 0.2);
-  layer(BG.near, 0.95, '#05080f', 14, true);
+  layer(BG.near, 0.95, '#05080f', 14, 0.008, true);
   g.fillStyle = '#05080f'; g.fillRect(0, H * 0.95, W, H * 0.05 + 2);
   BG.motes.forEach(function (m) {
     var y = ((m.y - t * m.s) % 1 + 1) % 1, x = m.x + Math.sin(t * 0.5 + m.ph) * 0.01, a = Math.sin(y * Math.PI) * 0.8;
-    g.globalAlpha = a; g.fillStyle = m.red ? '#ff6a7a' : '#f6d690'; g.shadowColor = g.fillStyle; g.shadowBlur = 8;
-    g.beginPath(); g.arc(x * W, (0.2 + y * 0.8) * H, m.r, 0, 6.283); g.fill();
+    var px = x * W, py = (0.2 + y * 0.8) * H; g.fillStyle = m.red ? '#ff6a7a' : '#f6d690';
+    g.globalAlpha = a * 0.18; g.beginPath(); g.arc(px, py, m.r * 3.2, 0, 6.283); g.fill();
+    g.globalAlpha = a; g.beginPath(); g.arc(px, py, m.r, 0, 6.283); g.fill();
   });
   g.globalAlpha = 1; g.shadowBlur = 0;
   BG.drawn = true; BG.drawnScr = SHELL.scr;

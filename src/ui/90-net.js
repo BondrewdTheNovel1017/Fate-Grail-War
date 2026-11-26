@@ -38,7 +38,7 @@ function localRoomNs() {
 }
 (function findRoom(n) {
   if (NET.local) { NET.ns = localRoomNs(); renderNet(); return; }
-  if (window.claude && window.claude.use) { window.claude.use('room').then(function (ns) { NET.ns = ns || null; if (!ns) NET.err = 'This view cannot reach the room (the page has to be open on claude.ai, signed in).'; renderNet(); }, function (e) { NET.err = 'Room unavailable: ' + ((e && e.code) || 'error'); renderNet(); }); return; }
+  if (window.claude && window.claude.use) { window.claude.use('room').then(function (ns) { NET.ns = ns || null; if (!ns) NET.err = 'claude.ai did not open the room service for this view (signed out, opened from a public link, or not invited).'; renderNet(); }, function (e) { NET.err = 'Room unavailable: ' + ((e && e.code) || 'error'); renderNet(); }); return; }
   if (n < 40) setTimeout(function () { findRoom(n + 1); }, 100); else { NET.err = 'Not on claude.ai: online play needs the published page, opened while signed in.'; renderNet(); }
 })(0);
 function netSay(s) { NET.msg = s; renderNet(); }
@@ -52,8 +52,10 @@ function netMyPresence(extra) { if (!NET.R) return; var base = { v: NET_V, nick:
 function netJoin(code, host) {
   if (!NET.ns) { NET.err = NET.err || 'The room is not available in this view.'; renderNet(); return; }
   code = String(code || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8); if (!code) return netSay('Type a room code first.');
-  netSay('Connecting…'); NET.err = '';
-  NET.ns.join('fgw-' + code).then(function (R) {
+  netSay('Connecting…'); NET.err = ''; var tok = NET.joinTok = (NET.joinTok || 0) + 1;
+  // a join that never answers is reported instead of leaving the screen silent
+  setTimeout(function () { if (NET.joinTok === tok && !NET.R) { netSay(''); NET.err = 'No answer from the room service after 12 seconds. Check that you are signed in to claude.ai and were invited to this page, then reload.'; renderNet(); } }, 12000);
+  NET.ns.join('fgw-' + code).then(function (R) { if (NET.joinTok !== tok) { try { R.leave(); } catch (x) {} return; }
     NET.R = R; NET.code = code; NET.role = host ? 'host' : 'client'; NET.joinedAt = Date.now(); NET.req = { slot: -1, id: 'random' }; NET.ready = false;
     if (host) { NET.lob = netDefaultLobby(); netHostResolve(); }
     else netMyPresence({ req: NET.req, ready: false, ing: null, inp: null });
@@ -62,6 +64,7 @@ function netJoin(code, host) {
     // the fast-moving parts of the war travel in rooms of their own
     ['f', 'm', 's0', 's1', 's2', 'c', 'e'].forEach(function (k) { NET.ns.join('fgw-' + code + '-' + k).then(function (X) { NET.X[k] = X; }, function (e) { NET.err = 'Could not open channel ' + k + ' (' + ((e && e.code) || 'error') + ')'; renderNet(); }); });
     netSay(host ? 'Room open. Share the code with your friends.' : 'Joined. Take a seat and wait for the host to begin.');
+    if (!host) setTimeout(function () { if (NET.R === R && !netHostPeer()) { NET.err = 'No host in room ' + code.toUpperCase() + '. Check the code, and that the host still has the lobby open. If the host is there, they may be in a different organization: see Share and invites.'; renderNet(); } }, 8000);
   }, function (e) { netSay(''); NET.err = 'Could not join the room (' + ((e && e.code) || 'error') + ').'; renderNet(); });
 }
 function netLeave() {

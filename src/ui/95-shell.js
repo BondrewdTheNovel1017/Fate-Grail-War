@@ -101,7 +101,7 @@ document.addEventListener('click', function (e) {
   if (t.closest('.rt, .mode, .chip, .mapc, .slot')) uiSnd('uiSelect');
 });
 document.addEventListener('pointerover', function (e) { if (running || !e.target.closest) return; var el = e.target.closest('.mmi'); if (el && SHELL.scr === 'main') { var items = [].slice.call(document.querySelectorAll('.mmi')), i = items.indexOf(el); if (i !== SHELL.cur) { setCur(i); uiSnd('uiMove'); } } });
-document.addEventListener('pointermove', function (e) { SHELL.mx = e.clientX / window.innerWidth - 0.5; SHELL.my = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+document.addEventListener('pointermove', function (e) { SHELL.tx = e.clientX / window.innerWidth - 0.5; SHELL.ty = e.clientY / window.innerHeight - 0.5; }, { passive: true });
 $('#prevBtn').addEventListener('click', back);
 $('#nextBtn').addEventListener('click', function () { var k = SHELL.scr; if (SHELL.page[k] < 2) { SHELL.page[k]++; applySteps(); uiSnd('uiSelect'); window.scrollTo(0, 0); } });
 window.addEventListener('keydown', function (e) {
@@ -123,11 +123,11 @@ function beginFlourish(fn) {
 }
 
 /* ---- the night behind the menus: sky, moon, Fuyuki's skyline, a turning summoning circle and rising motes ---- */
-var BG = { c: $('#menuBg'), w: 0, h: 0, dpr: 1, stars: [], far: [], near: [], motes: [], cx: 0.5, cy: 0.42, R: 0.36, A: 0.5, t0: performance.now() };
+var BG = { P: 1.6, c: $('#menuBg'), w: 0, h: 0, dpr: 1, stars: [], far: [], near: [], motes: [], cx: 0.5, cy: 0.42, R: 0.36, A: 0.5, t0: performance.now() };
 function bgSeed() {
   var r = 12345, R = function () { r = (r * 16807) % 2147483647; return r / 2147483647; };
   BG.stars = []; for (var i = 0; i < 170; i++) BG.stars.push([R(), R() * 0.62, R() * 1.4 + 0.3, R() * 6.28]);
-  function sky(arr, n, hmin, hmax, wmin, wmax) { var x = -0.05; while (x < 1.1) { var w = wmin + R() * (wmax - wmin), h = hmin + R() * (hmax - hmin); var win = []; for (var k = 0; k < 6; k++) if (R() < 0.5) win.push([R(), R()]); arr.push([x, w, h, R() < 0.18 ? 1 : 0, win]); x += w + R() * 0.006; } }
+  function sky(arr, n, hmin, hmax, wmin, wmax) { var x = 0; while (x < BG.P - wmax) { var w = wmin + R() * (wmax - wmin), h = hmin + R() * (hmax - hmin); var win = []; for (var k = 0; k < 6; k++) if (R() < 0.5) win.push([R(), R()]); arr.push([x, w, h, R() < 0.18 ? 1 : 0, win]); x += w + R() * 0.006; } arr.end = x; }
   BG.far = []; BG.near = []; sky(BG.far, 0, 0.06, 0.2, 0.02, 0.05); sky(BG.near, 0, 0.03, 0.13, 0.025, 0.07);
   BG.motes = []; for (var j = 0; j < 70; j++) BG.motes.push({ x: R(), y: R(), s: 0.004 + R() * 0.012, r: 0.6 + R() * 1.8, ph: R() * 6.28, red: R() < 0.3 });
 }
@@ -152,6 +152,9 @@ function bgFrame(now) {
   requestAnimationFrame(bgFrame);
   if (running || $('#setup').style.display === 'none') return;
   if (SHELL.calm && BG.drawn && !SHELL.flare && BG.drawnScr === SHELL.scr && BG.w === window.innerWidth && BG.h === window.innerHeight) return;
+  // the parallax follows the pointer gently, framerate-independent
+  var dtb = Math.min(0.1, ((now - (BG.last || now)) / 1000)); BG.last = now; var ease = SHELL.calm ? 1 : 1 - Math.exp(-dtb * 3);
+  SHELL.mx += ((SHELL.tx || 0) - SHELL.mx) * ease; SHELL.my += ((SHELL.ty || 0) - SHELL.my) * ease;
   bgSize(); var g = BG.c.getContext('2d'), W = BG.w, H = BG.h, t = SHELL.calm ? 40 : (now - BG.t0) / 1000;
   g.setTransform(BG.dpr, 0, 0, BG.dpr, 0, 0);
   var T = bgTarget(), k = SHELL.calm ? 1 : 0.05; BG.cx += (T[0] - BG.cx) * k; BG.cy += (T[1] - BG.cy) * k; BG.R += (T[2] - BG.R) * k; BG.A += (T[3] - BG.A) * k;
@@ -162,20 +165,23 @@ function bgFrame(now) {
   var mg = g.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 4.5); mg.addColorStop(0, 'rgba(240,232,210,.28)'); mg.addColorStop(1, 'rgba(240,232,210,0)'); g.fillStyle = mg; g.fillRect(mx - mr * 5, my - mr * 5, mr * 10, mr * 10);
   g.fillStyle = '#f2ecd8'; g.beginPath(); g.arc(mx, my, mr, 0, 6.283); g.fill(); g.fillStyle = 'rgba(180,170,150,.25)'; g.beginPath(); g.arc(mx - mr * 0.3, my - mr * 0.2, mr * 0.22, 0, 6.283); g.arc(mx + mr * 0.25, my + mr * 0.3, mr * 0.14, 0, 6.283); g.fill();
   drawCircleBg(g, BG.cx * W + SHELL.mx * 14, BG.cy * H + SHELL.my * 10, Math.min(W, H) * BG.R * (1 + SHELL.flare * 0.25), t, Math.min(1, BG.A + SHELL.flare * 0.6));
-  function layer(arr, base, col, par, lit) {
-    var off = SHELL.mx * par + (SHELL.calm ? 0 : (t * 0.0015 * par) % 0.02);
+  // the skyline drifts slowly and loops without a seam: each building is drawn at its place in a band BG.P screens wide
+  function layer(arr, base, col, par, speed, lit) {
+    var P = BG.P, sc = P / arr.end, drift = SHELL.calm ? 0 : t * speed, sh = SHELL.mx * par * 0.01;
+    var at = function (b) { var x = ((b[0] * sc - drift) % P + P) % P - 0.1 + sh; return x; };
     g.fillStyle = col;
-    arr.forEach(function (b) { var x = (b[0] + off) * W, w = b[1] * W, h = b[2] * H, y = H * base - h; g.fillRect(x, y, w + 1, H - y); if (b[3]) g.fillRect(x + w * 0.45, y - h * 0.25, w * 0.1, h * 0.25); });
-    if (lit) arr.forEach(function (b) { var x = (b[0] + off) * W, w = b[1] * W, h = b[2] * H, y = H * base - h; b[4].forEach(function (q, i) { g.fillStyle = i % 3 ? 'rgba(255,196,110,.55)' : 'rgba(255,150,90,.4)'; g.fillRect(x + 4 + q[0] * (w - 10), y + 6 + q[1] * (h - 12), 3, 4); }); });
+    arr.forEach(function (b) { var x0 = at(b), w = b[1] * sc * W, h = b[2] * H, y = H * base - h; [x0, x0 - P].forEach(function (xx) { var x = xx * W; if (x > W || x + w < 0) return; g.fillRect(x, y, w + 1, H - y); if (b[3]) g.fillRect(x + w * 0.45, y - h * 0.25, w * 0.1, h * 0.25); }); });
+    if (lit) arr.forEach(function (b) { var x0 = at(b), w = b[1] * sc * W, h = b[2] * H, y = H * base - h; [x0, x0 - P].forEach(function (xx) { var x = xx * W; if (x > W || x + w < 0) return; b[4].forEach(function (q, i) { g.fillStyle = i % 3 ? 'rgba(255,196,110,.55)' : 'rgba(255,150,90,.4)'; g.fillRect(x + 4 + q[0] * (w - 10), y + 6 + q[1] * (h - 12), 3, 4); }); }); });
   }
-  layer(BG.far, 0.86, '#0d1830', 6, false);
+  layer(BG.far, 0.86, '#0d1830', 6, 0.0035, false);
   var mist = g.createLinearGradient(0, H * 0.7, 0, H * 0.9); mist.addColorStop(0, 'rgba(120,80,120,0)'); mist.addColorStop(1, 'rgba(70,40,70,.35)'); g.fillStyle = mist; g.fillRect(0, H * 0.7, W, H * 0.2);
-  layer(BG.near, 0.95, '#05080f', 14, true);
+  layer(BG.near, 0.95, '#05080f', 14, 0.008, true);
   g.fillStyle = '#05080f'; g.fillRect(0, H * 0.95, W, H * 0.05 + 2);
   BG.motes.forEach(function (m) {
     var y = ((m.y - t * m.s) % 1 + 1) % 1, x = m.x + Math.sin(t * 0.5 + m.ph) * 0.01, a = Math.sin(y * Math.PI) * 0.8;
-    g.globalAlpha = a; g.fillStyle = m.red ? '#ff6a7a' : '#f6d690'; g.shadowColor = g.fillStyle; g.shadowBlur = 8;
-    g.beginPath(); g.arc(x * W, (0.2 + y * 0.8) * H, m.r, 0, 6.283); g.fill();
+    var px = x * W, py = (0.2 + y * 0.8) * H; g.fillStyle = m.red ? '#ff6a7a' : '#f6d690';
+    g.globalAlpha = a * 0.18; g.beginPath(); g.arc(px, py, m.r * 3.2, 0, 6.283); g.fill();
+    g.globalAlpha = a; g.beginPath(); g.arc(px, py, m.r, 0, 6.283); g.fill();
   });
   g.globalAlpha = 1; g.shadowBlur = 0;
   BG.drawn = true; BG.drawnScr = SHELL.scr;
