@@ -399,3 +399,16 @@ body:not(.ingame) .wrap { max-width: none; }
 @media (max-width: 860px) { .feat .circ { width: 150px; height: 150px; } .feat .circ.r2 { width: 110px; height: 110px; } }
 .codex .rules { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .codex .rule b { display: inline; font-size: inherit; letter-spacing: .04em; margin: 0; } .codex .rule > b:first-child { display: block; font-size: 14px; letter-spacing: .08em; margin-bottom: 4px; }
+
+/* Codex: characters */
+.lores { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 10px; margin-top: 12px; }
+.lore { position: relative; display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px; padding: 14px 16px; background: linear-gradient(135deg, color-mix(in srgb, var(--c) 10%, rgba(10, 16, 26, .92)), rgba(8, 12, 20, .94) 60%); border: 1px solid rgba(80, 104, 128, .4); border-left: 3px solid var(--c); animation: rise .5s var(--ease) both; }
+.lore .lth { align-self: start; padding-top: 6px; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .6)); } .lore .lth svg { width: 100%; height: auto; display: block; }
+.lore .lcls { font-family: var(--f-hud); letter-spacing: .26em; text-transform: uppercase; font-size: 11.5px; color: var(--c); }
+.lore h4 { margin: 2px 0 0; font-family: var(--f-title); font-weight: 600; font-size: 19px; color: #fff2cf; letter-spacing: .02em; }
+.lore .lep { font-family: var(--f-disp); font-style: italic; color: var(--gold2); font-size: 13.5px; margin-bottom: 6px; }
+.lore p { margin: 0 0 6px; color: #c9c2ae; font-size: 13.5px; line-height: 1.55; }
+.lore .lwish { color: #a9a393; font-size: 13px; border-top: 1px solid rgba(243, 213, 138, .15); padding-top: 6px; margin: 8px 0 0; }
+.lore .lwish b { font-family: var(--f-hud); letter-spacing: .2em; text-transform: uppercase; font-size: 11.5px; color: var(--seal2); margin-right: 6px; }
+@media (max-width: 520px) { .lore { grid-template-columns: 1fr; } .lore .lth { width: 150px; } }
+body.calm .lore { animation: none; }
