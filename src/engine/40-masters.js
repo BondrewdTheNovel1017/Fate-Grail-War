@@ -68,7 +68,7 @@ var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', '
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });
 /* war balance from tools/sim.js reports: multipliers on top of the duel values */
-var WAR_TUNE = { gilgamesh: { hp: 0.82 }, richard: { dmg: 1.07 }, heracles: { hp: 1.5 }, leonidas: { spd: 1.08, hp: 1.03 }, lancelot: { hp: 1.17 }, hassan: { dmg: 1.05 }, diarmuid: { hp: 1.05 }, kojirou: { dmg: 1.02 }, emiya: { hp: 1.08 }, medea: { hp: 1.15 }, iskandar: { dmg: 1.04 }, atalanta: { hp: 1.1 }, medusa: { hp: 1.05 }, cu: { dmg: 0.95 } };
+var WAR_TUNE = { gilgamesh: { hp: 0.82 }, richard: { dmg: 1.07 }, heracles: { hp: 1.5 }, leonidas: { spd: 1.08, hp: 1.03 }, lancelot: { hp: 1.22 }, hassan: { dmg: 1.05 }, diarmuid: { hp: 1.05 }, kojirou: { dmg: 0.98 }, emiya: { hp: 1.08 }, medea: { hp: 1.15 }, iskandar: { dmg: 1.04 }, atalanta: { hp: 1.1 }, medusa: { hp: 1.05 }, cu: { dmg: 0.95 } };
 // masters, from the same reports
 var MASTER_TUNE = { rin: { hp: 1.1 }, kariya: { hp: 1.2 }, waver: { hp: 1.35 }, irisviel: { hp: 0.9 }, illya: { hp: 0.92 } };
 Object.keys(MASTER_TUNE).forEach(function (k) { MASTERS[k].hp = Math.round(MASTERS[k].hp * MASTER_TUNE[k].hp); });
