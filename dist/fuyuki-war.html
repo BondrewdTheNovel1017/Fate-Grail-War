@@ -321,7 +321,7 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
 (function () {
 /*ENGINE_START*/
 var STEP = 1 / 60, W = 1600, H = 1100, FR = 20, PARRY = 0.17;
-var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, near: function () { return true; } };
+var FX = { shake: function () {}, spark: function () {}, text: function () {}, banner: function () {}, snd: function () {}, fx: function () {}, slow: function () {}, say: function () {}, duo: function () {}, phase: function () {}, church: function () {}, field: function () {}, truename: function () {}, task: function () {}, event: function () {}, turned: function () {}, unturned: function () {}, near: function () { return true; } };
 // hit-freeze only when the viewer can see the hit (the UI decides what "near" means)
 // Hit-stop is per fighter: only the attacker and the one hit freeze, the rest of the war keeps moving.
 function hitPause(att, def, v) { if (att) att.hs = Math.max(att.hs || 0, v); if (def) def.hs = Math.max(def.hs || 0, v); }
@@ -953,7 +953,7 @@ var SERV = {
     heavy: { kind: 'proj', speed: 1100, range: 760, dmg: 18, wind: 0.5, max: 1.0, rec: 0.7, lunge: 0, cost: 22 },
     skill: { name: 'Backstep Shot', kind: 'proj', hop: 170, speed: 1000, range: 600, wind: 0.26, act: 0.06, rec: 0.25, dmg: 11, cd: 3.5, cost: 12, stag: 0.4, desc: 'Leap back and loose an arrow. Her escape and her opener.' },
     np: { name: 'Phoebus Catastrophe', sub: 'Complaint Message on the Arrow', kind: 'rain', wind: 1.0, act: 0.2, rec: 0.8, dmg: 13, count: 6, spread: 170, zr: 80, delay: 0.85, gb: true, unblock: false, aiMin: 160, aiMax: 620, desc: 'Arrow circles mark the ground, then land. Read them and move.' } },
-  heracles: { id: 'heracles', name: 'Heracles', cls: 'Berserker', col: '#e2515c', wpn: 'club', godHand: true, hp: 158, spd: 205, dmg: 0.84, guard: 0.73, combo: 2, recMul: 1.1, armor: true,
+  heracles: { id: 'heracles', name: 'Heracles', cls: 'Berserker', col: '#e2515c', wpn: 'club', godHand: true, ghRegen: true, hp: 158, spd: 205, dmg: 0.84, guard: 0.73, combo: 2, recMul: 1.1, armor: true,
     brief: 'Hyper armor on every swing. Light hits will not stop him. Slow to turn.',
     light: { wind: 0.34, rec: 0.3, dmg: 9, reach: 125, armor: true, arc: 1.0 }, heavy: { wind: 0.6, max: 1.15, dmg: 22, reach: 135, rec: 0.78, armor: true },
     skill: { name: 'Stone Slam', kind: 'aoe', wind: 0.55, act: 0.1, rec: 0.6, dmg: 12, r: 150, cd: 7, cost: 14, stag: 0.55, gb: true, armor: true, desc: 'A ground slam all around him. Armored. Breaks guards.' },
@@ -1023,7 +1023,7 @@ var SERV = {
     ],
     heavy: { name: "Hecate's Lance", tag: 'Lance', kind: 'proj', speed: 1000, range: 720, dmg: 16, wind: 0.5, max: 1.0, rec: 0.7, lunge: 0, cost: 22, shape: 'orb', size: 11, col: '#e8f6ff' },
     skill: { name: 'High-Speed Divine Words', kind: 'volley', count: 3, spread: 0.12, speed: 1200, range: 680, dmg: 6, wind: 0.35, act: 0.05, rec: 0.35, cd: 4, cost: 10, stag: 0.25, shape: 'orb', desc: 'Three spells fired almost at once, with no incantation to read.' },
-    np: { name: 'Rule Breaker', sub: 'All Spells Must Be Broken', kind: 'proj', speed: 1500, range: 780, dmg: 24, wind: 0.6, act: 0.1, rec: 0.8, strip: true, stag: 0.9, shape: 'blade', aiMin: 150, aiMax: 720, desc: 'A hurled dagger. It cannot be blocked, and if it lands it breaks every enchantment on the target and drains their momentum.' } },
+    np: { name: 'Rule Breaker', sub: 'All Spells Must Be Broken', kind: 'proj', speed: 1500, range: 780, dmg: 24, wind: 1.6, act: 0.1, rec: 0.8, strip: true, stag: 0.9, shape: 'blade', momLock: 25, aiMin: 150, aiMax: 720, desc: 'A long incantation, then a hurled dagger. It cannot be blocked, and if it lands it breaks every enchantment on the target and drains their momentum. In the Grail War it cuts a servant\'s contract: for 5 seconds the servant fights for Medea and turns on its own master. Afterwards her momentum cannot build for 25 seconds.' } },
   kojirou: { id: 'kojirou', name: 'Sasaki Kojirou', cls: 'Assassin', col: '#e9b8cc', wpn: 'sword', hp: 180, spd: 236, dmg: 1.1, guard: 0.55, combo: 3, recMul: 1, parryWin: 0.27,
     brief: 'A swordsman without a master. The longest blade in the roster, and three cuts at once.',
     light: { reach: 150, wind: 0.26 }, heavy: { reach: 166 },
@@ -1239,17 +1239,18 @@ function setStag(f, dur) {
 }
 function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x, f.field.y, f); if (msg) FX.text(f, msg); f.field = null; f.stillT = 0; }
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
-function gainMom(f, v) { if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
+  if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {
-    f.gh = true; f.hp = f.def.hp * 0.2; f.ghT = 1.2; f.st = 'stag'; f.t = 0; f.dur = 0.5; f.act = null; f.combo = 0; f.guarding = false; f.sta = Math.max(f.sta, 60); f.exh = 0;
+    f.gh = true; f.ghAt = G.time; f.hp = f.def.hp * 0.2; f.ghT = 1.2; f.st = 'stag'; f.t = 0; f.dur = 0.5; f.act = null; f.combo = 0; f.guarding = false; f.sta = Math.max(f.sta, 60); f.exh = 0;
     FX.text(f, 'GOD HAND'); FX.fx('godhand', f.x, f.y, f); FX.snd('godhand', f); if (FX.near(f.x, f.y)) { FX.shake(10); G.hitstop = Math.max(G.hitstop, 0.3); FX.slow(0.6); }
     return;
   }
   f.st = 'dead'; f.t = 0; f.act = null; f.spirit = 0; f.cnc = false;
   f.cause = f.cause || (f.lastHit ? (f.lastHit.key === 'np' && !f.lastHit.by.def.isMaster ? 'np' : f.lastHit.by.def.isMaster ? 'master' : 'combat') : 'other'); f.killer = f.lastHit ? f.lastHit.by : null;
   if (f.def.isMaster && f.partner && f.partner.st !== 'dead') { var pt = f.partner; pt.orphanT = pt.def.cls === 'Archer' ? ARCHER_INDEPENDENT : ORPHAN_TIME; FX.text(pt, pt.def.cls === 'Archer' ? 'MASTER LOST \u00B7 INDEPENDENT ACTION' : 'MASTER LOST'); }
-  var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[x.team] = 1; });
+  var alive = G.f.filter(function (x) { return x.st !== 'dead' && !(G.mode === 'war' && x.def.isMaster); }), teams = {}; alive.forEach(function (x) { teams[trueTeamOf(x)] = 1; });
   if (Object.keys(teams).length <= 1) { G.over = true; G.winner = alive[0] || f.foe; }
   else { G.f.forEach(pickTarget); }
   if (G.tn) traceKill(f);
@@ -1626,6 +1627,8 @@ function hurt(att, def, a, mult, src) {
   if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
   if (att && att.rampT > G.time) dmg *= EVT.berserk.dmg; // Berserker unchained
   if (att && att.relic) dmg *= EVT2.festival.relicDmg; // the festival relic
+  if (att && att.trueTeam !== undefined && def === att.partner) dmg *= RB.vsMaster; // a turned servant still holds back against its own master
+  if (att) att.lastAtkT = G.time;
   if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
@@ -1681,6 +1684,7 @@ function hurt(att, def, a, mult, src) {
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
   def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
+  if (a.strip && a.key === 'np' && att && G.mode === 'war') ruleBreak(att, def);
   if (a.strip) { breakField(def, 'FIELD BROKEN'); def.wallT = 0; def.veilT = 0; def.bleedT = 0; def.mom = 0; FX.text(def, 'STRIPPED'); FX.spark(def.x, def.y, '#d6b4ff', 14); }
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
@@ -1718,7 +1722,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); npRepelsShadow(f); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; if (a.momLock) f.momLockT = G.time + a.momLock; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); npRepelsShadow(f); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -1832,6 +1836,7 @@ function stepF(f, dt) {
     if (f.cnc) { f.hid = true; if (G.time - (f.lastHitT || -99) > 4) f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
   }
   if (f.bleedT > 0 && f.st !== 'dead' && !G.over) { f.bleedT -= dt; var bd = f.bleedDps * dt; f.hp -= bd; f.stat.taken += bd; if (f.bleedBy) f.bleedBy.stat.dealt += bd; if (Math.floor(G.time * 14) % 3 === 0) FX.spark(f.x, f.y, f.burnFx ? '#ff8a3a' : '#b3202a', f.burnFx ? 2 : 1); if (f.hp <= 0) kill(f); } if (f.buf.t > 0) f.buf.t -= dt; else f.buf.name = null;
+  godHandTick(f);
   if (f.ripo > 0) f.ripo -= dt; if (f.crit > 0) f.crit -= dt; if (f.wallT > 0) f.wallT -= dt; if (f.veilT > 0) f.veilT -= dt; if (f.ghT > 0) f.ghT -= dt; if (f.exh > 0) f.exh -= dt; if (f.hit > 0) f.hit -= dt;
   if (f.ubwT > 0 && f.st !== 'dead' && !G.over) {
     f.ubwT -= dt; f.ubwCd -= dt;
@@ -1871,6 +1876,7 @@ function stepF(f, dt) {
     turnToward(f, toO, 14, dt);
     var n = f.buf.name;
     if (n && f.spirit && n !== 'spirit') { f.buf.name = null; n = null; }
+    if (n === 'np' && f.trueTeam !== undefined) { f.buf.name = null; n = null; } // a turned servant cannot call its Noble Phantasm
     if (n && f.exh <= 0) {
       var ok = false;
       if (n === 'dodge') { startDodge(f); ok = true; }
@@ -2392,6 +2398,41 @@ function relicDone(t, k) { k.claimed = t; var s = G.f.filter(function (f) { retu
 /* ---- the Great Cavern: the rarest final site, always corrupted. The fight happens underground ---- */
 function cavernSite() { var rm = (MAP.rooms || []).filter(function (r) { return r.id === 'cavern'; })[0]; return rm ? { x: (rm.x0 + rm.x1) / 2, y: (rm.y0 + rm.y1) / 2 + 100, name: 'the Great Cavern beneath Ryuudou Temple', cavern: true, room: rm } : null; }
 function inCavern(f) { var rm = roomAt(f.x, f.y); return !!(rm && rm.id === 'cavern'); }
+/* ---- Rule Breaker turns a servant, and God Hand comes back ----
+   Medea's dagger, landing on an enemy servant in the Grail War, cuts the contract for a few seconds:
+   the servant joins her side and turns on its own master, then the bond snaps back. A player's servant is
+   taken over by the AI while it lasts. Heracles' God Hand returns after a long while out of combat. */
+var RB = { dur: 5, vsMaster: 0.6, momLock: 25 }, GH_REGEN = 40;
+function ruleBreak(att, s) {
+  if (s.turnT > G.time || s.def.isMaster || !s.partner || s.partner.st === 'dead' || s.team === att.team) return false;
+  s.trueTeam = s.team; s.team = att.team; s.turnT = G.time + RB.dur; s.turnBy = att;
+  s.spirit = 0; s.cnc = false; s.hid = false; s.guarding = false; s.lock = s.partner; s.foe = s.partner;
+  if (!G.ai[s.idx]) { G.ai[s.idx] = mkAI(s, DIFF.knight); G.ai[s.idx].turned = true; s.wasHuman = true; }
+  G.f.forEach(function (o) { if (o.lock === s) o.lock = null; });
+  FX.turned(s, att);
+  return true;
+}
+function unturn(s) {
+  if (s.trueTeam === undefined) return;
+  s.team = s.trueTeam; s.trueTeam = undefined; s.turnT = 0; s.lock = null;
+  if (G.ai[s.idx] && G.ai[s.idx].turned) { G.ai[s.idx] = null; }
+  s.wasHuman = false; G.f.forEach(function (o) { if (o.lock === s) o.lock = null; pickTarget(o); });
+  FX.unturned(s);
+}
+function turnTick() { for (var i = 0; i < G.f.length; i++) { var f = G.f[i]; if (f.trueTeam !== undefined && (G.time >= f.turnT || f.st === 'dead')) unturn(f); } }
+function trueTeamOf(f) { return f.trueTeam !== undefined ? f.trueTeam : f.team; }
+// a turned servant's AI: go for its own master
+function aiTurned(ai, dt) {
+  var f = ai.f, tg = f.partner && f.partner.st !== 'dead' ? f.partner : nearestEnemyTo(f, f, 1e9);
+  if (!tg) return;
+  f.lock = tg; f.foe = tg;
+  if (dist(f, tg) > 280) { moveTo(f, tg.x, tg.y, 1); return; }
+  aiTick(ai, dt);
+}
+function godHandTick(f) {
+  if (!f.gh || !f.def.godHand || f.st === 'dead') return;
+  if (G.time - Math.max(f.lastHitT || 0, f.lastAtkT || 0, f.ghAt || 0) > GH_REGEN) { f.gh = false; FX.text(f, 'GOD HAND RESTORED'); FX.fx('godhand', f.x, f.y, f); }
+}
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -2716,7 +2757,8 @@ function simStep(dt) {
   if (G.hitstop > 0) { G.hitstop -= dt; return; }
   G.time += dt; if (G.clock) clockTick(dt); if (G.fields) fieldsTick(dt); if (G.clock) eventsTick(dt); if (G.dimT > 0) G.dimT -= dt; if (G.marble) { G.marble.t += dt; if (G.mode === 'war' && (G.marble.t > G.marble.life || G.marble.owner.st === 'dead')) endMarble(null, false); }
   G.f.forEach(function (f) { if (f.st !== 'dead' && (!f.foe || f.foe.st === 'dead' || G.f.length > 2)) pickTarget(f); });
-  for (var i = 0; i < G.f.length; i++) if (G.ai[i]) { if (G.mode === 'war') aiWar(G.ai[i], dt); else aiTick(G.ai[i], dt); }
+  turnTick();
+  for (var i = 0; i < G.f.length; i++) if (G.ai[i]) { if (G.ai[i].f.trueTeam !== undefined) aiTurned(G.ai[i], dt); else if (G.mode === 'war') aiWar(G.ai[i], dt); else aiTick(G.ai[i], dt); }
   for (var k = 0; k < G.f.length; k++) stepF(G.f[k], dt);
   stepProj(dt); stepZones(dt); separate();
 }
@@ -3061,7 +3103,7 @@ function INFO(d) {
       np: 'Six circles are marked around you and land one after another, starting about 0.85 seconds later. Each deals about ' + R(np.dmg * m) + ' damage and breaks guards. The first circle lands exactly where you were standing when the cast finished.',
       npBeat: 'Move out of the circles as soon as they appear. They are fixed to the ground and do not follow you. Dodging through one also works.' },
     heracles: {
-      pname: 'God Hand', pdesc: 'The first time a blow would kill him he survives, rising with 20% health and a second of invulnerability. It only happens once, and an execution still kills outright. He also takes 40% less damage from arrows.',
+      pname: 'God Hand', pdesc: 'The first time a blow would kill him he survives, rising with 20% health and a second of invulnerability. After 40 seconds without fighting, the life comes back. An execution still kills outright. He also takes 40% less damage from arrows.',
       style: 'A slow, enormous brawler. Every attack he makes has hyper armor: light hits and arrows will not stop his swing, and he takes 10% less damage while swinging. Heavy blows and NPs still stagger him, but for less time. His recoveries are long, so he is open after every swing.',
       passives: ['Hyper armor on every attack.', 'Slow to turn and slow to recover: 10% longer.', 'Health pool 158 plus God Hand, and the slowest Servant to move.'],
       skill: 'After a 0.55 second armored wind-up he smashes the ground in a circle of 150 units around him. About ' + R(12 * m) + ' damage, breaks guards, knocks you back and staggers.',
@@ -3939,7 +3981,7 @@ function enterGame(nTeams, title, sub) {
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
   if (title) { FX.banner(title, sub); return; }
-  NOTES = []; BUB = []; DUO = []; SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
+  NOTES = []; BUB = []; DUO = []; PAIRSEEN = {}; BSCRIPT = null; BANQ_SCRIPTS.forEach(function (s) { s.done = false; }); SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
 }
@@ -3963,6 +4005,7 @@ function btnDown(b) {
   doButton(f, b);
 }
 function doButton(f, b) {
+  if (f.turnT > G.time) return; // Rule Breaker: this servant is not yours right now
   if (b === 'target') { cycleTarget(f); return; }
   if (b === 'contract') { var cc = contractCandidate(f, CONTRACT_RANGE + 40); if (!cc || !formContract(f, cc)) FX.text(f, 'NOBODY TO CONTRACT WITH'); return; }
   if (b.indexOf('seal_') === 0) { if (f.def.isMaster) { if (!useSeal(f, b.slice(5))) FX.text(f, f.sealUsed[b.slice(5)] ? 'SEAL ALREADY USED' : 'NO SERVANT'); } return; }
@@ -5054,7 +5097,7 @@ function drawBubbles(cx, cy, zoom) {
   // a fighter that turns on a new foe close by may call out
   if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
   var now = performance.now(), c = ctx;
-  DUO = DUO.filter(function (d) { if (now < d.at) return true; if (d.f.st !== 'dead') { var s2 = pickLine(d.f, d.k); if (s2) { SAYT[d.f.idx] = now / 1000; showBubble(d.f, s2, 2.6, true); } } return false; });
+  DUO = DUO.filter(function (d) { if (d.text !== undefined || now < d.at) return true; if (d.f.st !== 'dead') { var s2 = pickLine(d.f, d.k); if (s2) { SAYT[d.f.idx] = now / 1000; showBubble(d.f, s2, 2.6, true); } } return false; });
   BUB = BUB.filter(function (b) { return (now - b.t0) / 1000 < b.life && (b.f.st !== 'dead' || INTRO); });
   BUB.forEach(function (b) {
     var f = b.f; if (!visL(f)) return;
@@ -5127,6 +5170,7 @@ function drawNight(cx, cy, zoom) {
 }
 /* ---- the clock, exposure and notices, under the minimap ---- */
 function drawClockHud(mx0, my0, mw, mh) {
+  drawTurnedScreen();
   var c = ctx, now = performance.now();
   NOTES = NOTES.filter(function (n) { return now - n.t0 < 6500; });
   NOTES.forEach(function (n, i) { var age = (now - n.t0) / 1000, al = Math.min(1, age / 0.3, (6.5 - age) / 0.6); c.globalAlpha = clamp(al, 0, 1); c.font = '600 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'center'; var y = SAFE.top + 26 + i * 24, tw = c.measureText(n.s).width + 24; c.fillStyle = 'rgba(6,10,16,.72)'; c.fillRect(VW / 2 - tw / 2, y - 17, tw, 23); c.fillStyle = n.col; c.fillText(n.s, VW / 2, y); });
@@ -5214,7 +5258,7 @@ function frame(now) {
     if (INTRO) { acc = 0; introTick(dt); }
     else if (NET.mirror) { acc = 0; netClientFrame(dt); }
     else {
-    var f = G.f[MEI], mv = readMove(); f.inp.mx = mv[0]; f.inp.my = mv[1];
+    var f = G.f[MEI], mv = readMove(); if (!(f.turnT > G.time)) { f.inp.mx = mv[0]; f.inp.my = mv[1]; }
     var guard = 0; while (acc >= STEP && guard++ < 6) { netApplyInputs(); simStep(STEP); acc -= STEP; }
     netHostSend(now);
     }
@@ -5575,6 +5619,134 @@ function drawProjX(g, p, a) {
 }
 // Strike Air leaves Arthur in a burst of pale wind
 (function () { var fx0 = fxExtra; fxExtra = function (n, x, y, f) { if (n === 'airRelease') { var fa = f.face, L = 470; vfx(0.32, function (g, q) { g.save(); g.translate(x, y); g.rotate(fa); var cg = g.createLinearGradient(0, 0, L, 0); cg.addColorStop(0, 'rgba(238,244,248,' + (0.55 * (1 - q)) + ')'); cg.addColorStop(1, 'rgba(238,244,248,0)'); g.fillStyle = cg; g.beginPath(); g.moveTo(20, -6); g.lineTo(L * (0.4 + 0.6 * q), -30); g.lineTo(L * (0.4 + 0.6 * q), 30); g.lineTo(20, 6); g.closePath(); g.fill(); g.strokeStyle = 'rgba(255,255,255,' + (0.7 * (1 - q)) + ')'; g.lineWidth = 1.5; for (var i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(30, i * 4); g.lineTo(L * (0.3 + 0.7 * q), i * 22); g.stroke(); } g.restore(); }); ringFx(x, y, 10, 130, '#eef4f8', 0.35, 4); ringFx(x, y, 6, 80, '#ffffff', 0.25, 3, 0.05); puffFx(x, y, 14, '232,240,246', 170, 10, 0.5); return true; } return fx0 ? fx0(n, x, y, f) : false; }; })();
+/* ---- the dialogue pass: fuller lines for every character, rivals who answer each other when they meet,
+   conversations at the King's table, and Rule Breaker's broken contract. All lines are original. ---- */
+var MORE_LINES = {
+  caerwyn: { engage: ['I will not fall here.', 'Your blade against mine, then.', 'Stand aside, or be cut down.'], kill: ['It is finished.', 'Go in peace.'], np: ['Ex... calibur!', 'Light, answer me!'], low: ['This is nothing.', 'A knight does not kneel.'], masterdown: ['Forgive me. I was too late.'], contract: ['Then I will be your sword.'] },
+  richard: { engage: ['Have at you!', 'For England, and for glory!'], kill: ['A worthy foe, now silent.'], low: ['Ha! Only a scratch!'], masterdown: ['My master... I will ride on alone.'] },
+  leonidas: { engage: ['Hold the line!', 'This is the pass. You will not cross it.'], kill: ['Next.'], np: ['Stand, Three Hundred!'], masterdown: ['A Spartan fights on.'] },
+  atalanta: { engage: ['My arrows find their mark.', 'Run, if you can.'], kill: ['Swift and clean.'], np: ['Hear me, Apollo and Artemis!'], low: ['I am not caught yet!'] },
+  emiya: { engage: ['Trace, on.', 'Let’s see how long you last.'], kill: ['Don’t get up.', 'That was a waste of both our time.'], low: ['Not bad... for an amateur.'], masterdown: ['Tch. Independent action, then.'], contract: ['Fine. But I give the orders on the field.'] },
+  heracles: { engage: ['■■■■—!!', 'RRRAAAGH!'], kill: ['■■■■■!!'], np: ['■■■■■■■—!!!'] },
+  lancelot: { engage: ['Grrrr...', '...Arrrr...'], kill: ['■■■!'] },
+  hassan: { engage: ['Your shadow is long tonight.', 'You never saw me.'], kill: ['Your heart was mine.'], np: ['Zabaniya.'], low: ['I will fade... and return.'] },
+  diarmuid: { engage: ['Two spears, one honor.', 'Face me, if you are a knight!'], kill: ['Rest. You fought well.'], np: ['The crimson rose cuts deep!'], low: ['My oath is not broken yet.'], masterdown: ['My lord... I failed my oath again.'] },
+  cu: { engage: ['Now we’re talking!', 'Let’s see what you’ve got!'], kill: ['That’s the job.', 'Shame. I was having fun.'], low: ['Heh. I’m good at surviving.'], masterdown: ['Figures. Guess I’m on my own.'] },
+  gilgamesh: { engage: ['You dare raise your head to me?', 'Amuse me, mongrel.'], kill: ['Trash returns to dust.', 'Know your place.'], low: ['You... you dared?!'], masterdown: ['I have no need of a master.'], contract: ['You may serve me. Be grateful.'] },
+  iskandar: { engage: ['Ho! A worthy foe!', 'Ride with me, or fall before me!'], kill: ['A fine end. Remember it!'], low: ['Ha! Still standing!'], masterdown: ['My boy... I will carry on.'], contract: ['Then we ride together!'] },
+  gilles: { engage: ['Oh, how splendid!', 'Despair for me, won’t you?'], kill: ['Cool! COOL!'], np: ['Behold, the spellbook of madness!'] },
+  medusa: { engage: ['You cannot run.', 'Look at me.'], kill: ['It is done.'], np: ['Bellerophon.'], masterdown: ['...Sakura?'] },
+  medea: { engage: ['How tedious.', 'You walked into my web.'], kill: ['Did you think magic was a game?'], np: ['Every contract breaks before this blade.', 'Rule Breaker!'], low: ['How dare you!'] },
+  kojirou: { engage: ['Let us see which blade is truer.', 'The moon watches. Draw.'], kill: ['A pity. A fine swordsman.'], np: ['Three arcs, one moment.'], low: ['Ha. You cut well.'] },
+  shirou: { engage: ['I won’t back down!', 'Trace, on!'], kill: ['...I had to.'], low: ['Not... done yet...!'], contract: ['I’ll fight beside you. That’s a promise.'] },
+  rin: { engage: ['Don’t underestimate a Tohsaka!', 'Gandr, take this!'], kill: ['Elegantly, as always.'], low: ['Ugh... that was careless.'], contract: ['Fine. But I set the rules.'] },
+  kiritsugu: { engage: ['Moving in.', 'Clear the line.'], kill: ['Confirmed.'], low: ['Time Alter... double accel.'], contract: ['Do your job. I’ll do mine.'] },
+  kirei: { engage: ['Let us see your despair.', 'Pray, if it helps.'], kill: ['Rest. Your suffering is over.'], low: ['Interesting...'] },
+  kayneth: { engage: ['Know the gap between us!', 'Volumen Hydrargyrum!'], kill: ['As expected of a lord of the Clock Tower.'], low: ['Impossible!'] },
+  waver: { engage: ['I-I’m not scared!', 'I’ll show you I’m a real magus!'], kill: ['I... did it?'], low: ['This is bad, this is bad!'] },
+  irisviel: { engage: ['I won’t lose here.', 'Stay behind me!'], kill: ['I’m sorry it had to be this way.'], low: ['Kiritsugu...'] },
+  illya: { engage: ['Let’s play!', 'Berserker, crush them~'], kill: ['That was boring.'], low: ['Ow! That hurt!'] },
+  kariya: { engage: ['For Sakura...!', 'The worms hunger.'], kill: ['One less...'], low: ['Not yet... not until she’s free...'] },
+  sakura: { engage: ['Please... don’t make me.', 'The shadow is hungry.'], kill: ['I’m sorry... I’m so sorry.'], low: ['It hurts... Senpai...'] }
+};
+Object.keys(MORE_LINES).forEach(function (id) { var L = LINES[id] = LINES[id] || {}; Object.keys(MORE_LINES[id]).forEach(function (k) { L[k] = (L[k] || []).concat(MORE_LINES[id][k]); }); });
+// rivals: the first time A turns on B, A speaks and B answers
+var PAIRS = {
+  'caerwyn>gilgamesh': ['Archer. The golden king walks again.', 'Still clinging to that sword, Saber? Kneel, and I may keep you.'],
+  'gilgamesh>caerwyn': ['Ah, Saber. Have you come to be claimed?', 'I belong to no one. Least of all to you.'],
+  'caerwyn>lancelot': ['That armor... Sir Lancelot?', 'Ar... thurrr...!'],
+  'lancelot>caerwyn': ['AR... THURRR!', 'Lancelot. What has become of you?'],
+  'caerwyn>iskandar': ['Rider. You speak of kingship too freely.', 'And you carry it far too heavily, little king!'],
+  'iskandar>caerwyn': ['Saber! Still brooding over your lost kingdom?', 'I do not brood. I mourn.'],
+  'caerwyn>diarmuid': ['Lancer of the Fianna. Your spears are honest.', 'Then let us cross them honestly, Saber!'],
+  'caerwyn>kojirou': ['A swordsman at the gate.', 'Only a farmer with a long blade. Shall we?'],
+  'emiya>cu': ['You again. Don’t you ever get tired?', 'Not when the fight’s this good, Archer!'],
+  'cu>emiya': ['Archer! Ready for round two?', 'I never finished round one with you.'],
+  'emiya>gilgamesh': ['Your treasury against my blades. Let’s see who runs out first.', 'A forger who copies my treasures. How amusing.'],
+  'emiya>caerwyn': ['...Saber.', 'Archer? Why do you look at me like that?'],
+  'emiya>shirou': ['You should have stayed out of this, kid.', 'Who are you? Why do you hate me?'],
+  'shirou>emiya': ['That stance... why does it look so familiar?', 'Because you’ll never be anything but a fake.'],
+  'heracles>gilgamesh': ['■■■■■—!!', 'A mad dog with many lives. I have a weapon for each.'],
+  'iskandar>gilgamesh': ['The King of Heroes! Join my army!', 'You would recruit me? Know your place, conqueror.'],
+  'leonidas>iskandar': ['Persians, horses, kings. I have stood against all of them.', 'A Spartan! Now this is a fight worth telling!'],
+  'medusa>caerwyn': ['Saber. Stay away from my master.', 'Then stand aside, Rider.'],
+  'diarmuid>kojirou': ['A blade as patient as moonlight.', 'And a spear as honest as dawn. Come.'],
+  'illya>shirou': ['Found you, Onii-chan~', 'Illya? You’re a master too?'],
+  'shirou>illya': ['Illya, we don’t have to fight.', 'Mm. But it’s more fun if we do.'],
+  'sakura>rin': ['Nee-san... you always got everything.', 'Sakura... I’m sorry. I won’t hold back.'],
+  'rin>sakura': ['Sakura. Go home. Please.', 'This is the only home I have, Nee-san.'],
+  'kiritsugu>kirei': ['Kotomine Kirei.', 'Emiya Kiritsugu. At last, someone who might answer me.'],
+  'kirei>kiritsugu': ['Emiya. Tell me what you hoped to find.', 'Nothing you’d understand.'],
+  'kiritsugu>kayneth': ['Lord El-Melloi. Your mystic code won’t save you.', 'A mercenary with toys! You dare approach me?'],
+  'kayneth>waver': ['Waver Velvet. You stole my relic, boy.', 'I-I’ll prove I’m a real magus!'],
+  'waver>kayneth': ['Professor! I’m not your student anymore!', 'You were never worth teaching.'],
+  'rin>kirei': ['Kirei. You knew. You always knew.', 'Rin. Your father would be proud. Or perhaps not.'],
+  'kariya>rin': ['Rin... tell your mother I’m sorry.', 'Uncle Kariya? What happened to you?'],
+  'kariya>kirei': ['You... you’re the one who...', 'Hm. Still breathing, Matou? How diligent.'],
+  'irisviel>kirei': ['Stay away from us, priest.', 'The vessel speaks. How curious.']
+};
+var PAIRSEEN = {};
+function tryPair(f, e) {
+  var k = f.def.id + '>' + e.def.id, P = PAIRS[k]; if (!P || PAIRSEEN[k] || e.st === 'dead') return false;
+  if (!FX.near(f.x, f.y)) return false;
+  PAIRSEEN[k] = PAIRSEEN[e.def.id + '>' + f.def.id] = true;
+  SAYT[f.idx] = performance.now() / 1000; showBubble(f, P[0], 3.2, true);
+  DUO.push({ at: performance.now() + 2600, f: e, text: P[1] });
+  return true;
+}
+// conversations at the King's table, played once per banquet when the right guests are seated
+var BANQ_SCRIPTS = [
+  { need: ['iskandar', 'caerwyn', 'gilgamesh'], lines: [['iskandar', 'Tonight we settle this with wine, not swords! What would each of you ask of the Grail?'], ['caerwyn', 'I would save my country. I would undo its fall.'], ['gilgamesh', 'A king who regrets her own reign. How pitiful.'], ['iskandar', 'A king does not apologize for the road they rode, Saber.'], ['caerwyn', 'A king exists to serve the people. Nothing more.'], ['iskandar', 'Then you were never a king. Only a sacrifice.'], ['gilgamesh', 'Pour me another. This is the best entertainment of the war.']] },
+  { need: ['iskandar', 'caerwyn'], lines: [['iskandar', 'Drink, Saber! What is it you want from the Grail?'], ['caerwyn', 'To save the kingdom I failed.'], ['iskandar', 'Ha! Then you never understood what a king is for.'], ['caerwyn', 'And you never understood what a king owes.']] },
+  { need: ['iskandar', 'gilgamesh'], lines: [['iskandar', 'Archer! You’ve brought your own wine?'], ['gilgamesh', 'Everything at this table is mine already, Rider.'], ['iskandar', 'Then share it like a king!'], ['gilgamesh', '...Very well. Drink, and be honored.']] },
+  { need: ['iskandar', 'leonidas'], lines: [['iskandar', 'The king of Sparta! Your three hundred would have made a fine vanguard.'], ['leonidas', 'They would have made a fine wall. Your horses would have broken on it.'], ['iskandar', 'Ha! Drink, then, wall-builder!']] },
+  { need: ['gilgamesh', 'caerwyn'], lines: [['gilgamesh', 'Sit, Saber. You will drink my wine and listen.'], ['caerwyn', 'I did not come here to be lectured.'], ['gilgamesh', 'No. You came to be admired. I permit it.']] },
+  { need: ['caerwyn', 'richard'], lines: [['richard', 'My king! To share a table with you is a dream!'], ['caerwyn', 'Richard. You were a far braver king than I.'], ['richard', 'Braver, perhaps. But never truer.']] }
+];
+var BSCRIPT = null;
+function banquetScript() {
+  var k = G.tasks && G.tasks.filter(function (q) { return q.kind === 'banquet'; })[0]; if (!k || !isDay()) { BSCRIPT = null; return false; }
+  var here = G.f.filter(function (f) { return f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120 && FX.near(f.x, f.y); }), ids = here.map(function (f) { return f.def.id; });
+  if (!BSCRIPT) { var sc = BANQ_SCRIPTS.filter(function (s) { return !s.done && s.need.every(function (n) { return ids.indexOf(n) >= 0; }); })[0]; if (!sc) return false; sc.done = true; BSCRIPT = { sc: sc, i: 0, t: 0 }; }
+  if (G.time < BSCRIPT.t) return true;
+  var L = BSCRIPT.sc.lines[BSCRIPT.i]; if (!L) { BSCRIPT = null; banqT = G.time + 6; return false; }
+  var who = here.filter(function (f) { return f.def.id === L[0]; })[0]; if (who) showBubble(who, L[1], 3.6, true);
+  BSCRIPT.i++; BSCRIPT.t = G.time + 3.8; return true;
+}
+(function () {
+  var chat0 = banquetChatter; banquetChatter = function () { if (banquetScript()) return; chat0(); };
+  // DUO entries may carry their own text
+  var tick0 = drawBubbles; drawBubbles = function (cx, cy, zoom) { var now = performance.now(); DUO = DUO.filter(function (d) { if (d.text === undefined || now < d.at) return true; if (d.f.st !== 'dead') { SAYT[d.f.idx] = now / 1000; showBubble(d.f, d.text, 3.0, true); } return false; }); tick0(cx, cy, zoom); };
+  // rivals speak first; ordinary call-outs otherwise
+  var say0 = FX.say; FX.say = function (f, key) { if (key === 'engage' && f && f.foe && G && G.mode === 'war' && !INTRO && tryPair(f, f.foe)) return; say0(f, key); };
+})();
+/* ---- Rule Breaker: a broken contract, for a few seconds ---- */
+FX.turned = function (s, by) {
+  if (!G.f[MEI]) return; var me = G.f[MEI], m = s.partner, mn = m ? shortName(m.def.name) : 'your master';
+  if (s === me) FX.banner('Rules Are Broken', 'You are no longer bound to ' + mn + '. For a moment, you serve the witch of Colchis.');
+  else if (m === me) FX.banner('Your contract is cut', 'Rule Breaker has turned ' + knownName(s) + ' against you. Survive a few seconds!');
+  else if (FX.near(s.x, s.y)) note('Rule Breaker cuts ' + teamName(s.trueTeam) + '’s contract!', '#b48cff');
+  if (FX.near(s.x, s.y)) { showBubble(by, 'Your contract is mine now.', 2.6, true); flashFx('#7a3cc8', 0.25, 0.4); }
+};
+FX.unturned = function (s) {
+  if (!G.f[MEI]) return; var me = G.f[MEI], m = s.partner;
+  if (s === me) FX.banner('The bond returns', 'You are bound to ' + (m ? shortName(m.def.name) : 'your master') + ' once more.');
+  else if (m === me) note(knownName(s) + ' is yours again.', '#9fe6b0');
+};
+// the turned servant wears broken purple chains; a turned player sees the world through them
+function drawTurned(g, f) {
+  if (f.trueTeam === undefined || f.st === 'dead') return; var t = G.time, left = Math.max(0, f.turnT - t);
+  g.save(); g.strokeStyle = '#b48cff'; g.lineWidth = 3; g.setLineDash([10, 6]); g.lineDashOffset = -t * 30; g.beginPath(); g.arc(f.x, f.y, FR + 14, 0, 6.283); g.stroke(); g.setLineDash([]);
+  for (var i = 0; i < 4; i++) { var a = i * 1.57 + t; g.beginPath(); g.arc(f.x + Math.cos(a) * (FR + 14), f.y + Math.sin(a) * (FR + 14), 4, 0, 6.283); g.fillStyle = '#7a3cc8'; g.fill(); }
+  g.fillStyle = '#d6b4ff'; g.font = '700 13px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText('CONTRACT BROKEN ' + Math.ceil(left), f.x, f.y - FR - 30);
+  g.restore();
+}
+function drawTurnedScreen() {
+  var me = G.f[MEI]; if (!me || !(me.turnT > G.time)) return; var c = ctx, p = 0.5 + 0.5 * Math.sin(G.time * 4);
+  c.fillStyle = 'rgba(90,30,140,' + (0.12 + 0.05 * p) + ')'; c.fillRect(0, 0, VW, VH);
+  c.textAlign = 'center'; c.font = '400 ' + (VW < 560 ? 22 : 30) + 'px "Marcellus SC", "Times New Roman", serif'; c.fillStyle = '#d6b4ff'; c.fillText('RULES ARE BROKEN · ' + Math.ceil(me.turnT - G.time), VW / 2, VH * 0.36);
+}
+(function () { var ff0 = drawFighterFx; drawFighterFx = function (g, f) { ff0(g, f); drawTurned(g, f); }; })();
 /* ---- multiplayer test: host-authoritative, relayed through the claude.ai room (WebRTC is blocked in artifacts) ---- */
 var NET = { ns: null, R: null, role: null, code: '', me: null, game: null, mirror: false, snapAt: 0, sentAt: 0, lastHost: null, seq: 0, ev: [], lastSeq: 0, prev: {}, cnt: {}, g: 0, h: 0, so: null, lk: -1, msg: '' };
 var NST = ['idle', 'wind', 'act', 'rec', 'stag', 'dodge', 'counter', 'dead'], NKEY = ['light', 'heavy', 'skill', 'np', 'counter', 'dodge'];
@@ -5753,6 +5925,6 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet();
 requestAnimationFrame(frame);
-window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, ev: { startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, ev: { startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
 </script>

@@ -35,7 +35,7 @@ function INFO(d) {
       np: 'Six circles are marked around you and land one after another, starting about 0.85 seconds later. Each deals about ' + R(np.dmg * m) + ' damage and breaks guards. The first circle lands exactly where you were standing when the cast finished.',
       npBeat: 'Move out of the circles as soon as they appear. They are fixed to the ground and do not follow you. Dodging through one also works.' },
     heracles: {
-      pname: 'God Hand', pdesc: 'The first time a blow would kill him he survives, rising with 20% health and a second of invulnerability. It only happens once, and an execution still kills outright. He also takes 40% less damage from arrows.',
+      pname: 'God Hand', pdesc: 'The first time a blow would kill him he survives, rising with 20% health and a second of invulnerability. After 40 seconds without fighting, the life comes back. An execution still kills outright. He also takes 40% less damage from arrows.',
       style: 'A slow, enormous brawler. Every attack he makes has hyper armor: light hits and arrows will not stop his swing, and he takes 10% less damage while swinging. Heavy blows and NPs still stagger him, but for less time. His recoveries are long, so he is open after every swing.',
       passives: ['Hyper armor on every attack.', 'Slow to turn and slow to recover: 10% longer.', 'Health pool 158 plus God Hand, and the slowest Servant to move.'],
       skill: 'After a 0.55 second armored wind-up he smashes the ground in a circle of 150 units around him. About ' + R(12 * m) + ' damage, breaks guards, knocks you back and staggers.',

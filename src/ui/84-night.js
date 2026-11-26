@@ -57,6 +57,7 @@ function drawNight(cx, cy, zoom) {
 }
 /* ---- the clock, exposure and notices, under the minimap ---- */
 function drawClockHud(mx0, my0, mw, mh) {
+  drawTurnedScreen();
   var c = ctx, now = performance.now();
   NOTES = NOTES.filter(function (n) { return now - n.t0 < 6500; });
   NOTES.forEach(function (n, i) { var age = (now - n.t0) / 1000, al = Math.min(1, age / 0.3, (6.5 - age) / 0.6); c.globalAlpha = clamp(al, 0, 1); c.font = '600 ' + (VW < 560 ? 14 : 16) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'center'; var y = SAFE.top + 26 + i * 24, tw = c.measureText(n.s).width + 24; c.fillStyle = 'rgba(6,10,16,.72)'; c.fillRect(VW / 2 - tw / 2, y - 17, tw, 23); c.fillStyle = n.col; c.fillText(n.s, VW / 2, y); });

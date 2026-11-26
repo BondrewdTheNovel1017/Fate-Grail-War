@@ -450,3 +450,36 @@ test('the Shadow swallows the weakened, cannot be hurt, and turns the Grail blac
   G2.festival = false; G2.civ.forEach((c) => { c.saw = -99; c.x = 3700; c.y = 4700; c.on = true; }); G2.expo[1] = 0;
   assert.ok(fest > 0);
 });
+
+test('Rule Breaker turns a servant on its own master for a few seconds, then it returns', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, ev = [];
+  E.FX.turned = () => ev.push('turned'); E.FX.unturned = () => ev.push('back');
+  const G = E.newWar([{ servant: S.medea, master: M.shirou }, { servant: S.richard, master: M.rin }, { servant: S.cu, master: M.waver }], { nights: 3 });
+  const med = G.f.find((f) => f.def.id === 'medea'), rich = G.f.find((f) => f.def.id === 'richard'), rin = rich.partner;
+  G.ai[rich.idx] = null; // a player's servant
+  E.hurt(med, rich, Object.assign({}, med.A.np, { key: 'np' }));
+  assert.strictEqual(rich.team, med.team, 'joins Medea'); assert.ok(G.ai[rich.idx], 'the AI takes over a player\'s servant'); assert.ok(ev.includes('turned'));
+  assert.ok(E.enemiesOf(rich).includes(rin), 'its own master is now an enemy');
+  for (let i = 0; i < (E.RB.dur + 0.5) * 60; i++) E.simStep(E.STEP);
+  assert.strictEqual(rich.team, rin.team, 'the bond snaps back'); assert.strictEqual(G.ai[rich.idx], null, 'control returns to the player'); assert.ok(ev.includes('back'));
+  assert.ok(!G.over, 'the war did not end while it was turned');
+  med.momLockT = 0; E.press(med, 'np'); med.mom = 100;
+});
+
+test('God Hand comes back after a long while out of combat', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.SERV.heracles, E.SERV.richard, { map: 'temple' });
+  const h = G.f.find((f) => f.def.id === 'heracles'); G.ai = [];
+  h.hp = 0; E.kill(h); assert.ok(h.gh && h.st !== 'dead');
+  h.x = 100; h.y = 100; G.f.forEach((f) => { if (f !== h) { f.x = 3000; f.y = 3000; } });
+  for (let i = 0; i < (E.GH_REGEN + 1) * 60; i++) E.simStep(E.STEP);
+  assert.ok(!h.gh, 'God Hand restored');
+});
+
+test('a turned servant cannot call its Noble Phantasm', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.medea, master: M.shirou }, { servant: S.richard, master: M.rin }, { servant: S.cu, master: M.waver }], { nights: 3 });
+  const med = G.f.find((f) => f.def.id === 'medea'), rich = G.f.find((f) => f.def.id === 'richard');
+  E.ruleBreak(med, rich); rich.mom = 100; E.press(rich, 'np'); E.simStep(E.STEP); E.simStep(E.STEP);
+  assert.notStrictEqual(rich.key, 'np');
+});

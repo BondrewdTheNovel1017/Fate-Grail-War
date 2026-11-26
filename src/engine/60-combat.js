@@ -18,6 +18,8 @@ function hurt(att, def, a, mult, src) {
   if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
   if (att && att.rampT > G.time) dmg *= EVT.berserk.dmg; // Berserker unchained
   if (att && att.relic) dmg *= EVT2.festival.relicDmg; // the festival relic
+  if (att && att.trueTeam !== undefined && def === att.partner) dmg *= RB.vsMaster; // a turned servant still holds back against its own master
+  if (att) att.lastAtkT = G.time;
   if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
@@ -73,6 +75,7 @@ function hurt(att, def, a, mult, src) {
   if (a.burn && att) { def.bleedT = a.burn.t; def.bleedDps = a.burn.dps; def.bleedBy = att; def.burnFx = true; FX.text(def, 'BURNING'); }
   if (att && att.def.lionheart) att.sta = Math.min(100, att.sta + 4);
   def.quietT = 0; def.hid = false; if (def.cnc) { def.cnc = false; def.cncCd = G.time + 3; }
+  if (a.strip && a.key === 'np' && att && G.mode === 'war') ruleBreak(att, def);
   if (a.strip) { breakField(def, 'FIELD BROKEN'); def.wallT = 0; def.veilT = 0; def.bleedT = 0; def.mom = 0; FX.text(def, 'STRIPPED'); FX.spark(def.x, def.y, '#d6b4ff', 14); }
   FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
@@ -110,7 +113,7 @@ function startAct(f, key) {
   if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
-  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); npRepelsShadow(f); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
+  else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; if (a.momLock) f.momLockT = G.time + a.momLock; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); npRepelsShadow(f); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
   if (a.hop) { FX.snd('hop', f, a); FX.fx('hop', f.x, f.y, f); }
   if (a.kind === 'counter') { f.st = 'counter'; f.t = 0; f.dur = a.dur; FX.snd('counter0', f, a); FX.fx('stance', f.x, f.y, f); }
   return true;
@@ -224,6 +227,7 @@ function stepF(f, dt) {
     if (f.cnc) { f.hid = true; if (G.time - (f.lastHitT || -99) > 4) f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
   }
   if (f.bleedT > 0 && f.st !== 'dead' && !G.over) { f.bleedT -= dt; var bd = f.bleedDps * dt; f.hp -= bd; f.stat.taken += bd; if (f.bleedBy) f.bleedBy.stat.dealt += bd; if (Math.floor(G.time * 14) % 3 === 0) FX.spark(f.x, f.y, f.burnFx ? '#ff8a3a' : '#b3202a', f.burnFx ? 2 : 1); if (f.hp <= 0) kill(f); } if (f.buf.t > 0) f.buf.t -= dt; else f.buf.name = null;
+  godHandTick(f);
   if (f.ripo > 0) f.ripo -= dt; if (f.crit > 0) f.crit -= dt; if (f.wallT > 0) f.wallT -= dt; if (f.veilT > 0) f.veilT -= dt; if (f.ghT > 0) f.ghT -= dt; if (f.exh > 0) f.exh -= dt; if (f.hit > 0) f.hit -= dt;
   if (f.ubwT > 0 && f.st !== 'dead' && !G.over) {
     f.ubwT -= dt; f.ubwCd -= dt;
@@ -263,6 +267,7 @@ function stepF(f, dt) {
     turnToward(f, toO, 14, dt);
     var n = f.buf.name;
     if (n && f.spirit && n !== 'spirit') { f.buf.name = null; n = null; }
+    if (n === 'np' && f.trueTeam !== undefined) { f.buf.name = null; n = null; } // a turned servant cannot call its Noble Phantasm
     if (n && f.exh <= 0) {
       var ok = false;
       if (n === 'dodge') { startDodge(f); ok = true; }

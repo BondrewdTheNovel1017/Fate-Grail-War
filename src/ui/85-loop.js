@@ -55,7 +55,7 @@ function frame(now) {
     if (INTRO) { acc = 0; introTick(dt); }
     else if (NET.mirror) { acc = 0; netClientFrame(dt); }
     else {
-    var f = G.f[MEI], mv = readMove(); f.inp.mx = mv[0]; f.inp.my = mv[1];
+    var f = G.f[MEI], mv = readMove(); if (!(f.turnT > G.time)) { f.inp.mx = mv[0]; f.inp.my = mv[1]; }
     var guard = 0; while (acc >= STEP && guard++ < 6) { netApplyInputs(); simStep(STEP); acc -= STEP; }
     netHostSend(now);
     }
