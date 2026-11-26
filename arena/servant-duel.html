@@ -459,6 +459,14 @@ h3.nmode { margin: 0 0 4px; font-family: var(--f-title); color: #fff2cf; font-we
 .nblock { margin: 0 0 14px; padding: 14px 16px; border: 1px solid rgba(255, 110, 120, .55); background: rgba(60, 14, 22, .55); border-radius: 10px; color: #f1e4d8; font-size: 14px; line-height: 1.45; }
 .nblock b { color: #ffd0b0; } .nblock p { margin: 6px 0 0; } .nblock ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
 .netgrid.off .btn, .netgrid.off .netin { opacity: .45; pointer-events: none; }
+
+/* the war's status cards: only your side, kept compact */
+body.ingame .hud.war { width: min(400px, calc(100vw - var(--mm) - 40px)); padding: 4px 7px; gap: 2px 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 560px) { body.ingame .hud.war { width: min(330px, calc(100vw - var(--mm) - 30px)); } }
+body.ingame .hud.war .nm { font-size: 10.5px; letter-spacing: .04em; } body.ingame .hud.war .hc.me .nm { font-size: 11.5px; }
+body.ingame .hud.war .hc .hth svg { width: 30px; height: 15px; }
+body.ingame .hud.war .bar { height: 5px; margin-top: 1px; } body.ingame .hud.war .bar.sta, body.ingame .hud.war .bar.mom, body.ingame .hud.war .bar.mana { height: 3px; }
+body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 </style>
 
 <main class="wrap">
@@ -1604,7 +1612,9 @@ function setStag(f, dur) {
 }
 function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x, f.field.y, f); if (msg) FX.text(f, msg); f.field = null; f.stillT = 0; }
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
-function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
+// Noble Phantasms are rare: every mode builds momentum at NP_MOM of the base rate (Shirou's Trace keeps its own pace)
+var NP_MOM = 0.6;
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= NP_MOM; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {
@@ -4579,12 +4589,17 @@ FX.spark = function (x, y, col, n) { fxPos = { x: x, y: y }; for (var i = 0; i <
 
 var HUD = [];
 function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(knownName(f)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
-var hudTarget = null, hudPartner = null;
+var hudTarget = null, hudPartner = null, HUDKEY = '';
+function hudKey() { var a = G.f[MEI]; if (G.mode !== 'war') return ''; var pm = G.pacts ? pactMate(a.team) : null; return (a.partner ? a.partner.idx : '-') + '|' + (pm === null ? '-' : teamFighters(pm).map(function (o) { return o.idx; }).join(',')); }
 function buildHud() {
   var me0 = G.f[MEI], tg = aimFoe(me0), list;
-  if (G.mode === 'war') { list = [[me0, 'You']]; if (me0.partner) list.push([me0.partner, me0.def.isMaster ? 'Servant' : 'Master']); if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']); }
+  if (G.mode === 'war') {
+    // the war shows only your side: you, your partner, and a pact ally's pair
+    list = [[me0, 'You']]; if (me0.partner) list.push([me0.partner, me0.def.isMaster ? 'Servant' : 'Master']);
+    var pm = G.pacts ? pactMate(me0.team) : null; if (pm !== null) teamFighters(pm).forEach(function (o) { list.push([o, 'Ally']); });
+  }
   else list = G.f.map(function (f, i) { return [f, i === MEI ? 'You' : (f.team === me0.team ? 'Ally' : 'CPU ' + i)]; });
-  hudTarget = tg; hudPartner = me0.partner; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
+  hudTarget = G.mode === 'war' ? null : tg; hudPartner = me0.partner; HUDKEY = hudKey(); var el = $('#hud'); el.classList.toggle('war', G.mode === 'war'); el.style.setProperty('--n', list.length); HUD = [];
   el.innerHTML = list.map(function (q) { return hudCard(q[0], q[1]); }).join('');
   el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]'), bma: c.querySelector('[data-h=bma]') }); });
 }
@@ -5854,7 +5869,7 @@ function miniMap(mw, mh) {
 }
 function hud() {
   var a = G.f[MEI]; var rb = $('#restBtn'), rbOn = !!(G.clock && isDay() && !netInMatch() && G.clock.t < G.clock.len - CLOCK.fade); if (rb.hidden === rbOn) rb.hidden = !rbOn;
-  if (aimFoe(a) !== hudTarget || a.partner !== hudPartner) buildHud();
+  if (G.mode === 'war' ? hudKey() !== HUDKEY : (aimFoe(a) !== hudTarget || a.partner !== hudPartner)) buildHud();
   HUD.forEach(function (h) { var f = h.f; if (!f) return;
     h.bhp.style.transform = 'scaleX(' + clamp(f.hp / f.def.hp, 0, 1) + ')'; h.bst.style.transform = 'scaleX(' + clamp(f.sta / 100, 0, 1) + ')'; h.bmo.style.transform = 'scaleX(' + f.mom / 100 + ')';
     h.bm.classList.toggle('full', f.mom >= 100); h.hp.textContent = Math.max(0, Math.ceil(f.hp)); h.c.classList.toggle('dead', f.st === 'dead'); if (h.bma && f.manaMax) { h.bma.style.transform = 'scaleX(' + clamp(f.mana / f.manaMax, 0, 1) + ')'; h.bma.parentNode.classList.toggle('low', f.mana < MANA.npCost); } if (!f.def.isMaster) h.bm.classList.toggle('nomana', f.mom >= 100 && !canNP(f)); });

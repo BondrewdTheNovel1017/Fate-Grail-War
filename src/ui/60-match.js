@@ -1,11 +1,16 @@
 var HUD = [];
 function hudCard(f, label) { return '<div class="hc' + (label === 'You' ? ' me' : '') + '" style="--tc:' + teamCol(f) + '"><div class="nm"><span class="nmL"><span class="hth">' + thumb(f.def.id, 84) + '</span><span>' + label + ': ' + esc(knownName(f)) + '</span></span><span data-h="hp"></span></div><div class="bar hp"><i data-h="bhp"></i></div><div class="bar sta"><i data-h="bst"></i></div><div class="bar mom" data-h="bm"><i data-h="bmo"></i></div>' + (f.def.isMaster && G && G.mode === 'war' ? '<div class="bar mana"><i data-h="bma"></i></div>' : '') + '</div>'; }
-var hudTarget = null, hudPartner = null;
+var hudTarget = null, hudPartner = null, HUDKEY = '';
+function hudKey() { var a = G.f[MEI]; if (G.mode !== 'war') return ''; var pm = G.pacts ? pactMate(a.team) : null; return (a.partner ? a.partner.idx : '-') + '|' + (pm === null ? '-' : teamFighters(pm).map(function (o) { return o.idx; }).join(',')); }
 function buildHud() {
   var me0 = G.f[MEI], tg = aimFoe(me0), list;
-  if (G.mode === 'war') { list = [[me0, 'You']]; if (me0.partner) list.push([me0.partner, me0.def.isMaster ? 'Servant' : 'Master']); if (tg) list.push([tg, me0.lock ? 'Locked' : 'Target']); }
+  if (G.mode === 'war') {
+    // the war shows only your side: you, your partner, and a pact ally's pair
+    list = [[me0, 'You']]; if (me0.partner) list.push([me0.partner, me0.def.isMaster ? 'Servant' : 'Master']);
+    var pm = G.pacts ? pactMate(me0.team) : null; if (pm !== null) teamFighters(pm).forEach(function (o) { list.push([o, 'Ally']); });
+  }
   else list = G.f.map(function (f, i) { return [f, i === MEI ? 'You' : (f.team === me0.team ? 'Ally' : 'CPU ' + i)]; });
-  hudTarget = tg; hudPartner = me0.partner; var el = $('#hud'); el.style.setProperty('--n', list.length); HUD = [];
+  hudTarget = G.mode === 'war' ? null : tg; hudPartner = me0.partner; HUDKEY = hudKey(); var el = $('#hud'); el.classList.toggle('war', G.mode === 'war'); el.style.setProperty('--n', list.length); HUD = [];
   el.innerHTML = list.map(function (q) { return hudCard(q[0], q[1]); }).join('');
   el.querySelectorAll('.hc').forEach(function (c, i) { HUD.push({ f: list[i][0], c: c, hp: c.querySelector('[data-h=hp]'), bhp: c.querySelector('[data-h=bhp]'), bst: c.querySelector('[data-h=bst]'), bm: c.querySelector('[data-h=bm]'), bmo: c.querySelector('[data-h=bmo]'), bma: c.querySelector('[data-h=bma]') }); });
 }
