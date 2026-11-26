@@ -1,32 +1,30 @@
-# Queued changes (from the owner)
+# Queue (owner's requests, organized)
 
-- Lancelot's seized weapons: the weapons themselves should take on the black-and-red vein colouring (tint the sword, spear and warhammer sprites while `armT > 0`). Right now the red veins (`drawSeizedVeins` in `src/ui/89f-abilities.js`) are drawn at a fixed spot in front of him and don't follow the weapon as it swings. They should be drawn along the weapon itself, using the same grip and rotation as `drawWeapon` (`GRIP`, `putW`), so they move with every swing.
+Order: fix what every game feels first (bugs and the AI), then small direct requests, then larger features. New masters have their own list in `docs/future-masters.md`. Tick items off here as they land.
 
-- Base spacing: homes are not evenly spread across the map, and some sit right next to each other (for example the Tohsaka Mansion at 3550,1180 and the Matou Residence at 5000,1180, the canon homes in `homes` in `src/engine/12-city.js`, plus estates on `MAP.plots`). Neighbouring bases cause early collisions and unfair fights. Goals:
-  - First, measure: a tool (or a `tools/mapcheck.js` report) giving the distance between every pair of homes and plots, and how often wars place two teams close together.
-  - Light fix: when `assignHomes` hands out estates and backup safehouses, pick plots that maximise the distance to every other team's base, not just the next free plot.
-  - Larger rework, if the light fix isn't enough: a spread-out set of plots across the whole city, with homes placed on them randomly each war (a minimum distance between any two bases), so the map plays differently every game. Some homes stay fixed no matter what: the Einzbern castle (its interior, the courtyard and the Banquet depend on it), and probably the Church (Executors and the Church events start there). Decide which others are fixed (Tohsaka, Matou, Emiya are lore homes with interiors) before reworking. Moving homes means moving their interiors' doors, summoning spots and the nav links too.
+## 1. Every game: bugs and feel
+- [ ] **Events not showing in real wars.** In a playtest no event appeared, and any that did weren't shown on the map or in text, although the sims draw an event every phase. Find why (human wars versus the sim), then make every event announce itself clearly (banner, log line, minimap marker, objective arrow) and happen a little more often.
+- [ ] **AI pass: feel alive and intelligent.**
+  - A Hassan circled the player without attacking: check Assassin AI, concealment, and Zabaniya's `aiKeep` step-back (it may hold range too long and never commit).
+  - A Kiritsugu stood and stared from afar: check ranged-master AI when the target is known but outside its preferred band, and the `knows`/`aimFoe` gating.
+  - The AI rushes straight back out after a seal rescue: it should recover at home and regroup with its partner first.
+  - Goal: varied, readable behaviour (flanking, baiting, retreating to heal, cover and doors, pressing an advantage, protecting the master) instead of hovering. Measure in the sims (time attacking versus idling near a known enemy).
+- [ ] **Cleaner UI.** Text and UI cover the play area. Audit what's on screen in a war (banners, notices, bubbles, task text, HUD) and move, shrink or fade it so the centre stays clear.
 
-- Progression: give players things to work toward, unlock and obtain across games. First unlockable: an alternate skill for every character (servants and masters), chosen before a match. Start by looking at how it should work, then the owner will decide whether to expand progression further. Open questions for that look:
-  - How unlocks are earned (wins, war milestones, per-character play, challenges) and how fast.
-  - Where progress is saved: browser storage is per device and can be wiped; an account-backed store would follow the player (on claude.ai a runtime capability, on the Cloudflare site a small server store).
-  - Fairness online: unlocked skills must be balanced sidegrades, not upgrades, so a new player isn't outclassed. Every alternate skill needs the same balance checks (duel and war sims).
-  - Design a candidate alternate skill per character before building any of it.
+## 2. Small direct requests
+- [ ] **Kiritsugu:** light attacks become a combat knife (melee); guns stay on heavy, skill and signature. Double Accel (Time Alter) also speeds his attacks for its duration, balanced with the sims.
+- [ ] **Origin Rounds vs Outsiders:** no ability disable on Outsiders (no magic circuits); show "no effect".
+- [ ] **Einzbern castle stair:** move the stair to the courtyard somewhere natural (off the grand staircase or the great hall's back wall); keep the door and nav working.
+- [ ] **Lancelot's seized weapons:** tint the weapon itself black and red while `armT > 0`, and draw the veins along the weapon (using `drawWeapon`'s grip and rotation, `GRIP`/`putW`) so they follow each swing, instead of a fixed spot in front of him.
 
-- More Arena maps themed on lore locations (hand-made like the current ones in `MAPS`, `src/engine/10-maps.js`, with a `drawFloor` theme each). Candidates to pick from: the Ryuudou Temple stairs and gate (Kojirou's post), the Einzbern forest clearing, the Fuyuki Hyatt rooftop (Kayneth's hotel), the Matou cellar (the worm pit), the Kotomine Church interior, the riverside warehouse district (where Lancer and Saber first met), Iskandar's desert reality marble, the Grail's crater under the Fuyuki Citizens' Hall, and the Ryuudou cavern (the Greater Grail). Each needs spawns, cover laid out for fair fights, and a duel sim to check fights end in a normal time.
+## 3. Map structure
+- [ ] **Base spacing.** Homes aren't evenly spread; some neighbour each other (for example Tohsaka and Matou). Steps: (1) measure every home/plot distance and how often wars start two teams close together; (2) light fix: `assignHomes` gives estates and safehouses the plot farthest from every other base; (3) only if needed, a rework with spread plots and homes placed randomly each war at a minimum distance. The Einzbern castle stays fixed (courtyard and Banquet), probably the Church too (Executors, events); decide about Tohsaka, Matou and Emiya before reworking. Moving a home moves its doors, summoning spot and nav links.
 
-- The Grail War's large map (`MAPS.city`, Fuyuki): a detail pass, with more props, set dressing and character in each district, and more interiors where they'd matter. Run `tools/mapcheck.js` and the reachability tests after.
-- Completely new large Grail War maps, themed and fitting the setting, chosen before a war like the Arena maps. Candidates: Snowfield (the American desert town of Fate/strange Fake, which also suits Ayaka and Richard), Trifas (the Romanian city and Yggdmillennia castle of Apocrypha, which suits Atalanta), and Fuyuki in the Fourth War era (Fate/Zero's version of the city, with the Hyatt standing and the Citizens' Hall). Each needs its own homes with interiors, roads and a nav graph, event and Grail sites, civilian routes, and the full sim pass (pacing targets). This is a big job per map, so start with one.
+- [ ] **Ryuudou Temple as its own northern area.** The temple stands alone on a hill or mountain to the north, with woods around it and nothing built to its left or right. Keep the stairs up the hill as they are. Add a lake behind the temple. Move the cavern entrance out of the temple grounds to the side of the hill in the surrounding area (a tree currently blocks it). Run `tools/mapcheck.js`, the reachability tests and the Great Cavern event checks after.
 
-## From the owner's playtest (Nov 26)
-
-- AI needs a large pass to feel alive and intelligent. Seen in play:
-  - A Hassan circled the player without ever attacking. Check Assassin AI: concealment, the new Zabaniya `aiKeep` stepping back (it may hold range too long and never commit), and the strafe/approach logic.
-  - A Kiritsugu stood and stared from afar without acting. Check ranged-master AI when the target is known but out of its preferred band, plus the `knows`/`aimFoe` gating.
-  - AI rushes straight back out after losing a life (seal rescue). It should recover at home first and regroup with its partner.
-  - The wider goal: varied, readable behaviour (flanking, baiting, retreating to heal, using cover and doors, pressing an advantage, protecting the master) instead of hovering. Measure with the sims (time spent attacking vs idling near a known enemy), not by feel only.
-- Kiritsugu: light attacks become a combat knife (melee) instead of gunfire; keep the guns on heavy, skill and signature. Double Accel (his Time Alter skill) should also boost his attacks in a balanced way (for example faster attack speed for its duration), tuned with the sims.
-- Origin Rounds must not disable abilities on Outsiders (Kuzuki, later Ryuunosuke): they have no magic circuits to destroy. Show a "no effect" note instead.
-- Events: in the playtest no event appeared at all, and any that did weren't shown on the map or in text. Check that `EVT.dayChance` 1 and the night deck actually fire in real (human) wars and not only in the sim; make every event announce itself clearly (banner, log line, minimap marker, an objective arrow) and push them to happen a little more.
-- Cleaner UI: some text and UI cover the play area. Audit what's on screen during a war (banners, notices, bubbles, task text, HUD) and move, shrink or fade it so the centre of the screen stays clear.
-- Einzbern castle: the stair up to the courtyard sits in an unnatural spot (a separate staircase part near the entrance). Move it somewhere that reads naturally, such as off the grand staircase or the great hall's back wall toward the courtyard, and keep the door and nav links working.
+## 4. Larger features (one at a time, owner picks the order)
+- [ ] **New masters:** Caren, Bazett, Ryuunosuke, Shinji, then Ayaka (designs in `docs/future-masters.md`).
+- [ ] **Progression:** things to work toward and unlock, starting with an alternate skill for every character. Settle first: how unlocks are earned; where progress is saved (browser storage is per device; following the player needs a claude.ai capability or a store on the Cloudflare site); alternate skills as sidegrades, never upgrades, sim-checked; draft one alternate skill per character for review before building.
+- [ ] **Fuyuki detail pass:** more props and character per district, more interiors where they matter (`tools/mapcheck.js` and reachability tests after).
+- [ ] **Lore Arena maps** (hand-made in `MAPS` with a `drawFloor` theme): Ryuudou Temple stairs and gate, Einzbern forest clearing, Hyatt rooftop, Matou cellar, Kotomine Church interior, riverside warehouses, Iskandar's desert, the Grail's crater, the Greater Grail cavern. Each with spawns, fair cover and a duel sim.
+- [ ] **New large war maps**, chosen before a war: Snowfield (Fate/strange Fake), Trifas (Apocrypha), Fourth-War Fuyuki (Fate/Zero). Each needs homes with interiors, roads and nav, event and Grail sites, civilian routes and the full sim pass. Start with one.

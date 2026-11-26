@@ -13,7 +13,13 @@ const list = (dir) => fs.readdirSync(path.join(ROOT, dir)).filter((n) => n.endsW
 function engineSource() { return list('src/engine').map(read).join(''); }
 function uiSource() { return list('src/ui').map(read).join(''); }
 
+/** Engine and UI share one scope in the page: a name declared at the top level of both would silently shadow
+ *  the engine's (the render loop's `draw` once replaced the event deck's `draw`, so no events ran in real games). */
+function topNames(src) { const names = new Set(); src.replace(/^(?:function\s+([A-Za-z_$][\w$]*)|var\s+([A-Za-z_$][\w$]*))/gm, (m, f, v) => { names.add(f || v); return m; }); return names; }
+function nameClashes() { const e = topNames(engineSource()), u = topNames(uiSource()); return [...e].filter((n) => u.has(n)); }
+
 function buildPage(arena, hosted) {
+  const clash = nameClashes(); if (clash.length) throw new Error('engine and UI both declare: ' + clash.join(', ') + ' (rename the engine one)');
   const js = '(function () {\n' + (arena ? 'var ARENA_ENTRY = true;\n' : '') + (hosted ? 'var NET_WS = true;\n' : '') + '/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
   const css = read('src/page/style.css').replace(/\n$/, '');
   const page = read('src/page/template.html').replace('{{CSS}}', () => css).replace('{{JS}}', () => js);
@@ -21,7 +27,7 @@ function buildPage(arena, hosted) {
   return hosted ? '<!doctype html>\n<html lang="en">\n' + page.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<style>html{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>') : page;
 }
 
-module.exports = { engineSource, uiSource, buildPage };
+module.exports = { engineSource, uiSource, buildPage, nameClashes };
 
 if (require.main === module) {
   const out = path.join(ROOT, 'dist', 'fuyuki-war.html');

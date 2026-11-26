@@ -798,3 +798,7 @@ test('A Command Seal rescue brings both home at half health or better, protected
   assert.ok(m.hp >= m.def.hp * 0.5 - 0.01, 'the master is topped up to half too');
   assert.ok(sv.iframes >= 3.5, 'and both are protected for about four seconds');
 });
+test('engine and UI never declare the same top-level name (the UI would silently replace the engine\'s)', () => {
+  const { nameClashes } = require('../tools/build.js');
+  assert.deepStrictEqual(nameClashes(), []);
+});

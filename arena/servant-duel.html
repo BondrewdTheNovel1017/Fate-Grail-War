@@ -2550,17 +2550,17 @@ function newPhaseEvents() {
     if (c.final) { c.pending = 'grail'; return; }
     // a long war may have one still night in the middle: a breather before the next storm
     if (c.nights >= 5 && c.n >= 2 && !c.hadQuiet && rnd() < EVT.quietChance) { c.hadQuiet = true; c.evDone = true; FX.event('quiet', {}); return; }
-    c.pending = draw('night'); return;
+    c.pending = drawEvent('night'); return;
   }
   if (rnd() < EVT.dayChance || G.forceSchool) {
-    var k = draw('day'); if (!k) return;
+    var k = drawEvent('day'); if (!k) return;
     if (k === 'school') c.pending = 'school';
     else if (k === 'banquet') startBanquet();
     else if (k === 'summons') startSummons();
     else if (k === 'festival') startFestival();
   }
 }
-function draw(which) { var D = G.deck[which]; for (var i = 0; i < D.length; i++) if (canRun(D[i])) return D.splice(i, 1)[0]; return null; }
+function drawEvent(which) { var D = G.deck[which]; for (var i = 0; i < D.length; i++) if (canRun(D[i])) return D.splice(i, 1)[0]; return null; }
 function startNight(k) {
   if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk(); else if (k === 'demo') startDemolition(); else if (k === 'shadow') startShadow();
   if (!G.event) G.clock.evDone = true;
