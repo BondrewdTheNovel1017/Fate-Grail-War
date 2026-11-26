@@ -6,3 +6,9 @@
   - First, measure: a tool (or a `tools/mapcheck.js` report) giving the distance between every pair of homes and plots, and how often wars place two teams close together.
   - Light fix: when `assignHomes` hands out estates and backup safehouses, pick plots that maximise the distance to every other team's base, not just the next free plot.
   - Larger rework, if the light fix isn't enough: a spread-out set of plots across the whole city, with homes placed on them randomly each war (a minimum distance between any two bases), so the map plays differently every game. Some homes stay fixed no matter what: the Einzbern castle (its interior, the courtyard and the Banquet depend on it), and probably the Church (Executors and the Church events start there). Decide which others are fixed (Tohsaka, Matou, Emiya are lore homes with interiors) before reworking. Moving homes means moving their interiors' doors, summoning spots and the nav links too.
+
+- Progression: give players things to work toward, unlock and obtain across games. First unlockable: an alternate skill for every character (servants and masters), chosen before a match. Start by looking at how it should work, then the owner will decide whether to expand progression further. Open questions for that look:
+  - How unlocks are earned (wins, war milestones, per-character play, challenges) and how fast.
+  - Where progress is saved: browser storage is per device and can be wiped; an account-backed store would follow the player (on claude.ai a runtime capability, on the Cloudflare site a small server store).
+  - Fairness online: unlocked skills must be balanced sidegrades, not upgrades, so a new player isn't outclassed. Every alternate skill needs the same balance checks (duel and war sims).
+  - Design a candidate alternate skill per character before building any of it.
