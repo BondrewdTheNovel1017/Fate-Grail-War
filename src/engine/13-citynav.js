@@ -131,14 +131,24 @@ function assignHomes(teams, rnd, plots) {
   var key = teams.map(function (t) { return MASTER_HOME[t.master.id]; });
   teams.forEach(function (t, ti) { var k = key[ti]; if (k && MAP.homes[k] && !used[k]) { used[k] = true; key[ti] = { canon: k }; } });
   teams.forEach(function (t, ti) { if (t.master.id === 'kiritsugu' && !used.einzbern && MAP.homes.einzbern) { used.einzbern = true; key[ti] = { canon: 'einzbern' }; } });
+  // family seats are fixed; each estate then takes the free plot farthest from every base already placed (a little
+  // randomness among the best few keeps wars varied). A guest rebuilding the host's war gets the plots in order.
+  var taken = teams.map(function (t, ti) { var k = key[ti]; return k && k.canon ? MAP.homes[k.canon] : null; }).filter(Boolean), chosen = [];
+  function farPlot() {
+    if (plots) return freePlots.shift();
+    var sc = freePlots.map(function (pi) { var p = MAP.plots[pi], m = 1e9; taken.forEach(function (h) { m = Math.min(m, Math.hypot(h.x - p[0], h.y - p[1] - 120)); }); return { pi: pi, m: m }; });
+    var best = Math.max.apply(null, sc.map(function (q) { return q.m; })), ok = sc.filter(function (q) { return q.m >= best * 0.85; }), pick = ok[Math.floor(rnd() * ok.length)] || sc[0];
+    freePlots.splice(freePlots.indexOf(pick.pi), 1); return pick.pi;
+  }
   teams.forEach(function (t, ti) {
     var k = key[ti];
     if (k && k.canon) { var H0 = MAP.homes[k.canon]; out.push({ team: ti, key: k.canon, name: H0.name, x: H0.x, y: H0.y, canon: true }); return; }
-    var pi = freePlots.shift(), p = MAP.plots[pi === undefined ? 0 : pi], st = ESTATE_STYLE[k || 'safe'];
+    var pi = farPlot(), p = MAP.plots[pi === undefined ? 0 : pi], st = ESTATE_STYLE[k || 'safe']; chosen.push(pi); taken.push({ x: p[0], y: p[1] + 120 });
     MAP.b.push({ x: p[0], y: p[1] - 30, w: 300, h: 210, k: st[0], gen: true, name: st[1] });
     var h = { team: ti, key: k || 'safe', name: st[1], x: p[0], y: p[1] + 120, canon: false };
     giveEstate(h, p[0], p[1] + 100, st[1], est); out.push(h);
   });
+  if (!plots) PLOT_ORDER = chosen.concat(freePlots); // the order a guest must replay
   RECTS = []; MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); }); buildRectGrid();
   if (gd || MAP.doors.some(function (d) { return d.gen; })) { MAP.nav = null; buildNav(MAP); }
   return out;

@@ -94,7 +94,8 @@ MAPS.city = (function () {
   B(3550, 335, 800, 18, 'fence'); B(3150, 720, 18, 780, 'fence'); B(3950, 720, 18, 780, 'fence'); B(3300, 1105, 300, 18, 'fence'); B(3800, 1105, 300, 18, 'fence');
   B(5000, 650, 420, 320, 'mansion_d', { name: 'Matou Residence', home: 'matou' }); reserve(4600, 330, 5400, 1110);
   B(5000, 335, 800, 18, 'fence'); B(4600, 720, 18, 780, 'fence'); B(5400, 720, 18, 780, 'fence'); B(4750, 1105, 300, 18, 'fence'); B(5250, 1105, 300, 18, 'fence');
-  B(2600, 1800, 220, 170, 'house_w', { name: 'Mackenzie House', home: 'mackenzie' }); reserve(2440, 1680, 2760, 1930);
+  // the Mackenzies' house: an ordinary family home in the streets south of the school, well apart from the hill mansions
+  B(3700, 5050, 220, 170, 'house_w', { name: 'Mackenzie House', home: 'mackenzie' }); reserve(3540, 4930, 3860, 5300);
   [[3250, 450], [3850, 450], [3250, 1000], [3850, 1000], [4700, 450], [5300, 450]].forEach(function (p) { T(p[0], p[1], 36); });
   // Fuyuki Church: alone on a wooded hill, a small lane winding up from the street
   B(1450, 2990, 380, 300, 'church', { name: 'Fuyuki Church', home: 'church' }); reserve(1150, 2790, 1760, 3330);
@@ -148,7 +149,7 @@ MAPS.city = (function () {
 
   reserve(2080, 1500, 2420, 1820); // Waver's clearing
   /* ---------- estate plots: where duplicate family houses and safehouses can appear ---------- */
-  var plots = [[2700, 600], [4000, 1800], [4950, 1820], [700, 4150], [3700, 6050], [7700, 5100], [9380, 2850], [10450, 3300], [6950, 2850], [700, 6050]];
+  var plots = [[10900, 4500], [8300, 4350], [10900, 6000], [700, 4150], [3700, 6050], [7700, 5100], [9380, 2850], [10450, 3300], [6950, 2850], [700, 6050]];
   plots.forEach(function (p) { reserve(p[0] - 260, p[1] - 190, p[0] + 260, p[1] + 190); });
 
   /* ---------- fill city blocks with buildings ---------- */
@@ -287,7 +288,7 @@ MAPS.city = (function () {
   wallV(mk, 600, 24, 776, [[300, 440]]);
   part(mk, 'carpet', mk.x0 + 80, mk.y0 + 80, mk.x0 + 560, mk.y0 + 720); B(mk.x0 + 300, mk.y0 + 220, 240, 90, 'kotatsu'); B(mk.x0 + 160, mk.y0 + 560, 160, 70, 'sofa');
   B(mk.x0 + 980, mk.y0 + 160, 120, 160, 'shelf'); B(mk.x0 + 760, mk.y0 + 120, 160, 80, 'table'); part(mk, 'circle', mk.x0 + 780, mk.y0 + 470, mk.x0 + 920, mk.y0 + 610);
-  door('mackenzie', 'mackenzie', 2600, 1910, 0, 1, mk.x0 + 300, mk.y0 + 725, 0, 1);
+  door('mackenzie', 'mackenzie', 3700, 5160, 0, 1, mk.x0 + 300, mk.y0 + 725, 0, 1);
   // four estates for masters without a family seat (and backup safehouses): their doors open on whichever plot they are built
   var estates = [];
   for (var ei = 0; ei < 4; ei++) {
@@ -314,13 +315,13 @@ MAPS.city = (function () {
   var homes = {
     tohsaka: { name: 'Tohsaka Mansion', x: 3550, y: 1180, style: 'mansion_w' }, matou: { name: 'Matou Residence', x: 5000, y: 1180, style: 'mansion_d' },
     einzbern: { name: 'Einzbern Castle', x: 11000, y: 1950, style: 'villa_e' }, church: { name: 'Fuyuki Church', x: 1450, y: 3330, style: 'church' },
-    hyatt: { name: 'Hyatt Hotel', x: 7700, y: 1220, style: 'hotel' }, mackenzie: { name: 'Mackenzie House', x: 2850, y: 1800, style: 'house_w' },
+    hyatt: { name: 'Hyatt Hotel', x: 7700, y: 1220, style: 'hotel' }, mackenzie: { name: 'Mackenzie House', x: 3700, y: 5250, style: 'house_w' },
     emiya: { name: 'Emiya Residence', x: 2050, y: 4620, style: 'house_jpL' }
   };
   return {
     id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
     walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]], [[1500, 1400], [1500, 1100], [2240, 1100], [2240, 560], [2120, 495]]], // footpaths through walled yards the road graph cannot see
     spots: spots, estates: estates, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
-    river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [2850, 1800], [5000, 1180]]
+    river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [3700, 5250], [5000, 1180]]
   };
 })();
