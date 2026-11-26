@@ -126,8 +126,11 @@ MAPS.city = (function () {
   B(10380, 5850, 520, 340, 'water', { nb: true, hide: true });
   B(10150, 4880, 460, 260, 'civic', { name: 'Fuyuki Civic Hall' }); reserve(9050, 4700, 11800, 6560);
   // Einzbern Castle
-  B(11000, 1150, 980, 620, 'castle', { name: 'Einzbern Castle', home: 'einzbern' });
-  B(11000, 1500, 200, 60, 'castle_arch', { walk: true, over: true }); B(10560, 980, 220, 220, 'castletower'); B(11440, 980, 220, 220, 'castletower');
+  // the castle: two roofed wings and two walls enclosing an open courtyard (reached only by the stair inside)
+  B(10630, 1150, 240, 620, 'castle_wing', { name: 'Einzbern Castle', home: 'einzbern', side: -1 }); B(11370, 1150, 240, 620, 'castle_wing', { name: 'Einzbern Castle', home: 'einzbern', side: 1 });
+  B(11000, 855, 500, 30, 'castle_cwall'); B(11000, 1445, 500, 30, 'castle_cwall');
+  zone('court', 10750, 870, 11250, 1430);
+  B(11000, 1500, 200, 60, 'castle_arch', { walk: true, over: true });
   B(11000, 610, 1400, 26, 'castlewall'); B(10300, 1180, 26, 1160, 'castlewall'); B(11700, 1180, 26, 1160, 'castlewall');
   B(10600, 1760, 600, 26, 'castlewall'); B(11400, 1760, 600, 26, 'castlewall');
   reserve(10280, 590, 11720, 1780);
@@ -223,12 +226,8 @@ MAPS.city = (function () {
   for (var ar = 0; ar < 3; ar++) B(cx0 + 2140, cy0 + 1300 + ar * 200, 500, 60, 'armory');
   [[cx0 + 1080, cy0 + 600], [cx0 + 1520, cy0 + 600], [cx0 + 1080, cy0 + 1000], [cx0 + 1520, cy0 + 1000], [cx0 + 1080, cy0 + 1400], [cx0 + 1520, cy0 + 1400]].forEach(function (p) { T(p[0], p[1], 30, 'column'); });
   door('einzbern', 'einzbern', 11000, 1485, 0, 1, cx0 + 1300, cy0 + 1820, 0, 1);
-  // the castle roof: an open courtyard above the great hall, up the grand staircase (where the King's Banquet is held)
-  var rf = room('einroof', 'Castle Rooftop', IX + 6050, 1600, 1400, 1000, 'stone');
-  part(rf, 'carpet', rf.x0 + 520, rf.y0 + 180, rf.x0 + 880, rf.y0 + 880);
-  B(rf.x0 + 700, rf.y0 + 470, 300, 110, 'table'); for (var bq = 0; bq < 4; bq++) { T(rf.x0 + 590 + bq * 75, rf.y0 + 390, 12, 'chair'); T(rf.x0 + 590 + bq * 75, rf.y0 + 550, 12, 'chair'); }
-  [[rf.x0 + 160, rf.y0 + 160], [rf.x0 + 1240, rf.y0 + 160], [rf.x0 + 160, rf.y0 + 760], [rf.x0 + 1240, rf.y0 + 760]].forEach(function (p) { T(p[0], p[1], 18, 'lantern'); });
-  door('einroof', 'einroof', cx0 + 1300, cy0 + 210, 0, 1, rf.x0 + 700, rf.y1 - 50, 0, 1); doors[doors.length - 1].inner = true;
+  part(c, 'stairs', cx0 + 960, cy0 + 1560, cx0 + 1140, cy0 + 1760); // the stair up to the courtyard, by the entrance
+  door('court', 'einzbern', 11000, 1400, 0, -1, cx0 + 1050, cy0 + 1600, 0, -1); doors[doors.length - 1].court = true;
   // Homurahara Academy: three classrooms above a long corridor; the front doors open on the schoolyard
   var sc = room('school', 'Homurahara Academy', IX + 6050, 200, 1800, 1150, 'wood');
   wallH(sc, 760, 24, 1776, [[260, 400], [860, 1000], [1440, 1580]]); wallV(sc, 600, 24, 760, []); wallV(sc, 1200, 24, 760, []);

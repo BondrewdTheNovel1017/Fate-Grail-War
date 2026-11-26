@@ -21,6 +21,7 @@ function drawCity(g, m) {
     if (!vis(vr, z.x0, z.y0, z.x1, z.y1)) return;
     if (z.kind === 'water' || z.kind === 'railbridge') return;
     if (z.kind === 'pond') { g.fillStyle = CITY_PAL.pond; g.beginPath(); g.ellipse((z.x0 + z.x1) / 2, (z.y0 + z.y1) / 2, (z.x1 - z.x0) / 2 + 30, (z.y1 - z.y0) / 2 + 20, 0, 0, 6.283); g.fill(); g.strokeStyle = '#4c5a44'; g.lineWidth = 10; g.stroke(); return; }
+    if (z.kind === 'court') { drawCourtyard(g, z, t); return; }
     g.fillStyle = CITY_PAL[z.kind] || '#333'; g.fillRect(z.x0, z.y0, z.x1 - z.x0, z.y1 - z.y0);
     zoneTexture(g, z, vr);
   });
@@ -145,7 +146,7 @@ function drawBridges(g, m, vr, t) {
 }
 /* ---- buildings ---- */
 var ROOF_JP = ['#4a4f58', '#55504a', '#3f4a52', '#574d55', '#465049', '#4d4a42'], ROOF_W = ['#7d4636', '#6a4038', '#566070', '#7a5a48', '#5f4a40'];
-var BHEIGHT = { house_jp: 8, house_jpL: 9, house_w: 9, mansion_w: 14, mansion_d: 14, mansion_s: 11, villa_e: 14, safehouse: 9, apt: 22, apt_s: 12, tower: 34, office: 26, shop_big: 12, shop: 8, hotel: 44, hotel_s: 18, center: 52, mall: 20, station: 14, station_s: 10, civic: 18, school: 16, gym: 16, dojo: 10, dojo_s: 9, storehouse: 9, temple: 16, temple2: 10, belltower: 12, gate_jp: 8, church: 22, chapel: 14, castle: 30, castletower: 40, castlewall: 10, warehouse: 14, box1: 8, box2: 8, box3: 8, grave: 2, fence: 2, wall: 5 };
+var BHEIGHT = { house_jp: 8, house_jpL: 9, house_w: 9, mansion_w: 14, mansion_d: 14, mansion_s: 11, villa_e: 14, safehouse: 9, apt: 22, apt_s: 12, tower: 34, office: 26, shop_big: 12, shop: 8, hotel: 44, hotel_s: 18, center: 52, mall: 20, station: 14, station_s: 10, civic: 18, school: 16, gym: 16, dojo: 10, dojo_s: 9, storehouse: 9, temple: 16, temple2: 10, belltower: 12, gate_jp: 8, church: 22, chapel: 14, castle: 30, castle_wing: 30, castle_cwall: 12, castletower: 40, castlewall: 10, warehouse: 14, box1: 8, box2: 8, box3: 8, grave: 2, fence: 2, wall: 5 };
 function shade(hex, k) { var n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, gg = (n >> 8) & 255, b = n & 255; function c(v) { return Math.max(0, Math.min(255, Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k)))); } return 'rgb(' + c(r) + ',' + c(gg) + ',' + c(b) + ')'; }
 function hipRoof(g, x0, y0, w, h, col, tiles) {
   var x1 = x0 + w, y1 = y0 + h, horiz = w >= h, d = Math.min(w, h) / 2;
@@ -209,6 +210,13 @@ function drawCityBlock(g, b, i) {
       gableRoof(g, nave[0], nave[1], nave[2], nave[3], '#59606c'); gableRoof(g, tr[0], tr[1], tr[2], tr[3], '#59606c');
       g.fillStyle = '#4a505a'; g.fillRect(b.x - 34, y0 - 10, 68, 68); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(b.x - 34, y0 - 10, 68, 68);
       g.fillStyle = '#e9e4d3'; g.fillRect(b.x - 5, y0 + 2, 10, 44); g.fillRect(b.x - 16, y0 + 14, 32, 9); break;
+    case 'castle_wing':
+      // a wing of the castle: a pitched roof with its round tower on the outer corner
+      hipRoof(g, x0, y0 + h * 0.12, w, h * 0.76, '#4e5868', true); g.fillStyle = '#7a8290'; g.fillRect(x0, y0, w, h * 0.12); g.fillRect(x0, y0 + h * 0.88, w, h * 0.12); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h);
+      var twx = b.side < 0 ? x0 + 40 : x0 + w - 40; [y0 + 40, y0 + h - 40].forEach(function (ty) { g.fillStyle = '#7a8290'; g.beginPath(); g.arc(twx, ty, 70, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 3; g.stroke(); for (var cr = 0; cr < 12; cr++) { var ca = cr * 0.5236; g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 2; g.beginPath(); g.moveTo(twx, ty); g.lineTo(twx + Math.cos(ca) * 70, ty + Math.sin(ca) * 70); g.stroke(); } g.fillStyle = '#c9a24a'; g.beginPath(); g.arc(twx, ty, 6, 0, 6.283); g.fill(); });
+      break;
+    case 'castle_cwall':
+      g.fillStyle = '#8a8f98'; g.fillRect(x0, y0, w, h); g.fillStyle = '#6a6f78'; for (var cq = x0; cq < x0 + w; cq += 30) g.fillRect(cq, y0, 16, h * 0.45); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(x0, y0, w, h); break;
     case 'castle':
       // the central keep is an open roof courtyard (the King's Banquet is held up there), between the two pitched wings
       var kx = x0 + w * 0.3, kw = w * 0.4;
@@ -297,4 +305,65 @@ function drawCityWin(g, m) {
   if (Y0 < 0) g.fillRect(X0, Y0, X1 - X0, -Y0); if (Y1 > m.h) g.fillRect(X0, m.h, X1 - X0, Y1 - m.h);
   if (X0 < 0) g.fillRect(X0, Math.max(0, Y0), -X0, Math.min(m.h, Y1) - Math.max(0, Y0)); if (X1 > m.w) g.fillRect(m.w, Math.max(0, Y0), X1 - m.w, Math.min(m.h, Y1) - Math.max(0, Y0));
   var t = G ? G.time : 0; g.save(); g.strokeStyle = 'rgba(243,213,138,.35)'; g.lineWidth = 3; g.setLineDash([18, 14]); g.lineDashOffset = -t * 12; g.strokeRect(2, 2, m.w - 4, m.h - 4); g.restore();
+}
+
+/* ---- the castle courtyard: four lawns of pale glowing flowers, a stone cross and border, a small round plaza in the
+   middle (room for three), the stair down into the castle, and the wine set out while the King's Banquet runs.
+   The static part is drawn once into a cache; the flowers' glow breathes over it. ---- */
+var COURT_CACHE = null;
+function courtLayout(z) {
+  var P = 42, X = 50, cx = (z.x0 + z.x1) / 2, cy = (z.y0 + z.y1) / 2, R = 82;
+  var lawns = [[z.x0 + P, z.y0 + P, cx - X / 2, cy - X / 2], [cx + X / 2, z.y0 + P, z.x1 - P, cy - X / 2], [z.x0 + P, cy + X / 2, cx - X / 2, z.y1 - P], [cx + X / 2, cy + X / 2, z.x1 - P, z.y1 - P]];
+  return { P: P, X: X, cx: cx, cy: cy, R: R, lawns: lawns };
+}
+function courtBase(z) {
+  var L = courtLayout(z), W = z.x1 - z.x0, H = z.y1 - z.y0, c = document.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d'); g.translate(-z.x0, -z.y0);
+  // stone everywhere, then the lawns
+  g.fillStyle = '#a7a49c'; g.fillRect(z.x0, z.y0, W, H);
+  g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 1; for (var sx = z.x0; sx < z.x1; sx += 28) { g.beginPath(); g.moveTo(sx, z.y0); g.lineTo(sx, z.y1); g.stroke(); } for (var sy = z.y0; sy < z.y1; sy += 28) { g.beginPath(); g.moveTo(z.x0, sy); g.lineTo(z.x1, sy); g.stroke(); }
+  var rnd2 = function (n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+  L.lawns.forEach(function (q, qi) {
+    g.save(); g.beginPath(); g.rect(q[0], q[1], q[2] - q[0], q[3] - q[1]); g.moveTo(L.cx + L.R + 14, L.cy); g.arc(L.cx, L.cy, L.R + 14, 0, Math.PI * 2, true); g.clip('evenodd');
+    g.fillStyle = '#2f4a30'; g.fillRect(q[0], q[1], q[2] - q[0], q[3] - q[1]);
+    g.fillStyle = 'rgba(120,170,110,.10)'; for (var gs = 0; gs < 60; gs++) g.fillRect(q[0] + rnd2(qi * 999 + gs) * (q[2] - q[0]), q[1] + rnd2(qi * 777 + gs) * (q[3] - q[1]), 14, 3);
+    // the flowers: pale blue-white, five petals, almost filling the lawn
+    // laid on a jittered grid so they carpet the lawn evenly, with only a little grass showing between
+    var cols = Math.floor((q[2] - q[0] - 8) / 13), rows = Math.floor((q[3] - q[1] - 8) / 13), n = cols * rows;
+    for (var f = 0; f < n; f++) {
+      var fx = q[0] + 10 + (f % cols) * 13 + (rnd2(qi * 5000 + f) - 0.5) * 9, fy = q[1] + 10 + Math.floor(f / cols) * 13 + (rnd2(qi * 7000 + f + 0.5) - 0.5) * 9, r = 2.1 + rnd2(qi * 3000 + f) * 1.5, hue = rnd2(f * 13 + qi);
+      if (rnd2(qi * 911 + f) < 0.08) continue;
+      var petal = hue < 0.5 ? '#dff0ff' : hue < 0.8 ? '#bcd8ff' : '#e9f6ff';
+      g.fillStyle = petal; for (var p5 = 0; p5 < 5; p5++) { var pa = p5 * 1.2566 + f; g.beginPath(); g.arc(fx + Math.cos(pa) * r, fy + Math.sin(pa) * r, r * 0.75, 0, 6.283); g.fill(); }
+      g.fillStyle = '#fff8d8'; g.beginPath(); g.arc(fx, fy, r * 0.45, 0, 6.283); g.fill();
+    }
+    g.restore();
+    g.strokeStyle = '#6e6a60'; g.lineWidth = 3; g.strokeRect(q[0], q[1], q[2] - q[0], q[3] - q[1]);
+  });
+  // the round plaza at the heart, with a ring of darker stone
+  g.fillStyle = '#a7a49c'; g.beginPath(); g.arc(L.cx, L.cy, L.R + 15, 0, 6.283); g.fill();
+  g.fillStyle = '#b4b0a6'; g.beginPath(); g.arc(L.cx, L.cy, L.R, 0, 6.283); g.fill(); g.strokeStyle = '#6e6a60'; g.lineWidth = 3; g.beginPath(); g.arc(L.cx, L.cy, L.R + 14, 0, 6.283); g.stroke();
+  g.strokeStyle = 'rgba(0,0,0,.15)'; g.lineWidth = 2; g.beginPath(); g.arc(L.cx, L.cy, L.R * 0.55, 0, 6.283); g.stroke();
+  for (var rs = 0; rs < 16; rs++) { var ra = rs * 0.3927; g.beginPath(); g.moveTo(L.cx + Math.cos(ra) * L.R * 0.55, L.cy + Math.sin(ra) * L.R * 0.55); g.lineTo(L.cx + Math.cos(ra) * L.R, L.cy + Math.sin(ra) * L.R); g.stroke(); }
+  // the stair down into the castle, at the foot of the cross
+  g.fillStyle = '#5e5a52'; g.fillRect(L.cx - 34, z.y1 - 40, 68, 40); g.strokeStyle = 'rgba(0,0,0,.4)'; for (var st = 0; st < 5; st++) { g.beginPath(); g.moveTo(L.cx - 34, z.y1 - 40 + st * 8); g.lineTo(L.cx + 34, z.y1 - 40 + st * 8); g.stroke(); }
+  return c;
+}
+function drawCourtyard(g, z, t) {
+  if (!COURT_CACHE || COURT_CACHE.z !== z) COURT_CACHE = { z: z, img: courtBase(z) };
+  g.drawImage(COURT_CACHE.img, z.x0, z.y0);
+  var L = courtLayout(z), dk = typeof darkness === 'function' ? darkness() : 0;
+  // the flowers breathe a faint light, stronger after dark
+  g.save(); g.beginPath(); L.lawns.forEach(function (q) { g.rect(q[0], q[1], q[2] - q[0], q[3] - q[1]); }); g.moveTo(L.cx + L.R + 14, L.cy); g.arc(L.cx, L.cy, L.R + 14, 0, Math.PI * 2, true); g.clip('evenodd'); g.globalCompositeOperation = 'lighter';
+  L.lawns.forEach(function (q, qi) { var a = (0.08 + 0.12 * dk) * (0.75 + 0.25 * Math.sin(t * 1.3 + qi * 1.7)); g.fillStyle = 'rgba(150,200,255,' + a + ')'; g.fillRect(q[0], q[1], q[2] - q[0], q[3] - q[1]); });
+  for (var m = 0; m < 26; m++) { var q = L.lawns[m % 4], u = (Math.sin(m * 91.3) * 0.5 + 0.5), v = (Math.sin(m * 37.7 + 1) * 0.5 + 0.5), fx = q[0] + u * (q[2] - q[0]), fy = q[1] + v * (q[3] - q[1]) - ((t * 12 + m * 20) % 40); g.fillStyle = 'rgba(210,235,255,' + (0.35 + 0.3 * Math.sin(t * 2 + m)) * (0.5 + dk * 0.5) + ')'; g.beginPath(); g.arc(fx, fy, 2, 0, 6.283); g.fill(); }
+  g.restore();
+  // the King's Banquet: a jug of wine and three cups on the plaza
+  if (G && G.tasks && G.tasks.some(function (k) { return k.kind === 'banquet'; })) {
+    g.save(); g.strokeStyle = '#0b121a'; g.lineWidth = 2;
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(L.cx + 3, L.cy + 5, 16, 12, 0, 0, 6.283); g.fill();
+    g.fillStyle = '#7a3a2a'; g.beginPath(); g.ellipse(L.cx, L.cy, 14, 16, 0, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#5a2a1e'; g.beginPath(); g.arc(L.cx, L.cy - 4, 6, 0, 6.283); g.fill(); g.stroke();
+    g.fillStyle = '#c9a24a'; g.fillRect(L.cx - 7, L.cy - 18, 14, 4);
+    [0, 2.094, 4.189].forEach(function (a) { var x = L.cx + Math.cos(a - 1.571) * 42, y = L.cy + Math.sin(a - 1.571) * 42; g.fillStyle = '#e0b04a'; g.beginPath(); g.arc(x, y, 7, 0, 6.283); g.fill(); g.stroke(); g.fillStyle = '#6a1424'; g.beginPath(); g.arc(x, y, 4, 0, 6.283); g.fill(); });
+    g.restore();
+  }
 }

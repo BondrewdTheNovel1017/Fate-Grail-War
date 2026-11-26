@@ -49,7 +49,7 @@ function buildNav(M) {
   (M.doors || []).forEach(function (d) {
     var o = node(d.out.x + d.out.nx * 70, d.out.y + d.out.ny * 70, 'door'), inn = node(d.in.x - d.in.nx * 70, d.in.y - d.in.ny * 70, 'door');
     d.outNode = o.id; d.inNode = inn.id;
-    nearestReach(o.x, o.y, roadNodes, 900).forEach(function (n) { link(o, n); });
+    if (!d.court) nearestReach(o.x, o.y, roadNodes, 900).forEach(function (n) { link(o, n); }); // the courtyard is walled in: only its stair leads there
     var rm = (M.rooms || []).find(function (r) { return r.id === d.room; });
     nearestReach(inn.x, inn.y, rm ? rm.nodes : [], 600).forEach(function (n) { link(inn, n); });
     link(o, inn, 80, d);

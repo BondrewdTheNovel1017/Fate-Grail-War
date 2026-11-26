@@ -8,7 +8,7 @@ var EVT = {
   nightAt: 45, dayAt: 35, dayChance: 1, quietChance: 0.35,
   challenge: { x: 9300, y: 6640, r: 620, dur: 170, accept: 0.65, acceptHp: 0.6 },
   school: { x: 4050, y: 3020, r: 760, dur: 200, circles: [[3520, 3010], [4580, 2960], [4050, 3380]], need: 9, drainM: 0.5, drainS: 1.0, floor: 10, mobMax: 7, mobEvery: 7, mobHp: 24, contest: 95 },
-  banquet: { x: 11000, y: 1820, r: 320, need: 20 },
+  banquet: { x: 11000, y: 1150, r: 300, need: 20 }, // the castle courtyard
   summons: { x: 1450, y: 3220, r: 280, need: 20 },
   horror: { hp: 1400, r: 110, path: [[6000, 4300], [6000, 2620]], spd: 70, slamEvery: 2.1, slamR: 125, slamDmg: 16, truceR: 1100 },
   berserk: { dur: 90, dmg: 1.3, drain: 0.01, floor: 0.25 },
@@ -256,8 +256,8 @@ function truceStops(att, def) {
 var KINGS = ['iskandar', 'gilgamesh', 'caerwyn', 'richard', 'leonidas'];
 function startBanquet() {
   var host = loreHost(KINGS); if (!host) { startSummons(); return; }
-  // the table is set on the castle roof, up the grand staircase
-  var roof = (MAP.rooms || []).filter(function (r) { return r.id === 'einroof'; })[0], bx = roof ? roof.x0 + 700 : EVT.banquet.x, by = roof ? roof.y0 + 470 : EVT.banquet.y;
+  // the wine is set out in the castle courtyard, up the stair by the castle's entrance
+  var bx = EVT.banquet.x, by = EVT.banquet.y;
   G.tasks.push({ kind: 'banquet', x: bx, y: by, r: EVT.banquet.r, name: 'The King’s Banquet', need: EVT.banquet.need, prog: {}, done: {}, host: host.team, hostF: host });
   FX.event('banquet', { host: host.team, f: host });
 }

@@ -139,8 +139,10 @@ function civShift() {
 // a point just outside the nearest building wall: where someone steps in or out of a house
 function civDoorway(x, y) {
   var rs = rectsIn(x - 420, y - 420, x + 420, y + 420), best = null, bd = 1e9;
-  rs.forEach(function (r) { if (r.x1 - r.x0 < 50 || r.y1 - r.y0 < 50) return; var cx = clamp(x, r.x0 + 12, r.x1 - 12), cy = clamp(y, r.y0 + 12, r.y1 - 12), d0 = [cx - r.x0, r.x1 - cx, cy - r.y0, r.y1 - cy], m = Math.min.apply(null, d0), px = cx, py = cy;
+  // nobody lives in the castle's walls: its wings would put people in the walled courtyard
+  rs.forEach(function (r) { if (r.x1 - r.x0 < 50 || r.y1 - r.y0 < 50 || (r.b && /^castle/.test(r.b.k))) return; var cx = clamp(x, r.x0 + 12, r.x1 - 12), cy = clamp(y, r.y0 + 12, r.y1 - 12), d0 = [cx - r.x0, r.x1 - cx, cy - r.y0, r.y1 - cy], m = Math.min.apply(null, d0), px = cx, py = cy;
     if (m === d0[0]) px = r.x0 - 10; else if (m === d0[1]) px = r.x1 + 10; else if (m === d0[2]) py = r.y0 - 10; else py = r.y1 + 10;
+    if (rs.some(function (o) { return px > o.x0 - 8 && px < o.x1 + 8 && py > o.y0 - 8 && py < o.y1 + 8; })) return; // a step out that lands in the next building is no doorway
     var d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = { x: px, y: py }; } });
   return best || { x: x, y: y };
 }

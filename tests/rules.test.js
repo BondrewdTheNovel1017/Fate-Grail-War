@@ -624,7 +624,8 @@ test('the Church: killing a civilian exposes the team, and Executors come from o
   const G = E.newWar(E.warTeams('richard', 'rin', 4), { nights: 3 });
   G.f.forEach((f, i) => { G.ai[i] = i === 0 ? null : E.mkAI(f, E.DIFF.knight); });
   G.clock.t = G.clock.len - 0.01; E.simStep(E.STEP); assert.ok(E.isDay());
-  const me = G.f[0], c = G.civ.find((q) => q.on);
+  // a civilian on open ground, so the Executors placed beside the master below are not inside a wall
+  const me = G.f[0], c = G.civ.find((q) => q.on && !E.rectsIn(q.x - 60, q.y - 60, q.x + 60, q.y + 60).some((r) => r.x1 > q.x - 50 && r.x0 < q.x + 50 && r.y1 > q.y - 50 && r.y0 < q.y + 50)) || G.civ.find((q) => q.on);
   me.x = c.x - 30; me.y = c.y; me.face = 0; G.f.forEach((f) => { if (f !== me && f !== me.partner && f.x < G.f[0].x + 2000) { f.x += 0; } });
   E.hitCivsArc(me, me.A.light);
   assert.ok(c.dead, 'the blow kills the civilian');
@@ -634,7 +635,9 @@ test('the Church: killing a civilian exposes the team, and Executors come from o
   assert.ok(ex.length >= 2, 'Executors are sent at once');
   ex.forEach((m) => assert.ok(Math.hypot(m.x - me.x, m.y - me.y) > E.CHURCH.farFromHumans - 1, 'never in sight of the player'));
   // they reach and wound the master
-  const rin = me.partner; rin.x = c.x; rin.y = c.y; rin.st = 'idle'; const hp0 = rin.hp; ex.forEach((m, i) => { m.x = rin.x + 160 + i * 30; m.y = rin.y; m.tx = rin.x; m.ty = rin.y; });
+  const rin = me.partner; rin.x = c.x; rin.y = c.y; rin.st = 'idle'; const hp0 = rin.hp; const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]];
+  const dir = dirs.find((d) => !E.segBlocked(rin.x, rin.y, rin.x + d[0] * 220, rin.y + d[1] * 220)) || dirs[0];
+  ex.forEach((m, i) => { m.x = rin.x + dir[0] * (160 + i * 30); m.y = rin.y + dir[1] * (160 + i * 30); m.tx = rin.x; m.ty = rin.y; });
   for (let i = 0; i < 60 * 25 && rin.hp >= hp0; i++) { G.f.forEach((f) => { if (f !== rin) f.st = f.st; }); E.execTick(E.STEP); }
   assert.ok(rin.hp < hp0, 'the Executors strike the master');
 });

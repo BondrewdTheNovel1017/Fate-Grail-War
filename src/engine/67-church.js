@@ -67,7 +67,7 @@ function execSpawn(t) {
   var hs = humansAlive(), tf = teamFighters(t), tx = tf.length ? tf[0].x : MAP.cityW / 2, ty = tf.length ? tf[0].y : H / 2;
   var far = function (p) { var m = 1e9; hs.forEach(function (f) { m = Math.min(m, Math.hypot(f.x - p.x, f.y - p.y)); }); return m; };
   var cand = churchEntrances(); if (!cand.length) return null;
-  var ok = cand.filter(function (p) { return far(p) > CHURCH.farFromHumans; });
+  var ok = cand.filter(function (p) { return far(p) > CHURCH.farFromHumans + 80; /* room for the squad to spread out */ });
   if (ok.length) { var ch = ok.filter(function (p) { return p.from === 'church'; })[0]; if (ch) return ch; return ok.sort(function (p, q) { return Math.hypot(p.x - tx, p.y - ty) - Math.hypot(q.x - tx, q.y - ty); })[0]; }
   return cand.sort(function (p, q) { return far(q) - far(p); })[0];
 }
