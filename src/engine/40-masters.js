@@ -62,8 +62,20 @@ MASTERS.sakura = MD({ id: 'sakura', name: 'Sakura Matou', type: 'Mage family', c
     heavy: { name: 'Shadow tendrils', kind: 'rain', count: 2, spread: 60, zr: 62, delay: 0.55, dmg: 9, zshape: 'tentacle', wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22 },
     skill: { name: 'Imaginary Drain', kind: 'siphon', r: 260, dmg: 8, wind: 0.4, act: 0.05, rec: 0.3, cd: 12, cost: 12 },
     np: { name: 'Shadow of the Grail', kind: 'rain', count: 1, spread: 0, zr: 150, delay: 0.8, dmg: 16, root: 1.5, zshape: 'tentacle', range: 620, wind: 0.6, act: 0.1, rec: 0.5, cost: 0, cd: 22, aiUse: 'ranged' } });
-MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura);
-var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura'];
+MASTERS.tokiomi = MD({ id: 'tokiomi', name: 'Tokiomi Tohsaka', type: 'Mage family', col: '#b8333c', hp: 100, spd: 200, guard: 0.35, elegance: true,
+    brief: 'Head of the Tohsaka, a mage of fire who never loses his composure. Flame bolts from his ruby cane, a ring of fire around him and a pillar of flame from the ground: every flame leaves a burn. While he is unhurt, his magecraft costs a quarter less mana.',
+    light: { name: 'Flame bolt', kind: 'proj', speed: 980, range: 580, dmg: 4, burn: { dps: 2, t: 2.5 }, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'flame', size: 7, col: '#ff7a2a' },
+    heavy: { name: 'Fireball', kind: 'proj', speed: 820, range: 640, dmg: 8, rad: 12, burn: { dps: 3, t: 3 }, explode: { r: 90, dmg: 8 }, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'flame', size: 12, col: '#ff5a1a' },
+    skill: { name: 'Flame Ward', kind: 'aoe', r: 135, dmg: 5, burn: { dps: 3, t: 4 }, stag: 0.4, power: 1, wind: 0.35, act: 0.1, rec: 0.35, cd: 11, cost: 14 },
+    np: { name: 'Crimson Pillar', kind: 'rain', count: 1, spread: 0, zr: 105, delay: 0.75, dmg: 15, burn: { dps: 4, t: 4 }, zshape: 'pillar', range: 640, wind: 0.55, act: 0.1, rec: 0.5, cost: 0, cd: 20, aiUse: 'ranged' } });
+MASTERS.kuzuki = MD({ id: 'kuzuki', name: 'Souichirou Kuzuki', type: 'Assassin', col: '#5b6b7c', wpn: 'fist', hp: 120, spd: 228, guard: 0.55, ranged: false, fightsServants: true, guardPierce: 0.35, combo: 4,
+    brief: 'A quiet teacher who was trained as an assassin. His Snake Fist strikes curl around a guard, and like Shirou he stands in a servant\u2019s fight at full damage. Reinforcement hardens his fists; Coiled Strike is a grip no guard can stop.',
+    light: { name: 'Snake Fist', kind: 'melee', dmg: 4.5, reach: 74, arc: 0.85, wind: 0.16, act: 0.06, rec: 0.16, lunge: 38, cost: 7, stag: 0.28, power: 1 },
+    heavy: { name: 'Coiled elbow', kind: 'melee', dmg: 12, reach: 82, arc: 0.9, wind: 0.4, max: 0.85, act: 0.1, rec: 0.55, lunge: 70, cost: 20, stag: 0.7, power: 2, gb: true },
+    skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.25, act: 0.05, rec: 0.2, cd: 13, cost: 12 },
+    np: { name: 'Coiled Strike', kind: 'grab', reach: 96, arc: 0.7, dmg: 22, stag: 1.0, unblock: true, noParry: true, noExec: true, wind: 0.35, act: 0.08, rec: 0.6, cost: 0, cd: 18, aiUse: 'near' } });
+MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki);
+var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki'];
 /* Arena mode keeps the duel-length numbers: copies taken before the war scaling below */
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });

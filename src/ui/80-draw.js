@@ -398,14 +398,15 @@ function drawWorld() {
   g.strokeStyle = '#5a7388'; g.lineWidth = 8; g.strokeRect(0, 0, W, H);
   G.zones.forEach(function (z) {
     if (!visL(z.owner)) return;
-    var p = clamp(z.t / z.delay, 0, 1), zs = z.a.zshape || 'arrow', zc = zs === 'flame' ? '255,140,60' : rgbOf(z.owner.def.col);
+    var p = clamp(z.t / z.delay, 0, 1), zs = z.a.zshape || 'arrow', zc = (zs === 'flame' || zs === 'pillar') ? '255,140,60' : rgbOf(z.owner.def.col);
     g.beginPath(); g.arc(z.x, z.y, z.r, 0, 6.283); g.fillStyle = z.done ? 'rgba(' + zc + ',.5)' : 'rgba(' + zc + ',' + (0.08 + 0.2 * p) + ')'; g.fill();
     g.strokeStyle = 'rgba(' + zc + ',.9)'; g.lineWidth = 2; g.stroke();
     if (!z.done) {
       g.beginPath(); g.arc(z.x, z.y, z.r * p, 0, 6.283); g.strokeStyle = 'rgba(' + zc + ',.6)'; g.stroke();
       if (zs === 'arrow' && p > 0.2) { var hx = z.x + (1 - p) * 110, hy = z.y - (1 - p) * 320; g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(hx + 18, hy - 56); g.lineTo(hx, hy); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.arc(hx, hy, 3.5, 0, 6.283); g.fill(); }
       if (zs === 'sword' && p > 0.15) { var hy2 = z.y - (1 - p) * 300; g.strokeStyle = '#d8dde2'; g.lineWidth = 4; g.beginPath(); g.moveTo(z.x, hy2 - 40); g.lineTo(z.x, hy2); g.stroke(); g.strokeStyle = '#7a1f2a'; g.lineWidth = 5; g.beginPath(); g.moveTo(z.x - 9, hy2 - 40); g.lineTo(z.x + 9, hy2 - 40); g.stroke(); }
-      if (zs === 'flame') { for (var fi = 0; fi < 6; fi++) { var fa = fi * 1.047 + G.time * 3, fr = z.r * 0.55 * p; g.beginPath(); g.arc(z.x + Math.cos(fa) * fr, z.y + Math.sin(fa) * fr, 6 + 6 * p, 0, 6.283); g.fillStyle = 'rgba(255,' + Math.round(150 + 60 * Math.sin(G.time * 9 + fi)) + ',60,' + (0.4 + 0.4 * p) + ')'; g.fill(); } g.beginPath(); g.moveTo(z.x - 14, z.y + 10); g.lineTo(z.x + 14, z.y - 10); g.moveTo(z.x + 14, z.y + 10); g.lineTo(z.x - 14, z.y - 10); g.strokeStyle = '#ffd36b'; g.lineWidth = 3; g.stroke(); }
+      if (zs === 'pillar') runeCircle(g, z.x, z.y, z.r * (0.5 + 0.45 * p), '#ff8a3a', G.time * 3, 0.4 + 0.5 * p);
+      if (zs === 'flame' || zs === 'pillar') { for (var fi = 0; fi < 6; fi++) { var fa = fi * 1.047 + G.time * 3, fr = z.r * 0.55 * p; g.beginPath(); g.arc(z.x + Math.cos(fa) * fr, z.y + Math.sin(fa) * fr, 6 + 6 * p, 0, 6.283); g.fillStyle = 'rgba(255,' + Math.round(150 + 60 * Math.sin(G.time * 9 + fi)) + ',60,' + (0.4 + 0.4 * p) + ')'; g.fill(); } g.beginPath(); g.moveTo(z.x - 14, z.y + 10); g.lineTo(z.x + 14, z.y - 10); g.moveTo(z.x + 14, z.y + 10); g.lineTo(z.x - 14, z.y - 10); g.strokeStyle = '#ffd36b'; g.lineWidth = 3; g.stroke(); }
       if (zs === 'tentacle') { g.strokeStyle = 'rgba(' + zc + ',.9)'; g.lineCap = 'round'; for (var ti = 0; ti < 4; ti++) { var ta = ti * 1.571 + G.time * 1.5, tl = z.r * 0.6 * p; g.lineWidth = 7 * p + 2; g.beginPath(); g.moveTo(z.x, z.y); g.quadraticCurveTo(z.x + Math.cos(ta) * tl * 0.5 + Math.sin(G.time * 7 + ti) * 6, z.y + Math.sin(ta) * tl * 0.5, z.x + Math.cos(ta) * tl, z.y + Math.sin(ta) * tl); g.stroke(); } }
     } else if (zs === 'tentacle') { g.strokeStyle = 'rgba(' + zc + ',.95)'; g.lineCap = 'round'; g.lineWidth = 12; for (var tj = 0; tj < 4; tj++) { var tb = tj * 1.571 + 0.4; g.beginPath(); g.moveTo(z.x, z.y); g.lineTo(z.x + Math.cos(tb) * z.r * 0.7, z.y + Math.sin(tb) * z.r * 0.7); g.stroke(); } }
     else if (zs === 'flame') { g.beginPath(); g.arc(z.x, z.y, z.r * 0.8, 0, 6.283); g.fillStyle = 'rgba(255,140,50,.55)'; g.fill(); }

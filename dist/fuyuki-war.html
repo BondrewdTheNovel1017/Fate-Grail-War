@@ -1222,7 +1222,7 @@ function stepDoor(f, x, y, d, entering) {
   G.f.forEach(function (o) { if (o.foe === f || o.lock === f) o.nav = null; });
 }
 /* ---- homes: each master starts at their family seat; a second member of the same family gets a new estate ---- */
-var MASTER_HOME = { rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null };
+var MASTER_HOME = { rin: 'tohsaka', sakura: 'matou', kariya: 'matou', illya: 'einzbern', irisviel: 'einzbern', kirei: 'church', kayneth: 'hyatt', waver: 'mackenzie', shirou: 'emiya', kiritsugu: null, tokiomi: 'tohsaka', kuzuki: null };
 var ESTATE_STYLE = { tohsaka: ['mansion_w', 'Tohsaka villa'], matou: ['mansion_d', 'Matou house'], einzbern: ['villa_e', 'Einzbern villa'], church: ['chapel', 'Church annex'], hyatt: ['hotel_s', 'Hotel suite'], mackenzie: ['house_w', 'Rented house'], emiya: ['house_jpL', 'Emiya house'], safe: ['safehouse', 'Safehouse'] };
 var PLOT_ORDER = null;
 function assignHomes(teams, rnd, plots) {
@@ -1500,8 +1500,20 @@ MASTERS.sakura = MD({ id: 'sakura', name: 'Sakura Matou', type: 'Mage family', c
     heavy: { name: 'Shadow tendrils', kind: 'rain', count: 2, spread: 60, zr: 62, delay: 0.55, dmg: 9, zshape: 'tentacle', wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22 },
     skill: { name: 'Imaginary Drain', kind: 'siphon', r: 260, dmg: 8, wind: 0.4, act: 0.05, rec: 0.3, cd: 12, cost: 12 },
     np: { name: 'Shadow of the Grail', kind: 'rain', count: 1, spread: 0, zr: 150, delay: 0.8, dmg: 16, root: 1.5, zshape: 'tentacle', range: 620, wind: 0.6, act: 0.1, rec: 0.5, cost: 0, cd: 22, aiUse: 'ranged' } });
-MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura);
-var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura'];
+MASTERS.tokiomi = MD({ id: 'tokiomi', name: 'Tokiomi Tohsaka', type: 'Mage family', col: '#b8333c', hp: 100, spd: 200, guard: 0.35, elegance: true,
+    brief: 'Head of the Tohsaka, a mage of fire who never loses his composure. Flame bolts from his ruby cane, a ring of fire around him and a pillar of flame from the ground: every flame leaves a burn. While he is unhurt, his magecraft costs a quarter less mana.',
+    light: { name: 'Flame bolt', kind: 'proj', speed: 980, range: 580, dmg: 4, burn: { dps: 2, t: 2.5 }, wind: 0.3, rec: 0.3, reach: 0, lunge: 0, cost: 10, shape: 'flame', size: 7, col: '#ff7a2a' },
+    heavy: { name: 'Fireball', kind: 'proj', speed: 820, range: 640, dmg: 8, rad: 12, burn: { dps: 3, t: 3 }, explode: { r: 90, dmg: 8 }, wind: 0.5, max: 1.0, rec: 0.7, reach: 0, lunge: 0, cost: 22, shape: 'flame', size: 12, col: '#ff5a1a' },
+    skill: { name: 'Flame Ward', kind: 'aoe', r: 135, dmg: 5, burn: { dps: 3, t: 4 }, stag: 0.4, power: 1, wind: 0.35, act: 0.1, rec: 0.35, cd: 11, cost: 14 },
+    np: { name: 'Crimson Pillar', kind: 'rain', count: 1, spread: 0, zr: 105, delay: 0.75, dmg: 15, burn: { dps: 4, t: 4 }, zshape: 'pillar', range: 640, wind: 0.55, act: 0.1, rec: 0.5, cost: 0, cd: 20, aiUse: 'ranged' } });
+MASTERS.kuzuki = MD({ id: 'kuzuki', name: 'Souichirou Kuzuki', type: 'Assassin', col: '#5b6b7c', wpn: 'fist', hp: 120, spd: 228, guard: 0.55, ranged: false, fightsServants: true, guardPierce: 0.35, combo: 4,
+    brief: 'A quiet teacher who was trained as an assassin. His Snake Fist strikes curl around a guard, and like Shirou he stands in a servant\u2019s fight at full damage. Reinforcement hardens his fists; Coiled Strike is a grip no guard can stop.',
+    light: { name: 'Snake Fist', kind: 'melee', dmg: 4.5, reach: 74, arc: 0.85, wind: 0.16, act: 0.06, rec: 0.16, lunge: 38, cost: 7, stag: 0.28, power: 1 },
+    heavy: { name: 'Coiled elbow', kind: 'melee', dmg: 12, reach: 82, arc: 0.9, wind: 0.4, max: 0.85, act: 0.1, rec: 0.55, lunge: 70, cost: 20, stag: 0.7, power: 2, gb: true },
+    skill: { name: 'Reinforcement', kind: 'reinforce', dur: 5, wind: 0.25, act: 0.05, rec: 0.2, cd: 13, cost: 12 },
+    np: { name: 'Coiled Strike', kind: 'grab', reach: 96, arc: 0.7, dmg: 22, stag: 1.0, unblock: true, noParry: true, noExec: true, wind: 0.35, act: 0.08, rec: 0.6, cost: 0, cd: 18, aiUse: 'near' } });
+MASTERS.illya.A = build(MASTERS.illya); MASTERS.sakura.A = build(MASTERS.sakura); MASTERS.tokiomi.A = build(MASTERS.tokiomi); MASTERS.kuzuki.A = build(MASTERS.kuzuki);
+var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', 'irisviel', 'kariya', 'illya', 'sakura', 'tokiomi', 'kuzuki'];
 /* Arena mode keeps the duel-length numbers: copies taken before the war scaling below */
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });
@@ -1670,13 +1682,14 @@ function kill(f, noRevive) {
    A servant whose master runs dry fights weaker. A masterless servant pays for its NP with its own remaining time. */
 var MANA = { upkeep: 0.25, farDist: 1800, farDrain: 0.8, npCost: 40, marbleCost: 55, sigCost: 12, skillCost: 6, starved: 5, starveDmg: 0.85, orphanNp: 6 };
 // [pool, regen per second]
-var MANA_POOL = { rin: [100, 2.0], kiritsugu: [70, 1.4], shirou: [45, 0.8], kayneth: [110, 2.2], kirei: [90, 1.8], waver: [75, 1.5], irisviel: [100, 2.0], kariya: [50, 0.8], illya: [140, 2.8], sakura: [130, 2.6] };
+var MANA_POOL = { rin: [100, 2.0], kiritsugu: [70, 1.4], shirou: [45, 0.8], kayneth: [110, 2.2], kirei: [90, 1.8], waver: [75, 1.5], irisviel: [100, 2.0], kariya: [50, 0.8], illya: [140, 2.8], sakura: [130, 2.6], tokiomi: [105, 2.1], kuzuki: [40, 0.7] };
 function initMana(m) { var p = MANA_POOL[m.def.id] || [80, 1.6]; m.manaMax = p[0]; m.manaRegen = p[1]; m.mana = p[0] * 0.75; }
 function livingMaster(s) { var m = s.partner; return m && m.def.isMaster && m.st !== 'dead' ? m : null; }
 function npManaCost(s) { var a = s.A.np; return a.manaCost || ((a.marble || a.kind === 'ubw') ? MANA.marbleCost : MANA.npCost); }
 // can master m pay `cost`? Kariya pays any shortfall in blood
-function canPay(m, cost) { return m.mana + (m.manaBonus || 0) >= cost || !!(m.def.bloodMana && m.hp > cost - m.mana + 30); }
-function payMana(m, cost) {
+function elegant(m, cost) { return m && m.def && m.def.elegance && m.hp > m.def.hp * 0.7 ? cost * 0.75 : cost; } // Tokiomi: composure makes magecraft cheaper
+function canPay(m, cost) { cost = elegant(m, cost); return m.mana + (m.manaBonus || 0) >= cost || !!(m.def.bloodMana && m.hp > cost - m.mana + 30); }
+function payMana(m, cost) { cost = elegant(m, cost);
   if (m.manaBonus > 0) { var fromB = Math.min(m.manaBonus, cost); m.manaBonus -= fromB; cost -= fromB; if (cost <= 0) return true; }
   if (m.mana >= cost) { m.mana -= cost; return true; }
   if (m.def.bloodMana) { var need = cost - m.mana; if (m.hp > need + 30) { m.mana = 0; m.hp -= need; m.stat.taken += need; FX.text(m, 'CREST WORMS -' + Math.round(need)); return true; } }
@@ -2259,7 +2272,7 @@ function strikeInit(f) {
   else if (k === 'grab') {
     if (dist(f, o) <= a.reach + FR && Math.abs(angDiff(f.face, angTo(f, o))) <= a.arc) {
       if (o.iframes > 0) { hurt(f, o, a, 1); }
-      else if (o.hp <= o.def.hp * 0.3) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
+      else if (!a.noExec && o.hp <= o.def.hp * 0.3) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
       else hurt(f, o, a, 1);
     }
   }
@@ -2909,7 +2922,7 @@ function godHandTick(f) {
 }
 /* ---- family and old bonds: when one of these would land a killing blow on the other, the hand
    stops the first time. The AI often lets them go; a player can strike again, or walk away. ---- */
-var FAMILY = { 'irisviel|kiritsugu': 1, 'illya|kiritsugu': 1, 'illya|irisviel': 1, 'rin|sakura': 1, 'illya|shirou': 1, 'kariya|sakura': 1, 'sakura|shirou': 1, 'kiritsugu|shirou': 1, 'kariya|rin': 1 };
+var FAMILY = { 'rin|tokiomi': 1, 'sakura|tokiomi': 1, 'irisviel|kiritsugu': 1, 'illya|kiritsugu': 1, 'illya|irisviel': 1, 'rin|sakura': 1, 'illya|shirou': 1, 'kariya|sakura': 1, 'sakura|shirou': 1, 'kiritsugu|shirou': 1, 'kariya|rin': 1 };
 var SPARE = { chance: 0.6, dur: 90 };
 function bondKey(a, b) { return [a.def.id, b.def.id].sort().join('|'); }
 function familyHold(att, def) {
@@ -2932,7 +2945,7 @@ function spared(f, e) { return !!(G.spare && G.spare[f.team + ':' + e.idx] > G.t
    unless Kirei stands on another team; and when a truce puts them together, he may betray his own master to take Kirei. */
 var PACT = { range: 1100, tick: 6, base: 0.22, offerT: 14, askCd: 60, cd: 240, outnum: 0.85, outR: 700, breakExpo: 25, revealT: 40, minTeams: 4, hate: 20, treachT: 5 };
 // willingness to make a pact at all (0 never, 1 eager)
-var PACT_M = { kiritsugu: 0, irisviel: 0.6, illya: 0.3, shirou: 0.85, rin: 0.55, sakura: 0.4, kariya: 0.35, kayneth: 0.25, kirei: 0.3, waver: 0.7 };
+var PACT_M = { kiritsugu: 0, irisviel: 0.6, illya: 0.3, shirou: 0.85, rin: 0.55, sakura: 0.4, kariya: 0.35, kayneth: 0.25, kirei: 0.3, waver: 0.7, tokiomi: 0.5, kuzuki: 0.3 };
 var PACT_S = { gilgamesh: 0, iskandar: 0.95, caerwyn: 0.6, diarmuid: 0.75, cu: 0.6, emiya: 0.45, heracles: 0.6, lancelot: 0.35, medea: 0.55, medusa: 0.5, kojirou: 0.6, hassan: 0.4, gilles: 0.15, richard: 0.7, leonidas: 0.75, atalanta: 0.4 };
 // who turns on a partner when the chance comes
 var TREACH = { medea: 0.3, kiritsugu: 0.35, kirei: 0.25, gilles: 0.3, hassan: 0.2, kayneth: 0.15 };
@@ -3823,7 +3836,7 @@ function aiMaster(ai, dt) {
     if (want) { press(f, 'skill'); return; }
   }
   // Shirou stands in a servant's fight: he joins his servant against a servant it is already fighting, while he is healthy
-  if (f.def.fightsServants && (!G.clock || (f.traceTier || 0) >= 1) && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
+  if (f.def.fightsServants && (!G.clock || !f.def.trace || (f.traceTier || 0) >= 1) && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
   if (thr && td < 330) {
     var aw = angTo(thr, f), gx = f.x + Math.cos(aw) * 260, gy = f.y + Math.sin(aw) * 260;
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }
@@ -4158,10 +4171,12 @@ var kojirou = mkS('kojirou', 'Sasaki Kojirou', 'Assassin', '#e9b8cc',
 
 var illya = mkS('illya', 'Illyasviel von Einzbern', 'Master', '#c9b8e0', 'A small girl in a purple winter coat and white hat, long silver hair, red eyes.', [['Coat', '#6e4f8e'], ['Hair', '#eef0f6']], [], function () { return HB('illya', { t1: '#6e4f8e', t2: '#7d5ea0', sh: '#5a3e78', arm: '#6e4f8e', hair: '#eef0f6', skin: '#f8e6dc', shw: 7, mh: true, hl: 'rgba(255,255,255,.7)', over: '<path d="M2 -10 Q-10 -16 -22 -13 Q-32 -8 -34 0 Q-32 8 -22 13 Q-10 16 2 10Z" fill="#eef0f6"/><path d="M-6 -8 Q-18 -10 -29 -4 M-6 0 L-31 0 M-6 8 Q-18 10 -29 4" stroke="#c4c6d4" stroke-width="1.3" fill="none"/>', head: '<circle cx="-0.5" cy="0" r="7.4" fill="#f4f2f8" stroke-width="1.4"/><path d="M-4 -5 Q-1 -7 3 -5" stroke="#d8d4e4" stroke-width="1.4" fill="none"/><circle cx="-7.4" cy="0" r="3.2" fill="#6e4f8e" stroke-width="1"/>' }); }, function () { return '<g stroke="#0b121a" stroke-width="1.4" fill="#f4f6fa"><path d="M2 0 L12 -8 L10 -1 L22 0 L10 1 L12 8Z"/><circle cx="16" cy="0" r="1.6" fill="#c43d3d" stroke="none"/></g>'; }, '-2 -10 26 20');
 var sakura = mkS('sakura', 'Sakura Matou', 'Master', '#7a4a8a', 'The Matou heir in a black dress traced with red lines, long purple hair with a red ribbon.', [['Dress', '#1e1626'], ['Lines', '#b3202a'], ['Hair', '#5a3a7a']], [], function () { return HB('sakura', { t1: '#1e1626', t2: '#2a1e34', sh: '#1a1220', arm: '#1e1626', hair: '#5a3a7a', skin: '#f0dcd2', mh: true, hl: 'rgba(220,190,255,.35)', torso: '<path d="M-8 -12 Q0 -4 -8 4 M-6 6 Q2 12 -6 16 M4 -14 Q8 0 4 14" stroke="#b3202a" stroke-width="1.6" fill="none"/>', over: '<path d="M2 -10 Q-10 -15 -20 -12 Q-30 -8 -32 0 Q-30 8 -20 12 Q-10 15 2 10Z" fill="#5a3a7a"/><path d="M-6 -8 Q-17 -9 -27 -3 M-6 0 L-29 0 M-6 8 Q-17 9 -27 3" stroke="#3e2856" stroke-width="1.3" fill="none"/>', head: '<path d="M-2 -9.4 L-6.4 -13 L-6 -8 Z" fill="#c43d3d" stroke-width="1"/>' }); }, function () { return '<g stroke="#0b121a" stroke-width="1.4"><circle cx="8" cy="0" r="7" fill="#1a1020"/><circle cx="8" cy="0" r="7" fill="none" stroke="#b3202a" stroke-width="1.4"/><circle cx="8" cy="0" r="2.4" fill="#b3202a" stroke="none"/></g>'; }, '-2 -9 20 18');
-return { illya: illya, sakura: sakura, rin: rin, kiritsugu: kiritsugu, shirou: shirou, kayneth: kayneth, kirei: kirei, waver: waver, irisviel: irisviel, kariya: kariya, richard: richard, emiya: emiya, cid: cid, leonidas: leonidas, atalanta: atalanta, heracles: heracles, hassan: hassan, caerwyn: caerwyn, diarmuid: diarmuid, cu: cu, gilgamesh: gilgamesh, iskandar: iskandar, gilles: gilles, lancelot: lancelot, medusa: medusa, medea: medea, kojirou: kojirou };
+var tokiomi = mkS('tokiomi', 'Tokiomi Tohsaka', 'Master', '#b8333c', 'Head of the Tohsaka in a deep red suit with a white cravat, brown hair swept back, a cane topped with a great ruby.', [['Suit', '#8a1e2a'], ['Cravat', '#f2ece0'], ['Hair', '#4a2e22']], [], function () { return HB('tokiomi', { t1: '#8a1e2a', t2: '#9c2834', sh: '#6e1620', arm: '#8a1e2a', hair: '#4a2e22', skin: '#e8c8b0', mh: true, fringe: 'none', hl: 'rgba(255,220,190,.3)', torso: '<path d="M6 -5 L12 0 L6 5 Z" fill="#f2ece0" stroke="#0b121a" stroke-width="1"/><path d="M-4 -13 L-4 13" stroke="#c9a24a" stroke-width="1.2"/>', strands: '<path d="M-8 -6 Q-2 -7.5 4 -6 M-8 0 L5 0 M-8 6 Q-2 7.5 4 6" stroke="#2e1c14" stroke-width="1.1" fill="none"/>' }); }, function () { return '<g stroke="#0b121a" stroke-width="1.4"><path d="M-4 0 L30 0" stroke="#2a1a14" stroke-width="3"/><path d="M27 -2 L31 -2 L31 2 L27 2Z" fill="#c9a24a"/><path d="M31 0 L36 -5 L41 0 L36 5Z" fill="#e0243a"/><path d="M34 -2 L37 -3" stroke="#ffb0b8" stroke-width="1"/></g>'; }, '-6 -8 50 16');
+var kuzuki = mkS('kuzuki', 'Souichirou Kuzuki', 'Master', '#5b6b7c', 'A quiet teacher in a dark grey suit and tie, short black hair and thin glasses. He fights bare-handed.', [['Suit', '#2e343c'], ['Tie', '#5b6b7c'], ['Hair', '#141416']], [], function () { return HB('kuzuki', { t1: '#2e343c', t2: '#3a414a', sh: '#262b32', arm: '#2e343c', hair: '#141416', skin: '#e0c4a8', mh: true, fringe: 'M4 -8.8 Q8.6 -6.8 9.2 -3.4 Q8.6 0 9.2 3.4 Q8.6 6.8 4 8.8Z', torso: '<path d="M6 -2 L13 0 L6 2 Z" fill="#5b6b7c" stroke="#0b121a" stroke-width=".8"/><path d="M2 -10 L8 -3 M2 10 L8 3" stroke="#e6e8ea" stroke-width="1.4"/>', strands: '<path d="M11.2 -4.8 L13.6 -4.8 L13.6 -1.4 L11.2 -1.4Z M11.2 1.4 L13.6 1.4 L13.6 4.8 L11.2 4.8Z" fill="rgba(200,225,245,.55)" stroke="#101214" stroke-width=".7"/><path d="M12.4 -1.4 L12.4 1.4" stroke="#101214" stroke-width=".7"/>' }); }, function () { return '<g stroke="#0b121a" stroke-width="1.4"><circle cx="4" cy="0" r="5" fill="#e0c4a8"/></g>'; }, '-2 -6 12 12');
+return { tokiomi: tokiomi, kuzuki: kuzuki, illya: illya, sakura: sakura, rin: rin, kiritsugu: kiritsugu, shirou: shirou, kayneth: kayneth, kirei: kirei, waver: waver, irisviel: irisviel, kariya: kariya, richard: richard, emiya: emiya, cid: cid, leonidas: leonidas, atalanta: atalanta, heracles: heracles, hassan: hassan, caerwyn: caerwyn, diarmuid: diarmuid, cu: cu, gilgamesh: gilgamesh, iskandar: iskandar, gilles: gilles, lancelot: lancelot, medusa: medusa, medea: medea, kojirou: kojirou };
 })();
 
-var GRIP = { illya: { x: 26, y: 8, k: 0.9 }, sakura: { x: 26, y: 8, k: 0.8 }, rin: { x: 26, y: 8, k: 0.8 }, kiritsugu: { x: 22, y: 8, k: 1 }, shirou: { x: 22, y: 8, k: 1 }, kayneth: { x: 26, y: 8, k: 0.8 }, kirei: { x: 20, y: 8, k: 1 }, waver: { x: 24, y: 8, k: 0.9 }, irisviel: { x: 26, y: 8, k: 0.9 }, kariya: { x: 26, y: 8, k: 0.9 }, richard: { x: 22, y: 9, k: 1.2 }, emiya: { x: 22, y: 10, k: 1.25, twin: true }, emiya_bow: { x: 22, y: 0, k: 1.0 }, cid: { x: 22, y: 9, k: 1.2 }, leonidas: { x: 24, y: 10, k: 1 }, atalanta: { x: 20, y: 0, k: 1.1 }, heracles: { x: 26, y: 16, k: 1.55 }, hassan: { x: 24, y: 9, k: 1.4 }, caerwyn: { x: 22, y: 9, k: 1.2 }, diarmuid: { x: 20, y: 9, k: 1, pair: 'diarmuid_yellow' }, cu: { x: 20, y: 9, k: 0.95 }, gilgamesh: { x: 26, y: -10, k: 0.9 }, iskandar: { x: 22, y: 9, k: 1.2 }, gilles: { x: 22, y: 7, k: 1.05 }, lancelot: { x: 28, y: 0, k: 1.1 }, lancelot_sword: { x: 22, y: 9, k: 1.15 }, lancelot_spear: { x: 24, y: 10, k: 1.0 }, lancelot_hammer: { x: 24, y: 12, k: 1.15 }, lancelot_gun: { x: 14, y: 2, k: 1.0 }, medusa: { x: 20, y: 9, k: 1.0 }, medea: { x: 18, y: 10, k: 1.0 }, kojirou: { x: 20, y: 9, k: 1.0 } };
+var GRIP = { tokiomi: { x: 22, y: 9, k: 1 }, kuzuki: { x: 22, y: 8, k: 1 }, illya: { x: 26, y: 8, k: 0.9 }, sakura: { x: 26, y: 8, k: 0.8 }, rin: { x: 26, y: 8, k: 0.8 }, kiritsugu: { x: 22, y: 8, k: 1 }, shirou: { x: 22, y: 8, k: 1 }, kayneth: { x: 26, y: 8, k: 0.8 }, kirei: { x: 20, y: 8, k: 1 }, waver: { x: 24, y: 8, k: 0.9 }, irisviel: { x: 26, y: 8, k: 0.9 }, kariya: { x: 26, y: 8, k: 0.9 }, richard: { x: 22, y: 9, k: 1.2 }, emiya: { x: 22, y: 10, k: 1.25, twin: true }, emiya_bow: { x: 22, y: 0, k: 1.0 }, cid: { x: 22, y: 9, k: 1.2 }, leonidas: { x: 24, y: 10, k: 1 }, atalanta: { x: 20, y: 0, k: 1.1 }, heracles: { x: 26, y: 16, k: 1.55 }, hassan: { x: 24, y: 9, k: 1.4 }, caerwyn: { x: 22, y: 9, k: 1.2 }, diarmuid: { x: 20, y: 9, k: 1, pair: 'diarmuid_yellow' }, cu: { x: 20, y: 9, k: 0.95 }, gilgamesh: { x: 26, y: -10, k: 0.9 }, iskandar: { x: 22, y: 9, k: 1.2 }, gilles: { x: 22, y: 7, k: 1.05 }, lancelot: { x: 28, y: 0, k: 1.1 }, lancelot_sword: { x: 22, y: 9, k: 1.15 }, lancelot_spear: { x: 24, y: 10, k: 1.0 }, lancelot_hammer: { x: 24, y: 12, k: 1.15 }, lancelot_gun: { x: 14, y: 2, k: 1.0 }, medusa: { x: 20, y: 9, k: 1.0 }, medea: { x: 18, y: 10, k: 1.0 }, kojirou: { x: 20, y: 9, k: 1.0 } };
 var THUMBN = 0;
 function thumb(id, w) {
   var s = SPR[id], g = GRIP[id], wp = s.weapon(), inner = s.body();
@@ -4419,6 +4434,12 @@ var MASTER_INFO = {
   illya: { style: 'The Einzbern masterpiece. Her familiars hunt on their own and her mana is nearly endless.', passive: ['Grail Vessel', 'Her servant’s Noble Phantasm charges 30% faster, and her mana pool is the deepest in the war.'],
     light: 'A Storch Ritter bird that homes in on its target.', heavy: 'Hold to charge, release: three homing birds.',
     skill: 'Einzbern Alchemy. Heals her servant for 35 within 380.', np: 'Storch Ritter Swarm: six homing birds at once.' },
+  tokiomi: { style: 'Head of the Tohsaka and a mage of fire. Every flame he casts leaves a burn that keeps eating at its target.', passive: ['Elegance', 'While above 70% health, all his mana costs are a quarter lower: his servant\u2019s Noble Phantasm included.'],
+    light: 'A flame bolt from his ruby cane that sets the target burning.', heavy: 'Hold to charge, release: a slow fireball that bursts and burns everyone near it.',
+    skill: 'Flame Ward. A ring of fire bursts out around him: burns and staggers everyone within 135.', np: 'Crimson Pillar: a circle of runes under the target, then a column of fire. Heavy burn.' },
+  kuzuki: { style: 'A teacher trained as an assassin. He walks into a servant\u2019s fight with his bare hands, and his strikes curl around a guard.', passive: ['Snake Fist', 'Deals full damage to servants like Shirou, and 35% of every blocked blow still gets through.'],
+    light: 'A four-strike chain of very fast jabs.', heavy: 'Hold to charge, release: a lunging elbow that breaks guards.',
+    skill: 'Reinforcement. For 5 seconds his fists are hardened with magecraft and hit harder.', np: 'Coiled Strike: a close grip that cannot be blocked or parried.' },
   sakura: { style: 'The Matou heir. Her shadow drinks what it touches and binds servants in place.', passive: ['Imaginary Numbers', 'Half of the damage she deals heals her.'],
     light: 'A lash of shadow.', heavy: 'Hold to charge, release: two shadow tendrils rise under the enemy.',
     skill: 'Imaginary Drain. Damages everyone within 260 and heals her for each one hit.', np: 'Shadow of the Grail: a wide pool of shadow erupts under the enemy and roots whoever it catches.' }
@@ -5569,14 +5590,15 @@ function drawWorld() {
   g.strokeStyle = '#5a7388'; g.lineWidth = 8; g.strokeRect(0, 0, W, H);
   G.zones.forEach(function (z) {
     if (!visL(z.owner)) return;
-    var p = clamp(z.t / z.delay, 0, 1), zs = z.a.zshape || 'arrow', zc = zs === 'flame' ? '255,140,60' : rgbOf(z.owner.def.col);
+    var p = clamp(z.t / z.delay, 0, 1), zs = z.a.zshape || 'arrow', zc = (zs === 'flame' || zs === 'pillar') ? '255,140,60' : rgbOf(z.owner.def.col);
     g.beginPath(); g.arc(z.x, z.y, z.r, 0, 6.283); g.fillStyle = z.done ? 'rgba(' + zc + ',.5)' : 'rgba(' + zc + ',' + (0.08 + 0.2 * p) + ')'; g.fill();
     g.strokeStyle = 'rgba(' + zc + ',.9)'; g.lineWidth = 2; g.stroke();
     if (!z.done) {
       g.beginPath(); g.arc(z.x, z.y, z.r * p, 0, 6.283); g.strokeStyle = 'rgba(' + zc + ',.6)'; g.stroke();
       if (zs === 'arrow' && p > 0.2) { var hx = z.x + (1 - p) * 110, hy = z.y - (1 - p) * 320; g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(hx + 18, hy - 56); g.lineTo(hx, hy); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.arc(hx, hy, 3.5, 0, 6.283); g.fill(); }
       if (zs === 'sword' && p > 0.15) { var hy2 = z.y - (1 - p) * 300; g.strokeStyle = '#d8dde2'; g.lineWidth = 4; g.beginPath(); g.moveTo(z.x, hy2 - 40); g.lineTo(z.x, hy2); g.stroke(); g.strokeStyle = '#7a1f2a'; g.lineWidth = 5; g.beginPath(); g.moveTo(z.x - 9, hy2 - 40); g.lineTo(z.x + 9, hy2 - 40); g.stroke(); }
-      if (zs === 'flame') { for (var fi = 0; fi < 6; fi++) { var fa = fi * 1.047 + G.time * 3, fr = z.r * 0.55 * p; g.beginPath(); g.arc(z.x + Math.cos(fa) * fr, z.y + Math.sin(fa) * fr, 6 + 6 * p, 0, 6.283); g.fillStyle = 'rgba(255,' + Math.round(150 + 60 * Math.sin(G.time * 9 + fi)) + ',60,' + (0.4 + 0.4 * p) + ')'; g.fill(); } g.beginPath(); g.moveTo(z.x - 14, z.y + 10); g.lineTo(z.x + 14, z.y - 10); g.moveTo(z.x + 14, z.y + 10); g.lineTo(z.x - 14, z.y - 10); g.strokeStyle = '#ffd36b'; g.lineWidth = 3; g.stroke(); }
+      if (zs === 'pillar') runeCircle(g, z.x, z.y, z.r * (0.5 + 0.45 * p), '#ff8a3a', G.time * 3, 0.4 + 0.5 * p);
+      if (zs === 'flame' || zs === 'pillar') { for (var fi = 0; fi < 6; fi++) { var fa = fi * 1.047 + G.time * 3, fr = z.r * 0.55 * p; g.beginPath(); g.arc(z.x + Math.cos(fa) * fr, z.y + Math.sin(fa) * fr, 6 + 6 * p, 0, 6.283); g.fillStyle = 'rgba(255,' + Math.round(150 + 60 * Math.sin(G.time * 9 + fi)) + ',60,' + (0.4 + 0.4 * p) + ')'; g.fill(); } g.beginPath(); g.moveTo(z.x - 14, z.y + 10); g.lineTo(z.x + 14, z.y - 10); g.moveTo(z.x + 14, z.y + 10); g.lineTo(z.x - 14, z.y - 10); g.strokeStyle = '#ffd36b'; g.lineWidth = 3; g.stroke(); }
       if (zs === 'tentacle') { g.strokeStyle = 'rgba(' + zc + ',.9)'; g.lineCap = 'round'; for (var ti = 0; ti < 4; ti++) { var ta = ti * 1.571 + G.time * 1.5, tl = z.r * 0.6 * p; g.lineWidth = 7 * p + 2; g.beginPath(); g.moveTo(z.x, z.y); g.quadraticCurveTo(z.x + Math.cos(ta) * tl * 0.5 + Math.sin(G.time * 7 + ti) * 6, z.y + Math.sin(ta) * tl * 0.5, z.x + Math.cos(ta) * tl, z.y + Math.sin(ta) * tl); g.stroke(); } }
     } else if (zs === 'tentacle') { g.strokeStyle = 'rgba(' + zc + ',.95)'; g.lineCap = 'round'; g.lineWidth = 12; for (var tj = 0; tj < 4; tj++) { var tb = tj * 1.571 + 0.4; g.beginPath(); g.moveTo(z.x, z.y); g.lineTo(z.x + Math.cos(tb) * z.r * 0.7, z.y + Math.sin(tb) * z.r * 0.7); g.stroke(); } }
     else if (zs === 'flame') { g.beginPath(); g.arc(z.x, z.y, z.r * 0.8, 0, 6.283); g.fillStyle = 'rgba(255,140,50,.55)'; g.fill(); }
@@ -6283,7 +6305,9 @@ var LINES = {
   irisviel: { summon: ["I am. Let's win this together, for the ones waiting at home."], engage: ['Stay close to me.'], servantdown: ['No... not yet...'] },
   illya: { summon: ["Mm-hm! You're mine now. Let's go crush everyone."], engage: ['Found you~'], kill: ['Bye-bye!'], servantdown: ['...Liar. You said you were the strongest.'] },
   kariya: { summon: ['I am... For her sake, we will not lose.'], engage: ['Tokiomi... is that you?'], servantdown: ['Not like this...'] },
-  sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] }
+  sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] },
+  tokiomi: { summon: ['I am. A Tohsaka does not lose his composure, and does not lose.'], engage: ['Let us settle this with dignity.'], kill: ['Elegance, to the very end.'], servantdown: ['This was not... how it was meant to go.'] },
+  kuzuki: { summon: ['I am. I have no wish of my own. Tell me what you need.'], engage: ['...'], kill: ['It is finished.'], servantdown: ['I see. Then I will go on alone.'] }
 };
 var LINE_S = { engage: ['Face me!', 'Another challenger.', 'Here we go.'], kill: ['One less.', 'It is done.', 'Next.'], np: ['Witness my Noble Phantasm!', 'This ends now!'], low: ['Not yet...!', 'I can still fight.'], masterdown: ['Master...!', 'My Master has fallen...'], contract: ['A new pact, then. Lead well.', 'Very well. I am yours.'] };
 var LINE_M = { engage: ['Careful!', 'Enemy Master!', 'There they are!'], kill: ['Did we... win?', 'One less team.'], low: ['I need help!', 'This is bad...'], servantdown: ['No... my Servant...', 'It is over for us...'], contract: ['Then fight for me now.'] };
@@ -7234,6 +7258,8 @@ var PACT_LINES = {
   gilgamesh: { offer: 'You may stand near me tonight. Consider it an honor.', yes: 'Hmph. Amuse me.', no: 'You presume too much, mongrel.', brk: '...' },
   shirou: { offer: 'We don’t have to fight tonight. Let’s work together.', yes: 'Thanks. I mean it.', no: 'I understand. But I won’t give up on talking.', brk: '...' },
   rin: { offer: 'A temporary alliance. Strictly business.', yes: 'Good. Don’t make me regret it.', no: 'Fine. Your funeral.', brk: 'Sorry. It’s nothing personal. Mostly.' },
+  tokiomi: { offer: 'An arrangement between gentlemen, until dawn. You will find me a reliable partner.', yes: 'Splendid. Let us proceed.', no: 'A pity. We shall meet as enemies, then.', brk: 'Forgive me. Victory was always the arrangement.' },
+  kuzuki: { offer: 'We have no reason to fight tonight.', yes: 'Understood.', no: 'Then I will not hold back.', brk: '...' },
   sakura: { offer: 'Um... could we not fight tonight?', yes: 'Thank you...', no: 'I see...', brk: 'I’m sorry. I couldn’t stop it.' },
   waver: { offer: 'H-hey! How about a truce? Just for tonight!', yes: 'Really? Great! I mean, good. Acceptable.', no: 'Why does nobody ever listen to me?!', brk: 'I— I didn’t want to do that!' },
   irisviel: { offer: 'There’s no need for us to fight tonight.', yes: 'Thank you. Let’s both see the morning.', no: 'I’m sorry to hear that.', brk: 'Forgive me...' },
@@ -7482,6 +7508,13 @@ function afx(f) { return AFX[f.idx] || (AFX[f.idx] = { trail: [], trT: 0 }); }
     if (prev && prev(n, x, y, f)) return true;
     var id = f && f.def ? f.def.id : '', fa = f ? f.face : 0, c = Math.cos(fa), s = Math.sin(fa);
     // Heracles: the Stone Slam caves the ground in
+    // Tokiomi's Flame Ward: a ring of fire bursts out around him
+    if (n === 'slam' && id === 'tokiomi') {
+      var wr = f.A.skill.r; flashFx('#ff8a3a', 0.14, 0.14); ringFx(x, y, 20, wr + 20, '#ff7a2a', 0.5, 14); ringFx(x, y, 10, wr * 0.7, '#ffe0a0', 0.35, 5, 0.05);
+      vfx(0.7, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; var r = 30 + wr * Math.min(1, p * 3); for (var i = 0; i < 18; i++) { var an = i / 18 * 6.283 + p, fl = 18 + 10 * Math.sin(i * 3 + p * 30); g.fillStyle = 'rgba(255,' + (110 + (i * 37) % 100) + ',40,' + (0.6 * (1 - p)) + ')'; g.beginPath(); g.ellipse(x + Math.cos(an) * r, y + Math.sin(an) * r, fl * (1 - p * 0.5), 7, an, 0, 6.283); g.fill(); } g.restore(); });
+      for (var wi = 0; wi < 8; wi++) { var wa = wi * 0.785; decal('scorch', x + Math.cos(wa) * wr * 0.8, y + Math.sin(wa) * wr * 0.8, { r: 26, ember: '255,120,40', life: 5 }); }
+      petals(x, y, 16, ['#ffb347', '#ff6a2a', '#ffd36b'], 220); return true;
+    }
     if (n === 'slam') {
       decal('crater', x, y, { r: 120, n: 11, life: 8 }); rocks(x, y, 16, 260, null, 7); dustRing(x, y, 210, '120,100,80', 0.7); FX.shake(9);
       vfx(0.25, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; var rg = g.createRadialGradient(x, y, 4, x, y, 150); rg.addColorStop(0, 'rgba(255,200,140,' + (0.5 * (1 - p)) + ')'); rg.addColorStop(1, 'rgba(255,120,40,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x, y, 150, 0, 6.283); g.fill(); g.restore(); });
@@ -7579,6 +7612,15 @@ function afx(f) { return AFX[f.idx] || (AFX[f.idx] = { trail: [], trT: 0 }); }
     if (n === 'npfire' && id === 'caerwyn') { for (var cw = 0; cw < 9; cw++) decal('scorch', x + c * (80 + cw * 110), y + s * (80 + cw * 110), { r: 46, ember: '255,200,90', life: 7 }); return false; }
     if (n === 'npfire' && id === 'hassan') { flashFx('#000000', 0.25, 0.25); return false; }
     if (n === 'explode') { decal('crater', x, y, { r: (f && f.r) ? f.r * 0.7 : 90, n: 9, life: 7, glow: f && f.big }); rocks(x, y, 10, 260, null, 6); return false; }
+    // Crimson Pillar: a column of fire erupts from the rune circle
+    if (n === 'arrowLand' && f && f.a && f.a.zshape === 'pillar') {
+      var pr = f.r; flashFx('#ff7a2a', 0.2, 0.2); FX.shake(8); decal('scorch', x, y, { r: pr * 1.1, ember: '255,110,30', life: 8 }); rocks(x, y, 6, 160, '#3a2a22', 5);
+      vfx(0.9, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; var R = pr * (0.6 + 0.5 * Math.min(1, p * 4)), rg = g.createRadialGradient(x, y, 4, x, y, R); rg.addColorStop(0, 'rgba(255,250,220,' + (0.95 * (1 - p)) + ')'); rg.addColorStop(0.4, 'rgba(255,150,50,' + (0.8 * (1 - p)) + ')'); rg.addColorStop(1, 'rgba(200,40,20,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x, y, R, 0, 6.283); g.fill();
+        for (var i = 0; i < 12; i++) { var an = i / 12 * 6.283 + p * 2, L = R * (0.9 + 0.5 * Math.sin(i * 5 + p * 20)); g.fillStyle = 'rgba(255,' + (120 + (i * 29) % 110) + ',40,' + (0.55 * (1 - p)) + ')'; g.beginPath(); g.moveTo(x + Math.cos(an - 0.2) * R * 0.3, y + Math.sin(an - 0.2) * R * 0.3); g.quadraticCurveTo(x + Math.cos(an) * L * 1.2, y + Math.sin(an) * L * 1.2 - 20, x + Math.cos(an + 0.2) * R * 0.3, y + Math.sin(an + 0.2) * R * 0.3); g.fill(); }
+        g.restore(); });
+      for (var em = 0; em < 26; em++) parts.push({ x: x + (Math.random() - 0.5) * pr, y: y + (Math.random() - 0.5) * pr, vx: (Math.random() - 0.5) * 80, vy: -120 - Math.random() * 160, t: 0, life: 0.8, col: Math.random() < 0.5 ? '#ffb347' : '#ff5a1a' });
+      return false;
+    }
     if (n === 'arrowLand') { decal('scorch', x, y, { r: 22, life: 4 }); return false; }
     if (n === 'marbleOff') { return false; }
     return false;
@@ -7595,8 +7637,9 @@ function masterSkillFx(f, x, y) {
     // Volumen Hydrargyrum: quicksilver pours out and rises into a dome
     vfx(0.7, function (g, p) { g.save(); var r = 20 + 40 * Math.min(1, p * 2); var mg = g.createRadialGradient(x - 10, y - 10, 4, x, y, r); mg.addColorStop(0, 'rgba(240,246,250,' + (0.7 * (1 - p)) + ')'); mg.addColorStop(0.7, 'rgba(160,172,184,' + (0.5 * (1 - p)) + ')'); mg.addColorStop(1, 'rgba(120,130,140,0)'); g.fillStyle = mg; g.beginPath(); for (var i = 0; i <= 20; i++) { var an = i / 20 * 6.283, rr = r * (1 + 0.08 * Math.sin(an * 5 + p * 20)); if (i) g.lineTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr); else g.moveTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr); } g.fill(); g.restore(); });
   } else if (k === 'reinforce') {
-    // Reinforcement: green circuit lines light up over the body
-    vfx(0.7, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(120,230,160,' + (0.85 * (1 - p)) + ')'; g.lineWidth = 1.8; for (var i = 0; i < 8; i++) { var an = i * 0.785 + 0.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(an) * 18, y + Math.sin(an) * 18); g.lineTo(x + Math.cos(an + 0.4) * 30, y + Math.sin(an + 0.4) * 30); g.stroke(); } g.restore(); });
+    // Reinforcement: circuit lines light up over the body (green for Shirou, Medea's pale blue for Kuzuki)
+    var rc = id === 'kuzuki' ? '140,200,255' : '120,230,160';
+    vfx(0.7, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(' + rc + ',' + (0.85 * (1 - p)) + ')'; g.lineWidth = 1.8; for (var i = 0; i < 8; i++) { var an = i * 0.785 + 0.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(an) * 18, y + Math.sin(an) * 18); g.lineTo(x + Math.cos(an + 0.4) * 30, y + Math.sin(an + 0.4) * 30); g.stroke(); } g.restore(); });
   } else if (k === 'buff') {
     // Strategist: a battle plan unrolls over the servant: arrows and a ring of command
     var pt = f.partner && f.partner.st !== 'dead' ? f.partner : f;
@@ -7619,7 +7662,9 @@ function masterSkillFx(f, x, y) {
 }
 function masterSigFx(f, x, y) {
   var id = f.def.id, fa = f.face, c = Math.cos(fa), s = Math.sin(fa);
-  if (id === 'kirei') { var px = x + c * 50, py = y + s * 50; ringFx(px, py, 6, 90, '#f2e6c0', 0.3, 8); decal('crater', px, py, { r: 50, n: 7, life: 5 }); rocks(px, py, 6, 160, null, 5); FX.shake(8); }
+  if (id === 'tokiomi') { var tx0 = x + c * 40, ty0 = y + s * 40; vfx(0.5, function (g, p) { runeCircle(g, tx0, ty0, 16 + 12 * p, '#ff7a2a', p * 6, 0.9 * (1 - p)); }); FX.spark(tx0, ty0, '#ff5a1a', 10); }
+  else if (id === 'kuzuki') { var kx = x + c * 70, ky = y + s * 70; vfx(0.45, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(140,200,255,' + (0.9 * (1 - p)) + ')'; g.lineWidth = 3; g.beginPath(); for (var i = 0; i <= 30; i++) { var k = i / 30, an = k * 12 + p * 6, r = 46 * (1 - k) * (1 - p * 0.4); if (i) g.lineTo(kx + Math.cos(an) * r, ky + Math.sin(an) * r); else g.moveTo(kx + Math.cos(an) * r, ky + Math.sin(an) * r); } g.stroke(); g.restore(); }); ringFx(kx, ky, 6, 80, '#8cc8ff', 0.3, 6); FX.shake(6); }
+  else if (id === 'kirei') { var px = x + c * 50, py = y + s * 50; ringFx(px, py, 6, 90, '#f2e6c0', 0.3, 8); decal('crater', px, py, { r: 50, n: 7, life: 5 }); rocks(px, py, 6, 160, null, 5); FX.shake(8); }
   else if (id === 'kayneth') { vfx(0.5, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(220,230,240,' + (0.9 * (1 - p)) + ')'; g.lineWidth = 10 * (1 - p) + 2; g.lineCap = 'round'; g.beginPath(); g.arc(x, y, 40 + 120 * Math.min(1, p * 2), p * 8, p * 8 + 4.5); g.stroke(); g.restore(); }); }
   else if (id === 'kariya' || id === 'sakura') { puffFx(x, y, 10, id === 'sakura' ? '30,10,40' : '70,40,80', 80, 12, 0.7); }
   else if (id === 'kiritsugu') { flashFx('#fff2a8', 0.12, 0.08); }
@@ -7638,7 +7683,18 @@ drawFighter = function (f, i, ar) {
   if (f.def.id === 'lancelot' && f.armT > 0 && f.key !== 'np') drawSeizedVeins(f);
   if (f.def.id === 'diarmuid' && f.key === 'np' && f.st === 'act') diarmuidTrail(f);
   if (f.def.id === 'heracles' && f.key === 'np' && f.st === 'act') heraclesRage(f);
+  if (f.def.id === 'kuzuki') kuzukiFists(f);
 };
+// Kuzuki: each jab coils in like a striking snake; reinforced fists glow pale blue
+function kuzukiFists(f) {
+  var t = G.time;
+  if (f.reinfT > 0) [-1, 1].forEach(function (sd) { var fp = locOf(f, 26, 9 * sd); ctx.save(); ctx.globalCompositeOperation = 'lighter'; var rg = ctx.createRadialGradient(fp.x, fp.y, 1, fp.x, fp.y, 14); rg.addColorStop(0, 'rgba(160,215,255,' + (0.6 + 0.2 * Math.sin(t * 10)) + ')'); rg.addColorStop(1, 'rgba(140,200,255,0)'); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(fp.x, fp.y, 14, 0, 6.283); ctx.fill(); ctx.restore(); });
+  var a = f.act; if (!a || f.st !== 'act' || a.kind !== 'melee') return;
+  var q = clamp(f.t / Math.max(a.act, 0.05), 0, 1), sd = f.key === 'light' ? (f.combo % 2 ? 1 : -1) : 1, L = a.reach + 10;
+  ctx.save(); ctx.lineCap = 'round'; ctx.globalCompositeOperation = 'lighter'; ctx.beginPath();
+  for (var i = 0; i <= 14; i++) { var k = i / 14 * q, x = 18 + (L - 18) * k, y = 9 * sd + Math.sin(k * 9) * 14 * (1 - k) * sd, p = locOf(f, x, y); if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }
+  ctx.strokeStyle = f.reinfT > 0 ? 'rgba(150,210,255,' + (0.7 * (1 - q * 0.5)) + ')' : 'rgba(220,226,232,' + (0.55 * (1 - q * 0.5)) + ')'; ctx.lineWidth = f.key === 'heavy' ? 7 : 4; ctx.stroke(); ctx.restore();
+}
 // Gordius Wheel: two divine bulls, the chariot behind them, thunder at the wheels
 function drawChariot(f) {
   var a = f.act, p = f.st === 'wind' ? clamp(f.t / (f.windTotal || a.wind), 0, 1) : f.st === 'act' ? 1 : 1 - f.t / 0.3, t = G.time, run = f.st === 'act';
@@ -7742,6 +7798,20 @@ SND.nine = function (o, out, t, P) {
 // his roar as Nine Lives begins
 (function () { var old = SND['npfire:heracles']; SND['npfire:heracles'] = function (o, out, t, P) { if (old) old(o, out, t, P); tone(o, out, t, 'sawtooth', 110, 58, 0.9, 0.22, 0.04); tone(o, out, t, 'square', 82, 46, 0.8, 0.1, 0.05); noise(o, out, t, 'bandpass', 500, 260, 0.9, 0.35, 0.05, 3); }; })();
 SND['skill:iskandar'] = function (o, out, t) { noise(o, out, t, 'highpass', 4000, 1200, 0.25, 0.4, 0.001, 0.8); bass(o, out, t + 0.02, 70, 30, 0.9, 0.6, 1.2); noise(o, out, t + 0.05, 'lowpass', 900, 200, 1.2, 0.4, 0.05, 0.8); };
+
+// Tokiomi's flame bolts and fireballs: a burning head with a tail of embers
+var drawProjX0 = drawProjX;
+drawProjX = function (g, p, a) {
+  if (p.a.shape !== 'flame') return drawProjX0(g, p, a);
+  var sz = p.a.size || 8, t = G.time;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.translate(p.x, p.y); g.rotate(a);
+  var tl = g.createLinearGradient(-sz * 7, 0, 0, 0); tl.addColorStop(0, 'rgba(255,80,20,0)'); tl.addColorStop(1, 'rgba(255,140,40,.7)'); g.fillStyle = tl;
+  g.beginPath(); g.moveTo(0, -sz * 0.9); g.quadraticCurveTo(-sz * 4, -sz * 0.6 + Math.sin(t * 30) * 2, -sz * 7, 0); g.quadraticCurveTo(-sz * 4, sz * 0.6 - Math.sin(t * 30) * 2, 0, sz * 0.9); g.fill();
+  var rg = g.createRadialGradient(0, 0, 1, 0, 0, sz * 1.5); rg.addColorStop(0, 'rgba(255,250,220,1)'); rg.addColorStop(0.5, 'rgba(255,170,60,.9)'); rg.addColorStop(1, 'rgba(255,60,20,0)'); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, sz * 1.5, 0, 6.283); g.fill();
+  g.restore();
+  if (Math.random() < 0.5 && FX.near(p.x, p.y)) parts.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 60, vy: -30 - Math.random() * 40, t: 0, life: 0.4, col: Math.random() < 0.5 ? '#ffb347' : '#ff5a1a' });
+  return true;
+};
 /* ---- the Church's reach, drawn: the fallen in the street, Executors and their Black Keys, and the notices ---- */
 function drawBodies(g) {
   if (!G.bodies || !G.bodies.length) return;
@@ -8724,6 +8794,8 @@ var MLORE = {
   irisviel: { ep: 'The Vessel', lore: 'A homunculus made by the Einzbern family to carry the Grail, given a heart she was never meant to have. She is Kiritsugu’s wife and Illya’s mother. This war is the first time she has seen the world beyond her castle and its snow.', wish: 'For her husband’s dream to come true, and for her daughter to live free of it.' },
   kariya: { ep: 'The Prodigal Matou', lore: 'He walked away from the Matou family and its magecraft, then came back to fight in the war to free Sakura. To become a master he let the crest worms eat away at his body. He has months to live, and spends his own life to keep his Servant fighting.', wish: 'Sakura safe, and back with her family.' },
   illya: { ep: 'Child of the Einzbern', lore: 'The daughter of Kiritsugu and Irisviel, raised alone in a castle in the snow and shaped into the next vessel of the Grail. She is playful and cruel by turns, and her mana seems endless. Her birds hunt on their own, and her Berserker guards her like a mountain.', wish: 'To ask her father why he never came back.' },
+  tokiomi: { ep: 'The Head of the Tohsaka', lore: 'The perfect gentleman of an old line of mages, raised from birth to reach the Root and never to show strain while doing it. He called a king to win the war, planned every step with the Church, and trusted that plan more than the people around him. He gave one daughter away so both could flourish.', wish: 'To reach the Root, as every Tohsaka before him meant to.' },
+  kuzuki: { ep: 'The Empty Teacher', lore: 'A teacher of ethics at Homurahara Academy who lives at the temple on Mount Enzou. Raised from childhood to kill, he has never wanted anything for himself. He found a wounded sorceress in the rain one night and took her in without a question.', wish: 'None. He fights so that she can have hers.' },
   sakura: { ep: 'The Matou Heir', lore: 'Born a Tohsaka and given away to the Matou family as a child, she grew up in the dark beneath their house. She is gentle and quiet and visits the Emiya house every morning. Something has been growing in her shadow for a long time.', wish: 'An ordinary life, and the people she cares about beside her.' }
 };
 function loreHTML(filter) {

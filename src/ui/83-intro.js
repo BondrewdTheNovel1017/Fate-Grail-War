@@ -90,7 +90,9 @@ var LINES = {
   irisviel: { summon: ["I am. Let's win this together, for the ones waiting at home."], engage: ['Stay close to me.'], servantdown: ['No... not yet...'] },
   illya: { summon: ["Mm-hm! You're mine now. Let's go crush everyone."], engage: ['Found you~'], kill: ['Bye-bye!'], servantdown: ['...Liar. You said you were the strongest.'] },
   kariya: { summon: ['I am... For her sake, we will not lose.'], engage: ['Tokiomi... is that you?'], servantdown: ['Not like this...'] },
-  sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] }
+  sakura: { summon: ["I... I am. Please, don't leave me alone."], engage: ['Please... just go away.'], servantdown: ["Don't leave me...!"] },
+  tokiomi: { summon: ['I am. A Tohsaka does not lose his composure, and does not lose.'], engage: ['Let us settle this with dignity.'], kill: ['Elegance, to the very end.'], servantdown: ['This was not... how it was meant to go.'] },
+  kuzuki: { summon: ['I am. I have no wish of my own. Tell me what you need.'], engage: ['...'], kill: ['It is finished.'], servantdown: ['I see. Then I will go on alone.'] }
 };
 var LINE_S = { engage: ['Face me!', 'Another challenger.', 'Here we go.'], kill: ['One less.', 'It is done.', 'Next.'], np: ['Witness my Noble Phantasm!', 'This ends now!'], low: ['Not yet...!', 'I can still fight.'], masterdown: ['Master...!', 'My Master has fallen...'], contract: ['A new pact, then. Lead well.', 'Very well. I am yours.'] };
 var LINE_M = { engage: ['Careful!', 'Enemy Master!', 'There they are!'], kill: ['Did we... win?', 'One less team.'], low: ['I need help!', 'This is bad...'], servantdown: ['No... my Servant...', 'It is over for us...'], contract: ['Then fight for me now.'] };

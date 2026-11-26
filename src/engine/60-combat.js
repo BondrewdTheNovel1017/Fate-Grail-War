@@ -212,7 +212,7 @@ function strikeInit(f) {
   else if (k === 'grab') {
     if (dist(f, o) <= a.reach + FR && Math.abs(angDiff(f.face, angTo(f, o))) <= a.arc) {
       if (o.iframes > 0) { hurt(f, o, a, 1); }
-      else if (o.hp <= o.def.hp * 0.3) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
+      else if (!a.noExec && o.hp <= o.def.hp * 0.3) { FX.text(o, 'EXECUTED'); FX.fx('execute', o.x, o.y, o); FX.snd('execute', o); o.hp = 0; f.stat.dealt += 30; f.stat.hits++; FX.shake(14); kill(o, true); }
       else hurt(f, o, a, 1);
     }
   }

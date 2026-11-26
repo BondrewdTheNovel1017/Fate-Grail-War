@@ -749,3 +749,18 @@ test('Zabaniya: the cursed arm reaches a foe beyond sword reach, in a narrow lin
   for (let i = 0; i < 60 * 0.9; i++) { r2.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); }
   assert.strictEqual(r2.hp, hp1, 'a step out of the line beats it');
 });
+test('Tokiomi burns what he hits and spends less mana while unhurt; Kuzuki hits servants at full force but his grip never executes', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.MASTERS.tokiomi, E.SERV.richard, { map: 'arena' });
+  const t = G.f[0], r = G.f[1]; G.ai = [null, null];
+  E.hurt(t, r, t.A.light, 1); assert.ok(r.bleedT > 0 && r.burnFx, 'a flame bolt sets the target burning');
+  t.mana = 9; assert.ok(E.canPay(t, 12), 'unhurt, a 12-mana cost needs only 9');
+  t.hp = t.def.hp * 0.5; assert.ok(!E.canPay(t, 12), 'hurt, it costs the full 12');
+  const G2 = E.newGame(E.MASTERS.kuzuki, E.SERV.richard, { map: 'arena' });
+  const k = G2.f[0], s = G2.f[1]; G2.ai = [null, null];
+  const hp0 = s.hp; E.hurt(k, s, Object.assign({}, k.A.light), 1);
+  assert.ok(hp0 - s.hp >= k.A.light.dmg * 0.9, 'no master half-damage against a servant');
+  k.x = 500; k.y = 500; s.x = 580; s.y = 500; k.face = 0; k.foe = s; s.foe = k; s.hp = s.def.hp * 0.2; k.sigCd = 0;
+  E.startAct(k, 'np'); for (let i = 0; i < 40; i++) E.simStep(E.STEP);
+  assert.ok(s.st !== 'dead', 'Coiled Strike hurts but does not execute a servant');
+});

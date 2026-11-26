@@ -99,6 +99,13 @@ function afx(f) { return AFX[f.idx] || (AFX[f.idx] = { trail: [], trT: 0 }); }
     if (prev && prev(n, x, y, f)) return true;
     var id = f && f.def ? f.def.id : '', fa = f ? f.face : 0, c = Math.cos(fa), s = Math.sin(fa);
     // Heracles: the Stone Slam caves the ground in
+    // Tokiomi's Flame Ward: a ring of fire bursts out around him
+    if (n === 'slam' && id === 'tokiomi') {
+      var wr = f.A.skill.r; flashFx('#ff8a3a', 0.14, 0.14); ringFx(x, y, 20, wr + 20, '#ff7a2a', 0.5, 14); ringFx(x, y, 10, wr * 0.7, '#ffe0a0', 0.35, 5, 0.05);
+      vfx(0.7, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; var r = 30 + wr * Math.min(1, p * 3); for (var i = 0; i < 18; i++) { var an = i / 18 * 6.283 + p, fl = 18 + 10 * Math.sin(i * 3 + p * 30); g.fillStyle = 'rgba(255,' + (110 + (i * 37) % 100) + ',40,' + (0.6 * (1 - p)) + ')'; g.beginPath(); g.ellipse(x + Math.cos(an) * r, y + Math.sin(an) * r, fl * (1 - p * 0.5), 7, an, 0, 6.283); g.fill(); } g.restore(); });
+      for (var wi = 0; wi < 8; wi++) { var wa = wi * 0.785; decal('scorch', x + Math.cos(wa) * wr * 0.8, y + Math.sin(wa) * wr * 0.8, { r: 26, ember: '255,120,40', life: 5 }); }
+      petals(x, y, 16, ['#ffb347', '#ff6a2a', '#ffd36b'], 220); return true;
+    }
     if (n === 'slam') {
       decal('crater', x, y, { r: 120, n: 11, life: 8 }); rocks(x, y, 16, 260, null, 7); dustRing(x, y, 210, '120,100,80', 0.7); FX.shake(9);
       vfx(0.25, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; var rg = g.createRadialGradient(x, y, 4, x, y, 150); rg.addColorStop(0, 'rgba(255,200,140,' + (0.5 * (1 - p)) + ')'); rg.addColorStop(1, 'rgba(255,120,40,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x, y, 150, 0, 6.283); g.fill(); g.restore(); });
@@ -196,6 +203,15 @@ function afx(f) { return AFX[f.idx] || (AFX[f.idx] = { trail: [], trT: 0 }); }
     if (n === 'npfire' && id === 'caerwyn') { for (var cw = 0; cw < 9; cw++) decal('scorch', x + c * (80 + cw * 110), y + s * (80 + cw * 110), { r: 46, ember: '255,200,90', life: 7 }); return false; }
     if (n === 'npfire' && id === 'hassan') { flashFx('#000000', 0.25, 0.25); return false; }
     if (n === 'explode') { decal('crater', x, y, { r: (f && f.r) ? f.r * 0.7 : 90, n: 9, life: 7, glow: f && f.big }); rocks(x, y, 10, 260, null, 6); return false; }
+    // Crimson Pillar: a column of fire erupts from the rune circle
+    if (n === 'arrowLand' && f && f.a && f.a.zshape === 'pillar') {
+      var pr = f.r; flashFx('#ff7a2a', 0.2, 0.2); FX.shake(8); decal('scorch', x, y, { r: pr * 1.1, ember: '255,110,30', life: 8 }); rocks(x, y, 6, 160, '#3a2a22', 5);
+      vfx(0.9, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; var R = pr * (0.6 + 0.5 * Math.min(1, p * 4)), rg = g.createRadialGradient(x, y, 4, x, y, R); rg.addColorStop(0, 'rgba(255,250,220,' + (0.95 * (1 - p)) + ')'); rg.addColorStop(0.4, 'rgba(255,150,50,' + (0.8 * (1 - p)) + ')'); rg.addColorStop(1, 'rgba(200,40,20,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x, y, R, 0, 6.283); g.fill();
+        for (var i = 0; i < 12; i++) { var an = i / 12 * 6.283 + p * 2, L = R * (0.9 + 0.5 * Math.sin(i * 5 + p * 20)); g.fillStyle = 'rgba(255,' + (120 + (i * 29) % 110) + ',40,' + (0.55 * (1 - p)) + ')'; g.beginPath(); g.moveTo(x + Math.cos(an - 0.2) * R * 0.3, y + Math.sin(an - 0.2) * R * 0.3); g.quadraticCurveTo(x + Math.cos(an) * L * 1.2, y + Math.sin(an) * L * 1.2 - 20, x + Math.cos(an + 0.2) * R * 0.3, y + Math.sin(an + 0.2) * R * 0.3); g.fill(); }
+        g.restore(); });
+      for (var em = 0; em < 26; em++) parts.push({ x: x + (Math.random() - 0.5) * pr, y: y + (Math.random() - 0.5) * pr, vx: (Math.random() - 0.5) * 80, vy: -120 - Math.random() * 160, t: 0, life: 0.8, col: Math.random() < 0.5 ? '#ffb347' : '#ff5a1a' });
+      return false;
+    }
     if (n === 'arrowLand') { decal('scorch', x, y, { r: 22, life: 4 }); return false; }
     if (n === 'marbleOff') { return false; }
     return false;
@@ -212,8 +228,9 @@ function masterSkillFx(f, x, y) {
     // Volumen Hydrargyrum: quicksilver pours out and rises into a dome
     vfx(0.7, function (g, p) { g.save(); var r = 20 + 40 * Math.min(1, p * 2); var mg = g.createRadialGradient(x - 10, y - 10, 4, x, y, r); mg.addColorStop(0, 'rgba(240,246,250,' + (0.7 * (1 - p)) + ')'); mg.addColorStop(0.7, 'rgba(160,172,184,' + (0.5 * (1 - p)) + ')'); mg.addColorStop(1, 'rgba(120,130,140,0)'); g.fillStyle = mg; g.beginPath(); for (var i = 0; i <= 20; i++) { var an = i / 20 * 6.283, rr = r * (1 + 0.08 * Math.sin(an * 5 + p * 20)); if (i) g.lineTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr); else g.moveTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr); } g.fill(); g.restore(); });
   } else if (k === 'reinforce') {
-    // Reinforcement: green circuit lines light up over the body
-    vfx(0.7, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(120,230,160,' + (0.85 * (1 - p)) + ')'; g.lineWidth = 1.8; for (var i = 0; i < 8; i++) { var an = i * 0.785 + 0.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(an) * 18, y + Math.sin(an) * 18); g.lineTo(x + Math.cos(an + 0.4) * 30, y + Math.sin(an + 0.4) * 30); g.stroke(); } g.restore(); });
+    // Reinforcement: circuit lines light up over the body (green for Shirou, Medea's pale blue for Kuzuki)
+    var rc = id === 'kuzuki' ? '140,200,255' : '120,230,160';
+    vfx(0.7, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(' + rc + ',' + (0.85 * (1 - p)) + ')'; g.lineWidth = 1.8; for (var i = 0; i < 8; i++) { var an = i * 0.785 + 0.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(an) * 18, y + Math.sin(an) * 18); g.lineTo(x + Math.cos(an + 0.4) * 30, y + Math.sin(an + 0.4) * 30); g.stroke(); } g.restore(); });
   } else if (k === 'buff') {
     // Strategist: a battle plan unrolls over the servant: arrows and a ring of command
     var pt = f.partner && f.partner.st !== 'dead' ? f.partner : f;
@@ -236,7 +253,9 @@ function masterSkillFx(f, x, y) {
 }
 function masterSigFx(f, x, y) {
   var id = f.def.id, fa = f.face, c = Math.cos(fa), s = Math.sin(fa);
-  if (id === 'kirei') { var px = x + c * 50, py = y + s * 50; ringFx(px, py, 6, 90, '#f2e6c0', 0.3, 8); decal('crater', px, py, { r: 50, n: 7, life: 5 }); rocks(px, py, 6, 160, null, 5); FX.shake(8); }
+  if (id === 'tokiomi') { var tx0 = x + c * 40, ty0 = y + s * 40; vfx(0.5, function (g, p) { runeCircle(g, tx0, ty0, 16 + 12 * p, '#ff7a2a', p * 6, 0.9 * (1 - p)); }); FX.spark(tx0, ty0, '#ff5a1a', 10); }
+  else if (id === 'kuzuki') { var kx = x + c * 70, ky = y + s * 70; vfx(0.45, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(140,200,255,' + (0.9 * (1 - p)) + ')'; g.lineWidth = 3; g.beginPath(); for (var i = 0; i <= 30; i++) { var k = i / 30, an = k * 12 + p * 6, r = 46 * (1 - k) * (1 - p * 0.4); if (i) g.lineTo(kx + Math.cos(an) * r, ky + Math.sin(an) * r); else g.moveTo(kx + Math.cos(an) * r, ky + Math.sin(an) * r); } g.stroke(); g.restore(); }); ringFx(kx, ky, 6, 80, '#8cc8ff', 0.3, 6); FX.shake(6); }
+  else if (id === 'kirei') { var px = x + c * 50, py = y + s * 50; ringFx(px, py, 6, 90, '#f2e6c0', 0.3, 8); decal('crater', px, py, { r: 50, n: 7, life: 5 }); rocks(px, py, 6, 160, null, 5); FX.shake(8); }
   else if (id === 'kayneth') { vfx(0.5, function (g, p) { g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(220,230,240,' + (0.9 * (1 - p)) + ')'; g.lineWidth = 10 * (1 - p) + 2; g.lineCap = 'round'; g.beginPath(); g.arc(x, y, 40 + 120 * Math.min(1, p * 2), p * 8, p * 8 + 4.5); g.stroke(); g.restore(); }); }
   else if (id === 'kariya' || id === 'sakura') { puffFx(x, y, 10, id === 'sakura' ? '30,10,40' : '70,40,80', 80, 12, 0.7); }
   else if (id === 'kiritsugu') { flashFx('#fff2a8', 0.12, 0.08); }
@@ -255,7 +274,18 @@ drawFighter = function (f, i, ar) {
   if (f.def.id === 'lancelot' && f.armT > 0 && f.key !== 'np') drawSeizedVeins(f);
   if (f.def.id === 'diarmuid' && f.key === 'np' && f.st === 'act') diarmuidTrail(f);
   if (f.def.id === 'heracles' && f.key === 'np' && f.st === 'act') heraclesRage(f);
+  if (f.def.id === 'kuzuki') kuzukiFists(f);
 };
+// Kuzuki: each jab coils in like a striking snake; reinforced fists glow pale blue
+function kuzukiFists(f) {
+  var t = G.time;
+  if (f.reinfT > 0) [-1, 1].forEach(function (sd) { var fp = locOf(f, 26, 9 * sd); ctx.save(); ctx.globalCompositeOperation = 'lighter'; var rg = ctx.createRadialGradient(fp.x, fp.y, 1, fp.x, fp.y, 14); rg.addColorStop(0, 'rgba(160,215,255,' + (0.6 + 0.2 * Math.sin(t * 10)) + ')'); rg.addColorStop(1, 'rgba(140,200,255,0)'); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(fp.x, fp.y, 14, 0, 6.283); ctx.fill(); ctx.restore(); });
+  var a = f.act; if (!a || f.st !== 'act' || a.kind !== 'melee') return;
+  var q = clamp(f.t / Math.max(a.act, 0.05), 0, 1), sd = f.key === 'light' ? (f.combo % 2 ? 1 : -1) : 1, L = a.reach + 10;
+  ctx.save(); ctx.lineCap = 'round'; ctx.globalCompositeOperation = 'lighter'; ctx.beginPath();
+  for (var i = 0; i <= 14; i++) { var k = i / 14 * q, x = 18 + (L - 18) * k, y = 9 * sd + Math.sin(k * 9) * 14 * (1 - k) * sd, p = locOf(f, x, y); if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }
+  ctx.strokeStyle = f.reinfT > 0 ? 'rgba(150,210,255,' + (0.7 * (1 - q * 0.5)) + ')' : 'rgba(220,226,232,' + (0.55 * (1 - q * 0.5)) + ')'; ctx.lineWidth = f.key === 'heavy' ? 7 : 4; ctx.stroke(); ctx.restore();
+}
 // Gordius Wheel: two divine bulls, the chariot behind them, thunder at the wheels
 function drawChariot(f) {
   var a = f.act, p = f.st === 'wind' ? clamp(f.t / (f.windTotal || a.wind), 0, 1) : f.st === 'act' ? 1 : 1 - f.t / 0.3, t = G.time, run = f.st === 'act';
@@ -359,3 +389,17 @@ SND.nine = function (o, out, t, P) {
 // his roar as Nine Lives begins
 (function () { var old = SND['npfire:heracles']; SND['npfire:heracles'] = function (o, out, t, P) { if (old) old(o, out, t, P); tone(o, out, t, 'sawtooth', 110, 58, 0.9, 0.22, 0.04); tone(o, out, t, 'square', 82, 46, 0.8, 0.1, 0.05); noise(o, out, t, 'bandpass', 500, 260, 0.9, 0.35, 0.05, 3); }; })();
 SND['skill:iskandar'] = function (o, out, t) { noise(o, out, t, 'highpass', 4000, 1200, 0.25, 0.4, 0.001, 0.8); bass(o, out, t + 0.02, 70, 30, 0.9, 0.6, 1.2); noise(o, out, t + 0.05, 'lowpass', 900, 200, 1.2, 0.4, 0.05, 0.8); };
+
+// Tokiomi's flame bolts and fireballs: a burning head with a tail of embers
+var drawProjX0 = drawProjX;
+drawProjX = function (g, p, a) {
+  if (p.a.shape !== 'flame') return drawProjX0(g, p, a);
+  var sz = p.a.size || 8, t = G.time;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.translate(p.x, p.y); g.rotate(a);
+  var tl = g.createLinearGradient(-sz * 7, 0, 0, 0); tl.addColorStop(0, 'rgba(255,80,20,0)'); tl.addColorStop(1, 'rgba(255,140,40,.7)'); g.fillStyle = tl;
+  g.beginPath(); g.moveTo(0, -sz * 0.9); g.quadraticCurveTo(-sz * 4, -sz * 0.6 + Math.sin(t * 30) * 2, -sz * 7, 0); g.quadraticCurveTo(-sz * 4, sz * 0.6 - Math.sin(t * 30) * 2, 0, sz * 0.9); g.fill();
+  var rg = g.createRadialGradient(0, 0, 1, 0, 0, sz * 1.5); rg.addColorStop(0, 'rgba(255,250,220,1)'); rg.addColorStop(0.5, 'rgba(255,170,60,.9)'); rg.addColorStop(1, 'rgba(255,60,20,0)'); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, sz * 1.5, 0, 6.283); g.fill();
+  g.restore();
+  if (Math.random() < 0.5 && FX.near(p.x, p.y)) parts.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 60, vy: -30 - Math.random() * 40, t: 0, life: 0.4, col: Math.random() < 0.5 ? '#ffb347' : '#ff5a1a' });
+  return true;
+};

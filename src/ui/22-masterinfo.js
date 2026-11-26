@@ -28,6 +28,12 @@ var MASTER_INFO = {
   illya: { style: 'The Einzbern masterpiece. Her familiars hunt on their own and her mana is nearly endless.', passive: ['Grail Vessel', 'Her servant’s Noble Phantasm charges 30% faster, and her mana pool is the deepest in the war.'],
     light: 'A Storch Ritter bird that homes in on its target.', heavy: 'Hold to charge, release: three homing birds.',
     skill: 'Einzbern Alchemy. Heals her servant for 35 within 380.', np: 'Storch Ritter Swarm: six homing birds at once.' },
+  tokiomi: { style: 'Head of the Tohsaka and a mage of fire. Every flame he casts leaves a burn that keeps eating at its target.', passive: ['Elegance', 'While above 70% health, all his mana costs are a quarter lower: his servant\u2019s Noble Phantasm included.'],
+    light: 'A flame bolt from his ruby cane that sets the target burning.', heavy: 'Hold to charge, release: a slow fireball that bursts and burns everyone near it.',
+    skill: 'Flame Ward. A ring of fire bursts out around him: burns and staggers everyone within 135.', np: 'Crimson Pillar: a circle of runes under the target, then a column of fire. Heavy burn.' },
+  kuzuki: { style: 'A teacher trained as an assassin. He walks into a servant\u2019s fight with his bare hands, and his strikes curl around a guard.', passive: ['Snake Fist', 'Deals full damage to servants like Shirou, and 35% of every blocked blow still gets through.'],
+    light: 'A four-strike chain of very fast jabs.', heavy: 'Hold to charge, release: a lunging elbow that breaks guards.',
+    skill: 'Reinforcement. For 5 seconds his fists are hardened with magecraft and hit harder.', np: 'Coiled Strike: a close grip that cannot be blocked or parried.' },
   sakura: { style: 'The Matou heir. Her shadow drinks what it touches and binds servants in place.', passive: ['Imaginary Numbers', 'Half of the damage she deals heals her.'],
     light: 'A lash of shadow.', heavy: 'Hold to charge, release: two shadow tendrils rise under the enemy.',
     skill: 'Imaginary Drain. Damages everyone within 260 and heals her for each one hit.', np: 'Shadow of the Grail: a wide pool of shadow erupts under the enemy and roots whoever it catches.' }
