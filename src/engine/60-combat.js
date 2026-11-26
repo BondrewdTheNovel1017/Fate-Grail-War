@@ -103,6 +103,7 @@ function hurt(att, def, a, mult, src) {
 }
 
 /* ---- actions ---- */
+var HASTE_ATK = 1.35;
 function startAct(f, key) {
   var a = f.A[key];
   if (key === 'light' && f.A.lightSeq) a = f.A.lightSeq[Math.min(f.combo, f.A.lightSeq.length - 1)];
@@ -225,7 +226,7 @@ function stepF(f, dt) {
   if (f.hs > 0) { f.hs -= dt; return; }
   var o = f.foe, a = f.act, vx = 0, vy = 0;
   f.iframes = (f.ghT > 0 || (f.st === 'act' && f.act && f.act.diveI && f.t < f.act.diveI) || (f.st === 'dodge' && f.t > 0.03 && f.t < 0.27) || (f.st === 'wind' && f.act && f.act.hop && f.t > 0.03 && f.t < 0.2)) ? 1 : 0;
-  f.t += dt;
+  f.t += dt * (f.hasteT > 0 && (f.st === 'wind' || f.st === 'act' || f.st === 'rec') ? HASTE_ATK : 1); // Double Accel: his own attacks run faster too
   if (f.cd > 0) f.cd -= dt * (f.def.cdRate || 1) * (f.field ? 1.5 : 1);
   if (f.st !== 'dead' && !G.over) {
     if (f.def.field) {

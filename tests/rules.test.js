@@ -142,13 +142,13 @@ test('Form Contract: AI orphans and free masters find each other', () => {
   assert.strictEqual(cu.partner, kirei, 'they formed a contract');
 });
 
-test('master kits: Shirou and Kirei fight up close, Kiritsugu fires a long Calico burst', () => {
+test('master kits: Shirou and Kirei fight up close; Kiritsugu knifes up close and fires a long Calico burst', () => {
   const E = loadEngine();
   assert.strictEqual(E.MASTERS.shirou.A.light.kind, 'melee');
   assert.strictEqual(E.MASTERS.kirei.A.light.kind, 'melee');
   assert.ok(E.MASTERS.kirei.A.heavy.count === 3 && E.MASTERS.kirei.A.heavy.spread * 2 < 0.25, 'Kirei throws three Black Keys in a tight cone');
   const k = E.MASTERS.kiritsugu.A;
-  assert.strictEqual(k.light.count, 2);
+  assert.strictEqual(k.light.kind, 'melee', 'a combat knife');
   assert.strictEqual(k.heavy.kind, 'barrage'); assert.ok(k.heavy.bullet && k.heavy.act / k.heavy.rate > 15, 'a long burst');
 });
 
@@ -837,4 +837,10 @@ test('AI: after a seal rescue the servant rests at home unless an enemy comes to
   if (Math.hypot(foe.x - hx, foe.y - hy) < 460) { foe.x = hx + 600; foe.y = hy; sv.x = hx + 380; sv.y = hy; }
   for (let i = 0; i < 60 * 4; i++) E.simStep(E.STEP);
   assert.ok(sv.recover, 'still resting');
+});
+test('Double Accel: Kiritsugu moves and attacks faster while it lasts', () => {
+  const E = loadEngine();
+  const time = (haste) => { const G = E.newGame(E.MASTERS.kiritsugu, E.MASTERS.kirei, { map: 'arena' }); G.ai = [null, null]; const k = G.f[0]; k.hasteT = haste ? 5 : 0; k.x = 400; k.y = 500; G.f[1].x = 900; assert.ok(E.startAct(k, 'light')); let n = 0; while (k.st !== 'idle' && n < 600) { E.simStep(E.STEP); n++; } return n; };
+  const plain = time(false), fast = time(true);
+  assert.ok(fast < plain * 0.85, 'a knife swing finishes sooner (' + fast + ' vs ' + plain + ' frames)');
 });

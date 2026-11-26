@@ -166,6 +166,9 @@ function aiTick(ai, dt) {
     if (f.def.ranged) {
       if (f.def.field && !f.field && f.stillT <= 0 && d > 260 && d < 560 && o.st !== 'wind' && Math.random() < 0.05) ai.plantT = 1.3;
       if (d < 230 && f.cd <= 0 && Math.random() < 0.6) { press(f, 'skill'); ai.cool = 0.5; return; }
+      // a gun on heavy and a knife on light (Kiritsugu): the burst at range, the blade when they close in
+      if (A.light.kind === 'melee' && d <= A.light.reach + FR + 12) { press(f, 'light'); ai.comboLeft = Math.floor(Math.random() * (f.def.combo || 2)); ai.cool = (0.35 + Math.random() * 0.5) * (1.5 - cfg.agg); return; }
+      if (A.light.kind === 'melee' && d > 120 && d < 640 && losClear(f, o)) { if (!f.def.mag || f.ammo >= 20) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.45; } ai.cool = (0.7 + Math.random() * 0.8) * (1.5 - cfg.agg); return; }
       if (d > 200 && d < 640 && losClear(f, o)) {
         if (r2 < 0.2 * cfg.agg + 0.12 && A.heavy) { press(f, 'heavy'); inp.heavy = true; var g1 = 0.55 + Math.random() * 0.35; ai.relAt = G.time + g1; f.pendGoal = g1; }
         else { press(f, 'light'); ai.comboLeft = Math.floor(Math.random() * (f.def.combo || 2)); }
@@ -193,6 +196,8 @@ startAct = function (f, key) {
   if (ok && key === 'heavy' && f.pendGoal) { f.goal = Math.max(f.A.heavy.wind, f.pendGoal); f.windTotal = f.goal; f.pendGoal = 0; }
   return ok;
 };
+// which button fires at range: the light attack if it shoots, else the heavy if that shoots (Kiritsugu's knife and Calico)
+function rangedKey(A) { var R = { proj: 1, volley: 1, barrage: 1, beam: 1 }; return R[A.light.kind] ? 'light' : (A.heavy && R[A.heavy.kind] ? 'heavy' : null); }
 function zoneGap(a, b) { return MAP.cityW && !sameZone(a, b) ? 2500 : 0; }
 function nearestEnemyTo(f, pt, maxD) { var b = null, bd = maxD || 1e9; enemiesOf(f).forEach(function (e) { if (!knows(f, e)) return; var d = dist(e, pt) + zoneGap(e, pt.def ? pt : f); if (d < bd) { bd = d; b = e; } }); return b; }
 function moveTo(f, x, y, k) {
@@ -329,7 +334,7 @@ function aiMaster(ai, dt) {
     if (!silenced && sigOk && f.sigCd <= 0 && np.aiUse === 'near' && td < (np.r || np.reach + np.lunge * 0.6) + FR && f.st === 'idle') { press(f, 'np'); return; }
     moveTo(f, gx, gy);
     // kiting: while the servant holds the threat off, a master with a ranged attack keeps firing as they back away
-    if (A.light.kind !== 'melee' && !silenced && f.st === 'idle' && ai.cool <= 0 && dist(s, thr) < 220 && losClear(f, thr)) { f.lock = thr; f.foe = thr; f.face = angTo(f, thr); press(f, 'light'); ai.cool = (0.6 + Math.random() * 0.7) * (1.6 - cfg.agg); }
+    var rk = rangedKey(A); if (rk && !silenced && f.st === 'idle' && ai.cool <= 0 && dist(s, thr) < 220 && losClear(f, thr) && (rk === 'light' || !f.def.mag || f.ammo >= 20)) { f.lock = thr; f.foe = thr; f.face = angTo(f, thr); press(f, rk); if (rk === 'heavy') { inp.heavy = true; ai.relAt = G.time + 0.4; } ai.cool = (0.6 + Math.random() * 0.7) * (1.6 - cfg.agg); }
     if (thr.st === 'wind' && thr.foe === f && td < 220 && f.dodges > 0 && Math.random() < 0.08 + 0.2 * cfg.skill) aiPressDodge(ai);
     return;
   }
@@ -355,5 +360,5 @@ function aiMaster(ai, dt) {
     if (np.aiUse === 'ally' && sf && dist(s, sf) < 420) { press(f, 'np'); return; }
     if (np.aiUse === 'ubw' && sf && !sf.def.isMaster && dist(f, sf) < 560 && dist(s, sf) < 500) { press(f, 'np'); return; }
   }
-  if (tg && f.st === 'idle' && ai.cool <= 0) { var d2 = dist(f, tg); if (d2 < 560 && losClear(f, tg)) { f.lock = tg; if (Math.random() < 0.25 && d2 < 420 && (!f.def.mag || f.ammo >= 20)) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.55; } else press(f, 'light'); ai.cool = (0.7 + Math.random() * 0.9) * (1.6 - cfg.agg); } else f.lock = null; }
+  if (tg && f.st === 'idle' && ai.cool <= 0) { var d2 = dist(f, tg), rk2 = rangedKey(A), knifeR = A.light.kind === 'melee' ? A.light.reach + FR + 10 : 0; if (d2 < 560 && losClear(f, tg)) { f.lock = tg; if (knifeR && d2 < knifeR) press(f, 'light'); else if (rk2 === 'heavy' || (Math.random() < 0.25 && d2 < 420)) { if (!f.def.mag || f.ammo >= 20) { press(f, 'heavy'); inp.heavy = true; ai.relAt = G.time + 0.55; } } else press(f, 'light'); ai.cool = (0.7 + Math.random() * 0.9) * (1.6 - cfg.agg); } else f.lock = null; }
 }

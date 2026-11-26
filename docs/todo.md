@@ -12,10 +12,12 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [ ] **Cleaner UI.** Text and UI cover the play area. Audit what's on screen in a war (banners, notices, bubbles, task text, HUD) and move, shrink or fade it so the centre stays clear.
 
 ## 2. Small direct requests
-- [ ] **Kiritsugu:** light attacks become a combat knife (melee); guns stay on heavy, skill and signature. Double Accel (Time Alter) also speeds his attacks for its duration, balanced with the sims.
+- [x] **Kiritsugu:** light attacks become a combat knife (melee); guns stay on heavy, skill and signature. Double Accel (Time Alter) also speeds his attacks for its duration, balanced with the sims.
 - [ ] **Origin Rounds vs Outsiders:** no ability disable on Outsiders (no magic circuits); show "no effect".
 - [ ] **Einzbern castle stair:** move the stair to the courtyard somewhere natural (off the grand staircase or the great hall's back wall); keep the door and nav working.
 - [ ] **Lancelot's seized weapons:** tint the weapon itself black and red while `armT > 0`, and draw the veins along the weapon (using `drawWeapon`'s grip and rotation, `GRIP`/`putW`) so they follow each swing, instead of a fixed spot in front of him.
+
+- [ ] **Master-duel balance** (Arena master duels): win rates are lopsided (3 duels against each other master, Nov 26): Sakura 91%, Kayneth 76%, Kiritsugu 74% (after his knife rework), Kirei 73%, Tokiomi 58%, Shirou 45%, Kariya 45%, Rin 42%, Kuzuki 42%, Waver 24%, Illya 18%, Irisviel 15%. Bring everyone toward 50% (±10) with `mduel`-style sims; adjust one number at a time.
 
 ## 3. Map structure
 - [ ] **Base spacing.** Homes aren't evenly spread; some neighbour each other (for example Tohsaka and Matou). Steps: (1) measure every home/plot distance and how often wars start two teams close together; (2) light fix: `assignHomes` gives estates and safehouses the plot farthest from every other base; (3) only if needed, a rework with spread plots and homes placed randomly each war at a minimum distance. The Einzbern castle stays fixed (courtyard and Banquet), probably the Church too (Executors, events); decide about Tohsaka, Matou and Emiya before reworking. Moving a home moves its doors, summoning spot and nav links.
