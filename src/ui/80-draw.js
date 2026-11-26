@@ -102,8 +102,13 @@ function drawWeapon(f) {
     else if (f.st === 'wind' && sweeps) ext = -26 * p;
     else if (f.st === 'act' && sweeps) ext = -26 + 70 * Math.sin(Math.min(1, q * 1.2) * 1.4);
     else if (f.st === 'rec' && sweeps) ext = 44 * (1 - r);
-    if (sweeps && f.st === 'act' && a.kind !== 'charge') { var s0 = locOf(f, g.x + 20, g.y), s1 = locOf(f, Math.min(a.reach, g.x + ext + 120), g.y); ctx.save(); ctx.globalAlpha = 0.5 * (1 - q); ctx.lineCap = 'round'; ctx.strokeStyle = rgbaOf(d.col, 0.7); ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.stroke(); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); }
-    putW(f, I, g.x + ext, g.y, f.guarding ? -0.15 : 0.04, g.k, false);
+    if (sweeps && f.st === 'act' && a.kind !== 'charge') { var ty = (g.pair && a.key === 'light' && f.combo % 2 === 1) ? -g.y : g.y, s0 = locOf(f, g.x + 20, ty), s1 = locOf(f, Math.min(a.reach, g.x + ext + 120), ty); ctx.save(); ctx.globalAlpha = 0.5 * (1 - q); ctx.lineCap = 'round'; ctx.strokeStyle = rgbaOf(d.col, 0.7); ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.stroke(); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); }
+    if (g.pair && IMG[g.pair]) {
+      // two spears, one per hand: the light chain alternates them, everything else thrusts the long red one
+      var alt = a && a.key === 'light' && f.combo % 2 === 1, e2 = f.guarding ? -6 : 0;
+      putW(f, IMG[g.pair].weapon, g.x + (alt ? ext : e2), -g.y, f.guarding ? 0.15 : -0.04, g.k, false);
+      putW(f, I, g.x + (alt ? e2 : ext), g.y, f.guarding ? -0.15 : 0.04, g.k, false);
+    } else putW(f, I, g.x + ext, g.y, f.guarding ? -0.15 : 0.04, g.k, false);
   } else if (wp === 'bow') {
     var rc = f.st === 'act' ? -5 * (1 - q) : 0;
     putW(f, I, g.x + rc, 0, 0, g.k, false);
