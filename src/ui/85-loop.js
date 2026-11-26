@@ -52,8 +52,10 @@ function frame(now) {
   var dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused) {
     acc += dt * speedMul * (slowT > 0 ? 0.4 : 1); if (slowT > 0) slowT -= dt;
-    if (INTRO) { acc = 0; introTick(dt); }
+    // online, every player watches their own summoning; the host's war waits until all of them are done
+    if (INTRO) { acc = 0; introTick(dt); if (NET.mirror) netClientFrame(dt); else if (NET.hosting) { netApplyInputs(); netHostSend(now); } }
     else if (NET.mirror) { acc = 0; netClientFrame(dt); }
+    else if (NET.hosting && netGuestsSummoning()) { acc = 0; netHostSend(now); if (!NET.waitSaid) { NET.waitSaid = true; note('Waiting for the other players\u2019 summonings\u2026', '#c9c3b0'); } }
     else {
     var f = G.f[MEI], mv = readMove(); if (!(f.turnT > G.time)) { f.inp.mx = mv[0]; f.inp.my = mv[1]; }
     var guard = 0; while (acc >= STEP && guard++ < 6) { netApplyInputs(); simStep(STEP); acc -= STEP; }

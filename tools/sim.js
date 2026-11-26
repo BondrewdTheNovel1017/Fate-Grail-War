@@ -14,6 +14,8 @@ const t0 = Date.now();
 for (let n = 0; n < WARS; n++) {
   const my = E.ORDER[n % E.ORDER.length], mm = E.MASTER_ORDER[(n * 3) % E.MASTER_ORDER.length];
   const G = aiWar(E, E.warTeams(my, mm, TEAMS));
+  // STRONG=1: team 0 stands in for two good players hunting together (top AI, tougher, never backs off)
+  if (process.env.STRONG) G.f.forEach((f, i) => { if (f.team !== 0) return; f.def = Object.assign({}, f.def, { dmg: f.def.dmg * 1.3, hp: f.def.hp * 1.25 }); f.hp = f.def.hp; f.bold = true; G.ai[i] = E.mkAI(f, E.DIFF.champion); });
   const start = G.f.map((f) => ({ f, id: f.def.id }));
   let marble = null; noMana = 0;
   for (let i = 0; i < LIMIT * 60 && !G.over; i++) {
@@ -27,6 +29,7 @@ for (let n = 0; n < WARS; n++) {
   }
   if (G.clock) { tot.nights.push(G.clock.n); tot.expo.push(Math.max(0, ...Object.values(G.expo))); tot.sanctions += Object.keys(G.reveal).length; }
   tot.noMana += noMana;
+  if (process.env.STRONG) { tot.strongWin = (tot.strongWin || 0) + (G.over && G.winner && G.winner.team === 0 ? 1 : 0); tot.strongOut = (tot.strongOut || 0) + (G.f.every((f) => f.team !== 0 || f.st === 'dead') ? 1 : 0); }
   if (G.over) { tot.ended++; tot.len.push(G.time); } { const C = G.church || { kills: {}, sent: 0, slain: 0 }; tot.civK += Object.values(C.kills).reduce((a, b) => a + b, 0); tot.exS += C.sent; tot.exK += C.slain; tot.endN.push(G.clock ? (G.clock.final ? 'F' : G.clock.n) : '-'); }
   tot.contracts += G.contracts || 0;
   if (G.pactLog) ['formed', 'broken', 'betray'].forEach((k) => { tot.pact[k] = (tot.pact[k] || 0) + G.pactLog[k]; });
@@ -54,6 +57,7 @@ console.log(`  servant deaths by phase (per war): ${Object.entries(deathAt).map(
 console.log(`  sanctions by phase:event ${JSON.stringify(sanc)}`);
 console.log(`  finished ${tot.ended}/${WARS}, length avg ${(avg(tot.len) / 60).toFixed(1)} min (min ${(Math.min(...tot.len) / 60).toFixed(1)}, max ${(Math.max(...tot.len) / 60).toFixed(1)})`);
 console.log(`  per war: ${(tot.nps / WARS).toFixed(1)} NPs, ${(tot.noMana / WARS).toFixed(1)} blocked for mana, ${(tot.contracts / WARS).toFixed(2)} contracts, ${(tot.marbles / WARS).toFixed(2)} marbles`);
+if (process.env.STRONG) console.log(`  strong team: won ${tot.strongWin}/${WARS}, eliminated ${tot.strongOut}/${WARS}`);
 console.log(`  church per war: civilians killed ${(tot.civK / WARS).toFixed(1)}, executors sent ${(tot.exS / WARS).toFixed(1)}, executors slain ${(tot.exK / WARS).toFixed(1)}; wars ended on night ${tot.endN.join(',')}`);
 console.log(`  pacts per war: formed ${((tot.pact.formed || 0) / WARS).toFixed(2)}, broken ${((tot.pact.broken || 0) / WARS).toFixed(2)}; Gilgamesh betrayals ${tot.pact.betray || 0}`);
 console.log(`  seals used per war: NP ${(tot.seals.np / WARS).toFixed(1)}, heal ${(tot.seals.heal / WARS).toFixed(1)}, recall ${(tot.seals.warp / WARS).toFixed(1)}`);

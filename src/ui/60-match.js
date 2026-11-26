@@ -31,7 +31,7 @@ function enterGame(nTeams, title, sub) {
   $('#setup').style.display = 'none'; $('#duel').style.display = 'block'; document.body.classList.add('ingame'); $('#end').classList.remove('on'); $('#pz').classList.remove('on');
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
-  if (title) { FX.banner(title, sub); return; }
+  if (title && !(nTeams && G.mode === 'war' && !G.quick)) { FX.banner(title, sub); return; }
   NOTES = []; BUB = []; DUO = []; PAIRSEEN = {}; TRUCESEEN = {}; truceChk = 0; BSCRIPT = null; BANQ_SCRIPTS.forEach(function (s) { s.done = false; }); SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));

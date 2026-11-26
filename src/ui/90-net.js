@@ -136,6 +136,7 @@ function netBuild(g) {
   }
 }
 function netStartHost() {
+  NET.startedAt = Date.now(); NET.waitSaid = false;
   var L = NET.lob, ids = netPickIds(L), S = L.slots, g = { id: Math.random().toString(36).slice(2, 8), kind: L.kind, amode: L.kind === 'war' ? null : L.amode, nights: L.nights, diff: L.diff, speed: L.speed, slots: {} };
   var war = L.kind === 'war' || L.amode === 'quickwar' || L.amode === 'pairs';
   if (war) {
@@ -216,10 +217,15 @@ function netClientFrame(dt) {
   (G.civ || []).forEach(function (c) { if (c.nx === undefined) return; var k = Math.min(1, dt * 3); c.x += (c.nx - c.x) * k; c.y += (c.ny - c.y) * k; });
   (G.mobs || []).forEach(function (m) { if (!m || m.nx === undefined) return; var k = Math.min(1, dt * 8); m.x += (m.nx - m.x) * k; m.y += (m.ny - m.y) * k; });
   var me0 = G.f[MEI]; if (me0 && me0.st !== 'dead') pickTarget(me0);
-  var mv = readMove(); netMyPresence({ ing: NET.game.id, inp: { mx: +mv[0].toFixed(2), my: +mv[1].toFixed(2), g: NET.g, h: NET.h, c: NET.cnt, so: NET.so, lk: NET.lk, pt: Math.round(performance.now()) } });
+  var mv = readMove(); netMyPresence({ ing: NET.game.id, sum: INTRO ? 1 : 0, inp: { mx: +mv[0].toFixed(2), my: +mv[1].toFixed(2), g: NET.g, h: NET.h, c: NET.cnt, so: NET.so, lk: NET.lk, pt: Math.round(performance.now()) } });
 }
 function netButton(b, down) {
   if (down) { if (b === 'block') NET.g = 1; else { if (b === 'heavy') NET.h = 1; NET.cnt[b] = (NET.cnt[b] || 0) + 1; } }
   else { if (b === 'block') NET.g = 0; if (b === 'heavy') NET.h = 0; }
+}
+// guests still watching their summoning (never longer than 45 seconds after the start)
+function netGuestsSummoning() {
+  if (!NET.hosting || !NET.game || !G || G.mode !== 'war' || G.time > 1 || Date.now() - (NET.startedAt || 0) > 45000) return false;
+  return netPeers().some(function (p) { return NET.game.slots[p.peer] !== undefined && p.presence && p.presence.ing === NET.game.id && p.presence.sum === 1; });
 }
 function netInMatch() { return !!(NET.game && (NET.mirror || NET.hosting)); }

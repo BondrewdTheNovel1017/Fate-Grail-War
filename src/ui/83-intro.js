@@ -9,7 +9,7 @@ var CHANT = [
   CHANT_END = 'If you would win the Grail, cross over and come to me!';
 var LINE_T = 2.1;
 function startIntro(nTeams) {
-  if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length || NET.game || NET.mirror) return false;
+  if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length) return false;
   var me = G.f[MEI], m = me.def.isMaster ? me : me.partner; if (!m || !m.partner) return false;
   var c = G.circles.filter(function (q) { return q.team === m.team; })[0]; if (!c) return false;
   var s = m.partner, lines = CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);

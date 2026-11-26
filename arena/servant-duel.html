@@ -3456,8 +3456,8 @@ function aiWar(ai, dt) {
     return;
   }
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
-  if (clockOn() && !finalNight() && !f.isPlayerMate && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
-  if (isDay() && !f.isPlayerMate && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
+  if (clockOn() && !finalNight() && !f.isPlayerMate && !f.bold && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
+  if (isDay() && !f.isPlayerMate && !f.bold && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
     if (f.def.cls === 'Assassin') { if (!f.cnc && f.st === 'idle' && nd > 160 && G.time >= (f.cncCd || 0)) press(f, 'spirit'); }
@@ -4806,7 +4806,7 @@ function enterGame(nTeams, title, sub) {
   $('#setup').style.display = 'none'; $('#duel').style.display = 'block'; document.body.classList.add('ingame'); $('#end').classList.remove('on'); $('#pz').classList.remove('on');
   held.mx = 0; held.my = 0; keys = {}; running = true; paused = false; last = performance.now();
   cam.x = me0.x; cam.y = me0.y;
-  if (title) { FX.banner(title, sub); return; }
+  if (title && !(nTeams && G.mode === 'war' && !G.quick)) { FX.banner(title, sub); return; }
   NOTES = []; BUB = []; DUO = []; PAIRSEEN = {}; TRUCESEEN = {}; truceChk = 0; BSCRIPT = null; BANQ_SCRIPTS.forEach(function (s) { s.done = false; }); SAYT = {}; LASTFOE = {}; ENGT = {}; INTRO = null; document.body.classList.remove('intro');
   if (startIntro(nTeams)) return;
   FX.banner('The Holy Grail War', 'Fuyuki City · ' + nTeams + ' teams' + (NET.game ? ' · ' + (Object.keys(NET.game.slots).length + 1) + ' players' : ''));
@@ -5819,7 +5819,7 @@ var CHANT = [
   CHANT_END = 'If you would win the Grail, cross over and come to me!';
 var LINE_T = 2.1;
 function startIntro(nTeams) {
-  if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length || NET.game || NET.mirror) return false;
+  if (!G || G.mode !== 'war' || G.quick || !G.circles || !G.circles.length) return false;
   var me = G.f[MEI], m = me.def.isMaster ? me : me.partner; if (!m || !m.partner) return false;
   var c = G.circles.filter(function (q) { return q.team === m.team; })[0]; if (!c) return false;
   var s = m.partner, lines = CHANT.concat(s.def.cls === 'Berserker' ? CHANT_MAD : [], [CHANT_END]);
@@ -6095,8 +6095,10 @@ function frame(now) {
   var dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!paused) {
     acc += dt * speedMul * (slowT > 0 ? 0.4 : 1); if (slowT > 0) slowT -= dt;
-    if (INTRO) { acc = 0; introTick(dt); }
+    // online, every player watches their own summoning; the host's war waits until all of them are done
+    if (INTRO) { acc = 0; introTick(dt); if (NET.mirror) netClientFrame(dt); else if (NET.hosting) { netApplyInputs(); netHostSend(now); } }
     else if (NET.mirror) { acc = 0; netClientFrame(dt); }
+    else if (NET.hosting && netGuestsSummoning()) { acc = 0; netHostSend(now); if (!NET.waitSaid) { NET.waitSaid = true; note('Waiting for the other players\u2019 summonings\u2026', '#c9c3b0'); } }
     else {
     var f = G.f[MEI], mv = readMove(); if (!(f.turnT > G.time)) { f.inp.mx = mv[0]; f.inp.my = mv[1]; }
     var guard = 0; while (acc >= STEP && guard++ < 6) { netApplyInputs(); simStep(STEP); acc -= STEP; }
@@ -7188,6 +7190,7 @@ function netBuild(g) {
   }
 }
 function netStartHost() {
+  NET.startedAt = Date.now(); NET.waitSaid = false;
   var L = NET.lob, ids = netPickIds(L), S = L.slots, g = { id: Math.random().toString(36).slice(2, 8), kind: L.kind, amode: L.kind === 'war' ? null : L.amode, nights: L.nights, diff: L.diff, speed: L.speed, slots: {} };
   var war = L.kind === 'war' || L.amode === 'quickwar' || L.amode === 'pairs';
   if (war) {
@@ -7268,11 +7271,16 @@ function netClientFrame(dt) {
   (G.civ || []).forEach(function (c) { if (c.nx === undefined) return; var k = Math.min(1, dt * 3); c.x += (c.nx - c.x) * k; c.y += (c.ny - c.y) * k; });
   (G.mobs || []).forEach(function (m) { if (!m || m.nx === undefined) return; var k = Math.min(1, dt * 8); m.x += (m.nx - m.x) * k; m.y += (m.ny - m.y) * k; });
   var me0 = G.f[MEI]; if (me0 && me0.st !== 'dead') pickTarget(me0);
-  var mv = readMove(); netMyPresence({ ing: NET.game.id, inp: { mx: +mv[0].toFixed(2), my: +mv[1].toFixed(2), g: NET.g, h: NET.h, c: NET.cnt, so: NET.so, lk: NET.lk, pt: Math.round(performance.now()) } });
+  var mv = readMove(); netMyPresence({ ing: NET.game.id, sum: INTRO ? 1 : 0, inp: { mx: +mv[0].toFixed(2), my: +mv[1].toFixed(2), g: NET.g, h: NET.h, c: NET.cnt, so: NET.so, lk: NET.lk, pt: Math.round(performance.now()) } });
 }
 function netButton(b, down) {
   if (down) { if (b === 'block') NET.g = 1; else { if (b === 'heavy') NET.h = 1; NET.cnt[b] = (NET.cnt[b] || 0) + 1; } }
   else { if (b === 'block') NET.g = 0; if (b === 'heavy') NET.h = 0; }
+}
+// guests still watching their summoning (never longer than 45 seconds after the start)
+function netGuestsSummoning() {
+  if (!NET.hosting || !NET.game || !G || G.mode !== 'war' || G.time > 1 || Date.now() - (NET.startedAt || 0) > 45000) return false;
+  return netPeers().some(function (p) { return NET.game.slots[p.peer] !== undefined && p.presence && p.presence.ing === NET.game.id && p.presence.sum === 1; });
 }
 function netInMatch() { return !!(NET.game && (NET.mirror || NET.hosting)); }
 /* ---- online play, part 2: replicating the host's war to every guest ----
