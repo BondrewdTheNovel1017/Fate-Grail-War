@@ -787,3 +787,14 @@ test('An Outsider (Kuzuki) crosses a bounded field unfelt, but is still slowed b
   assert.ok(!(G.seenBy[0][k.idx] > G.time), 'the field does not feel Kuzuki');
   assert.ok(G.seenBy[0][s.idx] > G.time, 'it feels his servant');
 });
+test('A Command Seal rescue brings both home at half health or better, protected for a while', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 3), { nights: 3 });
+  const sv = G.f[0], m = sv.partner, foe = G.f.find((f) => f.team !== sv.team && !f.def.isMaster);
+  m.hp = m.def.hp * 0.2; sv.hp = 1;
+  assert.ok(E.sealRescue(sv, foe), 'the seal turns the killing blow');
+  for (let i = 0; i < 60 * 1.5; i++) { G.time += E.STEP; E.rescueTick(E.STEP); }
+  assert.ok(sv.hp >= sv.def.hp * 0.5 - 0.01, 'the servant arrives at half health');
+  assert.ok(m.hp >= m.def.hp * 0.5 - 0.01, 'the master is topped up to half too');
+  assert.ok(sv.iframes >= 3.5, 'and both are protected for about four seconds');
+});
