@@ -210,9 +210,19 @@ function drawCityBlock(g, b, i) {
       g.fillStyle = '#4a505a'; g.fillRect(b.x - 34, y0 - 10, 68, 68); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(b.x - 34, y0 - 10, 68, 68);
       g.fillStyle = '#e9e4d3'; g.fillRect(b.x - 5, y0 + 2, 10, 44); g.fillRect(b.x - 16, y0 + 14, 32, 9); break;
     case 'castle':
-      hipRoof(g, x0 + w * 0.3, y0, w * 0.4, h, '#4e5868', true); hipRoof(g, x0, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true); hipRoof(g, x0 + w * 0.68, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true);
+      // the central keep is an open roof courtyard (the King's Banquet is held up there), between the two pitched wings
+      var kx = x0 + w * 0.3, kw = w * 0.4;
+      g.fillStyle = '#7d828c'; g.fillRect(kx, y0, kw, h); g.fillStyle = '#9aa0aa'; g.fillRect(kx + 22, y0 + 22, kw - 44, h - 44);
+      g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 1; for (var fl = kx + 22; fl < kx + kw - 22; fl += 36) { g.beginPath(); g.moveTo(fl, y0 + 22); g.lineTo(fl, y0 + h - 22); g.stroke(); } for (var fr = y0 + 22; fr < y0 + h - 22; fr += 36) { g.beginPath(); g.moveTo(kx + 22, fr); g.lineTo(kx + kw - 22, fr); g.stroke(); }
+      for (var pq = kx; pq < kx + kw; pq += 26) { g.fillStyle = '#6a6f78'; g.fillRect(pq, y0, 14, 12); g.fillRect(pq, y0 + h - 12, 14, 12); }
+      g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(kx, y0, kw, h); g.strokeRect(kx + 22, y0 + 22, kw - 44, h - 44);
+      var feast = G && G.tasks && G.tasks.some(function (q) { return q.kind === 'banquet'; }), tcx = b.x, tcy = y0 + h * 0.45;
+      g.fillStyle = '#5a3a22'; g.fillRect(tcx - 90, tcy - 30, 180, 60); g.strokeRect(tcx - 90, tcy - 30, 180, 60);
+      if (feast) { g.fillStyle = '#e8dfc8'; g.fillRect(tcx - 84, tcy - 24, 168, 48); for (var cu = 0; cu < 6; cu++) { g.fillStyle = '#e0b04a'; g.beginPath(); g.arc(tcx - 70 + cu * 28, tcy + (cu % 2 ? 10 : -10), 5, 0, 6.283); g.fill(); } }
+      [[kx + 40, y0 + 40], [kx + kw - 40, y0 + 40], [kx + 40, y0 + h - 40], [kx + kw - 40, y0 + h - 40]].forEach(function (lp) { if (feast) { var lg = g.createRadialGradient(lp[0], lp[1], 2, lp[0], lp[1], 60); lg.addColorStop(0, 'rgba(255,214,140,.75)'); lg.addColorStop(1, 'rgba(255,190,110,0)'); g.fillStyle = lg; g.beginPath(); g.arc(lp[0], lp[1], 60, 0, 6.283); g.fill(); } g.fillStyle = feast ? '#ffd88a' : '#5a5650'; g.beginPath(); g.arc(lp[0], lp[1], 7, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); });
+ hipRoof(g, x0, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true); hipRoof(g, x0 + w * 0.68, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true);
       g.fillStyle = '#c8ccd4'; g.fillRect(b.x - 70, y0 + h - 26, 140, 26); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(b.x - 70, y0 + h - 26, 140, 26);
-      g.fillStyle = '#d9d4c8'; g.beginPath(); g.arc(b.x, b.y - 30, 26, 0, 6.283); g.fill(); g.stroke(); break;
+      break;
     case 'castletower': g.fillStyle = '#7a8290'; g.beginPath(); g.arc(b.x, b.y, w / 2, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 3; g.stroke(); for (var cr = 0; cr < 16; cr++) { var ca = cr * 0.3927; g.strokeStyle = cr % 2 ? 'rgba(0,0,0,.3)' : 'rgba(255,255,255,.15)'; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + Math.cos(ca) * w / 2, b.y + Math.sin(ca) * w / 2); g.stroke(); } g.fillStyle = '#c9a43a'; g.beginPath(); g.arc(b.x, b.y, 6, 0, 6.283); g.fill(); break;
     case 'castlewall': case 'wall': g.fillStyle = k === 'castlewall' ? '#8a8f98' : '#8b857a'; g.fillRect(x0, y0, w, h); g.fillStyle = 'rgba(0,0,0,.25)'; var hz = w >= h; for (var mq = 0; mq < (hz ? w : h); mq += 24) { if (hz) g.fillRect(x0 + mq, y0, 12, h * 0.4); else g.fillRect(x0, y0 + mq, w * 0.4, 12); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     case 'fence': g.strokeStyle = '#1a1c20'; g.lineWidth = 4; g.beginPath(); if (w >= h) { g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); } else { g.moveTo(b.x, y0); g.lineTo(b.x, y0 + h); } g.stroke(); g.fillStyle = '#2a2d33'; for (var fp = 0; fp <= (w >= h ? w : h); fp += 40) { if (w >= h) g.fillRect(x0 + fp - 4, b.y - 4, 8, 8); else g.fillRect(b.x - 4, y0 + fp - 4, 8, 8); } break;

@@ -3,7 +3,7 @@
    city blocks, trees, estate plots for masters, and walk-in interiors placed in a strip east of the city
    (x > cityW) and reached through doors. Buildings collide as rectangles (MAP.rects); trees and posts as circles. */
 MAPS.city = (function () {
-  var CW = 12000, CH = 8000, IX = 12400, IW = 6000;                 // city size; interiors live at x >= IX
+  var CW = 12000, CH = 8000, IX = 12400, IW = 8000;                 // city size; interiors live at x >= IX
   var v = 20241125; function R() { v = (v * 1664525 + 1013904223) >>> 0; return v / 4294967296; }
   var roads = [], zones = [], b = [], o = [], labels = [], doors = [], rooms = [], reserved = [], lamps = [];
   function road(kind, x0, y0, x1, y1, w, name) { roads.push({ kind: kind, x0: Math.min(x0, x1), y0: Math.min(y0, y1), x1: Math.max(x0, x1), y1: Math.max(y0, y1), w: w, h: y0 === y1, name: name }); }
@@ -223,6 +223,20 @@ MAPS.city = (function () {
   for (var ar = 0; ar < 3; ar++) B(cx0 + 2140, cy0 + 1300 + ar * 200, 500, 60, 'armory');
   [[cx0 + 1080, cy0 + 600], [cx0 + 1520, cy0 + 600], [cx0 + 1080, cy0 + 1000], [cx0 + 1520, cy0 + 1000], [cx0 + 1080, cy0 + 1400], [cx0 + 1520, cy0 + 1400]].forEach(function (p) { T(p[0], p[1], 30, 'column'); });
   door('einzbern', 'einzbern', 11000, 1485, 0, 1, cx0 + 1300, cy0 + 1820, 0, 1);
+  // the castle roof: an open courtyard above the great hall, up the grand staircase (where the King's Banquet is held)
+  var rf = room('einroof', 'Castle Rooftop', IX + 6050, 1600, 1400, 1000, 'stone');
+  part(rf, 'carpet', rf.x0 + 520, rf.y0 + 180, rf.x0 + 880, rf.y0 + 880);
+  B(rf.x0 + 700, rf.y0 + 470, 300, 110, 'table'); for (var bq = 0; bq < 4; bq++) { T(rf.x0 + 590 + bq * 75, rf.y0 + 390, 12, 'chair'); T(rf.x0 + 590 + bq * 75, rf.y0 + 550, 12, 'chair'); }
+  [[rf.x0 + 160, rf.y0 + 160], [rf.x0 + 1240, rf.y0 + 160], [rf.x0 + 160, rf.y0 + 760], [rf.x0 + 1240, rf.y0 + 760]].forEach(function (p) { T(p[0], p[1], 18, 'lantern'); });
+  door('einroof', 'einroof', cx0 + 1300, cy0 + 210, 0, 1, rf.x0 + 700, rf.y1 - 50, 0, 1); doors[doors.length - 1].inner = true;
+  // Homurahara Academy: three classrooms above a long corridor; the front doors open on the schoolyard
+  var sc = room('school', 'Homurahara Academy', IX + 6050, 200, 1800, 1150, 'wood');
+  wallH(sc, 760, 24, 1776, [[260, 400], [860, 1000], [1440, 1580]]); wallV(sc, 600, 24, 760, []); wallV(sc, 1200, 24, 760, []);
+  part(sc, 'carpet', sc.x0 + 30, sc.y0 + 790, sc.x0 + 1770, sc.y0 + 1120); part(sc, 'stairs', sc.x0 + 1560, sc.y0 + 800, sc.x0 + 1760, sc.y0 + 1110);
+  [0, 1, 2].forEach(function (cr) { B(sc.x0 + 24 + cr * 600 + 290, sc.y0 + 38, 300, 24, 'shelf'); });
+  // desks in rows between the waypoint lanes, so every aisle stays open
+  for (var dj = 0; dj < 10; dj++) { var dx = 175 + dj * 170; if (Math.abs(dx - 600) < 70 || Math.abs(dx - 1200) < 70 || dx > 1720) continue; [345, 515].forEach(function (dy) { B(sc.x0 + dx, sc.y0 + dy, 70, 40, 'table'); }); }
+  door('school', 'school', 4050, 2840, 0, 1, sc.x0 + 900, sc.y1 - 50, 0, 1);
   // Tohsaka Mansion: foyer, parlor, workshop
   var t = room('tohsaka', 'Tohsaka Mansion', IX + 200, 2400, 1500, 1050, 'wood');
   wallV(t, 540, 24, 1026, [[380, 520], [780, 920]]); wallV(t, 960, 24, 1026, [[380, 520], [780, 920]]);

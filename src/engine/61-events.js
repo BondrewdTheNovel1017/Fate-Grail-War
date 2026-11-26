@@ -173,18 +173,24 @@ function berserkTick(E, dt) {
 function rampTarget(f) { var best = null, bv = -1; servantsAlive().forEach(function (e) { if (e.team === f.team || e.spirit === 2) return; var d = dist(f, e); if (d > 3200) return; var v = e.hp - d * 0.05; if (v > bv) { bv = v; best = e; } }); return best; }
 /* ---- the school: a bounded field drains everyone inside; skeleton familiars rise; three circles hold it up ---- */
 function startSchool() {
-  var S = EVT.school, med = evAlive('medusa'), culprit = med && med.partner && med.partner.st !== 'dead' ? med.team : -1;
-  var E = { kind: 'school', x: S.x, y: S.y, r: S.r, dur: S.dur, t: 0, culprit: culprit, circles: S.circles.map(function (p) { return { x: p[0], y: p[1], r: 75, prog: {}, up: true, by: -1 }; }), allowed: {}, broken: {}, mobT: 2, students: [] };
-  G.f.forEach(function (f) { if (f.st !== 'dead' && (Math.hypot(f.x - E.x, f.y - E.y) < E.r || f.team === culprit)) E.allowed[f.idx] = true; });
-  for (var i = 0; i < 26; i++) { var a = rnd() * 6.283, d = 120 + rnd() * (E.r - 220); E.students.push({ x: E.x + Math.cos(a) * d, y: E.y + Math.sin(a) * d * 0.7, down: 0, id: i }); }
+  var S = EVT.school, med = evAlive('medusa'), culprit = med && med.partner && med.partner.st !== 'dead' ? med.team : -1, R = schoolRoom();
+  var cx = R ? (R.x0 + R.x1) / 2 : S.x, cy = R ? (R.y0 + R.y1) / 2 : S.y;
+  // the seal's circles stand in the three classrooms
+  var circ = R ? [[R.x0 + 324, R.y0 + 420], [R.x0 + 924, R.y0 + 420], [R.x0 + 1524, R.y0 + 420]] : S.circles;
+  var E = { kind: 'school', x: Math.round(cx), y: Math.round(cy), r: R ? Math.round(Math.hypot(R.x1 - R.x0, R.y1 - R.y0) / 2) : S.r, dur: S.dur, t: 0, culprit: culprit, door: { x: 4050, y: 2840 }, circles: circ.map(function (p) { return { x: p[0], y: p[1], r: 75, prog: {}, up: true, by: -1 }; }), allowed: {}, broken: {}, mobT: 2, students: [] };
+  G.f.forEach(function (f) { if (f.st !== 'dead' && (zoneOf(f) === 'school' || f.team === culprit)) E.allowed[f.idx] = true; });
+  for (var i = 0; i < 26; i++) { var cr = i % 3, sx = R ? R.x0 + 60 + cr * 600 + rnd() * 480 : E.x, sy = R ? R.y0 + 180 + rnd() * 520 : E.y; E.students.push({ x: sx, y: sy, down: 0, id: i }); }
   G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); G.event = E; FX.event('school', E);
 }
-function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && f.x < MAP.cityW && Math.hypot(f.x - E.x, f.y - E.y) < E.r); }
+function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && zoneOf(f) === 'school'); }
+function schoolRoom() { return (MAP.rooms || []).filter(function (r) { return r.id === 'school'; })[0]; }
+// the blood seal keeps out servants who were not inside when it rose (masters may come and go)
+function schoolBars(f, d) { var E = G.event; if (!E || E.kind !== 'school' || d.room !== 'school' || f.def.isMaster || E.allowed[f.idx]) return false; if (!(f.barT > G.time)) { f.barT = G.time + 3; FX.text(f, 'THE BLOOD SEAL BARS THE WAY'); } f.doorT = 0.5; return true; }
 function schoolTick(E, dt) {
   // servants who were not inside when it rose cannot enter, even in spirit form; masters may come and go
   G.f.forEach(function (f) {
-    if (f.st === 'dead' || f.def.isMaster || E.allowed[f.idx] || f.x > MAP.cityW) return;
-    var d = Math.hypot(f.x - E.x, f.y - E.y); if (d < E.r + 6) { var a = Math.atan2(f.y - E.y, f.x - E.x); f.x = E.x + Math.cos(a) * (E.r + 8); f.y = E.y + Math.sin(a) * (E.r + 8); f.kx = f.ky = 0; if (!(f.barT > G.time)) { f.barT = G.time + 4; FX.text(f, 'THE FIELD HOLDS YOU OUT'); } }
+    if (f.st === 'dead' || f.def.isMaster || E.allowed[f.idx] || zoneOf(f) !== 'school') return;
+    { f.x = E.door.x; f.y = E.door.y + 90; f.kx = f.ky = 0; if (!(f.barT > G.time)) { f.barT = G.time + 4; FX.text(f, 'THE FIELD HOLDS YOU OUT'); } }
   });
   // the drain: never kills, but it wears everyone down
   G.f.forEach(function (f) { if (f.st === 'dead' || f.team === E.culprit || !inSchool(f) || f.spirit === 2) return; var k = f.def.isMaster ? EVT.school.drainM : EVT.school.drainS; if (f.hp > EVT.school.floor) f.hp = Math.max(EVT.school.floor, f.hp - k * dt); });
@@ -235,7 +241,7 @@ function truceZone(f) {
   if (E && E.kind === 'school' && inSchool(f)) return 'school';
   if (E && E.kind === 'horror' && !E.boss.dead && f.team !== E.culprit && f.x < MAP.cityW && Math.hypot(f.x - E.boss.x, f.y - E.boss.y) < EVT.horror.truceR) return 'horror';
   var L = G.lastSchool; if (L && G.time < L.truceEnd && f.x < MAP.cityW && Math.hypot(f.x - L.x, f.y - L.y) < L.r + 200 && !L.betray[f.team]) return 'school';
-  if (G.tasks) for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && f.x < MAP.cityW && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) return k.kind; }
+  if (G.tasks) for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && (k.kind === 'banquet' || f.x < MAP.cityW) && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) return k.kind; }
   return null;
 }
 function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a); return !!za && za === truceZone(b); }
@@ -250,7 +256,9 @@ function truceStops(att, def) {
 var KINGS = ['iskandar', 'gilgamesh', 'caerwyn', 'richard', 'leonidas'];
 function startBanquet() {
   var host = loreHost(KINGS); if (!host) { startSummons(); return; }
-  G.tasks.push({ kind: 'banquet', x: EVT.banquet.x, y: EVT.banquet.y, r: EVT.banquet.r, name: 'The King’s Banquet', need: EVT.banquet.need, prog: {}, done: {}, host: host.team, hostF: host });
+  // the table is set on the castle roof, up the grand staircase
+  var roof = (MAP.rooms || []).filter(function (r) { return r.id === 'einroof'; })[0], bx = roof ? roof.x0 + 700 : EVT.banquet.x, by = roof ? roof.y0 + 470 : EVT.banquet.y;
+  G.tasks.push({ kind: 'banquet', x: bx, y: by, r: EVT.banquet.r, name: 'The King’s Banquet', need: EVT.banquet.need, prog: {}, done: {}, host: host.team, hostF: host });
   FX.event('banquet', { host: host.team, f: host });
 }
 function banquetDone(t, k) {

@@ -106,8 +106,9 @@ function doorTick(f, dt) {
   var mx = f.inp.mx, my = f.inp.my; if (Math.hypot(mx, my) < 0.2) return;
   for (var i = 0; i < MAP.doors.length; i++) {
     var d = MAP.doors[i];
-    if (f.x < MAP.cityW) { if (!d.ruined && Math.hypot(f.x - d.out.x, f.y - d.out.y) < 52 && (mx * -d.out.nx + my * -d.out.ny) > 0.3) { stepDoor(f, d.in.x - d.in.nx * 60, d.in.y - d.in.ny * 60, d, true); return; } }
-    else if (Math.hypot(f.x - d.in.x, f.y - d.in.y) < 52 && (mx * d.in.nx + my * d.in.ny) > 0.3) { stepDoor(f, d.out.x + d.out.nx * 60, d.out.y + d.out.ny * 60, d, false); return; }
+    // a street door's outside is in the city; a stair between two rooms (inner) has both sides indoors
+    if ((f.x < MAP.cityW || d.inner) && !d.ruined && Math.hypot(f.x - d.out.x, f.y - d.out.y) < 52 && (mx * -d.out.nx + my * -d.out.ny) > 0.3) { if (schoolBars(f, d)) return; stepDoor(f, d.in.x - d.in.nx * 60, d.in.y - d.in.ny * 60, d, true); return; }
+    if (f.x >= MAP.cityW && Math.hypot(f.x - d.in.x, f.y - d.in.y) < 52 && (mx * d.in.nx + my * d.in.ny) > 0.3) { stepDoor(f, d.out.x + d.out.nx * 60, d.out.y + d.out.ny * 60, d, false); return; }
   }
 }
 function stepDoor(f, x, y, d, entering) {

@@ -362,10 +362,12 @@ test('the school event: servants are held out, everyone inside is drained, three
   G.clock.phase = 'day'; G.ai.forEach((a, i) => { G.ai[i] = null; });
   const sh = G.f.find((f) => f.def.id === 'shirou'), rin = G.f.find((f) => f.def.id === 'rin'), sab = sh.partner, X = E.EVT.school;
   G.f.forEach((f) => { f.x = 200; f.y = 6000; });
-  sh.x = X.x; sh.y = X.y; rin.x = X.x + 100; rin.y = X.y;
+  const R = E.MAP.rooms.find((r) => r.id === 'school'), cx = (R.x0 + R.x1) / 2, cy = (R.y0 + R.y1) / 2;
+  sh.x = cx; sh.y = cy; rin.x = cx + 100; rin.y = cy;
   E.startSchool(); assert.strictEqual(G.event.kind, 'school'); assert.strictEqual(G.event.culprit, 2, 'Medusa\'s team raised it');
-  sab.x = X.x + X.r - 100; sab.y = X.y; E.eventsTick(0.1);
-  assert.ok(Math.hypot(sab.x - X.x, sab.y - X.y) > X.r, 'a servant outside is held out');
+  assert.ok(G.event.circles.every((c) => c.x > R.x0 && c.x < R.x1 && c.y > R.y0 && c.y < R.y1), 'the circles stand inside the school');
+  sab.x = cx; sab.y = cy + 200; E.eventsTick(0.1);
+  assert.ok(sab.x < E.MAP.cityW, 'a servant who was not inside is put out of the building');
   const h0 = sh.hp; E.eventsTick(2); assert.ok(sh.hp < h0, 'the field drains the masters inside');
   assert.ok(E.inTruce(sh, rin), 'masters inside are in truce');
   G.ai[rin.idx] = E.mkAI(rin, E.DIFF.knight); const r0 = sh.hp; E.hurt(rin, sh, { dmg: 10, power: 1 }); assert.strictEqual(sh.hp, r0, 'an AI master honours the truce');

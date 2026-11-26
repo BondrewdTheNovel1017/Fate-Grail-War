@@ -781,7 +781,7 @@ setMap('arena');
    city blocks, trees, estate plots for masters, and walk-in interiors placed in a strip east of the city
    (x > cityW) and reached through doors. Buildings collide as rectangles (MAP.rects); trees and posts as circles. */
 MAPS.city = (function () {
-  var CW = 12000, CH = 8000, IX = 12400, IW = 6000;                 // city size; interiors live at x >= IX
+  var CW = 12000, CH = 8000, IX = 12400, IW = 8000;                 // city size; interiors live at x >= IX
   var v = 20241125; function R() { v = (v * 1664525 + 1013904223) >>> 0; return v / 4294967296; }
   var roads = [], zones = [], b = [], o = [], labels = [], doors = [], rooms = [], reserved = [], lamps = [];
   function road(kind, x0, y0, x1, y1, w, name) { roads.push({ kind: kind, x0: Math.min(x0, x1), y0: Math.min(y0, y1), x1: Math.max(x0, x1), y1: Math.max(y0, y1), w: w, h: y0 === y1, name: name }); }
@@ -1001,6 +1001,20 @@ MAPS.city = (function () {
   for (var ar = 0; ar < 3; ar++) B(cx0 + 2140, cy0 + 1300 + ar * 200, 500, 60, 'armory');
   [[cx0 + 1080, cy0 + 600], [cx0 + 1520, cy0 + 600], [cx0 + 1080, cy0 + 1000], [cx0 + 1520, cy0 + 1000], [cx0 + 1080, cy0 + 1400], [cx0 + 1520, cy0 + 1400]].forEach(function (p) { T(p[0], p[1], 30, 'column'); });
   door('einzbern', 'einzbern', 11000, 1485, 0, 1, cx0 + 1300, cy0 + 1820, 0, 1);
+  // the castle roof: an open courtyard above the great hall, up the grand staircase (where the King's Banquet is held)
+  var rf = room('einroof', 'Castle Rooftop', IX + 6050, 1600, 1400, 1000, 'stone');
+  part(rf, 'carpet', rf.x0 + 520, rf.y0 + 180, rf.x0 + 880, rf.y0 + 880);
+  B(rf.x0 + 700, rf.y0 + 470, 300, 110, 'table'); for (var bq = 0; bq < 4; bq++) { T(rf.x0 + 590 + bq * 75, rf.y0 + 390, 12, 'chair'); T(rf.x0 + 590 + bq * 75, rf.y0 + 550, 12, 'chair'); }
+  [[rf.x0 + 160, rf.y0 + 160], [rf.x0 + 1240, rf.y0 + 160], [rf.x0 + 160, rf.y0 + 760], [rf.x0 + 1240, rf.y0 + 760]].forEach(function (p) { T(p[0], p[1], 18, 'lantern'); });
+  door('einroof', 'einroof', cx0 + 1300, cy0 + 210, 0, 1, rf.x0 + 700, rf.y1 - 50, 0, 1); doors[doors.length - 1].inner = true;
+  // Homurahara Academy: three classrooms above a long corridor; the front doors open on the schoolyard
+  var sc = room('school', 'Homurahara Academy', IX + 6050, 200, 1800, 1150, 'wood');
+  wallH(sc, 760, 24, 1776, [[260, 400], [860, 1000], [1440, 1580]]); wallV(sc, 600, 24, 760, []); wallV(sc, 1200, 24, 760, []);
+  part(sc, 'carpet', sc.x0 + 30, sc.y0 + 790, sc.x0 + 1770, sc.y0 + 1120); part(sc, 'stairs', sc.x0 + 1560, sc.y0 + 800, sc.x0 + 1760, sc.y0 + 1110);
+  [0, 1, 2].forEach(function (cr) { B(sc.x0 + 24 + cr * 600 + 290, sc.y0 + 38, 300, 24, 'shelf'); });
+  // desks in rows between the waypoint lanes, so every aisle stays open
+  for (var dj = 0; dj < 10; dj++) { var dx = 175 + dj * 170; if (Math.abs(dx - 600) < 70 || Math.abs(dx - 1200) < 70 || dx > 1720) continue; [345, 515].forEach(function (dy) { B(sc.x0 + dx, sc.y0 + dy, 70, 40, 'table'); }); }
+  door('school', 'school', 4050, 2840, 0, 1, sc.x0 + 900, sc.y1 - 50, 0, 1);
   // Tohsaka Mansion: foyer, parlor, workshop
   var t = room('tohsaka', 'Tohsaka Mansion', IX + 200, 2400, 1500, 1050, 'wood');
   wallV(t, 540, 24, 1026, [[380, 520], [780, 920]]); wallV(t, 960, 24, 1026, [[380, 520], [780, 920]]);
@@ -1197,8 +1211,9 @@ function doorTick(f, dt) {
   var mx = f.inp.mx, my = f.inp.my; if (Math.hypot(mx, my) < 0.2) return;
   for (var i = 0; i < MAP.doors.length; i++) {
     var d = MAP.doors[i];
-    if (f.x < MAP.cityW) { if (!d.ruined && Math.hypot(f.x - d.out.x, f.y - d.out.y) < 52 && (mx * -d.out.nx + my * -d.out.ny) > 0.3) { stepDoor(f, d.in.x - d.in.nx * 60, d.in.y - d.in.ny * 60, d, true); return; } }
-    else if (Math.hypot(f.x - d.in.x, f.y - d.in.y) < 52 && (mx * d.in.nx + my * d.in.ny) > 0.3) { stepDoor(f, d.out.x + d.out.nx * 60, d.out.y + d.out.ny * 60, d, false); return; }
+    // a street door's outside is in the city; a stair between two rooms (inner) has both sides indoors
+    if ((f.x < MAP.cityW || d.inner) && !d.ruined && Math.hypot(f.x - d.out.x, f.y - d.out.y) < 52 && (mx * -d.out.nx + my * -d.out.ny) > 0.3) { if (schoolBars(f, d)) return; stepDoor(f, d.in.x - d.in.nx * 60, d.in.y - d.in.ny * 60, d, true); return; }
+    if (f.x >= MAP.cityW && Math.hypot(f.x - d.in.x, f.y - d.in.y) < 52 && (mx * d.in.nx + my * d.in.ny) > 0.3) { stepDoor(f, d.out.x + d.out.nx * 60, d.out.y + d.out.ny * 60, d, false); return; }
   }
 }
 function stepDoor(f, x, y, d, entering) {
@@ -2648,18 +2663,24 @@ function berserkTick(E, dt) {
 function rampTarget(f) { var best = null, bv = -1; servantsAlive().forEach(function (e) { if (e.team === f.team || e.spirit === 2) return; var d = dist(f, e); if (d > 3200) return; var v = e.hp - d * 0.05; if (v > bv) { bv = v; best = e; } }); return best; }
 /* ---- the school: a bounded field drains everyone inside; skeleton familiars rise; three circles hold it up ---- */
 function startSchool() {
-  var S = EVT.school, med = evAlive('medusa'), culprit = med && med.partner && med.partner.st !== 'dead' ? med.team : -1;
-  var E = { kind: 'school', x: S.x, y: S.y, r: S.r, dur: S.dur, t: 0, culprit: culprit, circles: S.circles.map(function (p) { return { x: p[0], y: p[1], r: 75, prog: {}, up: true, by: -1 }; }), allowed: {}, broken: {}, mobT: 2, students: [] };
-  G.f.forEach(function (f) { if (f.st !== 'dead' && (Math.hypot(f.x - E.x, f.y - E.y) < E.r || f.team === culprit)) E.allowed[f.idx] = true; });
-  for (var i = 0; i < 26; i++) { var a = rnd() * 6.283, d = 120 + rnd() * (E.r - 220); E.students.push({ x: E.x + Math.cos(a) * d, y: E.y + Math.sin(a) * d * 0.7, down: 0, id: i }); }
+  var S = EVT.school, med = evAlive('medusa'), culprit = med && med.partner && med.partner.st !== 'dead' ? med.team : -1, R = schoolRoom();
+  var cx = R ? (R.x0 + R.x1) / 2 : S.x, cy = R ? (R.y0 + R.y1) / 2 : S.y;
+  // the seal's circles stand in the three classrooms
+  var circ = R ? [[R.x0 + 324, R.y0 + 420], [R.x0 + 924, R.y0 + 420], [R.x0 + 1524, R.y0 + 420]] : S.circles;
+  var E = { kind: 'school', x: Math.round(cx), y: Math.round(cy), r: R ? Math.round(Math.hypot(R.x1 - R.x0, R.y1 - R.y0) / 2) : S.r, dur: S.dur, t: 0, culprit: culprit, door: { x: 4050, y: 2840 }, circles: circ.map(function (p) { return { x: p[0], y: p[1], r: 75, prog: {}, up: true, by: -1 }; }), allowed: {}, broken: {}, mobT: 2, students: [] };
+  G.f.forEach(function (f) { if (f.st !== 'dead' && (zoneOf(f) === 'school' || f.team === culprit)) E.allowed[f.idx] = true; });
+  for (var i = 0; i < 26; i++) { var cr = i % 3, sx = R ? R.x0 + 60 + cr * 600 + rnd() * 480 : E.x, sy = R ? R.y0 + 180 + rnd() * 520 : E.y; E.students.push({ x: sx, y: sy, down: 0, id: i }); }
   G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); G.event = E; FX.event('school', E);
 }
-function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && f.x < MAP.cityW && Math.hypot(f.x - E.x, f.y - E.y) < E.r); }
+function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && zoneOf(f) === 'school'); }
+function schoolRoom() { return (MAP.rooms || []).filter(function (r) { return r.id === 'school'; })[0]; }
+// the blood seal keeps out servants who were not inside when it rose (masters may come and go)
+function schoolBars(f, d) { var E = G.event; if (!E || E.kind !== 'school' || d.room !== 'school' || f.def.isMaster || E.allowed[f.idx]) return false; if (!(f.barT > G.time)) { f.barT = G.time + 3; FX.text(f, 'THE BLOOD SEAL BARS THE WAY'); } f.doorT = 0.5; return true; }
 function schoolTick(E, dt) {
   // servants who were not inside when it rose cannot enter, even in spirit form; masters may come and go
   G.f.forEach(function (f) {
-    if (f.st === 'dead' || f.def.isMaster || E.allowed[f.idx] || f.x > MAP.cityW) return;
-    var d = Math.hypot(f.x - E.x, f.y - E.y); if (d < E.r + 6) { var a = Math.atan2(f.y - E.y, f.x - E.x); f.x = E.x + Math.cos(a) * (E.r + 8); f.y = E.y + Math.sin(a) * (E.r + 8); f.kx = f.ky = 0; if (!(f.barT > G.time)) { f.barT = G.time + 4; FX.text(f, 'THE FIELD HOLDS YOU OUT'); } }
+    if (f.st === 'dead' || f.def.isMaster || E.allowed[f.idx] || zoneOf(f) !== 'school') return;
+    { f.x = E.door.x; f.y = E.door.y + 90; f.kx = f.ky = 0; if (!(f.barT > G.time)) { f.barT = G.time + 4; FX.text(f, 'THE FIELD HOLDS YOU OUT'); } }
   });
   // the drain: never kills, but it wears everyone down
   G.f.forEach(function (f) { if (f.st === 'dead' || f.team === E.culprit || !inSchool(f) || f.spirit === 2) return; var k = f.def.isMaster ? EVT.school.drainM : EVT.school.drainS; if (f.hp > EVT.school.floor) f.hp = Math.max(EVT.school.floor, f.hp - k * dt); });
@@ -2710,7 +2731,7 @@ function truceZone(f) {
   if (E && E.kind === 'school' && inSchool(f)) return 'school';
   if (E && E.kind === 'horror' && !E.boss.dead && f.team !== E.culprit && f.x < MAP.cityW && Math.hypot(f.x - E.boss.x, f.y - E.boss.y) < EVT.horror.truceR) return 'horror';
   var L = G.lastSchool; if (L && G.time < L.truceEnd && f.x < MAP.cityW && Math.hypot(f.x - L.x, f.y - L.y) < L.r + 200 && !L.betray[f.team]) return 'school';
-  if (G.tasks) for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && f.x < MAP.cityW && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) return k.kind; }
+  if (G.tasks) for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && (k.kind === 'banquet' || f.x < MAP.cityW) && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) return k.kind; }
   return null;
 }
 function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a); return !!za && za === truceZone(b); }
@@ -2725,7 +2746,9 @@ function truceStops(att, def) {
 var KINGS = ['iskandar', 'gilgamesh', 'caerwyn', 'richard', 'leonidas'];
 function startBanquet() {
   var host = loreHost(KINGS); if (!host) { startSummons(); return; }
-  G.tasks.push({ kind: 'banquet', x: EVT.banquet.x, y: EVT.banquet.y, r: EVT.banquet.r, name: 'The King’s Banquet', need: EVT.banquet.need, prog: {}, done: {}, host: host.team, hostF: host });
+  // the table is set on the castle roof, up the grand staircase
+  var roof = (MAP.rooms || []).filter(function (r) { return r.id === 'einroof'; })[0], bx = roof ? roof.x0 + 700 : EVT.banquet.x, by = roof ? roof.y0 + 470 : EVT.banquet.y;
+  G.tasks.push({ kind: 'banquet', x: bx, y: by, r: EVT.banquet.r, name: 'The King’s Banquet', need: EVT.banquet.need, prog: {}, done: {}, host: host.team, hostF: host });
   FX.event('banquet', { host: host.team, f: host });
 }
 function banquetDone(t, k) {
@@ -3384,6 +3407,9 @@ function dayActivities() {
       if (len < 600) return;
       LEYP[k.name] = { pts: p.map(function (q) { return { x: q.x, y: q.y }; }), len: len };
       k.act = 'wisp'; k.w = {}; k.wp = {}; k.len = Math.round(len); k.ex = Math.round(e.x); k.ey = Math.round(e.y);
+    } else if (k.kind === 'school') {
+      // lessons are attended in a classroom
+      var R = (MAP.rooms || []).filter(function (r) { return r.id === 'school'; })[0]; if (R) { k.x = R.x0 + 924; k.y = R.y0 + 430; k.r = Math.min(k.r, 200); }
     } else if (k.kind === 'trace') {
       k.act = 'clues'; k.clues = [openSpot(k.x, k.y, 120, 380), openSpot(k.x, k.y, 120, 380), openSpot(k.x, k.y, 120, 380)]; k.found = {}; k.exT = {};
     }
@@ -5879,9 +5905,19 @@ function drawCityBlock(g, b, i) {
       g.fillStyle = '#4a505a'; g.fillRect(b.x - 34, y0 - 10, 68, 68); g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(b.x - 34, y0 - 10, 68, 68);
       g.fillStyle = '#e9e4d3'; g.fillRect(b.x - 5, y0 + 2, 10, 44); g.fillRect(b.x - 16, y0 + 14, 32, 9); break;
     case 'castle':
-      hipRoof(g, x0 + w * 0.3, y0, w * 0.4, h, '#4e5868', true); hipRoof(g, x0, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true); hipRoof(g, x0 + w * 0.68, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true);
+      // the central keep is an open roof courtyard (the King's Banquet is held up there), between the two pitched wings
+      var kx = x0 + w * 0.3, kw = w * 0.4;
+      g.fillStyle = '#7d828c'; g.fillRect(kx, y0, kw, h); g.fillStyle = '#9aa0aa'; g.fillRect(kx + 22, y0 + 22, kw - 44, h - 44);
+      g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 1; for (var fl = kx + 22; fl < kx + kw - 22; fl += 36) { g.beginPath(); g.moveTo(fl, y0 + 22); g.lineTo(fl, y0 + h - 22); g.stroke(); } for (var fr = y0 + 22; fr < y0 + h - 22; fr += 36) { g.beginPath(); g.moveTo(kx + 22, fr); g.lineTo(kx + kw - 22, fr); g.stroke(); }
+      for (var pq = kx; pq < kx + kw; pq += 26) { g.fillStyle = '#6a6f78'; g.fillRect(pq, y0, 14, 12); g.fillRect(pq, y0 + h - 12, 14, 12); }
+      g.strokeStyle = '#0b121a'; g.lineWidth = 2.5; g.strokeRect(kx, y0, kw, h); g.strokeRect(kx + 22, y0 + 22, kw - 44, h - 44);
+      var feast = G && G.tasks && G.tasks.some(function (q) { return q.kind === 'banquet'; }), tcx = b.x, tcy = y0 + h * 0.45;
+      g.fillStyle = '#5a3a22'; g.fillRect(tcx - 90, tcy - 30, 180, 60); g.strokeRect(tcx - 90, tcy - 30, 180, 60);
+      if (feast) { g.fillStyle = '#e8dfc8'; g.fillRect(tcx - 84, tcy - 24, 168, 48); for (var cu = 0; cu < 6; cu++) { g.fillStyle = '#e0b04a'; g.beginPath(); g.arc(tcx - 70 + cu * 28, tcy + (cu % 2 ? 10 : -10), 5, 0, 6.283); g.fill(); } }
+      [[kx + 40, y0 + 40], [kx + kw - 40, y0 + 40], [kx + 40, y0 + h - 40], [kx + kw - 40, y0 + h - 40]].forEach(function (lp) { if (feast) { var lg = g.createRadialGradient(lp[0], lp[1], 2, lp[0], lp[1], 60); lg.addColorStop(0, 'rgba(255,214,140,.75)'); lg.addColorStop(1, 'rgba(255,190,110,0)'); g.fillStyle = lg; g.beginPath(); g.arc(lp[0], lp[1], 60, 0, 6.283); g.fill(); } g.fillStyle = feast ? '#ffd88a' : '#5a5650'; g.beginPath(); g.arc(lp[0], lp[1], 7, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.stroke(); });
+ hipRoof(g, x0, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true); hipRoof(g, x0 + w * 0.68, y0 + h * 0.25, w * 0.32, h * 0.6, '#4e5868', true);
       g.fillStyle = '#c8ccd4'; g.fillRect(b.x - 70, y0 + h - 26, 140, 26); g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(b.x - 70, y0 + h - 26, 140, 26);
-      g.fillStyle = '#d9d4c8'; g.beginPath(); g.arc(b.x, b.y - 30, 26, 0, 6.283); g.fill(); g.stroke(); break;
+      break;
     case 'castletower': g.fillStyle = '#7a8290'; g.beginPath(); g.arc(b.x, b.y, w / 2, 0, 6.283); g.fill(); g.strokeStyle = '#0b121a'; g.lineWidth = 3; g.stroke(); for (var cr = 0; cr < 16; cr++) { var ca = cr * 0.3927; g.strokeStyle = cr % 2 ? 'rgba(0,0,0,.3)' : 'rgba(255,255,255,.15)'; g.lineWidth = 2; g.beginPath(); g.moveTo(b.x, b.y); g.lineTo(b.x + Math.cos(ca) * w / 2, b.y + Math.sin(ca) * w / 2); g.stroke(); } g.fillStyle = '#c9a43a'; g.beginPath(); g.arc(b.x, b.y, 6, 0, 6.283); g.fill(); break;
     case 'castlewall': case 'wall': g.fillStyle = k === 'castlewall' ? '#8a8f98' : '#8b857a'; g.fillRect(x0, y0, w, h); g.fillStyle = 'rgba(0,0,0,.25)'; var hz = w >= h; for (var mq = 0; mq < (hz ? w : h); mq += 24) { if (hz) g.fillRect(x0 + mq, y0, 12, h * 0.4); else g.fillRect(x0, y0 + mq, w * 0.4, 12); } g.strokeStyle = '#0b121a'; g.lineWidth = 2; g.strokeRect(x0, y0, w, h); break;
     case 'fence': g.strokeStyle = '#1a1c20'; g.lineWidth = 4; g.beginPath(); if (w >= h) { g.moveTo(x0, b.y); g.lineTo(x0 + w, b.y); } else { g.moveTo(b.x, y0); g.lineTo(b.x, y0 + h); } g.stroke(); g.fillStyle = '#2a2d33'; for (var fp = 0; fp <= (w >= h ? w : h); fp += 40) { if (w >= h) g.fillRect(x0 + fp - 4, b.y - 4, 8, 8); else g.fillRect(b.x - 4, y0 + fp - 4, 8, 8); } break;
@@ -8323,6 +8359,6 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet(); shellBoot();
 requestAnimationFrame(frame);
-window.__duel = { mapShot: function (sc, x0, y0, w, h, id) { var m = MAPS[id || 'city'], c = document.createElement('canvas'); x0 = x0 || 0; y0 = y0 || 0; w = w || (m.cityW || m.w); h = h || m.h; c.width = Math.round(w * sc); c.height = Math.round(h * sc); var g = c.getContext('2d'); g.scale(sc, sc); g.translate(-x0, -y0); var vr0 = VIEWR; VIEWR = { x0: x0, y0: y0, x1: x0 + w, y1: y0 + h }; var M0 = MAP; MAP = m; try { drawFloor(g, m); m.b.forEach(function (b, i) { drawBlock(g, b, i, m); }); (m.o || []).forEach(function (p) { drawObs(g, p); }); if (m.theme === 'city' && typeof drawOverhead === 'function') try { drawOverhead(g); } catch (e) {} } finally { VIEWR = vr0; MAP = M0; } return c.toDataURL('image/png'); }, thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { hurt: hurt, civStruck: civStruck, sendExecutors: sendExecutors, formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { get MAP() { return MAP; }, mapShot: function (sc, x0, y0, w, h, id) { var m = MAPS[id || 'city'], c = document.createElement('canvas'); x0 = x0 || 0; y0 = y0 || 0; w = w || (m.cityW || m.w); h = h || m.h; c.width = Math.round(w * sc); c.height = Math.round(h * sc); var g = c.getContext('2d'); g.scale(sc, sc); g.translate(-x0, -y0); var vr0 = VIEWR; VIEWR = { x0: x0, y0: y0, x1: x0 + w, y1: y0 + h }; var M0 = MAP; MAP = m; try { drawFloor(g, m); m.b.forEach(function (b, i) { drawBlock(g, b, i, m); }); (m.o || []).forEach(function (p) { drawObs(g, p); }); if (m.theme === 'city' && typeof drawOverhead === 'function') try { drawOverhead(g); } catch (e) {} } finally { VIEWR = vr0; MAP = M0; } return c.toDataURL('image/png'); }, thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { hurt: hurt, civStruck: civStruck, sendExecutors: sendExecutors, formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
 </script>

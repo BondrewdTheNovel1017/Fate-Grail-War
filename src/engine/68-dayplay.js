@@ -31,6 +31,9 @@ function dayActivities() {
       if (len < 600) return;
       LEYP[k.name] = { pts: p.map(function (q) { return { x: q.x, y: q.y }; }), len: len };
       k.act = 'wisp'; k.w = {}; k.wp = {}; k.len = Math.round(len); k.ex = Math.round(e.x); k.ey = Math.round(e.y);
+    } else if (k.kind === 'school') {
+      // lessons are attended in a classroom
+      var R = (MAP.rooms || []).filter(function (r) { return r.id === 'school'; })[0]; if (R) { k.x = R.x0 + 924; k.y = R.y0 + 430; k.r = Math.min(k.r, 200); }
     } else if (k.kind === 'trace') {
       k.act = 'clues'; k.clues = [openSpot(k.x, k.y, 120, 380), openSpot(k.x, k.y, 120, 380), openSpot(k.x, k.y, 120, 380)]; k.found = {}; k.exT = {};
     }
