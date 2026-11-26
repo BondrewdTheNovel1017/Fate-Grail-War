@@ -12,6 +12,6 @@ document.addEventListener('pointerup', function (e) { var t = e.target; if (!t.c
 function syncSnd() { $('#snd').textContent = AUD.on ? 'Sound on' : 'Sound off'; }
 $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localStorage.setItem('duel2.snd', AUD.on ? '1' : '0'); } catch (e) {} syncSnd(); audInit(); });
 syncSnd();
-renderSetup(); renderNet();
+renderSetup(); renderNet(); shellBoot();
 requestAnimationFrame(frame);
 window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };

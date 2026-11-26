@@ -39,7 +39,7 @@ function enterGame(nTeams, title, sub) {
 }
 function endMatch(toSetup) { running = false; INTRO = null; document.body.classList.remove('intro'); if (NET.role === 'host' && NET.game) { NET.game = null; NET.R.presence({ game: null, s: null }).catch(function () {}); } if (NET.mirror) { NET.mirror = false; MEI = 0; if (NET.R) NET.R.presence({ ing: null, inp: null }).catch(function () {}); } renderNet(); document.body.classList.remove('ingame'); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} $('#duel').style.display = 'none'; $('#setup').style.display = 'block'; $('#end').classList.remove('on'); $('#pz').classList.remove('on'); }
 function startCurrent() { if (CFG.game === 'arena') startArena(); else startMatch(); }
-$('#go').addEventListener('click', startCurrent);
+$('#go').addEventListener('click', function () { beginFlourish(startCurrent); });
 $('#again').addEventListener('click', function () { if (NET.role === 'client') { netSay('Waiting for the host to start again.'); endMatch(); return; } startCurrent(); });
 $('#menu').addEventListener('click', endMatch); $('#menu2').addEventListener('click', endMatch); $('#quit').addEventListener('click', endMatch);
 $('#restBtn').addEventListener('click', function () { if (G && isDay() && !NET.mirror) { skipDay(); note('You rest until nightfall.'); } });

@@ -49,8 +49,8 @@ function renderArena() {
   $('#aslots').innerHTML = h;
   var cur = S[A.active];
   $('#aroster').innerHTML = entityRosterHTML(cur.k, cur.id, 'data-apick', A.active > 0);
-  $('#adetail').innerHTML = entityDetailHTML(cur.k, cur.id, arenaRole(A, A.active).toLowerCase());
-  $('#amaps').closest('.step').hidden = A.mode === 'quickwar';
+  $('#adetail').innerHTML = entityDetailHTML(cur.k, cur.id, arenaRole(A, A.active).toLowerCase()); setFeat($('#afeat'), cur.k, cur.id);
+  $('#amapsWrap').hidden = A.mode === 'quickwar';
   $('#amaps').innerHTML = MAP_ORDER.map(function (id) { var m = MAPS[id]; return '<button type="button" class="mapc" data-amap="' + id + '" aria-pressed="' + (A.map === id) + '"><canvas width="240" height="' + Math.round(240 * m.h / m.w) + '" data-prev="' + id + '"></canvas><span class="pl">' + esc(m.place) + '</span><b>' + esc(m.name) + '</b><small>' + esc(m.blurb) + '</small></button>'; }).join('') +
     '<button type="button" class="mapc" data-amap="random" aria-pressed="' + (A.map === 'random') + '"><span class="pl">Any location</span><b>Random battlefield</b><small>One of the arena maps, drawn when the battle starts.</small></button>';
   document.querySelectorAll('canvas[data-prev]').forEach(function (c) { drawMapPreview(c, MAPS[c.dataset.prev]); });

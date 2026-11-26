@@ -169,8 +169,6 @@ function cardHTML(d, kind) {
 }
 function shortName(n) { return n.split(/ of |, /)[0]; }
 function renderSetup() {
-  $('#gameMode').innerHTML = [['war', 'Holy Grail War', 'Seven master and servant teams across all of Fuyuki. Mana, Command Seals, contracts.'], ['arena', 'Arena', 'Quick fights on themed maps: duels, free-for-all, teams, master duels and master and servant pairs.']].map(function (m) { return '<button type="button" class="mode" data-game="' + m[0] + '" aria-pressed="' + (CFG.game === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
-  $('#warSetup').hidden = CFG.game !== 'war'; $('#arenaSetup').hidden = CFG.game !== 'arena';
   $('#go').textContent = CFG.game === 'arena' ? 'Start the battle' : 'Begin the war';
   $('#playas').innerHTML = [['servant', 'Servant', 'Fight directly. Your master follows and supports you with magecraft.'], ['master', 'Master', 'Fight as the human. Give your servant orders and spend Command Seals.']].map(function (m) { return '<button type="button" class="mode" data-playas="' + m[0] + '" aria-pressed="' + (CFG.playAs === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
   $('#roster').innerHTML = entityRosterHTML('s', CFG.servant, 'data-pick', false);
@@ -182,7 +180,9 @@ function renderSetup() {
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
   $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams &middot; starting at ' + (MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : 'a safehouse');
+  setFeat($('#sfeat'), 's', CFG.servant); setFeat($('#mfeat'), 'm', CFG.master); $('#warCard').innerHTML = warCardHTML();
   if (CFG.game === 'arena') renderArena();
+  applySteps();
 }
 document.addEventListener('click', function (e) {
   var t = e.target, el;

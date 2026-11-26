@@ -2,27 +2,87 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=Marcellus+SC&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&family=Marcellus+SC&display=swap" rel="stylesheet">
 <style>
 {{CSS}}
 </style>
 
 <main class="wrap">
 <section id="setup">
-  <header class="mhead"><span class="mtag">Milestone 2 build</span><h1>Fate Grail War</h1>
-  <p class="sub">The Holy Grail War as a top-down battle game. Fight the full war across Fuyuki with up to seven master and servant teams, or jump into a quick Arena fight.</p></header>
-  <div class="modes" id="gameMode"></div>
-  <div id="warSetup">
-  <div class="step"><div class="stepn">1</div><div><div class="lbl">Play as</div><div class="modes" id="playas"></div></div></div>
-  <div class="step"><div class="stepn">2</div><div><div class="lbl">Your servant</div><div class="roster" id="roster"></div><div class="detail" id="sdetail"></div></div></div>
-  <div class="step"><div class="stepn">3</div><div><div class="lbl">Your master</div><div class="roster" id="masters"></div><div class="detail" id="mdetail"></div></div></div>
-  <div class="step"><div class="stepn">4</div><div><div class="lbl">Teams</div><div class="chips" id="rivals"></div><div class="lbl">War length</div><div class="chips" id="nightsC"></div><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div></div>
-  <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
+  <canvas id="menuBg" aria-hidden="true"></canvas>
+  <div class="vign" aria-hidden="true"></div>
+
+  <div class="scr on" id="scrTitle" data-scr="title">
+    <div class="tlogo">
+      <div class="kick">The Holy Grail War &middot; Fuyuki</div>
+      <h1 class="logo"><span>Fate</span><span>Grail War</span></h1>
+      <div class="rule-seal"><svg class="sealmark" viewBox="0 0 120 60" aria-hidden="true"><path d="M60 8 C48 20 48 34 60 44 C72 34 72 20 60 8Z M60 44 C44 46 28 40 16 28 C30 34 44 36 54 32 M60 44 C76 46 92 40 104 28 C90 34 76 36 66 32 M60 44 L60 56" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <p class="tag">Seven masters. Seven servants. Every wish but one turns to ash.</p>
+    </div>
+    <button type="button" class="press" id="pressStart">Press any key to begin</button>
+    <div class="tfoot">An original fan game &middot; top-down battles across Fuyuki City</div>
+  </div>
+
+  <div class="scr" id="scrMain" data-scr="main">
+    <div class="mmcol">
+      <div class="mlogo"><span>Fate</span> Grail War</div>
+      <nav class="mm" id="mainMenu" aria-label="Main menu">
+        <button type="button" class="mmi" data-go="war" data-desc="war"><i>I</i><b>Holy Grail War</b></button>
+        <button type="button" class="mmi" data-go="arena" data-desc="arena"><i>II</i><b>Arena</b></button>
+        <button type="button" class="mmi" data-go="codex" data-desc="codex"><i>III</i><b>Codex</b></button>
+        <button type="button" class="mmi" data-go="settings" data-desc="settings"><i>IV</i><b>Settings</b></button>
+      </nav>
+      <div class="hints"><kbd>&uarr;</kbd><kbd>&darr;</kbd> choose &middot; <kbd>Enter</kbd> confirm &middot; <kbd>Esc</kbd> back</div>
+    </div>
+    <aside class="mdesc" id="mainDesc" aria-live="polite"></aside>
+  </div>
+
+  <div class="scr sel" id="scrWar" data-scr="war">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Holy Grail War</h2><ol class="steps" id="warSteps"></ol></header>
+    <div class="page" data-page="0">
+      <div class="pick"><div class="feat" id="sfeat"></div><div class="side"><div class="lbl">Summon your servant</div><div class="roster" id="roster"></div><details class="dossier"><summary>Full dossier</summary><div class="detail" id="sdetail"></div></details></div></div>
+    </div>
+    <div class="page" data-page="1" hidden>
+      <div class="pick"><div class="feat" id="mfeat"></div><div class="side"><div class="lbl">Choose your master</div><div class="roster" id="masters"></div><details class="dossier"><summary>Full dossier</summary><div class="detail" id="mdetail"></div></details></div></div>
+    </div>
+    <div class="page" data-page="2" hidden>
+      <div class="rulespage">
+        <div class="pact-card" id="warCard"></div>
+        <div class="opts">
+          <div class="opt"><div class="lbl">Play as</div><div class="modes" id="playas"></div></div>
+          <div class="opt"><div class="lbl">Teams</div><div class="chips" id="rivals"></div></div>
+          <div class="opt"><div class="lbl">War length</div><div class="chips" id="nightsC"></div></div>
+          <div class="opt"><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div></div>
+          <div class="opt"><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div>
+          <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
     <p class="note" style="margin:0 0 8px">Up to 4 players. One person hosts and runs the war; the others pick their servant and master above, then join with the room code. AI fills the remaining classes.</p>
     <div class="chips"><button type="button" class="chip" id="netHost">Host a room</button><input id="netCode" class="netin" maxlength="8" placeholder="Room code" autocomplete="off" aria-label="Room code"><button type="button" class="chip" id="netJoin">Join</button><button type="button" class="chip" id="netLeave" hidden>Leave room</button></div>
     <div id="netBox"></div></div></div>
-  <details class="how"><summary>How the sandbox works</summary>
-  <div class="rules" style="margin-top:10px">
+  
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scr sel" id="scrArena" data-scr="arena">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Arena</h2><ol class="steps" id="arenaSteps"></ol></header>
+    <div class="page" data-page="0">
+      <div class="lbl">Match type</div><div class="modes big" id="amodes"></div><div class="chips" id="acount" style="margin-top:10px"></div>
+    </div>
+    <div class="page" data-page="1" hidden>
+      <div class="slots" id="aslots"></div>
+      <div class="pick"><div class="feat" id="afeat"></div><div class="side"><div class="lbl">Choose who fills the slot</div><div class="roster" id="aroster"></div><details class="dossier"><summary>Full dossier</summary><div class="detail" id="adetail"></div></details></div></div>
+    </div>
+    <div class="page" data-page="2" hidden>
+      <div id="amapsWrap"><div class="lbl">Battlefield</div><div class="maps" id="amaps"></div></div>
+      <div class="opts two"><div class="opt"><div class="lbl">Opponent skill</div><div class="chips" id="adiff"></div></div><div class="opt"><div class="lbl">Game speed</div><div class="chips" id="aspd"></div></div></div>
+    </div>
+  </div>
+
+  <div class="scr" id="scrCodex" data-scr="codex">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Codex</h2>
+      <div class="tabs" role="tablist"><button type="button" role="tab" data-tab="cWar" aria-selected="true">The war</button><button type="button" role="tab" data-tab="cArena" aria-selected="false">Arena</button><button type="button" role="tab" data-tab="cKeys" aria-selected="false">Controls</button></div></header>
+    <div class="codex" id="cWar"><div class="rules" style="margin-top:10px">
     <div class="rule"><b>Masters</b>Each team is a servant and a fragile master. If a master dies, their servant fades after 20 seconds. Archers last 120 seconds without one.</div>
     <div class="rule"><b>Spirit form</b>Servants dematerialize in 1.5 seconds (1 to return). Unseen, untouchable and faster, but cannot attack. A hit while changing form cancels it.</div>
     <div class="rule"><b>Orders</b>Playing as the master, you order your servant: Protect, Charge, Hold, Don't attack, Retreat or Spirit form.</div>
@@ -36,27 +96,31 @@
     <div class="rule"><b>Long fights</b>Servants are much tougher here and Noble Phantasms charge slowly, but hit harder when they land.</div>
     <div class="rule"><b>Target lock</b>Tap or click an enemy to lock on, or press Target to cycle. Tap empty ground to clear.</div>
     <div class="rule"><b>Fuyuki City</b>The Mion River splits Miyama from Shinto, crossed by the red arch of Fuyuki Bridge, the Mion Bridge to the south and the railway bridge. Miyama has Ryuudou Temple on Mount Enzou, the Tohsaka and Matou houses on the hill, the church, Homurahara Academy, the Emiya residence and the shopping street; Shinto has the Hyatt, the Center Building, Verde, the station, Central Park, the harbor and the Einzbern forest. Buildings block movement, sight and shots.</div>
-    <div class="rule"><b>Homes and interiors</b>Every master starts at their lore home: Rin at the Tohsaka mansion, Sakura and Kariya at the Matou house, Illya and Irisviel at Einzbern Castle, Kirei at the church, Kayneth at the Hyatt, Waver at the Mackenzie house, Shirou at the Emiya residence, Kiritsugu at a safehouse. A second member of the same family gets a new estate somewhere in the city. Walk into the doors of Einzbern Castle, the Tohsaka mansion, the Matou house, the church or the Emiya residence to fight inside.</div>
+    <div class="rule"><b>Homes and interiors</b>Every master starts the war inside their home and summons there: Rin at the Tohsaka mansion, Sakura and Kariya at the Matou house, Illya and Irisviel at Einzbern Castle (Kiritsugu too, when no Einzbern is in the war), Kirei at the church, Kayneth in his suite at the Hyatt, Waver at the Mackenzie house, Shirou in the Emiya storehouse. A second member of the same family, or a master with no family seat, gets a house of their own somewhere in the city. Walk into a door to go inside; resting indoors by day heals.</div>
   </div>
-  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract &middot; <kbd>P</kbd> pact.</p>
-  </details>
   </div>
-  <div id="arenaSetup" hidden>
-  <div class="step"><div class="stepn">1</div><div><div class="lbl">Match type</div><div class="modes" id="amodes"></div><div class="chips" id="acount" style="margin-top:8px"></div></div></div>
-  <div class="step"><div class="stepn">2</div><div><div class="lbl">Fighters</div><p class="tip">Tap a slot to choose who fills it, then pick from the roster.</p><div class="slots" id="aslots"></div><div class="roster" id="aroster"></div><div class="detail" id="adetail"></div></div></div>
-  <div class="step"><div class="stepn">3</div><div><div class="lbl">Battlefield</div><div class="maps" id="amaps"></div></div></div>
-  <div class="step"><div class="stepn">4</div><div><div class="lbl">Opponent skill</div><div class="chips" id="adiff"></div><div class="lbl">Game speed</div><div class="chips" id="aspd"></div></div></div>
-  <details class="how"><summary>How the fight works</summary>
-  <div class="rules" style="margin-top:10px">
+    <div class="codex" id="cArena" hidden><div class="rules" style="margin-top:10px">
     <div class="rule"><b>Light</b>Fast chain. Hitting a charging heavy knocks it out. Blocked by Block.</div>
     <div class="rule"><b>Heavy</b>Hold to charge, release to swing. Breaks a block. A well-timed dodge beats it and leaves the attacker open.</div>
     <div class="rule"><b>Block and parry</b>Hold to block, which drains stamina. Tap right before a hit lands to parry and stagger the attacker.</div>
     <div class="rule"><b>Purple warnings</b>Cannot be blocked or parried. Dodge them.</div>
     <div class="rule"><b>Noble Phantasm</b>Momentum fills as you fight. At full, the NP is ready. If you are hit while it winds up, it is lost. Masters use a signature spell on a cooldown instead.</div>
     <div class="rule"><b>Arena pace</b>Arena fights use duel-length health and normal Noble Phantasm charging, so a match takes a few minutes. In Master and servant matches the war rules apply: mana, Command Seals and a fading servant if its master falls.</div>
-  </div></details>
+  </div></div>
+    <div class="codex" id="cKeys" hidden><p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract &middot; <kbd>P</kbd> pact.</p><div class="rules" style="margin-top:12px"><div class="rule"><b>Touch</b>Stick on the left to move, attack buttons on the right. Tap an enemy to lock on.</div><div class="rule"><b>Reading attacks</b>Red warnings can be blocked. Orange ones break your guard. Purple ones cannot be blocked: dodge them. Tap Block just before a hit lands to parry.</div></div></div>
   </div>
-  <div class="startbar"><div id="summary"></div><button type="button" class="btn" id="go">Begin the war</button></div>
+
+  <div class="scr" id="scrSettings" data-scr="settings">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Settings</h2></header>
+    <div class="setlist">
+      <button type="button" class="setrow" id="setSound"><span><b>Sound</b><small>Battle sound, music and menu sounds.</small></span><em></em></button>
+      <button type="button" class="setrow" id="setMotion"><span><b>Menu motion</b><small>The animated night sky, summoning circle and embers behind the menus.</small></span><em></em></button>
+      <button type="button" class="setrow" id="setTitle"><span><b>Title screen</b><small>Show the title screen when the game opens.</small></span><em></em></button>
+    </div>
+  </div>
+
+  <div class="cmdbar" id="cmdbar" hidden><div id="summary"></div><div class="cmds"><button type="button" class="btn ghost" id="prevBtn">Back</button><button type="button" class="btn" id="nextBtn">Next</button><button type="button" class="btn seal" id="go">Begin the war</button></div></div>
+  <div class="flare" id="flare" aria-hidden="true"></div>
 </section>
 
 <section id="duel">

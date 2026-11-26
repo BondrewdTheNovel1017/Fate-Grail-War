@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=Marcellus+SC&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&family=Marcellus+SC&display=swap" rel="stylesheet">
 <style>
 [hidden] { display: none !important; }
 /* Layout: setup screen (servant, opponent, difficulty, speed), then the duel screen: HUD bars, arena canvas, touch pad (stick + six buttons), end overlay. */
@@ -228,24 +228,261 @@ canvas#cv { display: block; margin: 0 auto; width: min(100%, calc((100vh - 250px
 .hth { background: #16293a; border-radius: 4px; padding: 1px; line-height: 0; }
 
 body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel .minis, body.intro #duel .hint { visibility: hidden; }
+
+/* ================= the menu: a title screen, a main menu and setup screens over an animated Fuyuki night ================= */
+:root { --seal: #c8283c; --seal2: #ff5468; --gold2: #f3d58a; --night: #060a13; --f-title: 'Cinzel', 'Marcellus SC', 'Times New Roman', serif; --ease: cubic-bezier(.2, .8, .2, 1); }
+body:not(.ingame) { background: var(--night); }
+#setup { position: relative; min-height: 100vh; min-height: 100dvh; }
+#menuBg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+.vign { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(2, 4, 9, .72) 100%); }
+.scr { position: relative; z-index: 1; display: none; opacity: 0; transform: translateY(14px) scale(.995); transition: opacity .45s var(--ease), transform .55s var(--ease); }
+.scr.show { display: block; } .scr.on { opacity: 1; transform: none; }
+.scr.leave { opacity: 0; transform: translateY(-10px) scale(1.005); }
+/* title */
+#scrTitle.show { display: grid; min-height: calc(100vh - 40px); min-height: calc(100dvh - 40px); place-items: center; align-content: center; gap: 48px; text-align: center; cursor: pointer; }
+.tlogo { display: grid; justify-items: center; gap: 6px; }
+.kick { font-family: var(--f-hud); letter-spacing: .42em; text-transform: uppercase; font-size: 13px; color: var(--gold2); opacity: .85; padding-left: .42em; }
+.logo { margin: 0; font-family: var(--f-title); font-weight: 700; line-height: .92; display: grid; justify-items: center; letter-spacing: .06em;
+  background: linear-gradient(180deg, #fff6da 0%, #f0cf7a 45%, #b98a2e 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .55)) drop-shadow(0 0 28px rgba(240, 190, 90, .28)); }
+.logo span:first-child { font-size: clamp(54px, 13vw, 132px); }
+.logo span:last-child { font-size: clamp(26px, 5.6vw, 58px); letter-spacing: .22em; padding-left: .22em; }
+.rule-seal { display: flex; align-items: center; gap: 14px; width: min(420px, 80vw); color: var(--seal2); margin: 4px 0 2px; }
+.rule-seal::before, .rule-seal::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(243, 213, 138, .7), transparent); }
+.sealmark { width: 64px; height: 32px; filter: drop-shadow(0 0 8px rgba(255, 70, 90, .7)); animation: sealPulse 3.2s ease-in-out infinite; }
+@keyframes sealPulse { 0%, 100% { opacity: .75; } 50% { opacity: 1; filter: drop-shadow(0 0 14px rgba(255, 70, 90, .95)); } }
+.tag { margin: 6px 0 0; color: #c9c2ae; font-family: var(--f-disp); font-size: clamp(14px, 2.2vw, 18px); letter-spacing: .04em; max-width: 46ch; }
+.press { background: none; border: 0; color: var(--bone); font-family: var(--f-hud); font-weight: 600; letter-spacing: .32em; text-transform: uppercase; font-size: 15px; padding: 10px 18px; cursor: pointer; animation: pressPulse 2.2s ease-in-out infinite; }
+@keyframes pressPulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; text-shadow: 0 0 14px rgba(243, 213, 138, .6); } }
+.tfoot { position: fixed; left: 0; right: 0; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); color: #6f7f92; font-size: 12px; letter-spacing: .06em; }
+.tlogo > * { animation: rise .9s var(--ease) both; } .tlogo > :nth-child(2) { animation-delay: .12s; } .tlogo > :nth-child(3) { animation-delay: .3s; } .tlogo > :nth-child(4) { animation-delay: .45s; }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+/* main menu */
+#scrMain.show { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 32px; align-items: center; min-height: calc(100vh - 40px); min-height: calc(100dvh - 40px); max-width: 1100px; margin: 0 auto; }
+.mlogo { font-family: var(--f-title); font-weight: 600; font-size: 22px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold2); margin: 0 0 26px 4px; opacity: .9; }
+.mlogo span { color: #fff2cf; }
+.mm { display: grid; gap: 4px; }
+.mmi { position: relative; display: flex; align-items: baseline; gap: 16px; width: 100%; text-align: left; background: none; border: 0; padding: 12px 18px 12px 26px; cursor: pointer; color: #b9b3a2; transition: color .2s, transform .3s var(--ease), letter-spacing .3s var(--ease); }
+.mmi i { font-style: normal; font-family: var(--f-title); font-size: 14px; color: #5e6c7d; width: 28px; transition: color .2s; }
+.mmi b { font-family: var(--f-title); font-weight: 600; font-size: clamp(24px, 3.4vw, 34px); letter-spacing: .06em; }
+.mmi::before { content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 0; background: var(--seal2); box-shadow: 0 0 12px var(--seal2); transform: translateY(-50%); transition: height .3s var(--ease); }
+.mmi::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(200, 40, 60, .22), rgba(200, 40, 60, 0) 75%); opacity: 0; transition: opacity .25s; }
+.mmi.cur, .mmi:focus-visible { color: #fff4d8; transform: translateX(10px); outline: none; }
+.mmi.cur i, .mmi:focus-visible i { color: var(--gold2); }
+.mmi.cur::before, .mmi:focus-visible::before { height: 70%; } .mmi.cur::after, .mmi:focus-visible::after { opacity: 1; }
+.mmi.cur b { text-shadow: 0 0 18px rgba(243, 213, 138, .35); }
+#scrMain.on .mmi { animation: slideIn .6s var(--ease) both; } #scrMain.on .mmi:nth-child(2) { animation-delay: .06s; } #scrMain.on .mmi:nth-child(3) { animation-delay: .12s; } #scrMain.on .mmi:nth-child(4) { animation-delay: .18s; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-24px); } }
+.hints { margin: 26px 0 0 26px; color: #6f7f92; font-size: 12.5px; }
+.hints kbd { margin-right: 2px; }
+.mdesc { align-self: center; border-left: 1px solid rgba(243, 213, 138, .25); padding: 8px 0 8px 28px; min-height: 220px; }
+.mdesc .dk { font-family: var(--f-hud); letter-spacing: .3em; text-transform: uppercase; font-size: 12px; color: var(--seal2); }
+.mdesc h3 { margin: 6px 0 10px; font-family: var(--f-title); font-weight: 600; font-size: clamp(22px, 3vw, 30px); color: #fff2cf; letter-spacing: .04em; }
+.mdesc p { margin: 0 0 12px; color: #c9c2ae; max-width: 52ch; font-size: 14.5px; }
+.mdesc .ln { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.mdesc .ln span { font-family: var(--f-hud); letter-spacing: .12em; text-transform: uppercase; font-size: 12px; color: var(--gold2); border: 1px solid rgba(243, 213, 138, .3); padding: 3px 10px; border-radius: 2px; }
+.mdesc .montage { display: flex; gap: 0; margin: 2px 0 8px -8px; height: 74px; }
+.mdesc .montage svg { width: 120px; height: 60px; margin-right: -26px; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .6)); animation: rise .6s var(--ease) both; }
+.mdesc.swap > * { animation: rise .45s var(--ease) both; }
+@media (max-width: 760px) { #scrMain.show { grid-template-columns: 1fr; align-content: center; gap: 18px; } .mdesc { border-left: 0; border-top: 1px solid rgba(243, 213, 138, .25); padding: 14px 4px 0; min-height: 0; } .mdesc .montage { display: none; } .hints { display: none; } .mlogo { margin-bottom: 12px; } }
+/* setup screens */
+.scr.sel.show, #scrCodex.show, #scrSettings.show { max-width: 1180px; margin: 0 auto; padding-bottom: 96px; }
+.shead { display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap; padding: 4px 0 14px; margin-bottom: 14px; border-bottom: 1px solid rgba(243, 213, 138, .18); }
+.shead h2 { margin: 0; font-family: var(--f-title); font-weight: 600; font-size: clamp(22px, 3vw, 30px); letter-spacing: .06em; color: #fff2cf; }
+.back { background: none; border: 1px solid rgba(143, 163, 181, .35); color: var(--mute); border-radius: 2px; padding: 6px 12px; font-family: var(--f-hud); letter-spacing: .12em; text-transform: uppercase; font-size: 13px; cursor: pointer; transition: color .2s, border-color .2s; }
+.back:hover, .back:focus-visible { color: var(--bone); border-color: var(--gold2); }
+.steps { display: flex; gap: 6px; margin: 0 0 0 auto; padding: 0; list-style: none; counter-reset: st; }
+.steps li { counter-increment: st; }
+.steps button { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 6px 10px; color: #6f7f92; font-family: var(--f-hud); letter-spacing: .14em; text-transform: uppercase; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; }
+.steps button::before { content: counter(st); display: grid; place-items: center; width: 22px; height: 22px; font-size: 11px; font-weight: 700; color: #0a0f18; background: #56657a; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.steps button[aria-current="step"]::before { background: var(--seal2); box-shadow: none; } .steps button.done::before { background: var(--gold2); }
+.steps button > span { color: inherit; }
+.steps button[aria-current="step"] { color: var(--gold2); border-bottom-color: var(--seal2); }
+.steps button.done { color: #a9b6c2; }
+.page { animation: pageIn .45s var(--ease) both; }
+@keyframes pageIn { from { opacity: 0; transform: translateX(16px); } }
+.lbl { font-family: var(--f-hud); font-weight: 600; font-size: 13px; letter-spacing: .2em; color: var(--gold2); }
+/* character select: a featured figure on a summoning circle, and the roster */
+.pick { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .pick { grid-template-columns: 1fr; } }
+.feat { position: sticky; top: 12px; border: 1px solid rgba(243, 213, 138, .2); background: linear-gradient(180deg, rgba(10, 16, 28, .82), rgba(6, 10, 18, .92)); padding: 16px 18px 18px; overflow: hidden; clip-path: polygon(0 14px, 14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); }
+@media (max-width: 860px) { .feat { position: relative; top: 0; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 0 14px; padding: 12px; } .feat .stage2 { grid-row: 1 / span 4; height: 150px; margin: 0; } .feat .circ { width: 150px; height: 150px; } .feat .circ.r2 { width: 110px; height: 110px; } .feat .fig { width: 150px; } .feat .bars, .feat .fnp { grid-column: 1 / -1; } .feat .bars { margin-top: 8px; } .feat .fbrief { margin-bottom: 4px; } }
+.feat .aura { position: absolute; inset: -30% -30% auto; height: 340px; background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--c) 45%, transparent), transparent 62%); opacity: .55; pointer-events: none; }
+.feat .stage2 { position: relative; height: 220px; display: grid; place-items: center; margin: -4px -8px 6px; }
+.feat .circ { position: absolute; width: 230px; height: 230px; color: var(--c); opacity: .75; animation: spin 40s linear infinite; }
+.feat .circ.r2 { width: 170px; height: 170px; opacity: .5; animation-duration: 26s; animation-direction: reverse; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.feat .fig { position: relative; width: 270px; max-width: 86%; animation: figIn .7s var(--ease) both, bob 4s ease-in-out .7s infinite; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .7)); }
+.feat .fig svg { width: 100%; height: auto; display: block; }
+@keyframes figIn { from { opacity: 0; transform: scale(.85) translateY(10px); filter: brightness(3) blur(3px); } }
+@keyframes bob { 50% { transform: translateY(-5px); } }
+.feat .fcls { position: relative; font-family: var(--f-hud); letter-spacing: .3em; text-transform: uppercase; font-size: 12.5px; color: var(--c); }
+.feat .fname { position: relative; margin: 2px 0 6px; font-family: var(--f-title); font-weight: 600; font-size: clamp(22px, 2.6vw, 28px); line-height: 1.1; color: #fff2cf; animation: rise .5s var(--ease) both; }
+.feat .fbrief { position: relative; color: #b8b2a2; font-size: 13.5px; margin: 0 0 12px; }
+.bars { position: relative; display: grid; gap: 6px; }
+.bars div { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 10px; font-family: var(--f-hud); letter-spacing: .14em; text-transform: uppercase; font-size: 12px; color: var(--mute); }
+.bars i { position: relative; height: 6px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.bars i b { position: absolute; inset: 0 auto 0 0; width: var(--v); background: linear-gradient(90deg, color-mix(in srgb, var(--c) 70%, #000), var(--c)); box-shadow: 0 0 10px color-mix(in srgb, var(--c) 60%, transparent); animation: fill .9s var(--ease) both; }
+.bars div:nth-child(2) b { animation-delay: .06s; } .bars div:nth-child(3) b { animation-delay: .12s; } .bars div:nth-child(4) b { animation-delay: .18s; } .bars div:nth-child(5) b { animation-delay: .24s; }
+@keyframes fill { from { width: 0; } }
+.feat .fnp { position: relative; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(243, 213, 138, .18); }
+.feat .fnp small { font-family: var(--f-hud); letter-spacing: .2em; text-transform: uppercase; font-size: 11.5px; color: var(--mute); display: block; }
+.feat .fnp b { font-family: var(--f-title); font-weight: 600; color: var(--gold); font-size: 16px; letter-spacing: .03em; }
+.feat .fnp span { display: block; color: #9fa9b4; font-size: 12.5px; font-style: italic; }
+/* roster tiles */
+.roster { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; margin-top: 8px; }
+.rt { position: relative; background: linear-gradient(180deg, rgba(20, 32, 48, .88), rgba(10, 17, 28, .92)); border: 1px solid rgba(80, 104, 128, .45); border-top: 0; border-radius: 0; padding: 8px 8px 7px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%); transition: transform .25s var(--ease), border-color .2s, background .2s; }
+.rt::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c, var(--line)); box-shadow: 0 0 10px var(--c, transparent); }
+.rt .th { background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--c, #456) 22%, transparent), transparent 70%); }
+.rt:hover, .rt:focus-visible { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c, #789) 70%, #fff); outline: none; }
+.rt:hover .th svg, .rt:focus-visible .th svg { transform: scale(1.06); }
+.rt .th svg { transition: transform .3s var(--ease); }
+.rt[aria-pressed="true"] { background: linear-gradient(180deg, rgba(64, 40, 18, .9), rgba(22, 16, 10, .95)); border-color: var(--gold2); box-shadow: none; }
+.rt[aria-pressed="true"]::after { content: "\2726"; position: absolute; top: 6px; right: 8px; color: var(--gold2); font-size: 12px; text-shadow: 0 0 8px var(--gold); }
+.rt.rnd { min-height: 104px; }
+.dossier { margin-top: 14px; border-top: 1px solid rgba(243, 213, 138, .18); padding-top: 10px; }
+.dossier summary { cursor: pointer; font-family: var(--f-hud); font-weight: 600; letter-spacing: .2em; text-transform: uppercase; font-size: 13px; color: var(--gold2); list-style: none; }
+.dossier summary::before { content: "\25B8  "; } .dossier[open] summary::before { content: "\25BE  "; }
+/* option cards */
+.modes .mode, .mapc, .slot, .chip { transition: transform .2s var(--ease), border-color .2s, background .2s; }
+.mode { background: linear-gradient(180deg, rgba(20, 32, 48, .85), rgba(10, 17, 28, .9)); border-color: rgba(80, 104, 128, .45); border-radius: 0; }
+.mode b { font-family: var(--f-title); font-weight: 600; letter-spacing: .03em; }
+.mode:hover, .mapc:hover, .slot:hover { transform: translateY(-2px); border-color: rgba(243, 213, 138, .55); }
+.mode[aria-pressed="true"], .slot[aria-pressed="true"], .mapc[aria-pressed="true"] { border-color: var(--gold2); background: linear-gradient(180deg, rgba(64, 40, 18, .85), rgba(22, 16, 10, .92)); box-shadow: inset 3px 0 0 var(--seal2); }
+.modes.big { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.modes.big .mode { padding: 16px 16px; min-height: 104px; align-content: start; }
+.modes.big .mode b { font-size: 21px; }
+.chip { background: rgba(14, 24, 36, .85); border-radius: 0; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); padding: 8px 18px; border-color: rgba(80, 104, 128, .5); }
+.chip:hover { border-color: rgba(243, 213, 138, .55); }
+.chip[aria-pressed="true"] { background: linear-gradient(180deg, rgba(90, 30, 40, .9), rgba(50, 14, 22, .95)); color: #fff2cf; border-color: var(--seal2); }
+.slot { border-radius: 0; background: linear-gradient(180deg, rgba(20, 32, 48, .85), rgba(10, 17, 28, .9)); }
+.mapc { border-radius: 0; background: rgba(12, 20, 32, .88); }
+.rulespage { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .rulespage { grid-template-columns: 1fr; } }
+.opts { display: grid; gap: 18px; } .opts.two { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 18px; }
+.opt .lbl { margin: 0 0 8px; }
+.pact-card { position: relative; border: 1px solid rgba(243, 213, 138, .3); background: linear-gradient(180deg, rgba(14, 18, 30, .9), rgba(6, 9, 16, .95)); padding: 18px; clip-path: polygon(0 14px, 14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); }
+.pact-card .pc-k { font-family: var(--f-hud); letter-spacing: .3em; text-transform: uppercase; font-size: 12px; color: var(--seal2); }
+.pact-card .pc-pair { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; margin: 10px 0; }
+.pact-card .pc-pair > div { text-align: center; } .pact-card .pc-pair svg { width: 100%; height: auto; max-width: 150px; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .6)); }
+.pact-card .pc-pair b { display: block; font-family: var(--f-title); font-weight: 600; color: #fff2cf; font-size: 15px; } .pact-card .pc-pair small { color: var(--mute); font-size: 12px; }
+.pact-card .pc-x { color: var(--seal2); width: 34px; }
+.pact-card p { margin: 6px 0 0; color: #b8b2a2; font-size: 13.5px; }
+.pact-card ul { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: #c9c2ae; }
+.pact-card ul li::before { content: "\2726  "; color: var(--gold2); }
+/* codex and settings */
+.tabs { display: flex; gap: 4px; margin-left: auto; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 6px 12px; color: #7d8b9b; font-family: var(--f-hud); letter-spacing: .16em; text-transform: uppercase; font-size: 13px; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--gold2); border-bottom-color: var(--seal2); }
+.codex { animation: pageIn .4s var(--ease) both; }
+.codex .rule { background: rgba(12, 20, 32, .86); border-color: rgba(80, 104, 128, .4); border-radius: 0; border-left: 2px solid rgba(243, 213, 138, .4); }
+.codex .rule b { color: var(--gold2); }
+.setlist { display: grid; gap: 8px; max-width: 720px; }
+.setrow { display: flex; justify-content: space-between; align-items: center; gap: 16px; text-align: left; background: rgba(12, 20, 32, .86); border: 1px solid rgba(80, 104, 128, .45); padding: 14px 18px; cursor: pointer; transition: border-color .2s, transform .2s var(--ease); }
+.setrow:hover, .setrow:focus-visible { border-color: var(--gold2); transform: translateX(4px); outline: none; }
+.setrow b { display: block; font-family: var(--f-title); font-weight: 600; font-size: 17px; color: #fff2cf; } .setrow small { color: var(--mute); font-size: 12.5px; }
+.setrow em { font-style: normal; font-family: var(--f-hud); letter-spacing: .2em; text-transform: uppercase; font-size: 13px; color: var(--gold2); min-width: 44px; text-align: right; }
+.setrow em.off { color: #6f7f92; }
+/* the command bar */
+.cmdbar { position: fixed; z-index: 10; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: linear-gradient(180deg, rgba(6, 10, 19, 0), rgba(6, 10, 19, .92) 34%); animation: barIn .5s var(--ease) both; }
+@keyframes barIn { from { transform: translateY(30px); opacity: 0; } }
+.cmdbar #summary { color: #9fa9b4; font-size: 13px; min-width: 0; flex: 1; }
+.cmds { display: flex; gap: 8px; }
+.btn { border-radius: 0; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); padding: 12px 28px; transition: filter .2s, transform .2s var(--ease); }
+.btn:hover, .btn:focus-visible { filter: brightness(1.12); transform: translateY(-1px); }
+.btn.ghost { background: rgba(20, 32, 48, .9); }
+.btn.seal { background: linear-gradient(180deg, #e0405a, #8e1c2c); color: #fff4e0; text-shadow: 0 1px 0 rgba(0, 0, 0, .4); box-shadow: 0 0 22px rgba(220, 50, 70, .35); animation: goGlow 2.4s ease-in-out infinite; }
+@keyframes goGlow { 50% { filter: brightness(1.18); } }
+@media (max-width: 520px) { .cmdbar #summary { display: none; } .cmds { width: 100%; } .cmds .btn { flex: 1; padding: 12px 10px; } .steps { margin: 0; width: 100%; } .steps button { padding: 6px 6px; font-size: 12px; } .shead { gap: 10px; } }
+/* the summoning flare when a war or a battle begins */
+.flare { position: fixed; inset: 0; z-index: 40; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 50%, rgba(255, 236, 190, .95), rgba(230, 60, 80, .55) 32%, rgba(6, 10, 19, 0) 70%); }
+.flare.go { animation: flare .85s ease-out both; }
+@keyframes flare { 0% { opacity: 0; transform: scale(.4); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(1.6); } }
+body.calm .scr, body.calm .page, body.calm .codex, body.calm .feat .fig, body.calm .feat .circ, body.calm .bars i b, body.calm .tlogo > *, body.calm #scrMain.on .mmi { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .scr, .page, .codex, .feat .fig, .feat .circ, .bars i b, .tlogo > *, #scrMain.on .mmi, .press, .sealmark, .btn.seal { animation: none !important; transition: none !important; } }
+body:not(.ingame) .wrap { max-width: none; }
+@media (max-width: 860px) { .feat .fig { width: 150px; max-width: 100%; } .feat .stage2 { overflow: hidden; } .feat .aura { height: 220px; } }
+@media (max-width: 860px) { .feat .circ { width: 150px; height: 150px; } .feat .circ.r2 { width: 110px; height: 110px; } }
+.codex .rules { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.codex .rule b { display: inline; font-size: inherit; letter-spacing: .04em; margin: 0; } .codex .rule > b:first-child { display: block; font-size: 14px; letter-spacing: .08em; margin-bottom: 4px; }
 </style>
 
 <main class="wrap">
 <section id="setup">
-  <header class="mhead"><span class="mtag">Milestone 2 build</span><h1>Fate Grail War</h1>
-  <p class="sub">The Holy Grail War as a top-down battle game. Fight the full war across Fuyuki with up to seven master and servant teams, or jump into a quick Arena fight.</p></header>
-  <div class="modes" id="gameMode"></div>
-  <div id="warSetup">
-  <div class="step"><div class="stepn">1</div><div><div class="lbl">Play as</div><div class="modes" id="playas"></div></div></div>
-  <div class="step"><div class="stepn">2</div><div><div class="lbl">Your servant</div><div class="roster" id="roster"></div><div class="detail" id="sdetail"></div></div></div>
-  <div class="step"><div class="stepn">3</div><div><div class="lbl">Your master</div><div class="roster" id="masters"></div><div class="detail" id="mdetail"></div></div></div>
-  <div class="step"><div class="stepn">4</div><div><div class="lbl">Teams</div><div class="chips" id="rivals"></div><div class="lbl">War length</div><div class="chips" id="nightsC"></div><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div></div>
-  <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
+  <canvas id="menuBg" aria-hidden="true"></canvas>
+  <div class="vign" aria-hidden="true"></div>
+
+  <div class="scr on" id="scrTitle" data-scr="title">
+    <div class="tlogo">
+      <div class="kick">The Holy Grail War &middot; Fuyuki</div>
+      <h1 class="logo"><span>Fate</span><span>Grail War</span></h1>
+      <div class="rule-seal"><svg class="sealmark" viewBox="0 0 120 60" aria-hidden="true"><path d="M60 8 C48 20 48 34 60 44 C72 34 72 20 60 8Z M60 44 C44 46 28 40 16 28 C30 34 44 36 54 32 M60 44 C76 46 92 40 104 28 C90 34 76 36 66 32 M60 44 L60 56" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <p class="tag">Seven masters. Seven servants. Every wish but one turns to ash.</p>
+    </div>
+    <button type="button" class="press" id="pressStart">Press any key to begin</button>
+    <div class="tfoot">An original fan game &middot; top-down battles across Fuyuki City</div>
+  </div>
+
+  <div class="scr" id="scrMain" data-scr="main">
+    <div class="mmcol">
+      <div class="mlogo"><span>Fate</span> Grail War</div>
+      <nav class="mm" id="mainMenu" aria-label="Main menu">
+        <button type="button" class="mmi" data-go="war" data-desc="war"><i>I</i><b>Holy Grail War</b></button>
+        <button type="button" class="mmi" data-go="arena" data-desc="arena"><i>II</i><b>Arena</b></button>
+        <button type="button" class="mmi" data-go="codex" data-desc="codex"><i>III</i><b>Codex</b></button>
+        <button type="button" class="mmi" data-go="settings" data-desc="settings"><i>IV</i><b>Settings</b></button>
+      </nav>
+      <div class="hints"><kbd>&uarr;</kbd><kbd>&darr;</kbd> choose &middot; <kbd>Enter</kbd> confirm &middot; <kbd>Esc</kbd> back</div>
+    </div>
+    <aside class="mdesc" id="mainDesc" aria-live="polite"></aside>
+  </div>
+
+  <div class="scr sel" id="scrWar" data-scr="war">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Holy Grail War</h2><ol class="steps" id="warSteps"></ol></header>
+    <div class="page" data-page="0">
+      <div class="pick"><div class="feat" id="sfeat"></div><div class="side"><div class="lbl">Summon your servant</div><div class="roster" id="roster"></div><details class="dossier"><summary>Full dossier</summary><div class="detail" id="sdetail"></div></details></div></div>
+    </div>
+    <div class="page" data-page="1" hidden>
+      <div class="pick"><div class="feat" id="mfeat"></div><div class="side"><div class="lbl">Choose your master</div><div class="roster" id="masters"></div><details class="dossier"><summary>Full dossier</summary><div class="detail" id="mdetail"></div></details></div></div>
+    </div>
+    <div class="page" data-page="2" hidden>
+      <div class="rulespage">
+        <div class="pact-card" id="warCard"></div>
+        <div class="opts">
+          <div class="opt"><div class="lbl">Play as</div><div class="modes" id="playas"></div></div>
+          <div class="opt"><div class="lbl">Teams</div><div class="chips" id="rivals"></div></div>
+          <div class="opt"><div class="lbl">War length</div><div class="chips" id="nightsC"></div></div>
+          <div class="opt"><div class="lbl">Opponent skill</div><div class="chips" id="diff"></div></div>
+          <div class="opt"><div class="lbl">Game speed</div><div class="chips" id="spd"></div></div>
+          <div class="step" hidden><div class="stepn">5</div><div><div class="lbl">Multiplayer test <span class="mtag">beta</span></div>
     <p class="note" style="margin:0 0 8px">Up to 4 players. One person hosts and runs the war; the others pick their servant and master above, then join with the room code. AI fills the remaining classes.</p>
     <div class="chips"><button type="button" class="chip" id="netHost">Host a room</button><input id="netCode" class="netin" maxlength="8" placeholder="Room code" autocomplete="off" aria-label="Room code"><button type="button" class="chip" id="netJoin">Join</button><button type="button" class="chip" id="netLeave" hidden>Leave room</button></div>
     <div id="netBox"></div></div></div>
-  <details class="how"><summary>How the sandbox works</summary>
-  <div class="rules" style="margin-top:10px">
+  
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scr sel" id="scrArena" data-scr="arena">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Arena</h2><ol class="steps" id="arenaSteps"></ol></header>
+    <div class="page" data-page="0">
+      <div class="lbl">Match type</div><div class="modes big" id="amodes"></div><div class="chips" id="acount" style="margin-top:10px"></div>
+    </div>
+    <div class="page" data-page="1" hidden>
+      <div class="slots" id="aslots"></div>
+      <div class="pick"><div class="feat" id="afeat"></div><div class="side"><div class="lbl">Choose who fills the slot</div><div class="roster" id="aroster"></div><details class="dossier"><summary>Full dossier</summary><div class="detail" id="adetail"></div></details></div></div>
+    </div>
+    <div class="page" data-page="2" hidden>
+      <div id="amapsWrap"><div class="lbl">Battlefield</div><div class="maps" id="amaps"></div></div>
+      <div class="opts two"><div class="opt"><div class="lbl">Opponent skill</div><div class="chips" id="adiff"></div></div><div class="opt"><div class="lbl">Game speed</div><div class="chips" id="aspd"></div></div></div>
+    </div>
+  </div>
+
+  <div class="scr" id="scrCodex" data-scr="codex">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Codex</h2>
+      <div class="tabs" role="tablist"><button type="button" role="tab" data-tab="cWar" aria-selected="true">The war</button><button type="button" role="tab" data-tab="cArena" aria-selected="false">Arena</button><button type="button" role="tab" data-tab="cKeys" aria-selected="false">Controls</button></div></header>
+    <div class="codex" id="cWar"><div class="rules" style="margin-top:10px">
     <div class="rule"><b>Masters</b>Each team is a servant and a fragile master. If a master dies, their servant fades after 20 seconds. Archers last 120 seconds without one.</div>
     <div class="rule"><b>Spirit form</b>Servants dematerialize in 1.5 seconds (1 to return). Unseen, untouchable and faster, but cannot attack. A hit while changing form cancels it.</div>
     <div class="rule"><b>Orders</b>Playing as the master, you order your servant: Protect, Charge, Hold, Don't attack, Retreat or Spirit form.</div>
@@ -259,27 +496,31 @@ body.intro #hud, body.intro #duel .pad, body.intro #duel .top, body.intro #duel 
     <div class="rule"><b>Long fights</b>Servants are much tougher here and Noble Phantasms charge slowly, but hit harder when they land.</div>
     <div class="rule"><b>Target lock</b>Tap or click an enemy to lock on, or press Target to cycle. Tap empty ground to clear.</div>
     <div class="rule"><b>Fuyuki City</b>The Mion River splits Miyama from Shinto, crossed by the red arch of Fuyuki Bridge, the Mion Bridge to the south and the railway bridge. Miyama has Ryuudou Temple on Mount Enzou, the Tohsaka and Matou houses on the hill, the church, Homurahara Academy, the Emiya residence and the shopping street; Shinto has the Hyatt, the Center Building, Verde, the station, Central Park, the harbor and the Einzbern forest. Buildings block movement, sight and shots.</div>
-    <div class="rule"><b>Homes and interiors</b>Every master starts at their lore home: Rin at the Tohsaka mansion, Sakura and Kariya at the Matou house, Illya and Irisviel at Einzbern Castle, Kirei at the church, Kayneth at the Hyatt, Waver at the Mackenzie house, Shirou at the Emiya residence, Kiritsugu at a safehouse. A second member of the same family gets a new estate somewhere in the city. Walk into the doors of Einzbern Castle, the Tohsaka mansion, the Matou house, the church or the Emiya residence to fight inside.</div>
+    <div class="rule"><b>Homes and interiors</b>Every master starts the war inside their home and summons there: Rin at the Tohsaka mansion, Sakura and Kariya at the Matou house, Illya and Irisviel at Einzbern Castle (Kiritsugu too, when no Einzbern is in the war), Kirei at the church, Kayneth in his suite at the Hyatt, Waver at the Mackenzie house, Shirou in the Emiya storehouse. A second member of the same family, or a master with no family seat, gets a house of their own somewhere in the city. Walk into a door to go inside; resting indoors by day heals.</div>
   </div>
-  <p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract &middot; <kbd>P</kbd> pact.</p>
-  </details>
   </div>
-  <div id="arenaSetup" hidden>
-  <div class="step"><div class="stepn">1</div><div><div class="lbl">Match type</div><div class="modes" id="amodes"></div><div class="chips" id="acount" style="margin-top:8px"></div></div></div>
-  <div class="step"><div class="stepn">2</div><div><div class="lbl">Fighters</div><p class="tip">Tap a slot to choose who fills it, then pick from the roster.</p><div class="slots" id="aslots"></div><div class="roster" id="aroster"></div><div class="detail" id="adetail"></div></div></div>
-  <div class="step"><div class="stepn">3</div><div><div class="lbl">Battlefield</div><div class="maps" id="amaps"></div></div></div>
-  <div class="step"><div class="stepn">4</div><div><div class="lbl">Opponent skill</div><div class="chips" id="adiff"></div><div class="lbl">Game speed</div><div class="chips" id="aspd"></div></div></div>
-  <details class="how"><summary>How the fight works</summary>
-  <div class="rules" style="margin-top:10px">
+    <div class="codex" id="cArena" hidden><div class="rules" style="margin-top:10px">
     <div class="rule"><b>Light</b>Fast chain. Hitting a charging heavy knocks it out. Blocked by Block.</div>
     <div class="rule"><b>Heavy</b>Hold to charge, release to swing. Breaks a block. A well-timed dodge beats it and leaves the attacker open.</div>
     <div class="rule"><b>Block and parry</b>Hold to block, which drains stamina. Tap right before a hit lands to parry and stagger the attacker.</div>
     <div class="rule"><b>Purple warnings</b>Cannot be blocked or parried. Dodge them.</div>
     <div class="rule"><b>Noble Phantasm</b>Momentum fills as you fight. At full, the NP is ready. If you are hit while it winds up, it is lost. Masters use a signature spell on a cooldown instead.</div>
     <div class="rule"><b>Arena pace</b>Arena fights use duel-length health and normal Noble Phantasm charging, so a match takes a few minutes. In Master and servant matches the war rules apply: mana, Command Seals and a fading servant if its master falls.</div>
-  </div></details>
+  </div></div>
+    <div class="codex" id="cKeys" hidden><p class="keys">Keyboard: <kbd>WASD</kbd> move &middot; <kbd>J</kbd> light &middot; <kbd>K</kbd> heavy &middot; <kbd>L</kbd> block &middot; <kbd>Space</kbd> dodge &middot; <kbd>I</kbd> skill &middot; <kbd>O</kbd> NP (masters: signature spell) &middot; <kbd>U</kbd> spirit form &middot; <kbd>Tab</kbd> target &middot; <kbd>1</kbd>&ndash;<kbd>6</kbd> orders &middot; <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> Command Seals: NP, heal, recall &middot; <kbd>F</kbd> form a contract &middot; <kbd>P</kbd> pact.</p><div class="rules" style="margin-top:12px"><div class="rule"><b>Touch</b>Stick on the left to move, attack buttons on the right. Tap an enemy to lock on.</div><div class="rule"><b>Reading attacks</b>Red warnings can be blocked. Orange ones break your guard. Purple ones cannot be blocked: dodge them. Tap Block just before a hit lands to parry.</div></div></div>
   </div>
-  <div class="startbar"><div id="summary"></div><button type="button" class="btn" id="go">Begin the war</button></div>
+
+  <div class="scr" id="scrSettings" data-scr="settings">
+    <header class="shead"><button type="button" class="back" data-back>&larr; <span>Main menu</span></button><h2>Settings</h2></header>
+    <div class="setlist">
+      <button type="button" class="setrow" id="setSound"><span><b>Sound</b><small>Battle sound, music and menu sounds.</small></span><em></em></button>
+      <button type="button" class="setrow" id="setMotion"><span><b>Menu motion</b><small>The animated night sky, summoning circle and embers behind the menus.</small></span><em></em></button>
+      <button type="button" class="setrow" id="setTitle"><span><b>Title screen</b><small>Show the title screen when the game opens.</small></span><em></em></button>
+    </div>
+  </div>
+
+  <div class="cmdbar" id="cmdbar" hidden><div id="summary"></div><div class="cmds"><button type="button" class="btn ghost" id="prevBtn">Back</button><button type="button" class="btn" id="nextBtn">Next</button><button type="button" class="btn seal" id="go">Begin the war</button></div></div>
+  <div class="flare" id="flare" aria-hidden="true"></div>
 </section>
 
 <section id="duel">
@@ -3478,8 +3719,6 @@ function cardHTML(d, kind) {
 }
 function shortName(n) { return n.split(/ of |, /)[0]; }
 function renderSetup() {
-  $('#gameMode').innerHTML = [['war', 'Holy Grail War', 'Seven master and servant teams across all of Fuyuki. Mana, Command Seals, contracts.'], ['arena', 'Arena', 'Quick fights on themed maps: duels, free-for-all, teams, master duels and master and servant pairs.']].map(function (m) { return '<button type="button" class="mode" data-game="' + m[0] + '" aria-pressed="' + (CFG.game === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
-  $('#warSetup').hidden = CFG.game !== 'war'; $('#arenaSetup').hidden = CFG.game !== 'arena';
   $('#go').textContent = CFG.game === 'arena' ? 'Start the battle' : 'Begin the war';
   $('#playas').innerHTML = [['servant', 'Servant', 'Fight directly. Your master follows and supports you with magecraft.'], ['master', 'Master', 'Fight as the human. Give your servant orders and spend Command Seals.']].map(function (m) { return '<button type="button" class="mode" data-playas="' + m[0] + '" aria-pressed="' + (CFG.playAs === m[0]) + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('');
   $('#roster').innerHTML = entityRosterHTML('s', CFG.servant, 'data-pick', false);
@@ -3491,7 +3730,9 @@ function renderSetup() {
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
   $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams &middot; starting at ' + (MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : 'a safehouse');
+  setFeat($('#sfeat'), 's', CFG.servant); setFeat($('#mfeat'), 'm', CFG.master); $('#warCard').innerHTML = warCardHTML();
   if (CFG.game === 'arena') renderArena();
+  applySteps();
 }
 document.addEventListener('click', function (e) {
   var t = e.target, el;
@@ -3620,8 +3861,8 @@ function renderArena() {
   $('#aslots').innerHTML = h;
   var cur = S[A.active];
   $('#aroster').innerHTML = entityRosterHTML(cur.k, cur.id, 'data-apick', A.active > 0);
-  $('#adetail').innerHTML = entityDetailHTML(cur.k, cur.id, arenaRole(A, A.active).toLowerCase());
-  $('#amaps').closest('.step').hidden = A.mode === 'quickwar';
+  $('#adetail').innerHTML = entityDetailHTML(cur.k, cur.id, arenaRole(A, A.active).toLowerCase()); setFeat($('#afeat'), cur.k, cur.id);
+  $('#amapsWrap').hidden = A.mode === 'quickwar';
   $('#amaps').innerHTML = MAP_ORDER.map(function (id) { var m = MAPS[id]; return '<button type="button" class="mapc" data-amap="' + id + '" aria-pressed="' + (A.map === id) + '"><canvas width="240" height="' + Math.round(240 * m.h / m.w) + '" data-prev="' + id + '"></canvas><span class="pl">' + esc(m.place) + '</span><b>' + esc(m.name) + '</b><small>' + esc(m.blurb) + '</small></button>'; }).join('') +
     '<button type="button" class="mapc" data-amap="random" aria-pressed="' + (A.map === 'random') + '"><span class="pl">Any location</span><b>Random battlefield</b><small>One of the arena maps, drawn when the battle starts.</small></button>';
   document.querySelectorAll('canvas[data-prev]').forEach(function (c) { drawMapPreview(c, MAPS[c.dataset.prev]); });
@@ -4228,7 +4469,7 @@ function enterGame(nTeams, title, sub) {
 }
 function endMatch(toSetup) { running = false; INTRO = null; document.body.classList.remove('intro'); if (NET.role === 'host' && NET.game) { NET.game = null; NET.R.presence({ game: null, s: null }).catch(function () {}); } if (NET.mirror) { NET.mirror = false; MEI = 0; if (NET.R) NET.R.presence({ ing: null, inp: null }).catch(function () {}); } renderNet(); document.body.classList.remove('ingame'); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} $('#duel').style.display = 'none'; $('#setup').style.display = 'block'; $('#end').classList.remove('on'); $('#pz').classList.remove('on'); }
 function startCurrent() { if (CFG.game === 'arena') startArena(); else startMatch(); }
-$('#go').addEventListener('click', startCurrent);
+$('#go').addEventListener('click', function () { beginFlourish(startCurrent); });
 $('#again').addEventListener('click', function () { if (NET.role === 'client') { netSay('Waiting for the host to start again.'); endMatch(); return; } startCurrent(); });
 $('#menu').addEventListener('click', endMatch); $('#menu2').addEventListener('click', endMatch); $('#quit').addEventListener('click', endMatch);
 $('#restBtn').addEventListener('click', function () { if (G && isDay() && !NET.mirror) { skipDay(); note('You rest until nightfall.'); } });
@@ -6379,6 +6620,194 @@ function netButton(b, down) {
   else { if (b === 'block') NET.g = 0; if (b === 'heavy') NET.h = 0; }
 }
 
+/* ---- the menu shell: title screen, main menu, setup screens and their transitions, the animated night
+   behind them, menu sounds and keyboard navigation. renderSetup (20-menu) fills the pages; this file moves
+   between them. ---- */
+var SHELL = { scr: 'title', page: { war: 0, arena: 0 }, cur: 0, flare: 0, mx: 0, my: 0, calm: false, hoverT: 0 };
+try { SHELL.calm = localStorage.getItem('fgw.calm') === '1'; SHELL.noTitle = localStorage.getItem('fgw.notitle') === '1'; } catch (e) {}
+document.body.classList.toggle('calm', SHELL.calm);
+var WAR_STEPS = ['Servant', 'Master', 'The war'], ARENA_STEPS = ['Match', 'Fighters', 'Battlefield'];
+
+/* ---- menu sounds: soft, short, and only when sound is on ---- */
+SND.uiMove = function (o, out, t) { tone(o, out, t, 'sine', 1320, 1180, 0.06, 0.035, 0.002); noise(o, out, t, 'highpass', 5000, 7000, 0.03, 0.02, 0.001); };
+SND.uiSelect = function (o, out, t) { ringS(o, out, t, [784, 1176], 0.5, 0.07); tone(o, out, t, 'triangle', 392, 390, 0.12, 0.05, 0.003); };
+SND.uiBack = function (o, out, t) { tone(o, out, t, 'sine', 660, 440, 0.12, 0.05, 0.003); };
+SND.uiTitle = function (o, out, t) { pad(o, out, t, 3.2, [110, 165, 220, 330], 0.09, 0.4, 2.2, 'sawtooth', 500, 1800); ringS(o, out, t + 0.05, [523, 784, 1046], 2.6, 0.06); };
+SND.uiStart = function (o, out, t) { bass(o, out, t, 82, 30, 1.2, 0.6, 1.1); ringS(o, out, t, [392, 588, 784, 1176], 2.4, 0.09); noise(o, out, t, 'bandpass', 300, 3200, 0.8, 0.14, 0.05, 1.4, true); };
+function uiSnd(n) { if (n === 'uiMove') { var now = performance.now(); if (now - SHELL.hoverT < 60) return; SHELL.hoverT = now; } audInit(); playSnd(n); }
+
+/* ---- screens ---- */
+function scrEl(id) { return document.querySelector('[data-scr="' + id + '"]'); }
+function showScr(id, quiet) {
+  var from = scrEl(SHELL.scr), to = scrEl(id); if (!to) return;
+  if (from && from !== to) { from.classList.remove('on'); from.classList.remove('show'); }
+  SHELL.scr = id; to.classList.add('show'); void to.offsetWidth; to.classList.add('on');
+  if (id === 'war' || id === 'arena') { CFG.game = id; saveCfg(); renderSetup(); }
+  $('#cmdbar').hidden = !(id === 'war' || id === 'arena');
+  applySteps();
+  if (id === 'main') { setCur(SHELL.cur, true); var it = document.querySelectorAll('.mmi')[SHELL.cur]; if (it && !quiet) it.focus({ preventScroll: true }); }
+  if (id === 'settings') renderSettings();
+  window.scrollTo(0, 0);
+}
+function back() {
+  if (SHELL.scr === 'title') return;
+  if ((SHELL.scr === 'war' || SHELL.scr === 'arena') && SHELL.page[SHELL.scr] > 0) { SHELL.page[SHELL.scr]--; applySteps(); uiSnd('uiBack'); return; }
+  uiSnd('uiBack'); showScr('main');
+}
+/* ---- the stepped setup pages ---- */
+function applySteps() {
+  ['war', 'arena'].forEach(function (k) {
+    var el = scrEl(k), P = SHELL.page[k], names = k === 'war' ? WAR_STEPS : ARENA_STEPS;
+    el.querySelectorAll('.page').forEach(function (pg) { var on = +pg.dataset.page === P; if (pg.hidden === on) { pg.hidden = !on; if (on) { pg.style.animation = 'none'; void pg.offsetWidth; pg.style.animation = ''; } } });
+    $('#' + k + 'Steps').innerHTML = names.map(function (n, i) { return '<li><button type="button" data-step="' + i + '"' + (i === P ? ' aria-current="step"' : '') + (i < P ? ' class="done"' : '') + '>' + n + '</button></li>'; }).join('');
+  });
+  if (SHELL.scr !== 'war' && SHELL.scr !== 'arena') return;
+  var P2 = SHELL.page[SHELL.scr], last = P2 >= 2;
+  $('#nextBtn').hidden = last; $('#go').hidden = !last; $('#prevBtn').textContent = P2 > 0 ? 'Back' : 'Main menu';
+  var nxt = SHELL.scr === 'war' ? WAR_STEPS : ARENA_STEPS; $('#nextBtn').textContent = last ? '' : nxt[P2 + 1] + ' →';
+}
+/* ---- main menu ---- */
+var MAIN_DESC = {
+  war: function () { var s = SERV[CFG.servant], m = MASTERS[CFG.master]; return { k: 'Seven teams · three or five nights', h: 'Holy Grail War', p: ['Summon a servant and fight for the Grail across Fuyuki City. Nights are for battle and days for preparation: fortify your home, learn true names, strike pacts, and live to see the final night.', 'Your last pairing: ' + shortName(s.name) + ' with ' + m.name + '.'], tags: ['Nights and days', 'Pacts', 'Events', 'Command Seals'], art: [CFG.servant, CFG.master] }; },
+  arena: function () { return { k: 'Quick battles', h: 'Arena', p: ['Duels, free-for-all, team fights, master duels and master-and-servant pairs on themed battlefields: the bridge, the temple, the forest, the harbor and more.'], tags: ['Duel', 'Free-for-all', 'Teams', 'Quick Grail War'], art: ['caerwyn', 'gilgamesh', 'iskandar', 'heracles'] }; },
+  codex: function () { return { k: 'Rules of the war', h: 'Codex', p: ['How fighting works, what masters and servants can do, how the nights and days run, and every control.'], tags: ['Combat', 'Masters', 'Controls'], art: ['medea', 'emiya', 'rin'] }; },
+  settings: function () { return { k: 'Options', h: 'Settings', p: ['Sound, the animated menu background, and whether the title screen greets you.'], tags: [], art: [] }; }
+};
+function setCur(i, force) {
+  var items = document.querySelectorAll('.mmi'); if (!items.length) return; i = (i + items.length) % items.length;
+  if (i === SHELL.cur && !force) return; SHELL.cur = i;
+  items.forEach(function (el, j) { el.classList.toggle('cur', j === i); });
+  var D = MAIN_DESC[items[i].dataset.desc](), el = $('#mainDesc');
+  el.innerHTML = (D.art.length ? '<div class="montage">' + D.art.map(function (id) { return thumb(id, 120); }).join('') + '</div>' : '') + '<div class="dk">' + esc(D.k) + '</div><h3>' + esc(D.h) + '</h3>' + D.p.map(function (q) { return '<p>' + esc(q) + '</p>'; }).join('') + (D.tags.length ? '<div class="ln">' + D.tags.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' : '');
+  el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap');
+}
+/* ---- the featured figure on the character-select pages ---- */
+var CIRC_SVG = '<svg viewBox="-100 -100 200 200" fill="none" stroke="currentColor" aria-hidden="true"><circle r="96" stroke-width="1.6"/><circle r="88" stroke-width=".8" stroke-dasharray="2 5"/><circle r="62" stroke-width="1.2"/><path d="M0 -86 L74.5 43 L-74.5 43Z M0 86 L-74.5 -43 L74.5 -43Z" stroke-width="1.2"/>' + (function () { var s = ''; for (var i = 0; i < 24; i++) { var a = i * Math.PI / 12, x0 = Math.cos(a) * 89, y0 = Math.sin(a) * 89, x1 = Math.cos(a) * 95, y1 = Math.sin(a) * 95; s += '<path d="M' + x0.toFixed(1) + ' ' + y0.toFixed(1) + ' L' + x1.toFixed(1) + ' ' + y1.toFixed(1) + '" stroke-width="2"/>'; } return s; })() + '</svg>';
+function featHTML(kind, id) {
+  var d = kind === 'm' ? MASTERS[id] : SERV[id], bars, np, col;
+  if (!d) return '<div class="aura" style="--c:#8fa3b5"></div><div class="stage2" style="--c:#8fa3b5"><div class="circ">' + CIRC_SVG + '</div><div class="fig" style="font:600 92px var(--f-title);color:#8fa3b5;text-align:center">?</div></div><div class="fcls" style="--c:#8fa3b5">Unknown</div><div class="fname">Random ' + (kind === 'm' ? 'master' : 'servant') + '</div><p class="fbrief">Drawn by fate when the battle starts.</p>';
+  col = d.col;
+  if (kind === 'm') { var pool = MANA_POOL[d.id] || [80, 1.6]; bars = [['Health', d.hp / 125 * 0.9], ['Mana', pool[0] / 160], ['Regen', pool[1] / 3.2], ['Speed', d.spd / 230], ['Guard', d.guard * 1.4]]; np = ['Signature spell', d.A.np.name, d.A.skill.name]; }
+  else { bars = [['Health', (SERV_DUEL[d.id] || d).hp / 215 * 0.88], ['Speed', d.spd / 290], ['Guard', d.guard * 1.04], [d.ranged ? 'Range' : 'Reach', d.ranged ? 1 : d.A.light.reach / 150], ['Chain', d.combo / 5]]; np = ['Noble Phantasm', d.A.np.name, d.A.np.sub || '']; }
+  return '<div class="aura" style="--c:' + col + '"></div><div class="stage2" style="--c:' + col + '"><div class="circ">' + CIRC_SVG + '</div><div class="circ r2">' + CIRC_SVG + '</div><div class="fig">' + thumb(d.id, 300) + '</div></div>' +
+    '<div class="fcls" style="--c:' + col + '">' + esc(kind === 'm' ? d.type : d.cls) + '</div><div class="fname">' + esc(d.name) + '</div><p class="fbrief">' + esc(d.brief) + '</p>' +
+    '<div class="bars" style="--c:' + col + '">' + bars.map(function (b) { return '<div><span>' + b[0] + '</span><i><b style="--v:' + Math.round(clamp(b[1], 0.06, 1) * 100) + '%"></b></i></div>'; }).join('') + '</div>' +
+    '<div class="fnp"><small>' + np[0] + '</small><b>' + esc(np[1]) + '</b>' + (np[2] ? '<span>' + esc(np[2]) + '</span>' : '') + '</div>';
+}
+function setFeat(el, kind, id) { if (!el) return; var k = kind + ':' + id; if (el.dataset.cur === k) return; el.dataset.cur = k; el.innerHTML = featHTML(kind, id); }
+function warCardHTML() {
+  var s = SERV[CFG.servant], m = MASTERS[CFG.master], home = MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : (CFG.master === 'kiritsugu' ? 'Einzbern Castle or a safehouse' : 'a safehouse');
+  return '<div class="pc-k">The contract</div><div class="pc-pair"><div>' + thumb(s.id, 150) + '<b>' + esc(shortName(s.name)) + '</b><small>' + s.cls + '</small></div><div class="pc-x">' + '<svg viewBox="0 0 120 60" aria-hidden="true"><path d="M60 8 C48 20 48 34 60 44 C72 34 72 20 60 8Z M60 44 C44 46 28 40 16 28 C30 34 44 36 54 32 M60 44 C76 46 92 40 104 28 C90 34 76 36 66 32 M60 44 L60 56" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>' + '</div><div>' + thumb(m.id, 150) + '<b>' + esc(m.name) + '</b><small>' + esc(m.type) + '</small></div></div>' +
+    '<p>You play the <b>' + CFG.playAs + '</b>. The war begins at ' + esc(home) + ', where ' + esc(m.name.split(' ')[0]) + ' completes the summoning.</p>' +
+    '<ul><li>' + CFG.teams + ' teams fight for the Grail</li><li>' + (CFG.nights || 3) + ' nights, then the final night</li><li>Opponents: ' + DIFF[CFG.diff].name + '</li></ul>';
+}
+/* ---- settings ---- */
+function renderSettings() {
+  function setv(id, on) { var em = $('#' + id + ' em'); em.textContent = on ? 'On' : 'Off'; em.className = on ? '' : 'off'; }
+  setv('setSound', AUD.on); setv('setMotion', !SHELL.calm); setv('setTitle', !SHELL.noTitle);
+}
+$('#setSound').addEventListener('click', function () { AUD.on = !AUD.on; try { localStorage.setItem('duel2.snd', AUD.on ? '1' : '0'); } catch (e) {} syncSnd(); renderSettings(); uiSnd('uiSelect'); });
+$('#setMotion').addEventListener('click', function () { SHELL.calm = !SHELL.calm; document.body.classList.toggle('calm', SHELL.calm); try { localStorage.setItem('fgw.calm', SHELL.calm ? '1' : '0'); } catch (e) {} renderSettings(); uiSnd('uiSelect'); });
+$('#setTitle').addEventListener('click', function () { SHELL.noTitle = !SHELL.noTitle; try { localStorage.setItem('fgw.notitle', SHELL.noTitle ? '1' : '0'); } catch (e) {} renderSettings(); uiSnd('uiSelect'); });
+/* ---- input ---- */
+function leaveTitle() { if (SHELL.scr !== 'title') return; uiSnd('uiTitle'); SHELL.flare = 0.6; showScr(SHELL.after || 'main'); }
+$('#scrTitle').addEventListener('click', leaveTitle);
+document.addEventListener('click', function (e) {
+  var t = e.target, el; if (!t.closest || running) return;
+  if ((el = t.closest('.mmi'))) { var items = [].slice.call(document.querySelectorAll('.mmi')); setCur(items.indexOf(el)); uiSnd('uiSelect'); showScr(el.dataset.go); return; }
+  if (t.closest('[data-back]')) { back(); return; }
+  if ((el = t.closest('[data-step]'))) { var k = SHELL.scr; if (k === 'war' || k === 'arena') { SHELL.page[k] = +el.dataset.step; applySteps(); uiSnd('uiMove'); } return; }
+  if ((el = t.closest('[data-tab]'))) { document.querySelectorAll('[data-tab]').forEach(function (b) { var on = b === el; b.setAttribute('aria-selected', on); $('#' + b.dataset.tab).hidden = !on; }); uiSnd('uiMove'); return; }
+  if (t.closest('.rt, .mode, .chip, .mapc, .slot')) uiSnd('uiSelect');
+});
+document.addEventListener('pointerover', function (e) { if (running || !e.target.closest) return; var el = e.target.closest('.mmi'); if (el && SHELL.scr === 'main') { var items = [].slice.call(document.querySelectorAll('.mmi')), i = items.indexOf(el); if (i !== SHELL.cur) { setCur(i); uiSnd('uiMove'); } } });
+document.addEventListener('pointermove', function (e) { SHELL.mx = e.clientX / window.innerWidth - 0.5; SHELL.my = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+$('#prevBtn').addEventListener('click', back);
+$('#nextBtn').addEventListener('click', function () { var k = SHELL.scr; if (SHELL.page[k] < 2) { SHELL.page[k]++; applySteps(); uiSnd('uiSelect'); window.scrollTo(0, 0); } });
+window.addEventListener('keydown', function (e) {
+  if (running || $('#setup').style.display === 'none') return;
+  var tag = (e.target && e.target.tagName) || ''; if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (SHELL.scr === 'title') { if (!e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); leaveTitle(); } return; }
+  if (e.key === 'Escape') { e.preventDefault(); back(); return; }
+  if (SHELL.scr === 'main') {
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { e.preventDefault(); setCur(SHELL.cur + 1); uiSnd('uiMove'); document.querySelectorAll('.mmi')[SHELL.cur].focus({ preventScroll: true }); }
+    else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); setCur(SHELL.cur - 1); uiSnd('uiMove'); document.querySelectorAll('.mmi')[SHELL.cur].focus({ preventScroll: true }); }
+    else if (e.key === 'Enter' && !(e.target && e.target.closest && e.target.closest('.mmi'))) { e.preventDefault(); document.querySelectorAll('.mmi')[SHELL.cur].click(); }
+  }
+});
+/* ---- beginning a battle: the circle flares, then the war starts ---- */
+function beginFlourish(fn) {
+  if (SHELL.busy) return; SHELL.busy = true; uiSnd('uiStart'); SHELL.flare = 1.2;
+  var f = $('#flare'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  setTimeout(function () { SHELL.busy = false; f.classList.remove('go'); fn(); }, SHELL.calm ? 60 : 520);
+}
+
+/* ---- the night behind the menus: sky, moon, Fuyuki's skyline, a turning summoning circle and rising motes ---- */
+var BG = { c: $('#menuBg'), w: 0, h: 0, dpr: 1, stars: [], far: [], near: [], motes: [], cx: 0.5, cy: 0.42, R: 0.36, A: 0.5, t0: performance.now() };
+function bgSeed() {
+  var r = 12345, R = function () { r = (r * 16807) % 2147483647; return r / 2147483647; };
+  BG.stars = []; for (var i = 0; i < 170; i++) BG.stars.push([R(), R() * 0.62, R() * 1.4 + 0.3, R() * 6.28]);
+  function sky(arr, n, hmin, hmax, wmin, wmax) { var x = -0.05; while (x < 1.1) { var w = wmin + R() * (wmax - wmin), h = hmin + R() * (hmax - hmin); var win = []; for (var k = 0; k < 6; k++) if (R() < 0.5) win.push([R(), R()]); arr.push([x, w, h, R() < 0.18 ? 1 : 0, win]); x += w + R() * 0.006; } }
+  BG.far = []; BG.near = []; sky(BG.far, 0, 0.06, 0.2, 0.02, 0.05); sky(BG.near, 0, 0.03, 0.13, 0.025, 0.07);
+  BG.motes = []; for (var j = 0; j < 70; j++) BG.motes.push({ x: R(), y: R(), s: 0.004 + R() * 0.012, r: 0.6 + R() * 1.8, ph: R() * 6.28, red: R() < 0.3 });
+}
+function bgSize() { var d = Math.min(2, window.devicePixelRatio || 1), w = window.innerWidth, h = window.innerHeight; if (w === BG.w && h === BG.h && d === BG.dpr) return; BG.w = w; BG.h = h; BG.dpr = d; BG.c.width = Math.round(w * d); BG.c.height = Math.round(h * d); }
+function bgTarget() { var s = SHELL.scr; return s === 'title' ? [0.5, 0.42, 0.34, 0.55] : s === 'main' ? [0.72, 0.5, 0.4, 0.26] : [0.86, 0.78, 0.5, 0.1]; }
+function drawCircleBg(g, x, y, R, t, a) {
+  g.save(); g.translate(x, y); g.globalAlpha = a; g.lineCap = 'round';
+  var gold = 'rgba(243,213,138,', red = 'rgba(255,84,104,';
+  g.shadowColor = 'rgba(255,90,110,.8)'; g.shadowBlur = 18 * a;
+  g.strokeStyle = red + '0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, R, 0, 6.283); g.stroke();
+  g.strokeStyle = gold + '0.7)'; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, R * 0.9, 0, 6.283); g.stroke(); g.beginPath(); g.arc(0, 0, R * 0.58, 0, 6.283); g.stroke();
+  g.save(); g.rotate(t * 0.05); g.strokeStyle = red + '0.8)'; g.lineWidth = 1.4;
+  for (var k = 0; k < 2; k++) { g.beginPath(); for (var i = 0; i < 3; i++) { var an = -Math.PI / 2 + i * 2.094 + k * Math.PI; g[i ? 'lineTo' : 'moveTo'](Math.cos(an) * R * 0.88, Math.sin(an) * R * 0.88); } g.closePath(); g.stroke(); }
+  g.restore();
+  g.save(); g.rotate(-t * 0.03); g.strokeStyle = gold + '0.8)'; g.lineWidth = 2;
+  for (var j = 0; j < 36; j++) { var b = j * 6.283 / 36, l = j % 3 ? 0.035 : 0.07; g.beginPath(); g.moveTo(Math.cos(b) * R * 0.91, Math.sin(b) * R * 0.91); g.lineTo(Math.cos(b) * R * (0.91 + l), Math.sin(b) * R * (0.91 + l)); g.stroke(); }
+  g.restore();
+  g.save(); g.rotate(t * 0.08); g.strokeStyle = gold + '0.6)'; g.lineWidth = 1; g.setLineDash([4, 10]); g.beginPath(); g.arc(0, 0, R * 0.72, 0, 6.283); g.stroke(); g.restore();
+  g.restore();
+}
+function bgFrame(now) {
+  requestAnimationFrame(bgFrame);
+  if (running || $('#setup').style.display === 'none') return;
+  if (SHELL.calm && BG.drawn && !SHELL.flare && BG.drawnScr === SHELL.scr && BG.w === window.innerWidth && BG.h === window.innerHeight) return;
+  bgSize(); var g = BG.c.getContext('2d'), W = BG.w, H = BG.h, t = SHELL.calm ? 40 : (now - BG.t0) / 1000;
+  g.setTransform(BG.dpr, 0, 0, BG.dpr, 0, 0);
+  var T = bgTarget(), k = SHELL.calm ? 1 : 0.05; BG.cx += (T[0] - BG.cx) * k; BG.cy += (T[1] - BG.cy) * k; BG.R += (T[2] - BG.R) * k; BG.A += (T[3] - BG.A) * k;
+  if (SHELL.flare > 0) SHELL.flare = Math.max(0, SHELL.flare - 0.02);
+  var sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#03060d'); sk.addColorStop(0.55, '#0a1428'); sk.addColorStop(0.82, '#1a1430'); sk.addColorStop(1, '#2a1424'); g.fillStyle = sk; g.fillRect(0, 0, W, H);
+  BG.stars.forEach(function (s) { g.globalAlpha = 0.35 + 0.45 * Math.abs(Math.sin(t * 0.6 + s[3])); g.fillStyle = '#e8eefc'; g.fillRect(s[0] * W, s[1] * H, s[2], s[2]); }); g.globalAlpha = 1;
+  var mx = W * 0.8 + SHELL.mx * -10, my = H * 0.2 + SHELL.my * -6, mr = Math.min(W, H) * 0.075;
+  var mg = g.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 4.5); mg.addColorStop(0, 'rgba(240,232,210,.28)'); mg.addColorStop(1, 'rgba(240,232,210,0)'); g.fillStyle = mg; g.fillRect(mx - mr * 5, my - mr * 5, mr * 10, mr * 10);
+  g.fillStyle = '#f2ecd8'; g.beginPath(); g.arc(mx, my, mr, 0, 6.283); g.fill(); g.fillStyle = 'rgba(180,170,150,.25)'; g.beginPath(); g.arc(mx - mr * 0.3, my - mr * 0.2, mr * 0.22, 0, 6.283); g.arc(mx + mr * 0.25, my + mr * 0.3, mr * 0.14, 0, 6.283); g.fill();
+  drawCircleBg(g, BG.cx * W + SHELL.mx * 14, BG.cy * H + SHELL.my * 10, Math.min(W, H) * BG.R * (1 + SHELL.flare * 0.25), t, Math.min(1, BG.A + SHELL.flare * 0.6));
+  function layer(arr, base, col, par, lit) {
+    var off = SHELL.mx * par + (SHELL.calm ? 0 : (t * 0.0015 * par) % 0.02);
+    g.fillStyle = col;
+    arr.forEach(function (b) { var x = (b[0] + off) * W, w = b[1] * W, h = b[2] * H, y = H * base - h; g.fillRect(x, y, w + 1, H - y); if (b[3]) g.fillRect(x + w * 0.45, y - h * 0.25, w * 0.1, h * 0.25); });
+    if (lit) arr.forEach(function (b) { var x = (b[0] + off) * W, w = b[1] * W, h = b[2] * H, y = H * base - h; b[4].forEach(function (q, i) { g.fillStyle = i % 3 ? 'rgba(255,196,110,.55)' : 'rgba(255,150,90,.4)'; g.fillRect(x + 4 + q[0] * (w - 10), y + 6 + q[1] * (h - 12), 3, 4); }); });
+  }
+  layer(BG.far, 0.86, '#0d1830', 6, false);
+  var mist = g.createLinearGradient(0, H * 0.7, 0, H * 0.9); mist.addColorStop(0, 'rgba(120,80,120,0)'); mist.addColorStop(1, 'rgba(70,40,70,.35)'); g.fillStyle = mist; g.fillRect(0, H * 0.7, W, H * 0.2);
+  layer(BG.near, 0.95, '#05080f', 14, true);
+  g.fillStyle = '#05080f'; g.fillRect(0, H * 0.95, W, H * 0.05 + 2);
+  BG.motes.forEach(function (m) {
+    var y = ((m.y - t * m.s) % 1 + 1) % 1, x = m.x + Math.sin(t * 0.5 + m.ph) * 0.01, a = Math.sin(y * Math.PI) * 0.8;
+    g.globalAlpha = a; g.fillStyle = m.red ? '#ff6a7a' : '#f6d690'; g.shadowColor = g.fillStyle; g.shadowBlur = 8;
+    g.beginPath(); g.arc(x * W, (0.2 + y * 0.8) * H, m.r, 0, 6.283); g.fill();
+  });
+  g.globalAlpha = 1; g.shadowBlur = 0;
+  BG.drawn = true; BG.drawnScr = SHELL.scr;
+}
+bgSeed(); requestAnimationFrame(bgFrame);
+window.addEventListener('resize', function () { BG.drawn = false; });
+function shellBoot() {
+  var start = (typeof ARENA_ENTRY !== 'undefined') ? 'arena' : 'main';
+  if (start === 'arena') SHELL.cur = 1;
+  if (SHELL.noTitle) { scrEl('title').classList.remove('show', 'on'); SHELL.scr = 'main'; showScr(start, true); }
+  else { scrEl('title').classList.add('show'); requestAnimationFrame(function () { scrEl('title').classList.add('on'); }); SHELL.after = start; }
+}
 $('#fs').addEventListener('click', function () { var d = $('#duel'); try { if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen().catch(function () {}); } catch (e) {} });
 document.addEventListener('fullscreenchange', function () { $('#fs').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
 $('#netHost').addEventListener('click', function () { var c = ''; for (var i = 0; i < 4; i++) c += 'abcdefghjkmnpqrstuvwxyz'.charAt(Math.floor(Math.random() * 23)); netJoin(c, true); });
@@ -6393,7 +6822,7 @@ document.addEventListener('pointerup', function (e) { var t = e.target; if (!t.c
 function syncSnd() { $('#snd').textContent = AUD.on ? 'Sound on' : 'Sound off'; }
 $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localStorage.setItem('duel2.snd', AUD.on ? '1' : '0'); } catch (e) {} syncSnd(); audInit(); });
 syncSnd();
-renderSetup(); renderNet();
+renderSetup(); renderNet(); shellBoot();
 requestAnimationFrame(frame);
 window.__duel = { get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
