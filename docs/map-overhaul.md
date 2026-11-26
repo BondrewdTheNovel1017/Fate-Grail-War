@@ -71,3 +71,7 @@ This is the largest change since the city map itself: expect two or three sessio
 
 ## Draft 2 (Nov 26, owner approved draft 1)
 `docs/map-draft-2.png`: adds every point of interest events use (bridges, river, rail bridge, docks and warehouses, Homurahara Academy, shopping arcade, both stations, Center Building, Verde, Semina Apartments, Civic Hall and park, cemetery, the Church summons spot, Waver's clearing, the Einzbern courtyard) and five backup safehouses on top of the three estates (sixteen base sites for at most seven teams). Safehouses keep at least about 1,300 from any base. The owner asked for enough safehouses that a war never runs out.
+
+## Docks and destructible props (owner, Nov 26)
+- The docks get real room: rows of shipping-container stacks that make lanes, with open yards between them (at least about 600 x 600) for duels; cranes over the quay (overhead layer); warehouses; the Challenge event moves to one of the yards. Every district gets the same care: enough open ground to fight in, detail around it.
+- Destructible props (only props, never homes or walls, so bases and the road graph stay fixed): shipping containers, crates, fences, lamp posts, vending machines, later cars. Each has hit points and four looks: whole, dented, torn open, wrecked. A wrecked container drops to low cover, so sight lines open and shots pass. Heavy blows, NPs and explosions damage them; light hits barely. Online, only each prop's stage (0–3) is sent. The AI's road graph ignores them.
