@@ -14,7 +14,7 @@ var MASTER_INFO = {
     light: 'Three mercury needles in a narrow fan.', heavy: 'Hold to charge, release: a mercury blade at range.',
     skill: 'Volumen Hydrargyrum. A mercury shield absorbs the next 3 hits within 8 seconds.', np: 'Mercury Scythe: the mercury whips around him (160) and staggers everyone close.' },
   kirei: { style: 'An Executor and a martial artist. He walks into close range and stays there.', passive: ['Executor', 'The toughest master: more health and a strong guard. His bajiquan can stagger a servant.'],
-    light: 'Slashes with Black Keys held between his fingers: a fast three-hit chain.', heavy: 'Hold to charge, release: hurls a wide fan of six Black Keys.',
+    light: 'Slashes with Black Keys held between his fingers: a fast three-hit chain.', heavy: 'Hold to charge, release: hurls three Black Keys in a tight line that hits hard at range.',
     skill: 'Healing Sacrament. Heals himself for 30.', np: 'Bajiquan: a lunging strike that staggers whatever it hits, servants included.' },
   waver: { style: 'A student with little power of his own, but a sharp tactician. He wins by making his servant better.', passive: ['Strategist', 'Weak alone. Everything he has goes into his servant.'],
     light: 'A small Gandr curse.', heavy: 'Hold to charge, release: a stronger Gandr.',

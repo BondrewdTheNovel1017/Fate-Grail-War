@@ -43,6 +43,8 @@ FX.pact = function (kind, t1, t2, x) {
     return;
   }
   if (kind === 'declined') { pactLine(t2, 'no'); if (t1 === mt) note(teamName(t2) + ' refuses the pact.', '#f0a85a'); return; }
+  if (kind === 'withdrawn') { if (t1 === mt || t2 === mt) note('Blood is drawn: the pact talks with ' + teamName(t1 === mt ? t2 : t1) + ' are over.', '#f0a85a'); return; }
+  if (kind === 'void') { if (me1) FX.text(me1, 'THE PACT CAN NO LONGER BE MADE'); return; }
   if (kind === 'expired') { if (mine) note('The pact offer lapses.', '#c9c3b0'); return; }
   if (kind === 'formed') {
     pactLine(t2, 'yes');

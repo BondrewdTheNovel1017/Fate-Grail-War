@@ -68,7 +68,22 @@ function breakPact(team, victim) {
   G.expo[team] = (G.expo[team] || 0) + PACT.breakExpo; G.reveal[team] = Math.max(G.reveal[team] || 0, G.time + PACT.revealT);
   G.f.forEach(pickTarget); FX.pact('broken', team, other, victim); return true;
 }
-function noteFight(att, def) { if (!G.pactHate || !att || att.team === def.team) return; G.pactHate[Math.min(att.team, def.team) + '|' + Math.max(att.team, def.team)] = G.time; }
+function noteFight(att, def) {
+  if (!G.pactHate || !att || att.team === def.team) return; G.pactHate[Math.min(att.team, def.team) + '|' + Math.max(att.team, def.team)] = G.time;
+  // a player who strikes during the parley withdraws the offer
+  if (!G.ai[att.idx] && pactParley(att.team, def.team)) { G.offer = null; G.pactPending = null; FX.pact('withdrawn', att.team, def.team); }
+}
+// while an offer stands (or an AI is weighing one), the two teams talk instead of fighting
+function pactParley(t1, t2) {
+  if (!G.pacts) return false;
+  var o = G.offer && G.offer.until > G.time ? G.offer : null, q = G.pactPending;
+  return !!((o && ((o.from === t1 && o.to === t2) || (o.from === t2 && o.to === t1))) || (q && ((q.from === t1 && q.to === t2) || (q.from === t2 && q.to === t1))));
+}
+// accepting a standing offer only needs both teams free and the night not final
+function pactCanAccept(t1, t2) {
+  if (!G.clock || G.clock.final || G.over || t1 === t2 || pactOf(t1) || pactOf(t2)) return false;
+  var lt = liveTeams(); return lt.indexOf(t1) >= 0 && lt.indexOf(t2) >= 0 && lt.length >= PACT.minTeams;
+}
 // a lone team that a pact gangs up on takes a little less from each blow
 function outnumbered(att, def) {
   if (!G.pacts || !G.pacts.length || !att || pactOf(def.team)) return false; var m = pactMate(att.team); if (m === null) return false;
@@ -88,7 +103,7 @@ function pactCandidate(f) {
 }
 function pactButton(f) {
   if (!G.pacts) return;
-  if (G.offer && G.offer.to === f.team && G.offer.until > G.time) { var fr = G.offer.from; if (pactOpen(fr, f.team)) formPact(fr, f.team, f.team); else G.offer = null; return; }
+  if (G.offer && G.offer.to === f.team && G.offer.until > G.time) { var fr = G.offer.from; G.offer = null; if (pactCanAccept(fr, f.team)) formPact(fr, f.team, f.team); else FX.pact('void', f.team, fr); return; }
   var p = pactOf(f.team);
   if (p) { if (f.breakAsk > G.time) { f.breakAsk = 0; breakPact(f.team, null); } else { f.breakAsk = G.time + 3; FX.pact('confirmBreak', f.team, pactMate(f.team)); } return; }
   var c = pactCandidate(f); if (!c) { FX.pact('nobody', f.team, -1); return; }
@@ -105,7 +120,7 @@ function pactTick(dt) {
   var c = G.clock, lt = liveTeams();
   // dawn, the final night or too few teams end every pact
   for (var i = G.pacts.length - 1; i >= 0; i--) { var p = G.pacts[i]; if (c.final || lt.length < PACT.minTeams || lt.indexOf(p.a) < 0 || lt.indexOf(p.b) < 0 || (c.phase === 'day' && c.n > p.night)) endPact(p, c.final ? 'final' : lt.length < PACT.minTeams ? 'few' : 'dawn'); }
-  if (G.pactPending && G.time >= G.pactPending.at) { var q = G.pactPending; G.pactPending = null; if (q.yes && pactOpen(q.from, q.to)) formPact(q.from, q.to, q.from); else FX.pact('declined', q.from, q.to); }
+  if (G.pactPending && G.time >= G.pactPending.at) { var q = G.pactPending; G.pactPending = null; if (q.yes && pactCanAccept(q.from, q.to)) formPact(q.from, q.to, q.from); else FX.pact('declined', q.from, q.to); }
   if (G.offer && G.offer.until <= G.time) { FX.pact('expired', G.offer.from, G.offer.to); G.offer = null; }
   gilBetrayTick();
   G.pactT -= dt; if (G.pactT > 0) return; G.pactT = PACT.tick;

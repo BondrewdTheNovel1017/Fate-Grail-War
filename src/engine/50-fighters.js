@@ -23,7 +23,7 @@ function newGame(dA, dB, opts) {
 }
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
-function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !pactTeams(e.team, f.team) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
+function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !pactTeams(e.team, f.team) && !(G.ai[f.idx] && pactParley(e.team, f.team)) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 // What a human player perceives as their target in the war: known, in the same place and within sight.
 // Their auto-facing, the HUD target card, the camera lean and the off-screen arrow all follow this, so they never point across the city.
 var AIM_R = 1300;

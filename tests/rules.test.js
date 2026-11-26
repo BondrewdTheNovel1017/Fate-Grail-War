@@ -146,7 +146,7 @@ test('master kits: Shirou and Kirei fight up close, Kiritsugu fires a long Calic
   const E = loadEngine();
   assert.strictEqual(E.MASTERS.shirou.A.light.kind, 'melee');
   assert.strictEqual(E.MASTERS.kirei.A.light.kind, 'melee');
-  assert.ok(E.MASTERS.kirei.A.heavy.count >= 5, 'Kirei throws a fan of Black Keys');
+  assert.ok(E.MASTERS.kirei.A.heavy.count === 3 && E.MASTERS.kirei.A.heavy.spread * 2 < 0.25, 'Kirei throws three Black Keys in a tight cone');
   const k = E.MASTERS.kiritsugu.A;
   assert.strictEqual(k.light.count, 2);
   assert.strictEqual(k.heavy.kind, 'barrage'); assert.ok(k.heavy.bullet && k.heavy.act / k.heavy.rate > 15, 'a long burst');
@@ -598,4 +598,20 @@ test('Shirou\'s Trace grows over the war: Rho Aias by the middle, Unlimited Blad
   sh.mom = 99; for (let i = 0; i < 120; i++) E.simStep(E.STEP);
   assert.ok(sh.mom < 100, 'held back on Night 1'); assert.ok(sh.rhoOn, 'Rho Aias learned at ' + E.TRACE.rho);
   G.clock.n = 2; for (let i = 0; i < 1500; i++) E.simStep(E.STEP); assert.ok(sh.mom >= 100);
+});
+test('a pact offer holds: both sides parley, and Accept works even after blows were traded', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar(FIVE(S, M, [S.iskandar, M.shirou], [S.diarmuid, M.irisviel]), { nights: 3 });
+  G.f.forEach((f, i) => { G.ai[i] = f.team === 0 ? null : E.mkAI(f, E.DIFF.knight); });
+  const me = G.f.find((f) => f.team === 0 && !f.def.isMaster), dia = G.f.find((f) => f.def.id === 'diarmuid');
+  G.offer = { from: dia.team, to: me.team, until: G.time + E.PACT.offerT };
+  assert.ok(!E.enemiesOf(dia).includes(me), 'the offering team holds its attack');
+  E.hurt(dia, me, { dmg: 2, power: 1 }); // a stray blow already in the air
+  assert.ok(G.offer, 'an AI blow does not cancel the talks');
+  E.pactButton(me);
+  assert.ok(E.pactTeams(me.team, dia.team), 'Accept forms the pact');
+  E.breakPact(me.team, null); G.pactCd = {};
+  G.offer = { from: 2, to: me.team, until: G.time + E.PACT.offerT };
+  E.hurt(me, G.f.find((f) => f.team === 2), { dmg: 2, power: 1 });
+  assert.strictEqual(G.offer, null, 'the player striking them withdraws the offer');
 });
