@@ -163,7 +163,7 @@ function execNear(f, r) { var best = null, bd = r; (G.mobs || []).forEach(functi
    pulled to the servant), both dissolve and appear together in their workshop, badly hurt. The team is marked for a
    while and whoever won the fight learns the servant's true name and catches their breath. With no seals left, death
    is death. Timeline (RESCUE): glow, swoop, dissolve, arrive. ---- */
-var RESCUE = { swoop: 0.55, gone: 1.05, arrive: 1.35, hpS: 0.5, hpM: 0.5, mark: 75, guard: 4, winHeal: 0.12 };
+var RESCUE = { swoop: 0.55, gone: 1.05, arrive: 1.35, hpS: 0.5, hpM: 0.5, mark: 75, guard: 4, winHeal: 0.12, rest: 20 }; // rest: seconds the AI stays home to heal after a rescue
 function rescueOn() { return clockOn() && !finalNight() && !G.quick && G.mode === 'war'; }
 function teamHome(team, m) {
   var circ = (G.circles || []).filter(function (q) { return q.team === team; })[0];
@@ -199,7 +199,7 @@ function rescueTick(dt) {
       if (age >= RESCUE.arrive) {
         // both come home on their feet: at least half health (more if they had it), so no one can bully them at the door
         f.hp = Math.max(f.resc.fell ? 0 : f.hp, f.def.hp * (f.def.isMaster ? RESCUE.hpM : RESCUE.hpS));
-        f.resc = null; f.iframes = RESCUE.guard; f.ghT = Math.max(f.ghT || 0, RESCUE.guard); f.recover = true; if (f.def.isMaster) f.fleeing = true;
+        f.resc = null; f.restUntil = G.time + RESCUE.rest; f.iframes = RESCUE.guard; f.ghT = Math.max(f.ghT || 0, RESCUE.guard); f.recover = true; if (f.def.isMaster) f.fleeing = true;
       }
     });
     if (age >= RESCUE.arrive) R.done = true;

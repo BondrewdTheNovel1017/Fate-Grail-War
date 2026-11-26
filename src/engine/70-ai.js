@@ -130,7 +130,15 @@ function aiTick(ai, dt) {
     if (ai.plantT > 0) ai.plantT -= dt;
     if (flee) { var fa = Math.atan2(f.y - flee.y, f.x - flee.x); mx = Math.cos(fa); my = Math.sin(fa); }
     else if (f.def.field && ai.plantT > 0 && !f.field) { mx = 0; my = 0; }
+    else if (f.def.ranged && d < 760 && !losClear(f, o)) {
+      // no clear shot (a tree or a wall in the way): step around it, swapping sides if that doesn't open a line
+      ai.nolosT = (ai.nolosT || 0) + dt; ai.blockT = (ai.blockT || 0) + dt; if (ai.nolosT > 1.4) { ai.orbit = -ai.orbit; ai.nolosT = 0; ai.orbitT = 2.5; }
+      // a long wall that a sidestep can't clear: walk the city's paths around it toward the target until the line opens
+      if (ai.blockT > 2.6) { var svP = steer(f, o.x, o.y); mx = svP[0]; my = svP[1]; }
+      else { var sa = toO + ai.orbit * 1.35, pull = d > 420 ? 90 : d < 220 ? -60 : 0, svL = steer(f, f.x + Math.cos(sa) * 170 + Math.cos(toO) * pull, f.y + Math.sin(sa) * 170 + Math.sin(toO) * pull); mx = svL[0]; my = svL[1]; }
+    }
     else if (f.def.ranged) {
+      ai.nolosT = 0; ai.blockT = 0;
       if (d < 250) { var sv = steer(f, f.x + (f.x - o.x), f.y + (f.y - o.y)); mx = sv[0]; my = sv[1]; if (ai.stuckT > 0.4) { mx = Math.cos(toO + ai.orbit * 1.5); my = Math.sin(toO + ai.orbit * 1.5); } }
       else if (d > 520 || !losClear(f, o)) { var sv2 = steer(f, o.x, o.y); mx = sv2[0] * 0.8; my = sv2[1] * 0.8; }
       else { mx = Math.cos(toO + ai.orbit * 1.5708) * 0.7; my = Math.sin(toO + ai.orbit * 1.5708) * 0.7; }
@@ -201,7 +209,8 @@ function aiWar(ai, dt) {
   var near = nearestEnemyTo(f, f, 1e9), nd = near ? dist(f, near) + zoneGap(f, near) : 1e9;
   if (f.hp < f.def.hp * 0.25 && f.def.id !== 'heracles' && f.orphanT <= 0 && near && near.hp > f.hp * 1.2 && !(f.sealOrder > 0) && !f.isPlayerMate) st = 'retreat';
   if (f.hp < f.def.hp * 0.5 && nd > 900 && f.orphanT <= 0 && !(f.sealOrder > 0)) f.recover = true;
-  if (f.recover && (f.hp > f.def.hp * 0.85 || (near && nd < 300))) f.recover = false;
+  var homeD = near && f.home ? Math.hypot(near.x - f.home[0], near.y - f.home[1]) : 1e9;
+  if (f.recover && (f.hp > f.def.hp * 0.85 || (near && nd < 300 && !(G.time < (f.restUntil || 0) && homeD > 450)))) f.recover = false; // freshly rescued: only an enemy at the door ends the rest
   if (f.recover && st === 'charge' && !f.isPlayerMate) st = 'spirit';
   if (f.sealOrder > 0 && st !== 'charge') st = 'charge';
   if (m && m.fleeing && !f.isPlayerMate && !(f.sealOrder > 0) && st === 'charge') st = 'protect';
@@ -286,7 +295,8 @@ function aiMaster(ai, dt) {
     moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.haven) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // before the final night a wounded master breaks off and runs home; the servant covers the retreat
   // ...and an unguarded master keeps away from enemy servants, running to their own servant if it is near
-  var guarded = s && dist(f, s) < 260, hunted = thr && td < 440 && !guarded;
+  // guarded: the servant is close, or it is already holding the threat off
+  var guarded = s && (dist(f, s) < 260 || (thr && dist(s, thr) < 200 && dist(f, s) < 480)), hunted = thr && td < 440 && !guarded;
   if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75 || hunted) f.fleeing = true; else if (f.hp > f.def.hp * 0.9 && !(thr && td < 600)) f.fleeing = false; } else f.fleeing = false;
   if (f.fleeing && hunted && s && dist(f, s) < 1400 && dist(s, thr) > td) { var sa2 = angTo(thr, f); moveTo(f, s.x + Math.cos(sa2) * 60, s.y + Math.sin(sa2) * 60, 1); return; }
   if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
@@ -318,6 +328,8 @@ function aiMaster(ai, dt) {
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }
     if (!silenced && sigOk && f.sigCd <= 0 && np.aiUse === 'near' && td < (np.r || np.reach + np.lunge * 0.6) + FR && f.st === 'idle') { press(f, 'np'); return; }
     moveTo(f, gx, gy);
+    // kiting: while the servant holds the threat off, a master with a ranged attack keeps firing as they back away
+    if (A.light.kind !== 'melee' && !silenced && f.st === 'idle' && ai.cool <= 0 && dist(s, thr) < 220 && losClear(f, thr)) { f.lock = thr; f.foe = thr; f.face = angTo(f, thr); press(f, 'light'); ai.cool = (0.6 + Math.random() * 0.7) * (1.6 - cfg.agg); }
     if (thr.st === 'wind' && thr.foe === f && td < 220 && f.dodges > 0 && Math.random() < 0.08 + 0.2 * cfg.skill) aiPressDodge(ai);
     return;
   }
@@ -328,8 +340,14 @@ function aiMaster(ai, dt) {
   }
   var sf = s.foe, bx = s.x, by = s.y;
   if (sf) { var ba = angTo(sf, s); bx = s.x + Math.cos(ba) * 150; by = s.y + Math.sin(ba) * 150; }
-  if (dist(f, { x: bx, y: by }) > 70) moveTo(f, bx, by, 0.9); else { inp.mx = 0; inp.my = 0; }
   var tg = sf || f.foe;
+  if (tg && tg.st !== 'dead' && f.st === 'idle' && knows(f, tg) && (dist(f, tg) > 540 || !losClear(f, tg))) {
+    // no shot from behind the servant: take an angle on the target from the side, swapping sides if it stays blocked
+    ai.flankT = (ai.flankT || 0) + dt; if (ai.flankT > 1.8) { ai.flankS = -(ai.flankS || 1); ai.flankT = 0; }
+    var fa2 = angTo(tg, s) + (ai.flankS || 1) * 0.9; bx = tg.x + Math.cos(fa2) * 360; by = tg.y + Math.sin(fa2) * 360;
+    if (Math.hypot(bx - s.x, by - s.y) > 420) { bx = (bx + s.x) / 2; by = (by + s.y) / 2; }
+  } else ai.flankT = 0;
+  if (dist(f, { x: bx, y: by }) > 70) moveTo(f, bx, by, 0.9); else { inp.mx = 0; inp.my = 0; }
   if (np.aiUse === 'origin') { var em = null, ed = 1e9; enemiesOf(f).forEach(function (e) { if (e.def.isMaster) { var d3 = dist(f, e); if (d3 < ed) { ed = d3; em = e; } } }); if (em && ed < 850 && losClear(f, em)) tg = em; }
   if (!silenced && sigOk && f.sigCd <= 0 && f.st === 'idle' && tg) {
     var dT = dist(f, tg);

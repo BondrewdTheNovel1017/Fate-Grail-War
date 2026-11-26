@@ -802,3 +802,39 @@ test('engine and UI never declare the same top-level name (the UI would silently
   const { nameClashes } = require('../tools/build.js');
   assert.deepStrictEqual(nameClashes(), []);
 });
+function aiScene(E, aId, aIsMaster, svDist, X, Y) {
+  const G = E.newWar([{ servant: E.SERV.richard, master: E.MASTERS.rin }, { servant: E.SERV[aIsMaster ? 'leonidas' : aId], master: E.MASTERS[aIsMaster ? aId : 'waver'] }], { nights: 3 });
+  G.f.forEach((f, i) => { G.ai[i] = f.team === 0 ? null : E.mkAI(f, E.DIFF.knight); });
+  G.clock.t = 60; G.clock.pending = null; G.clock.evDone = true; G.event = null;
+  const me = G.f.find((f) => f.team === 0 && !f.def.isMaster), mm = me.partner, a = G.f.find((f) => f.def.id === aId && f.team === 1), b = a.partner;
+  me.x = X; me.y = Y; mm.x = X - 900; mm.y = Y - 600; a.x = X + 320; a.y = Y; b.x = X + svDist; b.y = Y + (aIsMaster ? 60 : 900);
+  [me, mm, a, b].forEach((f) => { f.inM = false; });
+  let starts = 0, last = a.st;
+  const run = (s) => { for (let i = 0; i < 60 * s; i++) { me.inp = { mx: 0, my: 0 }; mm.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); if (a.st === 'wind' && last !== 'wind') starts++; last = a.st; } return starts; };
+  return { G, me, a, run };
+}
+test('AI: a ranged servant whose shot is blocked works around the obstacle and fires', () => {
+  const E = loadEngine(); let total = 0;
+  for (let r = 0; r < 3; r++) total += aiScene(E, 'gilles', false, 1400, 5200, 1000).run(15);
+  assert.ok(total >= 6, 'Gilles keeps attacking past the building (' + total + ' attacks in 3 tries)');
+});
+test('AI: a master fights beside their servant instead of backing off and staring', () => {
+  const E = loadEngine(); let total = 0, near = 0;
+  for (let r = 0; r < 3; r++) { const s = aiScene(E, 'kiritsugu', true, 120, 2300, 3100); total += s.run(15); if (Math.hypot(s.a.x - s.me.x, s.a.y - s.me.y) < 700) near++; }
+  assert.ok(total >= 6, 'Kiritsugu shoots (' + total + ' attacks in 3 tries)');
+  assert.ok(near >= 2, 'and stays in the fight');
+});
+test('AI: after a seal rescue the servant rests at home unless an enemy comes to the door', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('cu', 'rin', 3), { nights: 3 });
+  G.f.forEach((f, i) => { G.ai[i] = E.mkAI(f, E.DIFF.knight); });
+  G.clock.t = 60; G.clock.pending = null; G.clock.evDone = true; G.event = null;
+  const sv = G.f[0], foe = G.f.find((f) => f.team !== sv.team && !f.def.isMaster);
+  sv.hp = 1; assert.ok(E.sealRescue(sv, foe));
+  for (let i = 0; i < 60 * 1.5; i++) { G.time += E.STEP; E.rescueTick(E.STEP); }
+  // an enemy servant nearby, but far from this team's home
+  foe.x = sv.x + 250; foe.y = sv.y; const hx = sv.home[0], hy = sv.home[1];
+  if (Math.hypot(foe.x - hx, foe.y - hy) < 460) { foe.x = hx + 600; foe.y = hy; sv.x = hx + 380; sv.y = hy; }
+  for (let i = 0; i < 60 * 4; i++) E.simStep(E.STEP);
+  assert.ok(sv.recover, 'still resting');
+});
