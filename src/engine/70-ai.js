@@ -261,7 +261,7 @@ function aiMaster(ai, dt) {
   if (s && sealsLeft(f) > 0) {
     if (!f.sealUsed.heal && s.hp < s.def.hp * 0.3 && s.foe && dist(s, s.foe) < 500) useSeal(f, 'heal');
     else if (!f.sealUsed.warp && thr && td < 260 && dist(f, s) > 600) useSeal(f, 'warp');
-    else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && Math.random() < 0.0008) useSeal(f, 'np');
+    else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && !s.foe.def.isMaster && Math.random() < 0.00025) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
     var haven = MAP.haven ? MAP.haven : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
