@@ -1425,7 +1425,7 @@ var MASTER_ORDER = ['rin', 'kiritsugu', 'shirou', 'kayneth', 'kirei', 'waver', '
 var SERV_DUEL = {}; Object.keys(SERV).forEach(function (k) { SERV_DUEL[k] = Object.assign({}, SERV[k]); });
 Object.keys(SERV).forEach(function (k) { SERV[k].hp = Math.round(SERV[k].hp * 2.0); });
 /* war balance from tools/sim.js reports: multipliers on top of the duel values */
-var WAR_TUNE = { gilgamesh: { hp: 0.82 }, richard: { dmg: 1.07 }, heracles: { hp: 1.5 }, leonidas: { spd: 1.08, hp: 1.03 }, lancelot: { hp: 1.22 }, hassan: { dmg: 1.05 }, diarmuid: { hp: 1.05 }, kojirou: { dmg: 0.98 }, emiya: { hp: 1.08 }, medea: { hp: 1.15 }, iskandar: { dmg: 1.04 }, atalanta: { hp: 1.1 }, medusa: { hp: 1.05 }, cu: { dmg: 0.95 } };
+var WAR_TUNE = { gilgamesh: { hp: 0.82 }, richard: { dmg: 1.07 }, heracles: { hp: 1.5 }, leonidas: { spd: 1.08, hp: 1.03 }, lancelot: { hp: 1.22 }, hassan: { dmg: 1.15, hp: 1.1 }, diarmuid: { hp: 1.05 }, kojirou: { dmg: 0.98 }, emiya: { hp: 1.08 }, medea: { hp: 1.2, dmg: 1.3 }, iskandar: { dmg: 1.04 }, atalanta: { hp: 1.1 }, medusa: { hp: 1.05 }, cu: { dmg: 0.95 } };
 // masters, from the same reports
 var MASTER_TUNE = { rin: { hp: 1.1 }, kariya: { hp: 1.2 }, waver: { hp: 1.35 }, irisviel: { hp: 0.9 }, illya: { hp: 0.92 } };
 Object.keys(MASTER_TUNE).forEach(function (k) { MASTERS[k].hp = Math.round(MASTERS[k].hp * MASTER_TUNE[k].hp); });
@@ -2732,7 +2732,7 @@ function inCavern(f) { var rm = roomAt(f.x, f.y); return !!(rm && rm.id === 'cav
    Medea's dagger, landing on an enemy servant in the Grail War, cuts the contract for a few seconds:
    the servant joins her side and turns on its own master, then the bond snaps back. A player's servant is
    taken over by the AI while it lasts. Heracles' God Hand returns after a long while out of combat. */
-var RB = { dur: 5, vsMaster: 0.6, momLock: 25 }, GH_REGEN = 40;
+var RB = { dur: 5, vsMaster: 0.6, momLock: 15 }, GH_REGEN = 40;
 function ruleBreak(att, s) {
   if (s.turnT > G.time || s.def.isMaster || !s.partner || s.partner.st === 'dead' || s.team === att.team) return false;
   s.trueTeam = s.team; s.team = att.team; s.turnT = G.time + RB.dur; s.turnBy = att;
@@ -3277,7 +3277,7 @@ function aiMaster(ai, dt) {
     if (want) { press(f, 'skill'); return; }
   }
   // Shirou stands in a servant's fight: he joins his servant against a servant it is already fighting, while he is healthy
-  if (f.def.fightsServants && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
+  if (f.def.fightsServants && (!G.clock || (f.traceTier || 0) >= 1) && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
   if (thr && td < 330) {
     var aw = angTo(thr, f), gx = f.x + Math.cos(aw) * 260, gy = f.y + Math.sin(aw) * 260;
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }

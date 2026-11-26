@@ -291,7 +291,7 @@ function aiMaster(ai, dt) {
     if (want) { press(f, 'skill'); return; }
   }
   // Shirou stands in a servant's fight: he joins his servant against a servant it is already fighting, while he is healthy
-  if (f.def.fightsServants && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
+  if (f.def.fightsServants && (!G.clock || (f.traceTier || 0) >= 1) && thr && dist(s, thr) < 240 && td < 460 && f.hp > f.def.hp * 0.65 && s.hp > s.def.hp * 0.35) { f.lock = thr; f.foe = thr; aiTick(ai, dt); return; }
   if (thr && td < 330) {
     var aw = angTo(thr, f), gx = f.x + Math.cos(aw) * 260, gy = f.y + Math.sin(aw) * 260;
     if (dist(s, thr) > 120) { gx = (gx + s.x) / 2; gy = (gy + s.y) / 2; }

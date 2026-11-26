@@ -2,7 +2,7 @@
    Medea's dagger, landing on an enemy servant in the Grail War, cuts the contract for a few seconds:
    the servant joins her side and turns on its own master, then the bond snaps back. A player's servant is
    taken over by the AI while it lasts. Heracles' God Hand returns after a long while out of combat. */
-var RB = { dur: 5, vsMaster: 0.6, momLock: 25 }, GH_REGEN = 40;
+var RB = { dur: 5, vsMaster: 0.6, momLock: 15 }, GH_REGEN = 40;
 function ruleBreak(att, s) {
   if (s.turnT > G.time || s.def.isMaster || !s.partner || s.partner.st === 'dead' || s.team === att.team) return false;
   s.trueTeam = s.team; s.team = att.team; s.turnT = G.time + RB.dur; s.turnBy = att;
