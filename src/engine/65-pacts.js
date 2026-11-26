@@ -41,6 +41,7 @@ function pactWill(t, o) {
   if (m && m.def.id === 'kiritsugu') wm = teamHas(o, ['illya', 'irisviel', 'shirou']) ? 0.9 : 0; // the Magus Killer trusts only his family
   if (m && m.def.id === 'illya' && teamHas(o, ['shirou'])) wm = 0.8;
   if (m && (m.def.id === 'sakura' || m.def.id === 'rin') && teamHas(o, ['shirou', 'rin', 'sakura'])) wm = Math.max(wm, 0.8);
+  if (m && ((m.def.id === 'tokiomi' && teamHas(o, ['kirei'])) || (m.def.id === 'kirei' && teamHas(o, ['tokiomi'])))) wm = 0.9; // teacher and student, allies of the Church
   if (s && s.def.id === 'gilgamesh') ws = (!m || m.def.id !== 'kirei') && teamHas(o, ['kirei']) ? 0.85 : 0; // the King allies with no one, unless it brings him Kirei
   var w = wm === null ? ws : ws === null ? wm : Math.sqrt(wm * ws);
   teamFighters(t).forEach(function (a) { teamFighters(o).forEach(function (b) { var k = bondKey(a, b); if (PACT_FEUD[k] !== undefined) w *= PACT_FEUD[k]; if (FAMILY[k]) w *= 1.5; if (G.hesit && (G.hesit[a.idx + '>' + b.idx] || G.hesit[b.idx + '>' + a.idx])) w *= 1.6; }); });
@@ -168,13 +169,14 @@ function gilBetrayTick() {
   var gil = G.f.filter(function (f) { return f.def.id === 'gilgamesh' && f.st !== 'dead' && f.trueTeam === undefined; })[0]; if (!gil || !G.ai[gil.idx]) return;
   var gm = gil.partner, k = G.f.filter(function (f) { return f.def.id === 'kirei' && f.st !== 'dead'; })[0];
   if (!gm || gm.st === 'dead' || gm.team !== gil.team || !k || k === gm || k.team === gil.team || !isFreeMaster(k)) return;
-  if (!(pactTeams(gil.team, k.team) || inTruce(gil, k)) || dist(gil, k) > 900 || dist(gil, gm) > 1400) return;
+  var student = gm.def.id === 'tokiomi'; // with Tokiomi as his master, the canon betrayal: Kirei is the one who strikes
+  if (!(pactTeams(gil.team, k.team) || inTruce(gil, k)) || dist(gil, k) > 900 || dist(student ? k : gil, gm) > (student ? 700 : 1400)) return;
   if (gil.st !== 'idle' && gil.st !== 'move' && gil.st !== 'rec') return;
   if (Math.random() > 0.35) return;
   G.gilDone = true; G.pactLog.betray++;
   var p = pactOf(gil.team); if (p) { G.pacts.splice(G.pacts.indexOf(p), 1); G.f.forEach(pickTarget); }
-  FX.pact('betray', gil.team, k.team, gm);
-  gm.lastHit = { by: gil, key: 'betray' }; gm.lastHitT = G.time; gm.cause = 'betrayed'; gm.hp = 0; kill(gm);
+  FX.pact(student ? 'betrayT' : 'betray', gil.team, k.team, gm);
+  gm.lastHit = { by: student ? k : gil, key: 'betray' }; gm.lastHitT = G.time; gm.cause = 'betrayed'; gm.hp = 0; kill(gm);
   formContract(gil, k, true);
 }
 // targeting: help a partner with their fight, and an AI pact never closes in on the player together

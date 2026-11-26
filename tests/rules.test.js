@@ -764,3 +764,16 @@ test('Tokiomi burns what he hits and spends less mana while unhurt; Kuzuki hits 
   E.startAct(k, 'np'); for (let i = 0; i < 40; i++) E.simStep(E.STEP);
   assert.ok(s.st !== 'dead', 'Coiled Strike hurts but does not execute a servant');
 });
+test('With Tokiomi as Gilgamesh\'s master, the betrayal is Kirei\'s: he cuts Tokiomi down and the King contracts him', () => {
+  const E = loadEngine();
+  const G = E.newWar([{ servant: E.SERV.gilgamesh, master: E.MASTERS.tokiomi }, { servant: E.SERV.cu, master: E.MASTERS.kirei }, { servant: E.SERV.richard, master: E.MASTERS.rin }], { nights: 3 });
+  G.f.forEach((f, i) => { G.ai[i] = E.mkAI(f, E.DIFF.knight); });
+  const gil = G.f.find((f) => f.def.id === 'gilgamesh'), tok = G.f.find((f) => f.def.id === 'tokiomi'), kir = G.f.find((f) => f.def.id === 'kirei'), cu = G.f.find((f) => f.def.id === 'cu');
+  cu.hp = 0; E.kill(cu);
+  E.formPact(gil.team, kir.team);
+  tok.x = 3000; tok.y = 3000; kir.x = 3200; kir.y = 3000; gil.x = 3100; gil.y = 3100; [gil, tok, kir].forEach((f) => { f.st = 'idle'; });
+  for (let i = 0; i < 400 && !G.gilDone; i++) { G.time += 2.1; E.gilBetrayTick(); }
+  assert.ok(G.gilDone, 'the betrayal happens');
+  assert.strictEqual(tok.st, 'dead'); assert.strictEqual(tok.lastHit.by, kir, 'Kirei struck the blow');
+  assert.strictEqual(gil.partner, kir, 'Gilgamesh is now Kirei\'s servant');
+});

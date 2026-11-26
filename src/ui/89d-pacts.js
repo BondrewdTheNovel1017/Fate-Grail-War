@@ -62,6 +62,12 @@ FX.pact = function (kind, t1, t2, x) {
     return;
   }
   if (kind === 'dawn' || kind === 'final' || kind === 'few') { if (mine) note(kind === 'dawn' ? 'Dawn: your pact with ' + teamName(other) + ' ends.' : kind === 'final' ? 'The final night: every pact is void.' : 'Too few teams remain: the pact is void.', '#c9c3b0'); return; }
+  if (kind === 'betrayT') {
+    var gl = G.f.filter(function (f) { return f.def.id === 'gilgamesh' && f.st !== 'dead'; })[0], kr = G.f.filter(function (f) { return f.def.id === 'kirei'; })[0];
+    FX.banner('The student\u2019s answer', 'Kirei cuts down Tokiomi, and the King takes him as his master.');
+    if (kr && FX.near(kr.x, kr.y)) { SAYT[kr.idx] = performance.now() / 1000; showBubble(kr, 'Forgive me, Teacher. I have found something I want more than your Root.', 3.6, true); if (gl) DUO.push({ at: performance.now() + 2800, f: gl, text: 'Kirei. Now you have become interesting.' }); }
+    return;
+  }
   if (kind === 'betray') {
     var gil = G.f.filter(function (f) { return f.def.id === 'gilgamesh' && f.st !== 'dead'; })[0], k = G.f.filter(function (f) { return f.def.id === 'kirei'; })[0], gm = x;
     FX.banner('The King chooses', 'Gilgamesh cuts down ' + shortName(gm.def.name) + ' and takes Kirei as his master.');

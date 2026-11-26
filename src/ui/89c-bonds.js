@@ -2,6 +2,20 @@
    truce puts them side by side, a hesitation when one would kill the other, and last words for those kills.
    All lines are original. ---- */
 var MORE_PAIRS = {
+  // Tokiomi: his student, his rival in love, his enemies and his daughter
+  'tokiomi>kirei': ['Kirei. You\u2019ve done well. Remember your place in the plan.', 'Of course, Master. I remember everything.'],
+  'kirei>tokiomi': ['Teacher. I had wondered when we\u2019d meet.', 'Kirei? This was not part of our arrangement.'],
+  'tokiomi>kariya': ['Kariya. You threw away your magecraft, and now you return like this?', 'You gave her away, Tokiomi. I\u2019ll make you answer for it.'],
+  'kariya>tokiomi': ['TOKIOMI!', 'How unsightly. You were always a failure, Kariya.'],
+  'tokiomi>kiritsugu': ['The Magus Killer. A mercenary with no place in this ritual.', 'You\u2019ll die believing in rituals.'],
+  'tokiomi>kayneth': ['Lord El-Melloi. Let us conduct this properly.', 'At last, an opponent with breeding.'],
+  'tokiomi>rin': ['Rin. You should not be here.', '...Father. I\u2019m a Tohsaka too.'],
+  // Kuzuki: the temple, the knight, his students, the priest
+  'kuzuki>kojirou': ['The gatekeeper.', 'The teacher who climbs the stairs. Shall we test each other?'],
+  'kuzuki>caerwyn': ['A knight. Bare hands will do.', 'You would face my blade with nothing?'],
+  'kuzuki>shirou': ['Emiya. Go home.', 'Kuzuki-sensei?!'],
+  'kuzuki>rin': ['Tohsaka. You\u2019re late for class.', 'This isn\u2019t class, sensei!'],
+  'kuzuki>kirei': ['A priest who kills.', 'A teacher who kills. We are not so different.'],
   // the Einzbern family
   'kiritsugu>irisviel': ['Iri. Step aside. Please.', 'You would really raise a gun to me, Kiritsugu?'],
   'irisviel>kiritsugu': ['So the Grail made us enemies after all.', 'It was always going to ask for something.'],
@@ -37,6 +51,9 @@ var MORE_PAIRS = {
 Object.keys(MORE_PAIRS).forEach(function (k) { PAIRS[k] = MORE_PAIRS[k]; });
 // side by side under a truce: the school, the horror, the banquet, the Church
 var TRUCE_PAIRS = {
+  'rin|tokiomi': ['tokiomi', 'Stay behind me, Rin.', 'I can manage on my own, Father.'],
+  'sakura|tokiomi': ['tokiomi', '...Sakura. You\u2019ve grown.', '...You don\u2019t get to say that.'],
+  'kirei|tokiomi': ['kirei', 'Your plan holds, Teacher?', 'Perfectly. Trust in it.'],
   'irisviel|kiritsugu': ['kiritsugu', 'Stay close, Iri. Just for now.', 'Just for now. I know.'],
   'illya|kiritsugu': ['kiritsugu', 'Illya... are you hurt?', 'Don’t act like a father now. ...But thanks.'],
   'illya|irisviel': ['irisviel', 'Hold my hand, Illya.', '...Only until this is over, Mother.'],
@@ -68,6 +85,8 @@ function trucePairs() {
 }
 // the hand that will not fall
 var HESIT = {
+  'tokiomi>rin': ['Rin... no. Not by my hand.', 'Why did you stop?'],
+  'tokiomi>sakura': ['I gave you away so you would live. Not for this.', '...You never asked what I wanted.'],
   'kiritsugu>illya': ['...My hands won’t move.', '...Why did you stop?'],
   'kiritsugu>irisviel': ['Iri... I can’t. Not like this.', 'Then go. Before you change your mind.'],
   'irisviel>kiritsugu': ['No... I won’t be the one.', 'Iri...'],
@@ -92,6 +111,9 @@ FX.hesitate = function (a, d) {
 };
 // last words over the fallen, for the kills that mean something
 var KILLQ = {
+  'kirei>tokiomi': 'I wondered if I would feel something. Nothing. How disappointing.',
+  'kariya>tokiomi': 'That was for Sakura.',
+  'kuzuki>shirou': 'Class dismissed.',
   'kiritsugu>irisviel': 'I’m sorry, Iri. Every life I save costs one I love.',
   'kiritsugu>illya': 'Forgive me, Illya. I chose the world over you. Again.',
   'irisviel>kiritsugu': 'Wait for me... somewhere the Grail can’t reach.',

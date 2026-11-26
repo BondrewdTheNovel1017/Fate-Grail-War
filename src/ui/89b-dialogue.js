@@ -1,6 +1,8 @@
 /* ---- the dialogue pass: fuller lines for every character, rivals who answer each other when they meet,
    conversations at the King's table, and Rule Breaker's broken contract. All lines are original. ---- */
 var MORE_LINES = {
+  tokiomi: { low: ['A setback. Nothing more.', 'Composure... composure.'] },
+  kuzuki: { low: ['Still standing.', 'Pain is information.'], servantdown: ['I see. I will continue.'] },
   caerwyn: { engage: ['I will not fall here.', 'Your blade against mine, then.', 'Stand aside, or be cut down.'], kill: ['It is finished.', 'Go in peace.'], np: ['Ex... calibur!', 'Light, answer me!'], low: ['This is nothing.', 'A knight does not kneel.'], masterdown: ['Forgive me. I was too late.'], contract: ['Then I will be your sword.'] },
   richard: { engage: ['Have at you!', 'For England, and for glory!'], kill: ['A worthy foe, now silent.'], low: ['Ha! Only a scratch!'], masterdown: ['My master... I will ride on alone.'] },
   leonidas: { engage: ['Hold the line!', 'This is the pass. You will not cross it.'], kill: ['Next.'], np: ['Stand, Three Hundred!'], masterdown: ['A Spartan fights on.'] },
@@ -80,7 +82,8 @@ var BANQ_SCRIPTS = [
   { need: ['iskandar', 'gilgamesh'], lines: [['iskandar', 'Archer! You’ve brought your own wine?'], ['gilgamesh', 'Everything at this table is mine already, Rider.'], ['iskandar', 'Then share it like a king!'], ['gilgamesh', '...Very well. Drink, and be honored.']] },
   { need: ['iskandar', 'leonidas'], lines: [['iskandar', 'The king of Sparta! Your three hundred would have made a fine vanguard.'], ['leonidas', 'They would have made a fine wall. Your horses would have broken on it.'], ['iskandar', 'Ha! Drink, then, wall-builder!']] },
   { need: ['gilgamesh', 'caerwyn'], lines: [['gilgamesh', 'Sit, Saber. You will drink my wine and listen.'], ['caerwyn', 'I did not come here to be lectured.'], ['gilgamesh', 'No. You came to be admired. I permit it.']] },
-  { need: ['caerwyn', 'richard'], lines: [['richard', 'My king! To share a table with you is a dream!'], ['caerwyn', 'Richard. You were a far braver king than I.'], ['richard', 'Braver, perhaps. But never truer.']] }
+  { need: ['caerwyn', 'richard'], lines: [['richard', 'My king! To share a table with you is a dream!'], ['caerwyn', 'Richard. You were a far braver king than I.'], ['richard', 'Braver, perhaps. But never truer.']] },
+  { need: ['gilgamesh', 'tokiomi'], lines: [['tokiomi', 'Your Majesty honours this table.'], ['gilgamesh', 'Silence, Tokiomi. Kings are speaking.']] }
 ];
 var BSCRIPT = null;
 function banquetScript() {
