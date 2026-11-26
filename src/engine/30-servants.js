@@ -36,7 +36,7 @@ var SERV = {
     brief: 'Hyper armor on every swing. Light hits will not stop him. Slow to turn.',
     light: { wind: 0.34, rec: 0.3, dmg: 9, reach: 125, armor: true, arc: 1.0 }, heavy: { wind: 0.6, max: 1.15, dmg: 22, reach: 135, rec: 0.78, armor: true },
     skill: { name: 'Stone Slam', kind: 'aoe', wind: 0.55, act: 0.1, rec: 0.6, dmg: 12, r: 150, cd: 7, cost: 14, stag: 0.55, gb: true, armor: true, desc: 'A ground slam all around him. Armored. Breaks guards.' },
-    np: { name: 'Nine Lives', sub: 'Shooting the Nine Heads', kind: 'pulses', wind: 1.3, act: 1.26, rec: 1.0, dmg: 5, pulses: 9, interval: 0.14, r: 160, leap: 190, armor: true, unblock: false, aiMin: 0, aiMax: 230, desc: 'He leaps and nine blows land in a storm around him. Armored throughout.' } },
+    np: { name: 'Nine Lives', sub: 'Shooting the Nine Heads', kind: 'pulses', swings: true, reach: 150, arc: 1.25, chase: 560, wind: 1.3, act: 1.26, rec: 1.0, dmg: 5, pulses: 9, interval: 0.14, r: 160, leap: 190, armor: true, unblock: false, aiMin: 0, aiMax: 230, desc: 'He leaps and nine blows land in a storm around him. Armored throughout.' } },
   caerwyn: { id: 'caerwyn', name: 'King Arthur', cls: 'Saber', col: '#dfeaf4', wpn: 'sword', momMul: 1.2, hiddenReach: 1.1, hp: 205, spd: 218, dmg: 1.1, guard: 0.78, combo: 3, recMul: 1,
     brief: 'A sovereign swordswoman. Her blade hides in wind, which she can release as a cutting gust, and ends it with Excalibur\'s golden light.',
     light: { reach: 108 }, heavy: { reach: 122 },

@@ -176,6 +176,8 @@ function strikeInit(f) {
   if (f.key === 'light' || f.key === 'heavy') { FX.snd((k === 'proj' || k === 'volley') ? 'shoot' : k === 'rain' ? 'skill:' + f.def.id : (f.key === 'heavy' ? 'swingH' : 'swingL'), f, a); if (f.key === 'heavy' && k === 'melee') FX.fx('heavySwing', f.x, f.y, f); }
   if (f.key === 'skill' && f.def.hiddenReach) { f.revealT = G.time + 0.55; FX.fx('airRelease', f.x, f.y, f); }
   if (f.key === 'skill') { if (a.beam) FX.fx('miniBeam', f.x, f.y, f); FX.snd('skill:' + f.def.id, f, a); if (k === 'melee') FX.fx('bash', f.x, f.y, f); if (k === 'shadow') FX.fx('shadowOut', f.x, f.y, f); }
+  if (f.key === 'skill') FX.fx('skillfire', f.x, f.y, f);
+  if (f.key === 'np' && f.def.isMaster) FX.fx('sigfire', f.x, f.y, f);
   if (f.key === 'np' && !f.def.isMaster) { if (a.breaksMarble) breakMarble(f); FX.snd('npfire:' + f.def.id, f, a); FX.fx('npfire', f.x, f.y, f); }
   if (k === 'melee') { if (a.arc) meleeCheck(f, a.lunge > 100 ? Object.assign({}, a, { reach: a.reach + a.lunge * 0.85 }) : a, mult); }
   else if (k === 'proj') { spawnProj(f, a, mult, f.face, 0); if (a.breakT) { f.brokenT = a.breakT + a.rec; FX.text(f, 'BLADE SHATTERED'); FX.fx('swordBreak', f.x + Math.cos(f.face) * 40, f.y + Math.sin(f.face) * 40, f); } }
@@ -320,7 +322,21 @@ function stepF(f, dt) {
       }
       vx = f.inp.mx * f.def.spd * 0.15; vy = f.inp.my * f.def.spd * 0.15;
     }
-    if (a.kind === 'pulses') {
+    if (a.kind === 'pulses' && a.swings) {
+      // Nine Lives: he hurls himself at the foe and keeps driving in, nine quick blows of the axe-sword in a storm
+      turnToward(f, toO, 16, dt);
+      var cd0 = dist(f, o) - 78, csp = f.t < 0.2 ? Math.max(a.chase, a.leap / 0.2) : a.chase;
+      if (cd0 > 0 && o.st !== 'dead') { csp = Math.min(csp, cd0 / dt); vx = Math.cos(toO) * csp; vy = Math.sin(toO) * csp; }
+      f.pulseT += dt;
+      while (f.pulseN < a.pulses && f.pulseT >= (f.pulseN + 1) * a.interval) {
+        f.pulseN++; var last = f.pulseN === a.pulses;
+        var sw = { dmg: a.dmg * (last ? 1.8 : 1), reach: a.reach, arc: a.arc, stag: last ? 0.9 : 0.28, power: last ? 3 : 1, hs: last ? 0.1 : 0.035, unblock: a.unblock, noParry: a.unblock, key: a.key };
+        hitMobsArc(f, sw, 1); hitCivsArc(f, sw);
+        enemiesOf(f).forEach(function (e) { if (dist(f, e) <= sw.reach + FR && Math.abs(angDiff(f.face, angTo(f, e))) <= sw.arc) { var hr = hurt(f, e, sw, 1); if (last && (hr === 'hit' || hr === 'gbreak')) { var ka = angTo(f, e); e.kx = Math.cos(ka) * 420; e.ky = Math.sin(ka) * 420; } } });
+        FX.shake(last ? 12 : 4); FX.snd('nine', f, f.pulseN); FX.fx(last ? 'nineLast' : 'nineSwing', f.x, f.y, f);
+      }
+    }
+    else if (a.kind === 'pulses') {
       if (f.t < 0.25 && a.leap) { var lp = a.leap / 0.25, dd = Math.max(0, dist(f, o) - 70); lp = Math.min(lp, dd / 0.25); vx = Math.cos(toO) * lp; vy = Math.sin(toO) * lp; }
       f.pulseT += dt;
       while (f.pulseN < a.pulses && f.pulseT >= (f.pulseN + 1) * a.interval) {

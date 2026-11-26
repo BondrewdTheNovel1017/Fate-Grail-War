@@ -710,10 +710,25 @@ test('a scout that survives the day tells its master where its quarry is', () =>
   assert.ok(E.intelOn(foe, me), 'the rival knows where we are');
   assert.ok(!G.mobs.some((m) => m.scout), 'the familiar goes home at dusk');
 });
-test('every Arena window map is a real map with spawns on open ground', () => {
+test('every Arena battlefield is its own hand-made map with spawns inside', () => {
   const E = loadEngine();
   ['bridge', 'temple', 'forest', 'harbor', 'church', 'school'].forEach((id) => {
-    const m = E.MAPS[id]; assert.strictEqual(m.theme, 'citywin', id); assert.ok((m.b.length + m.o.length) > 0 && m.spawns.length >= 2, id);
+    const m = E.MAPS[id]; assert.notStrictEqual(m.theme, 'citywin', id); assert.ok(!m.win && m.spawns.length >= 2, id);
     const G = E.newGame(E.SERV.richard, E.SERV.cu, { map: id }); G.f.forEach((f) => assert.ok(f.x > 0 && f.x < m.w && f.y > 0 && f.y < m.h, id + ' spawn inside'));
   });
+});
+test('Nine Lives: Heracles lunges at his foe and lands quick blows in front of him, the last one hurling them back', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.SERV.heracles, E.SERV.richard, { map: 'arena' });
+  const h = G.f[0], r = G.f[1]; G.ai = [null, null];
+  h.x = 500; h.y = 500; r.x = 800; r.y = 500; h.face = 0; r.face = Math.PI; h.foe = r; r.foe = h; h.mom = 100;
+  const behind = { x: 300, y: 500 };
+  assert.ok(E.startAct(h, 'np'));
+  const hp0 = r.hp; let hits = 0, last = r.hp;
+  for (let i = 0; i < 60 * 4; i++) { r.st = r.st === 'dead' ? 'dead' : r.st; r.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); if (r.hp < last) { hits++; last = r.hp; } }
+  assert.ok(Math.abs(h.x - 500) > 120, 'he closes the distance');
+  assert.ok(hits >= 6, 'many separate blows land (' + hits + ')');
+  assert.ok(r.hp < hp0 - 30, 'they add up');
+  assert.ok(Math.hypot(r.x - 800, r.y - 500) > 60, 'the last blow throws the foe back');
+  assert.ok(behind.x < h.x, 'a blow lands only where he faces');
 });

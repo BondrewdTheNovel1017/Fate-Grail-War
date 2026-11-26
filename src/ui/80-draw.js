@@ -87,7 +87,9 @@ function drawWeapon(f) {
     else if (f.st === 'wind' && sweeps) rot = rest + 1.3 * p;
     else if (f.st === 'act' && sweeps) rot = 1.5 - 3.1 * q;
     else if (f.st === 'rec' && sweeps) rot = -1.6 * (1 - r) + rest * r;
-    if (sweeps && a.kind !== 'charge' && (f.st === 'act' || (f.st === 'rec' && r < 0.35))) {
+    var sw9 = a && a.swings && f.st === 'act';
+    if (sw9) { var ph9 = f.t / a.interval, n9 = Math.floor(ph9), q9 = Math.min(1, (ph9 - n9) * 1.7); rot = (n9 % 2 ? -1 : 1) * (1.5 - 3.1 * q9); }
+    if (sweeps && !sw9 && a.kind !== 'charge' && (f.st === 'act' || (f.st === 'rec' && r < 0.35))) {
       var tr = (a.reach || 110) * 0.92, aCur = f.st === 'act' ? 1.5 - 3.1 * q : -1.6, tal = f.st === 'act' ? 0.55 : 0.55 * (1 - r / 0.35);
       ctx.save(); ctx.globalAlpha = tal; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.arc(f.x, f.y, tr, f.face + aCur, f.face + 1.5); ctx.strokeStyle = shine ? 'rgba(255,224,140,.9)' : rgbaOf(d.col, 0.55); ctx.lineWidth = 14; ctx.stroke();
@@ -204,8 +206,7 @@ function drawFighter(f) {
   if (d.id === 'medusa' && f.key === 'np' && (f.st === 'wind' || f.st === 'act' || (f.st === 'rec' && f.t < 0.35))) drawPegasus(f);
   ctx.beginPath(); ctx.ellipse(f.x, f.y + 6, FR + 6, FR - 2, 0, 0, 6.283); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
   ctx.beginPath(); ctx.arc(f.x, f.y, FR + 5, 0, 6.283); ctx.strokeStyle = base; ctx.globalAlpha = 0.85; ctx.lineWidth = 3; ctx.stroke(); ctx.globalAlpha = 1;
-  if (f.wallT > 0) { ctx.beginPath(); ctx.arc(f.x, f.y, 190, 0, 6.283); ctx.fillStyle = 'rgba(255,211,107,.07)'; ctx.fill(); ctx.strokeStyle = 'rgba(255,211,107,.5)'; ctx.lineWidth = 3; ctx.setLineDash([14, 10]); ctx.stroke(); ctx.setLineDash([]);
-    for (var si = 0; si < 14; si++) { var san = G.time * 0.6 + si * 0.4488; ctx.beginPath(); ctx.arc(f.x + Math.cos(san) * 190, f.y + Math.sin(san) * 190, 9, 0, 6.283); ctx.fillStyle = '#c7954a'; ctx.fill(); ctx.strokeStyle = '#0b121a'; ctx.lineWidth = 2; ctx.stroke(); } }
+  if (f.wallT > 0) drawHotGates(f);
   if (f.iframes > 0) ctx.globalAlpha = 0.45; else if (f.hid) ctx.globalAlpha = ally ? 0.55 : 0.28;
   if (f.spirit) ctx.globalAlpha = f.spirit === 2 ? (ally ? 0.32 : ctx.globalAlpha) : 0.6 + 0.3 * Math.sin(G.time * 20);
   if (weaponOK(I)) { var br = (d.isMaster ? 0.8 : 1) * (f.spirit === 2 ? 1.05 : 1) + (f.st === 'idle' ? 0.018 * Math.sin(G.time * 3.2 + f.idx * 1.7) : 0) + (f.st === 'wind' && f.key === 'np' ? 0.05 * clamp(f.t / (f.windTotal || 1), 0, 1) : 0); ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.face); ctx.scale(br, br); ctx.drawImage(I.im, I.x, I.y, I.w, I.h); ctx.restore(); }
@@ -243,7 +244,6 @@ function mapNoise(m, n, seed) { if (m['_n' + seed]) return m['_n' + seed]; var v
 var VIEWR = null;
 function drawFloor(g, m) {
   if (m.theme === 'city') { drawCity(g, m); return; }
-  if (m.theme === 'citywin') { drawCityWin(g, m); return; }
   var th = m.theme, w = m.w, h = m.h;
   g.fillStyle = THEME[th].floor; g.fillRect(0, 0, w, h);
   if (th === 'fuyuki') {
@@ -297,7 +297,7 @@ function drawFloor(g, m) {
   else if (th === 'school') { g.fillStyle = '#4f4231'; g.fillRect(0, 0, w, 300); g.beginPath(); g.ellipse(950, 780, 560, 330, 0, 0, 6.283); g.fillStyle = '#6e5a42'; g.fill(); g.beginPath(); g.ellipse(950, 780, 450, 230, 0, 0, 6.283); g.fillStyle = '#3d5a36'; g.fill();
     g.strokeStyle = 'rgba(240,240,240,.55)'; g.lineWidth = 3; [560, 520, 480].forEach(function (rx, k) { g.beginPath(); g.ellipse(950, 780, rx, 330 - k * 40, 0, 0, 6.283); g.stroke(); }); g.beginPath(); g.moveTo(950, 560); g.lineTo(950, 1000); g.stroke(); g.beginPath(); g.arc(950, 780, 70, 0, 6.283); g.stroke(); }
 }
-function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'citywin') return drawCityBlock(g, b, b.ci !== undefined ? b.ci : i); if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
+function drawBlock(g, b, i, m) { if ((m || MAP).theme === 'city' || b.gen) return drawCityBlock(g, b, i); return drawBlock0(g, b, i); }
 function drawBlock0(g, b, i) {
   var x0 = b.x - b.w / 2, y0 = b.y - b.h / 2, k = b.k;
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 + 6, y0 + 8, b.w, b.h);
