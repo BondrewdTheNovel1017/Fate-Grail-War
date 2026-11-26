@@ -1543,7 +1543,7 @@ function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }
   var best = null, bd = 1e9, es = enemiesOf(f);
-  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (inTruce(f, e) ? 5000 : 0) + (spared(f, e) ? 5000 : 0) + pactAim(f, e) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
+  for (var i = 0; i < es.length; i++) { var e = es[i], d = dist(f, e) + (MAP.cityW && !sameZone(f, e) ? 2500 : 0) + (knows(f, e) ? 0 : 5000) + (inTruce(f, e) ? 5000 : 0) + (spared(f, e) ? 5000 : 0) + pactAim(f, e) + (G.ai[f.idx] && clockOn() && G.clock.n >= 2 && e.team === leadTeam() ? -600 : 0) + (e.def.isMaster && clockOn() && !finalNight() ? (f.def.isMaster ? 800 : 400) : 0) - (e === f.foe ? 60 : 0); if (G.mode === 'war' && !(clockOn() && !finalNight()) && !f.def.isMaster && e.def.isMaster && e.partner && e.partner.st !== 'dead' && dist(e, e.partner) > 220) d -= 140; if (d < bd) { bd = d; best = e; } }
   if (best) f.foe = best;
 }
 function addFighter(def, x, y, team, face) { var f = mkF(def, x, y, face || 0, G.f.length); f.team = team; G.f.push(f); G.ai.push(null); G.f.forEach(pickTarget); return f; }
@@ -1716,7 +1716,7 @@ function ammoTick(f, dt) {
    Night: dark streets, short sight, few people about. Day: crowded streets, teams rest at home.
    Civilians are witnesses, never targets: fighting where they can see raises the team's exposure,
    and the Church answers with rumors, a warning, and finally a sanction that shows the team to everyone. */
-var MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
+var HOME_WARD = 0.5, MASTER_GUARD = 0.75, CAUTION = [0.55, 0.4]; // servants break off at this share of health: night 1, later regular nights
 var CLOCK = { night: 300, day: 150, nights: 3, fade: 18 };
 var CIV = { day: 140, night: 22, walk: 62, run: 210, seeN: 380, seeD: 700, cool: 8 };
 var EXPO = { rumor: 35, warn: 70, max: 100, decay: 0.15, sanction: 50, perN: 1.2, perD: 2.6, after: 30 };
@@ -2017,6 +2017,8 @@ function hurt(att, def, a, mult, src) {
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
   if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
   if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
+  // a master in their own workshop is warded: before the final night, enemy servants' blows land at half strength there
+  if (att && def.def.isMaster && !att.def.isMaster && clockOn() && !finalNight() && inOwnHome(def)) dmg *= HOME_WARD;
   if (att && att.buffT > 0) dmg *= 1.15;
   if (att && G.tn && att.team !== def.team && !def.def.isMaster && G.clock && G.tn[att.team] && G.tn[att.team][def.def.id]) dmg *= 1.1; // true name known
   if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
@@ -2074,6 +2076,7 @@ function hurt(att, def, a, mult, src) {
   if (def.st === 'rec' && def.key === 'counter') taken = dmg;
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
+  if (def.hp - taken <= 0 && sealRescue(def)) return 'hit'; // the master spends a Command Seal to pull the servant out
   def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
@@ -2880,6 +2883,14 @@ function liveTeams() { var s = {}; G.f.forEach(function (f) { if (f.st !== 'dead
 function teamPower(t) { var v = 0; G.f.forEach(function (f) { if (f.team === t && f.st !== 'dead') v += (f.def.isMaster ? 0.35 : 1) * f.hp / f.def.hp; }); return v; }
 function teamHas(t, ids) { return G.f.some(function (f) { return f.team === t && f.st !== 'dead' && ids.indexOf(f.def.id) >= 0; }); }
 // how willing team t is to share a night with team o
+// the team running away with the war: the most kills (two or more), at least one clear of the next; rivals rally against it
+function leadTeam() {
+  if (!G || !clockOn()) return -1; if (G._leadT !== undefined && G.time - G._leadAt < 2) return G._leadT;
+  var k = {}; G.f.forEach(function (f) { if (f.st === 'dead' && f.killer && f.killer.team !== f.team) { var t = f.killer.trueTeam !== undefined ? f.killer.trueTeam : f.killer.team; k[t] = (k[t] || 0) + 1; } });
+  var ts = Object.keys(k).sort(function (a, b) { return k[b] - k[a]; }), lead = -1;
+  if (ts.length && k[ts[0]] >= 2 && (ts.length < 2 || k[ts[0]] - k[ts[1]] >= 1) && teamFighters(+ts[0]).length) lead = +ts[0];
+  G._leadT = lead; G._leadAt = G.time; return lead;
+}
 function pactWill(t, o) {
   var m = teamMaster(t), s = teamServant(t); if (!m && !s) return 0;
   var wm = m ? (PACT_M[m.def.id] === undefined ? 0.5 : PACT_M[m.def.id]) : null, ws = s ? (PACT_S[s.def.id] === undefined ? 0.5 : PACT_S[s.def.id]) : null;
@@ -2889,6 +2900,7 @@ function pactWill(t, o) {
   if (s && s.def.id === 'gilgamesh') ws = (!m || m.def.id !== 'kirei') && teamHas(o, ['kirei']) ? 0.85 : 0; // the King allies with no one, unless it brings him Kirei
   var w = wm === null ? ws : ws === null ? wm : Math.sqrt(wm * ws);
   teamFighters(t).forEach(function (a) { teamFighters(o).forEach(function (b) { var k = bondKey(a, b); if (PACT_FEUD[k] !== undefined) w *= PACT_FEUD[k]; if (FAMILY[k]) w *= 1.5; if (G.hesit && (G.hesit[a.idx + '>' + b.idx] || G.hesit[b.idx + '>' + a.idx])) w *= 1.6; }); });
+  var ld = leadTeam(); if (ld >= 0 && t !== ld && o !== ld) w = Math.min(1, w * 1.6 + 0.15); // united against the strongest
   return clamp(w, 0, 1);
 }
 // can these two teams make a pact right now (the rules, not the will)
@@ -3232,6 +3244,22 @@ function keysTick(dt) {
 }
 // nearest executor hunting this fighter's team (the AI turns to face them)
 function execNear(f, r) { var best = null, bd = r; (G.mobs || []).forEach(function (m) { if (!m.exec || m.dead || m.tgt !== f.team) return; var d = Math.hypot(m.x - f.x, m.y - f.y); if (d < bd) { bd = d; best = m; } }); return best; }
+
+/* ---- the emergency Command Seal: before the final night, the first killing blow on a servant whose master lives and
+   still holds a seal is cheated: the master spends a seal and the servant is pulled home at the brink of death ---- */
+function sealRescue(sv) {
+  if (!sv || sv.def.isMaster || !clockOn() || finalNight() || G.quick || sv.rescued) return false;
+  var m = sv.partner; if (!m || m.st === 'dead' || !m.sealUsed) return false;
+  var k = ['warp', 'heal', 'np'].filter(function (q) { return !m.sealUsed[q]; })[0]; if (!k) return false;
+  sv.rescued = true; m.sealUsed[k] = true;
+  // home to the summoning circle (the master's workshop), or to the master if the master is already there
+  var circ = (G.circles || []).filter(function (q) { return q.team === m.team; })[0], hx = circ ? circ.x : m.x, hy = circ ? circ.y : m.y;
+  if (!circ || inOwnHome(m)) { hx = m.x; hy = m.y; }
+  FX.fx('spiritOut', sv.x, sv.y, sv);
+  sv.hp = Math.max(1, sv.def.hp * 0.12); sv.x = hx + 50; sv.y = hy; sv.kx = sv.ky = 0; sv.st = 'idle'; sv.t = 0; sv.act = null; sv.iframes = 1.5; sv.spirit = 0; sv.lock = null; sv.recover = true;
+  FX.church('rescue', m.team, { s: sv.idx, k: k });
+  return true;
+}
 /* ---- AI ---- */
 var DIFF = {
   training: { name: 'Training', react: 0.6, skill: 0.1, agg: 0.3, err: 0.12, desc: 'Slow, readable, forgiving.' },
@@ -3458,6 +3486,11 @@ function aiWar(ai, dt) {
   if (G.mobs && G.mobs.length && f.spirit === 0 && f.st === 'idle' && G.mobs.some(function (m) { return Math.hypot(m.x - f.x, m.y - f.y) - (m.r || 16) < (f.A.light.reach || 80) + 20; })) { press(f, 'light'); }
   if (clockOn() && !finalNight() && !f.isPlayerMate && !f.bold && !(f.sealOrder > 0) && f.hp < f.def.hp * (G.clock.n <= 1 ? CAUTION[0] : CAUTION[1]) && f.def.id !== 'heracles' && f.orphanT <= 0) { st = 'retreat'; f.recover = true; }
   if (isDay() && !f.isPlayerMate && !f.bold && !(f.sealOrder > 0) && !(near && nd < 380 && f.hp > f.def.hp * 0.4)) st = 'spirit';
+  // an enemy servant closing on our master: drop everything and go to them (unless this servant is the one at death's door)
+  if (clockOn() && m && m.st !== 'dead' && !f.isPlayerMate && st !== 'retreat' && !(f.sealOrder > 0)) {
+    var mhT = null, mhD = 650; G.f.forEach(function (e) { if (e.team === f.team || e.def.isMaster || e.st === 'dead' || e.spirit === 2 || pactTeams(e.team, f.team)) return; var d = dist(e, m); if (d < mhD) { mhD = d; mhT = e; } });
+    if (mhT) { if (f.spirit === 2 && dist(f, m) < 500) press(f, 'spirit'); if (dist(f, mhT) > 260) { moveTo(f, mhT.x, mhT.y, 1); if (f.spirit === 0 && dist(f, mhT) < 420) { f.lock = mhT; f.foe = mhT; aiTick(ai, dt); } return; } f.lock = mhT; f.foe = mhT; }
+  }
   if (G.mode === 'war' && f.orphanT > 0) { var oc = contractCandidate(f); if (oc && (!near || nd > 220)) { if (f.spirit === 2 && dist(f, oc) < 400) press(f, 'spirit'); moveTo(f, oc.x, oc.y, 1); noOffense(f); autoContract(f, oc); return; } }
   if (st === 'spirit' || st === 'retreat') {
     if (f.def.cls === 'Assassin') { if (!f.cnc && f.st === 'idle' && nd > 160 && G.time >= (f.cncCd || 0)) press(f, 'spirit'); }
@@ -3503,14 +3536,19 @@ function aiMaster(ai, dt) {
   // Command Seals
   if (s && sealsLeft(f) > 0) {
     if (!f.sealUsed.heal && s.hp < s.def.hp * 0.3 && s.foe && dist(s, s.foe) < 500) useSeal(f, 'heal');
-    else if (!f.sealUsed.warp && thr && td < 260 && dist(f, s) > 600) useSeal(f, 'warp');
+    else if (!f.sealUsed.warp && thr && td < 420 && dist(f, s) > 600) useSeal(f, 'warp');
+    // a servant losing badly is pulled out of the fight to the master's side (before the final night)
+    else if (!f.sealUsed.warp && clockOn() && !finalNight() && s.hp < s.def.hp * 0.3 && s.foe && !s.foe.def.isMaster && dist(s, s.foe) < 320 && dist(f, s) > 650 && !(thr && td < 650)) useSeal(f, 'warp');
     else if (!f.sealUsed.np && s.foe && dist(s, s.foe) < 420 && s.mom < 50 && s.hp > s.def.hp * 0.4 && s.foe.hp > s.foe.def.hp * 0.45 && !s.foe.def.isMaster && Math.random() < 0.00025) useSeal(f, 'np');
   }
   if (!s) { var oc = contractCandidate(f); if (oc) { moveTo(f, oc.x, oc.y, 1); autoContract(f, oc); if (!f.toldSeek) { f.toldSeek = true; FX.text(f, 'SEEKING A NEW SERVANT'); } return; }
     var haven = MAP.haven ? MAP.haven : { x: f.home ? f.home[0] : f.x, y: f.home ? f.home[1] : f.y };
     moveTo(f, haven.x, haven.y, 1); if (!f.toldChurch && MAP.haven) { f.toldChurch = true; FX.text(f, 'FLEEING TO THE CHURCH'); } if (dist(f, haven) < 120) { inp.mx = 0; inp.my = 0; } return; }
   // before the final night a wounded master breaks off and runs home; the servant covers the retreat
-  if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75) f.fleeing = true; else if (f.hp > f.def.hp * 0.9) f.fleeing = false; } else f.fleeing = false;
+  // ...and an unguarded master keeps away from enemy servants, running to their own servant if it is near
+  var guarded = s && dist(f, s) < 260, hunted = thr && td < 440 && !guarded;
+  if (clockOn() && !finalNight() && !f.isPlayerMate) { if (f.hp < f.def.hp * 0.75 || hunted) f.fleeing = true; else if (f.hp > f.def.hp * 0.9 && !(thr && td < 600)) f.fleeing = false; } else f.fleeing = false;
+  if (f.fleeing && hunted && s && dist(f, s) < 1400 && dist(s, thr) > td) { var sa2 = angTo(thr, f); moveTo(f, s.x + Math.cos(sa2) * 60, s.y + Math.sin(sa2) * 60, 1); return; }
   if (f.fleeing && f.home) { var hx = f.home[0], hy = f.home[1]; if (thr && td < 300) { var fa = angTo(thr, f); hx = f.x + Math.cos(fa) * 200 + (hx - f.x) * 0.15; hy = f.y + Math.sin(fa) * 200 + (hy - f.y) * 0.15; } if (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 140 || (thr && td < 300)) moveTo(f, hx, hy, 1); else { inp.mx = 0; inp.my = 0; } return; }
   if (shadowNear(f, 520) && !f.isPlayerMate) { var sm = Math.atan2(f.y - G.event.y, f.x - G.event.x); moveTo(f, f.x + Math.cos(sm) * 400, f.y + Math.sin(sm) * 400, 1); return; }
   var EM = G.event;
@@ -6943,7 +6981,7 @@ function drawExecKeys(g) {
 (function () {
   var ch0 = FX.church;
   FX.church = function (kind, team, d) {
-    if (kind !== 'civKill' && kind !== 'dispatch' && kind !== 'execDown') return ch0(kind, team, d);
+    if (kind !== 'civKill' && kind !== 'dispatch' && kind !== 'execDown' && kind !== 'rescue') return ch0(kind, team, d);
     if (!G || !G.f[MEI]) return;
     var me = G.f[MEI], mine = team === me.team, who = mine ? 'Your team' : teamName(team);
     if (kind === 'civKill') {
@@ -6953,6 +6991,10 @@ function drawExecKeys(g) {
       var whence = d && d.from === 'church' ? 'from Kotomine Church' : 'into the city from the ' + (d ? d.from : 'edge');
       if (mine) { FX.banner('The Church sends Executors', (d ? d.n : 2) + ' Executors are coming ' + whence + '. They hunt your master first.'); SFX('bell'); }
       else note('Executors set out ' + whence + ' to hunt ' + who + '.', '#c9b8e0');
+    } else if (kind === 'rescue') {
+      var sv = G.f[d.s]; if (!sv) return;
+      if (mine) { FX.banner('A Command Seal burns', (sv.idx === MEI ? 'Your master' : 'You') + ' pulled ' + (sv.idx === MEI ? 'you' : shortName(sv.def.name)) + ' home from the brink of death. That seal is spent.'); SFX('bell'); }
+      else if (FX.near(sv.x, sv.y)) note(knownName(sv) + ' vanished at the last moment: a Command Seal.', '#c9c3b0');
     } else if (kind === 'execDown') {
       if (d && d.by === me.team) note('An Executor falls. The Church will remember it.', '#c9b8e0');
     }
@@ -7834,6 +7876,6 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet(); shellBoot();
 requestAnimationFrame(frame);
-window.__duel = { thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { civStruck: civStruck, sendExecutors: sendExecutors, formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
+window.__duel = { mapShot: function (sc, x0, y0, w, h, id) { var m = MAPS[id || 'city'], c = document.createElement('canvas'); x0 = x0 || 0; y0 = y0 || 0; w = w || (m.cityW || m.w); h = h || m.h; c.width = Math.round(w * sc); c.height = Math.round(h * sc); var g = c.getContext('2d'); g.scale(sc, sc); g.translate(-x0, -y0); var vr0 = VIEWR; VIEWR = { x0: x0, y0: y0, x1: x0 + w, y1: y0 + h }; var M0 = MAP; MAP = m; try { drawFloor(g, m); m.b.forEach(function (b, i) { drawBlock(g, b, i, m); }); (m.o || []).forEach(function (p) { drawObs(g, p); }); if (m.theme === 'city' && typeof drawOverhead === 'function') try { drawOverhead(g); } catch (e) {} } finally { VIEWR = vr0; MAP = M0; } return c.toDataURL('image/png'); }, thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { civStruck: civStruck, sendExecutors: sendExecutors, formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch, audioTest: audioTest, sounds: Object.keys(SND) };
 })();
 </script>
