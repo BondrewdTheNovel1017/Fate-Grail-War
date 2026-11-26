@@ -68,3 +68,6 @@ This is the largest change since the city map itself: expect two or three sessio
 
 ## Draft 1 (Nov 26)
 `docs/map-draft-1.png` (drawn by `tools/mapdraft.py`, which also prints base spacing): closest rival bases 2,300 (today 1,423), average nearest 2,656. Mount Enzou is a north-west lobe with the lake behind the temple and the cave on its far west slope on a hidden trail; the Uryuu storehouse sits at the edge of Miyama south.
+
+## Draft 2 (Nov 26, owner approved draft 1)
+`docs/map-draft-2.png`: adds every point of interest events use (bridges, river, rail bridge, docks and warehouses, Homurahara Academy, shopping arcade, both stations, Center Building, Verde, Semina Apartments, Civic Hall and park, cemetery, the Church summons spot, Waver's clearing, the Einzbern courtyard) and five backup safehouses on top of the three estates (sixteen base sites for at most seven teams). Safehouses keep at least about 1,300 from any base. The owner asked for enough safehouses that a war never runs out.

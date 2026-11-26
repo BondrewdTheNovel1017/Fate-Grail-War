@@ -34,7 +34,7 @@ svg.append('<circle cx="68" cy="226" r="7" fill="#0b0b0b" stroke="#7a6a52" strok
 # alleys (dark)
 for a in ['M450,380 L470,560','M520,400 L540,560','M800,150 L820,400','M960,300 L1000,420','M790,500 L840,700']: svg.append('<path d="%s" stroke="#111" stroke-width="4" opacity=".85"/>'%a)
 # district labels
-LB={'Mount Enzou':(150,295),'Western hill':(470,145),'Miyama old town':(330,365),'Miyama south':(470,800),'Church headland':(40,765),'Shinto core':(800,115),'Shinto south and harbour':(900,820),'Einzbern forest':(1180,520)}
+LB={'Mount Enzou':(150,295),'Western hill':(470,145),'Miyama old town':(300,365),'Miyama south':(470,800),'Church headland':(40,765),'Shinto core':(800,115),'Shinto south and harbour':(900,820),'Einzbern forest':(1180,520)}
 for n,(x,y) in LB.items(): svg.append('<text x="%d" y="%d" fill="#e9e4d3" font-size="15" font-weight="700" letter-spacing="1" opacity=".85">%s</text>'%(x,y,n.upper()))
 svg.append('<text x="565" y="240" fill="#9fb59a" font-size="11" transform="rotate(-80 585 240)">ravine</text>')
 for n,(x,y) in B.items():
@@ -44,8 +44,21 @@ for n,(x,y) in B.items():
 leg=[('#e0b84a','canon home'),('#c8283a','new unique residence'),('#7fc4ee','estate / safehouse plot'),('#111','dark alley')]
 svg.append('<rect x="1060" y="600" width="0" height="0"/>')
 lx,ly=20,880
-for i,(c,t) in enumerate(leg): svg.append('<circle cx="%d" cy="%d" r="7" fill="%s" stroke="#ccc"/><text x="%d" y="%d" fill="#ddd" font-size="12">%s</text>'%(1160,620+i*22,c,1174,624+i*22,t))
-svg.append('<text x="1160" y="710" fill="#aab" font-size="12">closest bases: %d units</text>'%round(ds[0][0]))
-svg.append('<text x="1160" y="728" fill="#aab" font-size="12">(today: 1,423)</text>')
+for i,(c,t) in enumerate(leg): svg.append('<circle cx="%d" cy="%d" r="7" fill="%s" stroke="#ccc"/><text x="%d" y="%d" fill="#ddd" font-size="12">%s</text>'%(470+i*150,25,c,484+i*150,29,t))
+svg.append('<text x="770" y="54" fill="#aab" font-size="12">closest rival bases: %d units (today 1,423)</text>'%round(ds[0][0]))
+
 svg.append('<text x="20" y="890" fill="#8899aa" font-size="12">Draft blockout, about 14,000 x 8,600 units. Not to final scale.</text>')
+
+P={'Homurahara Academy':(800,640),'Shopping arcade':(560,430),'Miyama Station':(640,560),'Fuyuki Bridge':(720,330),'Mion Bridge':(720,520),'River (Horror)':(690,425),'Rail bridge':(720,180),'Fuyuki Station':(930,390),'Center Building':(1010,150),'Verde mall':(1050,300),'Semina Apts':(820,250),'Civic Hall & park':(1040,520),'Docks & warehouses':(1180,640),'Cemetery':(60,610),'Church summons':(175,725),'Waver\'s clearing':(1180,120),'Einzbern courtyard':(1325,200)}
+for n,(x,y) in P.items():
+  svg.append('<path d="M%d,%d l7,7 l-7,7 l-7,-7 Z" fill="#d6d0f0" stroke="#0b121a" stroke-width="2"/>'%(x,y-7))
+  svg.append('<text x="%d" y="%d" fill="#d6d0f0" font-size="11" stroke="#0b121a" stroke-width="3" paint-order="stroke">%s</text>'%(x+10,y+4,n.replace('&','and')))
+SH={'Safehouse 1':(1000,450),'Safehouse 2':(870,760),'Safehouse 3':(95,440),'Safehouse 4':(520,385),'Safehouse 5':(1200,470)}
+for n,(x,y) in SH.items():
+  svg.append('<rect x="%d" y="%d" width="13" height="13" fill="#8fd3a8" stroke="#0b121a" stroke-width="2"/>'%(x-6,y-6))
+  svg.append('<text x="%d" y="%d" fill="#bfe8cc" font-size="11" stroke="#0b121a" stroke-width="3" paint-order="stroke">%s</text>'%(x+10,y+4,n))
+allb=dict(B); 
+md=min((math.hypot(SH[a][0]-allb[b][0],SH[a][1]-allb[b][1])*10,a,b) for a in SH for b in allb)
+print('safehouse nearest base',round(md[0]),md[1],md[2])
+for i,(c,t) in enumerate([('#d6d0f0','point of interest'),('#8fd3a8','backup safehouse')]): svg.append('<circle cx="%d" cy="50" r="7" fill="%s" stroke="#ccc"/><text x="%d" y="54" fill="#ddd" font-size="12">%s</text>'%(470+i*150,c,484+i*150,t))
 svg.append('</svg>'); open('mapdraft.svg','w').write('\n'.join(svg))
