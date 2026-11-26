@@ -49,7 +49,8 @@ function demolish(E) {
   var p = free.sort(function (a2, b2) { return Math.hypot(a2[0] - F.x, a2[1] - F.y) - Math.hypot(b2[0] - F.x, b2[1] - F.y); })[0] || MAP.plots[0];
   MAP.b.push({ x: p[0], y: p[1] - 20, w: 200, h: 150, k: 'safehouse', gen: true, name: 'Backup safehouse' }); rebuildRects();
   if (h) { h.x = p[0]; h.y = p[1] + 110; h.canon = false; h.name = 'Backup safehouse'; }
-  F.x = p[0]; F.y = p[1] + 110; F.lvl = 1; F.rooms = []; F.backup = true; F.name = 'Backup safehouse'; F.inside = {};
+  var hh = h || {}; if (giveEstate(hh, p[0], p[1] + 80, 'Backup safehouse')) { MAP.nav = null; buildNav(MAP); }
+  F.x = p[0]; F.y = p[1] + 110; F.lvl = 1; F.rooms = hh.room ? [hh.room] : []; F.backup = true; F.name = 'Backup safehouse'; F.inside = {};
   G.f.forEach(function (f) { if (f.team === E.target) f.home = [F.x, F.y]; });
   var am = masterOf(E.team); if (am) am.manaBonus = (am.manaBonus || 0) + 40;
   FX.event('demolished', { team: E.target, agg: E.team, x: E.x, y: E.y }); FX.shake(18);

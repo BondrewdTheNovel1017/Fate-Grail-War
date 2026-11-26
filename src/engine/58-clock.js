@@ -26,6 +26,8 @@ function initClock(opts) {
   initCivs();
 }
 function skipDay() { var c = G.clock; if (c && c.phase === 'day' && c.t < c.len - CLOCK.fade) c.t = c.len - CLOCK.fade; }
+// inside one's own house counts as home: the rooms behind its door
+function inOwnHome(f) { var F = G.fields && G.fields[f.team]; return !!(F && F.rooms && F.rooms.indexOf(zoneOf(f)) >= 0); }
 function clockTick(dt) {
   var c = G.clock; if (!c) return;
   c.t += dt;
@@ -35,7 +37,7 @@ function clockTick(dt) {
     civShift();
   }
   // resting at home by day: wounds close, mana returns
-  if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
+  if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700 && !inOwnHome(f))) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
   civTick(dt); tasksTick(dt);
 }

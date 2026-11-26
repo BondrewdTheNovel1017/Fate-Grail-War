@@ -122,18 +122,37 @@ var ESTATE_STYLE = { tohsaka: ['mansion_w', 'Tohsaka villa'], matou: ['mansion_d
 function assignHomes(teams, rnd) {
   rnd = rnd || Math.random;
   MAP.b = MAP.b.filter(function (q) { return !q.gen; });
-  var used = {}, freePlots = shuffled(MAP.plots.map(function (p, i) { return i; }), rnd), out = [];
+  var gd = (MAP.doors || []).filter(function (d) { return d.gen; }).length; MAP.doors = (MAP.doors || []).filter(function (d) { return !d.gen; });
+  (MAP.doors || []).forEach(function (d) { d.ruined = false; });
+  var used = {}, freePlots = shuffled(MAP.plots.map(function (p, i) { return i; }), rnd), out = [], est = (MAP.estates || []).slice();
+  // family seats first, in team order; Kiritsugu takes the Einzbern castle when no Einzbern does
+  var key = teams.map(function (t) { return MASTER_HOME[t.master.id]; });
+  teams.forEach(function (t, ti) { var k = key[ti]; if (k && MAP.homes[k] && !used[k]) { used[k] = true; key[ti] = { canon: k }; } });
+  teams.forEach(function (t, ti) { if (t.master.id === 'kiritsugu' && !used.einzbern && MAP.homes.einzbern) { used.einzbern = true; key[ti] = { canon: 'einzbern' }; } });
   teams.forEach(function (t, ti) {
-    var key = MASTER_HOME[t.master.id], H0 = key && MAP.homes[key];
-    if (H0 && !used[key]) { used[key] = true; out.push({ team: ti, key: key, name: H0.name, x: H0.x, y: H0.y, canon: true }); return; }
-    var pi = freePlots.shift(), p = MAP.plots[pi === undefined ? 0 : pi], st = ESTATE_STYLE[key || 'safe'];
+    var k = key[ti];
+    if (k && k.canon) { var H0 = MAP.homes[k.canon]; out.push({ team: ti, key: k.canon, name: H0.name, x: H0.x, y: H0.y, canon: true }); return; }
+    var pi = freePlots.shift(), p = MAP.plots[pi === undefined ? 0 : pi], st = ESTATE_STYLE[k || 'safe'];
     MAP.b.push({ x: p[0], y: p[1] - 30, w: 300, h: 210, k: st[0], gen: true, name: st[1] });
-    out.push({ team: ti, key: key || 'safe', name: st[1], x: p[0], y: p[1] + 120, canon: false });
+    var h = { team: ti, key: k || 'safe', name: st[1], x: p[0], y: p[1] + 120, canon: false };
+    giveEstate(h, p[0], p[1] + 100, st[1], est); out.push(h);
   });
   RECTS = []; MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); }); buildRectGrid();
+  if (gd || MAP.doors.some(function (d) { return d.gen; })) { MAP.nav = null; buildNav(MAP); }
   return out;
+}
+// an estate without a family seat still has rooms inside: one of the spare interiors, with a door on its plot
+function giveEstate(h, dx, dy, name, pool) {
+  var takenIds = (MAP.doors || []).filter(function (d) { return d.gen; }).map(function (d) { return d.room; });
+  var E = (pool || MAP.estates || []).filter(function (e) { return takenIds.indexOf(e.id) < 0; })[0]; if (!E) return null;
+  if (pool) pool.splice(pool.indexOf(E), 1);
+  var rm = MAP.rooms.find(function (r) { return r.id === E.id; }); if (rm) rm.name = name;
+  MAP.doors.push({ id: E.id, room: E.id, gen: true, out: { x: dx, y: dy, nx: 0, ny: 1 }, in: { x: E.in.x, y: E.in.y, nx: E.in.nx, ny: E.in.ny } });
+  h.room = E.id; h.spot = { x: E.spot.x, y: E.spot.y, name: 'The summoning circle, ' + name };
+  return E;
 }
 function summonSpot(h) {
   if (h.canon && MAP.spots && MAP.spots[h.key]) return MAP.spots[h.key];
+  if (h.spot) return h.spot;
   return { x: h.x, y: h.y - 20, name: h.name };
 }

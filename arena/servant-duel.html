@@ -465,7 +465,7 @@ setMap('arena');
    city blocks, trees, estate plots for masters, and walk-in interiors placed in a strip east of the city
    (x > cityW) and reached through doors. Buildings collide as rectangles (MAP.rects); trees and posts as circles. */
 MAPS.city = (function () {
-  var CW = 12000, CH = 8000, IX = 12400, IW = 3800;                 // city size; interiors live at x >= IX
+  var CW = 12000, CH = 8000, IX = 12400, IW = 6000;                 // city size; interiors live at x >= IX
   var v = 20241125; function R() { v = (v * 1664525 + 1013904223) >>> 0; return v / 4294967296; }
   var roads = [], zones = [], b = [], o = [], labels = [], doors = [], rooms = [], reserved = [], lamps = [];
   function road(kind, x0, y0, x1, y1, w, name) { roads.push({ kind: kind, x0: Math.min(x0, x1), y0: Math.min(y0, y1), x1: Math.max(x0, x1), y1: Math.max(y0, y1), w: w, h: y0 === y1, name: name }); }
@@ -719,6 +719,29 @@ MAPS.city = (function () {
   [[420, 500], [2150, 520], [600, 1700], [2000, 1800], [1300, 380], [380, 1150], [2250, 1150]].forEach(function (p) { o.push({ x: gc.x0 + p[0], y: gc.y0 + p[1], r: 70, k: 'rock' }); });
   B(2120, 360, 180, 100, 'cave_mouth', { name: 'Cave mouth' });
   door('cavern', 'cavern', 2120, 425, 0, 1, gc.x0 + 1300, gc.y0 + 70, 0, -1);
+  // Hyatt Hotel: Kayneth's top-floor suite, the lounge and his workshop
+  var hy = room('hyatt', 'Hyatt Hotel Suite', IX + 3900, 200, 1500, 1000, 'marble');
+  wallV(hy, 900, 24, 976, [[380, 520]]); wallH(hy, 560, 900, 1476, [[1120, 1260]]);
+  part(hy, 'carpet', hy.x0 + 60, hy.y0 + 60, hy.x0 + 860, hy.y0 + 940); part(hy, 'workshop', hy.x0 + 920, hy.y0 + 580, hy.x0 + 1470, hy.y0 + 970);
+  B(hy.x0 + 300, hy.y0 + 260, 280, 100, 'sofa'); B(hy.x0 + 300, hy.y0 + 420, 180, 90, 'table'); B(hy.x0 + 640, hy.y0 + 200, 100, 220, 'shelf');
+  for (var hs = 0; hs < 3; hs++) B(hy.x0 + 1030 + hs * 150, hy.y0 + 160, 100, 200, 'shelf');
+  part(hy, 'circle', hy.x0 + 1125, hy.y0 + 700, hy.x0 + 1265, hy.y0 + 840); B(hy.x0 + 1390, hy.y0 + 650, 110, 60, 'table');
+  door('hyatt', 'hyatt', 7700, 1105, 0, 1, hy.x0 + 450, hy.y0 + 925, 0, 1);
+  // Mackenzie House: the old couple's living room and the upstairs room Waver rents
+  var mk = room('mackenzie', 'Mackenzie House', IX + 3900, 1400, 1100, 800, 'wood');
+  wallV(mk, 600, 24, 776, [[300, 440]]);
+  part(mk, 'carpet', mk.x0 + 80, mk.y0 + 80, mk.x0 + 560, mk.y0 + 720); B(mk.x0 + 300, mk.y0 + 220, 240, 90, 'kotatsu'); B(mk.x0 + 160, mk.y0 + 560, 160, 70, 'sofa');
+  B(mk.x0 + 980, mk.y0 + 160, 120, 160, 'shelf'); B(mk.x0 + 760, mk.y0 + 120, 160, 80, 'table'); part(mk, 'circle', mk.x0 + 780, mk.y0 + 470, mk.x0 + 920, mk.y0 + 610);
+  door('mackenzie', 'mackenzie', 2600, 1910, 0, 1, mk.x0 + 300, mk.y0 + 725, 0, 1);
+  // four estates for masters without a family seat (and backup safehouses): their doors open on whichever plot they are built
+  var estates = [];
+  for (var ei = 0; ei < 4; ei++) {
+    var er = room('est' + ei, 'Safehouse', IX + 3900, 2400 + ei * 950, 1000, 750, ei % 2 ? 'stone' : 'wood');
+    wallV(er, 560, 24, 726, [[260, 400]]); part(er, 'carpet', er.x0 + 60, er.y0 + 60, er.x0 + 520, er.y0 + 690);
+    B(er.x0 + 280, er.y0 + 200, 220, 90, 'table'); B(er.x0 + 160, er.y0 + 520, 160, 70, 'sofa'); B(er.x0 + 900, er.y0 + 140, 120, 160, 'shelf'); B(er.x0 + 880, er.y0 + 600, 90, 90, 'crate');
+    part(er, 'circle', er.x0 + 710, er.y0 + 300, er.x0 + 850, er.y0 + 440);
+    estates.push({ id: er.id, spot: { x: er.x0 + 780, y: er.y0 + 370 }, in: { x: er.x0 + 280, y: er.y0 + 675, nx: 0, ny: 1 } });
+  }
   // summoning spots: where each master starts the war alone
   var spots = {
     emiya: { x: sh.x0 + 310, y: sh.y0 + 230, name: 'The storehouse, Emiya residence' },
@@ -726,8 +749,8 @@ MAPS.city = (function () {
     matou: { x: m.x0 + 1125, y: m.y0 + 270, name: 'The worm pit, Matou residence' },
     einzbern: { x: cx0 + 1300, y: cy0 + 800, name: 'The great hall, Einzbern Castle' },
     church: { x: k.x0 + 550, y: k.y0 + 340, name: 'Before the altar, Fuyuki Church' },
-    hyatt: { x: 7700, y: 1190, name: 'The forecourt, Hyatt Hotel' },
-    mackenzie: { x: 2250, y: 1660, name: 'A clearing in the woods of Mount Enzou' }
+    hyatt: { x: hy.x0 + 1195, y: hy.y0 + 770, name: 'The workshop, Hyatt Hotel suite' },
+    mackenzie: { x: mk.x0 + 850, y: mk.y0 + 540, name: 'The upstairs room, Mackenzie House' }
   };
   // the gap between city and interiors is solid
   B(CW + 200, CH / 2, 400, CH, 'void', { hide: true });
@@ -742,7 +765,7 @@ MAPS.city = (function () {
   return {
     id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
     walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]], [[1500, 1400], [1500, 1100], [2240, 1100], [2240, 560], [2120, 495]]], // footpaths through walled yards the road graph cannot see
-    spots: spots, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
+    spots: spots, estates: estates, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
     river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [2850, 1800], [5000, 1180]]
   };
 })();
@@ -870,19 +893,38 @@ var ESTATE_STYLE = { tohsaka: ['mansion_w', 'Tohsaka villa'], matou: ['mansion_d
 function assignHomes(teams, rnd) {
   rnd = rnd || Math.random;
   MAP.b = MAP.b.filter(function (q) { return !q.gen; });
-  var used = {}, freePlots = shuffled(MAP.plots.map(function (p, i) { return i; }), rnd), out = [];
+  var gd = (MAP.doors || []).filter(function (d) { return d.gen; }).length; MAP.doors = (MAP.doors || []).filter(function (d) { return !d.gen; });
+  (MAP.doors || []).forEach(function (d) { d.ruined = false; });
+  var used = {}, freePlots = shuffled(MAP.plots.map(function (p, i) { return i; }), rnd), out = [], est = (MAP.estates || []).slice();
+  // family seats first, in team order; Kiritsugu takes the Einzbern castle when no Einzbern does
+  var key = teams.map(function (t) { return MASTER_HOME[t.master.id]; });
+  teams.forEach(function (t, ti) { var k = key[ti]; if (k && MAP.homes[k] && !used[k]) { used[k] = true; key[ti] = { canon: k }; } });
+  teams.forEach(function (t, ti) { if (t.master.id === 'kiritsugu' && !used.einzbern && MAP.homes.einzbern) { used.einzbern = true; key[ti] = { canon: 'einzbern' }; } });
   teams.forEach(function (t, ti) {
-    var key = MASTER_HOME[t.master.id], H0 = key && MAP.homes[key];
-    if (H0 && !used[key]) { used[key] = true; out.push({ team: ti, key: key, name: H0.name, x: H0.x, y: H0.y, canon: true }); return; }
-    var pi = freePlots.shift(), p = MAP.plots[pi === undefined ? 0 : pi], st = ESTATE_STYLE[key || 'safe'];
+    var k = key[ti];
+    if (k && k.canon) { var H0 = MAP.homes[k.canon]; out.push({ team: ti, key: k.canon, name: H0.name, x: H0.x, y: H0.y, canon: true }); return; }
+    var pi = freePlots.shift(), p = MAP.plots[pi === undefined ? 0 : pi], st = ESTATE_STYLE[k || 'safe'];
     MAP.b.push({ x: p[0], y: p[1] - 30, w: 300, h: 210, k: st[0], gen: true, name: st[1] });
-    out.push({ team: ti, key: key || 'safe', name: st[1], x: p[0], y: p[1] + 120, canon: false });
+    var h = { team: ti, key: k || 'safe', name: st[1], x: p[0], y: p[1] + 120, canon: false };
+    giveEstate(h, p[0], p[1] + 100, st[1], est); out.push(h);
   });
   RECTS = []; MAP.b.forEach(function (b) { if (!b.walk) RECTS.push({ x0: b.x - b.w / 2, y0: b.y - b.h / 2, x1: b.x + b.w / 2, y1: b.y + b.h / 2, nb: !!b.nb, b: b }); }); buildRectGrid();
+  if (gd || MAP.doors.some(function (d) { return d.gen; })) { MAP.nav = null; buildNav(MAP); }
   return out;
+}
+// an estate without a family seat still has rooms inside: one of the spare interiors, with a door on its plot
+function giveEstate(h, dx, dy, name, pool) {
+  var takenIds = (MAP.doors || []).filter(function (d) { return d.gen; }).map(function (d) { return d.room; });
+  var E = (pool || MAP.estates || []).filter(function (e) { return takenIds.indexOf(e.id) < 0; })[0]; if (!E) return null;
+  if (pool) pool.splice(pool.indexOf(E), 1);
+  var rm = MAP.rooms.find(function (r) { return r.id === E.id; }); if (rm) rm.name = name;
+  MAP.doors.push({ id: E.id, room: E.id, gen: true, out: { x: dx, y: dy, nx: 0, ny: 1 }, in: { x: E.in.x, y: E.in.y, nx: E.in.nx, ny: E.in.ny } });
+  h.room = E.id; h.spot = { x: E.spot.x, y: E.spot.y, name: 'The summoning circle, ' + name };
+  return E;
 }
 function summonSpot(h) {
   if (h.canon && MAP.spots && MAP.spots[h.key]) return MAP.spots[h.key];
+  if (h.spot) return h.spot;
   return { x: h.x, y: h.y - 20, name: h.name };
 }
 /* ---- reality marbles: replace the battlefield until another marble overwrites it or Enuma Elish breaks it ---- */
@@ -1376,6 +1418,8 @@ function initClock(opts) {
   initCivs();
 }
 function skipDay() { var c = G.clock; if (c && c.phase === 'day' && c.t < c.len - CLOCK.fade) c.t = c.len - CLOCK.fade; }
+// inside one's own house counts as home: the rooms behind its door
+function inOwnHome(f) { var F = G.fields && G.fields[f.team]; return !!(F && F.rooms && F.rooms.indexOf(zoneOf(f)) >= 0); }
 function clockTick(dt) {
   var c = G.clock; if (!c) return;
   c.t += dt;
@@ -1385,7 +1429,7 @@ function clockTick(dt) {
     civShift();
   }
   // resting at home by day: wounds close, mana returns
-  if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
+  if (c.phase === 'day') G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || (Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700 && !inOwnHome(f))) return; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * 0.012 * dt); if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
   civTick(dt); tasksTick(dt);
 }
@@ -1509,7 +1553,7 @@ function initFields() {
     var t = h.team, m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0], s = m && m.partner;
     var lvl = m && m.def.type === 'Mage family' ? 2 : 1, max = m && m.def.type === 'Mage family' ? 4 : 3, temple = !!(s && s.def.cls === 'Caster');
     if (temple) { lvl += 1; max += 1; }
-    var rooms = (MAP.rooms || []).filter(function (r) { return h.canon && (r.id === h.key || (h.key === 'emiya' && r.id === 'shed')); }).map(function (r) { return r.id; });
+    var rooms = (MAP.rooms || []).filter(function (r) { return (h.canon && (r.id === h.key || (h.key === 'emiya' && r.id === 'shed'))) || r.id === h.room; }).map(function (r) { return r.id; });
     G.fields[t] = { team: t, x: h.x, y: h.y, lvl: lvl, max: max, temple: temple, rooms: rooms, boltT: 3, name: h.name, inside: {} };
     G.seenBy[t] = {}; G.tn[t] = {};
   });
@@ -2369,7 +2413,8 @@ function demolish(E) {
   var p = free.sort(function (a2, b2) { return Math.hypot(a2[0] - F.x, a2[1] - F.y) - Math.hypot(b2[0] - F.x, b2[1] - F.y); })[0] || MAP.plots[0];
   MAP.b.push({ x: p[0], y: p[1] - 20, w: 200, h: 150, k: 'safehouse', gen: true, name: 'Backup safehouse' }); rebuildRects();
   if (h) { h.x = p[0]; h.y = p[1] + 110; h.canon = false; h.name = 'Backup safehouse'; }
-  F.x = p[0]; F.y = p[1] + 110; F.lvl = 1; F.rooms = []; F.backup = true; F.name = 'Backup safehouse'; F.inside = {};
+  var hh = h || {}; if (giveEstate(hh, p[0], p[1] + 80, 'Backup safehouse')) { MAP.nav = null; buildNav(MAP); }
+  F.x = p[0]; F.y = p[1] + 110; F.lvl = 1; F.rooms = hh.room ? [hh.room] : []; F.backup = true; F.name = 'Backup safehouse'; F.inside = {};
   G.f.forEach(function (f) { if (f.team === E.target) f.home = [F.x, F.y]; });
   var am = masterOf(E.team); if (am) am.manaBonus = (am.manaBonus || 0) + 40;
   FX.event('demolished', { team: E.target, agg: E.team, x: E.x, y: E.y }); FX.shake(18);

@@ -3,7 +3,7 @@
    city blocks, trees, estate plots for masters, and walk-in interiors placed in a strip east of the city
    (x > cityW) and reached through doors. Buildings collide as rectangles (MAP.rects); trees and posts as circles. */
 MAPS.city = (function () {
-  var CW = 12000, CH = 8000, IX = 12400, IW = 3800;                 // city size; interiors live at x >= IX
+  var CW = 12000, CH = 8000, IX = 12400, IW = 6000;                 // city size; interiors live at x >= IX
   var v = 20241125; function R() { v = (v * 1664525 + 1013904223) >>> 0; return v / 4294967296; }
   var roads = [], zones = [], b = [], o = [], labels = [], doors = [], rooms = [], reserved = [], lamps = [];
   function road(kind, x0, y0, x1, y1, w, name) { roads.push({ kind: kind, x0: Math.min(x0, x1), y0: Math.min(y0, y1), x1: Math.max(x0, x1), y1: Math.max(y0, y1), w: w, h: y0 === y1, name: name }); }
@@ -257,6 +257,29 @@ MAPS.city = (function () {
   [[420, 500], [2150, 520], [600, 1700], [2000, 1800], [1300, 380], [380, 1150], [2250, 1150]].forEach(function (p) { o.push({ x: gc.x0 + p[0], y: gc.y0 + p[1], r: 70, k: 'rock' }); });
   B(2120, 360, 180, 100, 'cave_mouth', { name: 'Cave mouth' });
   door('cavern', 'cavern', 2120, 425, 0, 1, gc.x0 + 1300, gc.y0 + 70, 0, -1);
+  // Hyatt Hotel: Kayneth's top-floor suite, the lounge and his workshop
+  var hy = room('hyatt', 'Hyatt Hotel Suite', IX + 3900, 200, 1500, 1000, 'marble');
+  wallV(hy, 900, 24, 976, [[380, 520]]); wallH(hy, 560, 900, 1476, [[1120, 1260]]);
+  part(hy, 'carpet', hy.x0 + 60, hy.y0 + 60, hy.x0 + 860, hy.y0 + 940); part(hy, 'workshop', hy.x0 + 920, hy.y0 + 580, hy.x0 + 1470, hy.y0 + 970);
+  B(hy.x0 + 300, hy.y0 + 260, 280, 100, 'sofa'); B(hy.x0 + 300, hy.y0 + 420, 180, 90, 'table'); B(hy.x0 + 640, hy.y0 + 200, 100, 220, 'shelf');
+  for (var hs = 0; hs < 3; hs++) B(hy.x0 + 1030 + hs * 150, hy.y0 + 160, 100, 200, 'shelf');
+  part(hy, 'circle', hy.x0 + 1125, hy.y0 + 700, hy.x0 + 1265, hy.y0 + 840); B(hy.x0 + 1390, hy.y0 + 650, 110, 60, 'table');
+  door('hyatt', 'hyatt', 7700, 1105, 0, 1, hy.x0 + 450, hy.y0 + 925, 0, 1);
+  // Mackenzie House: the old couple's living room and the upstairs room Waver rents
+  var mk = room('mackenzie', 'Mackenzie House', IX + 3900, 1400, 1100, 800, 'wood');
+  wallV(mk, 600, 24, 776, [[300, 440]]);
+  part(mk, 'carpet', mk.x0 + 80, mk.y0 + 80, mk.x0 + 560, mk.y0 + 720); B(mk.x0 + 300, mk.y0 + 220, 240, 90, 'kotatsu'); B(mk.x0 + 160, mk.y0 + 560, 160, 70, 'sofa');
+  B(mk.x0 + 980, mk.y0 + 160, 120, 160, 'shelf'); B(mk.x0 + 760, mk.y0 + 120, 160, 80, 'table'); part(mk, 'circle', mk.x0 + 780, mk.y0 + 470, mk.x0 + 920, mk.y0 + 610);
+  door('mackenzie', 'mackenzie', 2600, 1910, 0, 1, mk.x0 + 300, mk.y0 + 725, 0, 1);
+  // four estates for masters without a family seat (and backup safehouses): their doors open on whichever plot they are built
+  var estates = [];
+  for (var ei = 0; ei < 4; ei++) {
+    var er = room('est' + ei, 'Safehouse', IX + 3900, 2400 + ei * 950, 1000, 750, ei % 2 ? 'stone' : 'wood');
+    wallV(er, 560, 24, 726, [[260, 400]]); part(er, 'carpet', er.x0 + 60, er.y0 + 60, er.x0 + 520, er.y0 + 690);
+    B(er.x0 + 280, er.y0 + 200, 220, 90, 'table'); B(er.x0 + 160, er.y0 + 520, 160, 70, 'sofa'); B(er.x0 + 900, er.y0 + 140, 120, 160, 'shelf'); B(er.x0 + 880, er.y0 + 600, 90, 90, 'crate');
+    part(er, 'circle', er.x0 + 710, er.y0 + 300, er.x0 + 850, er.y0 + 440);
+    estates.push({ id: er.id, spot: { x: er.x0 + 780, y: er.y0 + 370 }, in: { x: er.x0 + 280, y: er.y0 + 675, nx: 0, ny: 1 } });
+  }
   // summoning spots: where each master starts the war alone
   var spots = {
     emiya: { x: sh.x0 + 310, y: sh.y0 + 230, name: 'The storehouse, Emiya residence' },
@@ -264,8 +287,8 @@ MAPS.city = (function () {
     matou: { x: m.x0 + 1125, y: m.y0 + 270, name: 'The worm pit, Matou residence' },
     einzbern: { x: cx0 + 1300, y: cy0 + 800, name: 'The great hall, Einzbern Castle' },
     church: { x: k.x0 + 550, y: k.y0 + 340, name: 'Before the altar, Fuyuki Church' },
-    hyatt: { x: 7700, y: 1190, name: 'The forecourt, Hyatt Hotel' },
-    mackenzie: { x: 2250, y: 1660, name: 'A clearing in the woods of Mount Enzou' }
+    hyatt: { x: hy.x0 + 1195, y: hy.y0 + 770, name: 'The workshop, Hyatt Hotel suite' },
+    mackenzie: { x: mk.x0 + 850, y: mk.y0 + 540, name: 'The upstairs room, Mackenzie House' }
   };
   // the gap between city and interiors is solid
   B(CW + 200, CH / 2, 400, CH, 'void', { hide: true });
@@ -280,7 +303,7 @@ MAPS.city = (function () {
   return {
     id: 'city', name: 'Fuyuki City', place: 'Miyama and Shinto across the Mion River', blurb: 'The full war map.', theme: 'city', w: IX + IW, h: CH, cityW: CW, rects: true,
     walks: [[[2050, 4870], [1560, 4910], [1560, 5185], [2380, 5185]], [[1500, 1400], [1500, 1100], [2240, 1100], [2240, 560], [2120, 495]]], // footpaths through walled yards the road graph cannot see
-    spots: spots, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
+    spots: spots, estates: estates, o: o, b: b, roads: roads, zones: zones, labels: labels, doors: doors, rooms: rooms, homes: homes, plots: plots, haven: { x: 1450, y: 3330, name: 'Fuyuki Church' },
     river: null, spawns: [[2050, 4620], [3550, 1180], [11000, 1950], [1450, 3330], [7700, 1220], [2850, 1800], [5000, 1180]]
   };
 })();

@@ -556,3 +556,14 @@ test('a player in the war never targets or turns toward an enemy across the city
   foe.x = me.x + 300; foe.y = me.y; E.pickTarget(me);
   assert.strictEqual(E.aimFoe(me), foe, 'a nearby enemy is the target');
 });
+test('every master starts the war inside their own base, with a door out', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, sv = ['richard', 'cu', 'medusa', 'emiya', 'iskandar', 'medea', 'kojirou'];
+  [['kiritsugu', 'rin', 'kirei', 'kayneth', 'waver', 'shirou', 'sakura'], ['illya', 'irisviel', 'kiritsugu', 'sakura', 'kariya', 'rin', 'waver']].forEach((list) => {
+    const G = E.newWar(list.map((m, i) => ({ servant: S[sv[i]], master: M[m] })), { nights: 3 });
+    G.f.filter((f) => f.def.isMaster).forEach((m) => {
+      const rm = E.roomAt(m.x, m.y); assert.ok(rm, m.def.id + ' starts inside');
+      assert.ok(E.MAP.doors.some((d) => d.room === rm.id), m.def.id + ' has a door out');
+      assert.ok(G.fields[m.team].rooms.includes(rm.id), m.def.id + '’s field covers the rooms');
+    });
+  });
+});

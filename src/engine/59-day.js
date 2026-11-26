@@ -16,7 +16,7 @@ function initFields() {
     var t = h.team, m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0], s = m && m.partner;
     var lvl = m && m.def.type === 'Mage family' ? 2 : 1, max = m && m.def.type === 'Mage family' ? 4 : 3, temple = !!(s && s.def.cls === 'Caster');
     if (temple) { lvl += 1; max += 1; }
-    var rooms = (MAP.rooms || []).filter(function (r) { return h.canon && (r.id === h.key || (h.key === 'emiya' && r.id === 'shed')); }).map(function (r) { return r.id; });
+    var rooms = (MAP.rooms || []).filter(function (r) { return (h.canon && (r.id === h.key || (h.key === 'emiya' && r.id === 'shed'))) || r.id === h.room; }).map(function (r) { return r.id; });
     G.fields[t] = { team: t, x: h.x, y: h.y, lvl: lvl, max: max, temple: temple, rooms: rooms, boltT: 3, name: h.name, inside: {} };
     G.seenBy[t] = {}; G.tn[t] = {};
   });
