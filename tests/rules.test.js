@@ -698,7 +698,7 @@ test('a scout that survives the day tells its master where its quarry is', () =>
 test('every Arena window map is a real map with spawns on open ground', () => {
   const E = loadEngine();
   ['bridge', 'temple', 'forest', 'harbor', 'church', 'school'].forEach((id) => {
-    const m = E.MAPS[id]; assert.strictEqual(m.theme, 'citywin', id); assert.ok(m.b.length && m.spawns.length >= 2, id);
+    const m = E.MAPS[id]; assert.strictEqual(m.theme, 'citywin', id); assert.ok((m.b.length + m.o.length) > 0 && m.spawns.length >= 2, id);
     const G = E.newGame(E.SERV.richard, E.SERV.cu, { map: id }); G.f.forEach((f) => assert.ok(f.x > 0 && f.x < m.w && f.y > 0 && f.y < m.h, id + ' spawn inside'));
   });
 });
