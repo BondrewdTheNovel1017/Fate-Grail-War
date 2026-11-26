@@ -327,10 +327,8 @@ function drawCursedArm(f) {
 }
 // Seize Arms: veins of black and red run along the stolen weapon
 function drawSeizedVeins(f) {
-  var t = G.time; ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  for (var v = 0; v < 4; v++) { var p0 = locOf(f, 24, 9), L = 50 + 30 * Math.sin(t * 3 + v), p1 = locOf(f, 24 + L, 9 + (v - 1.5) * 5); bolt(ctx, p0.x, p0.y, p1.x, p1.y, 6, 6); ctx.strokeStyle = 'rgba(220,30,50,' + (0.3 + 0.3 * Math.sin(t * 9 + v * 2)) + ')'; ctx.lineWidth = 1.5; ctx.stroke(); }
-  ctx.restore();
-  if (Math.random() < 0.15 && FX.near(f.x, f.y)) puffs.push({ x: f.x + (Math.random() - 0.5) * 30, y: f.y + (Math.random() - 0.5) * 30, vx: 0, vy: -20, r: 6, t: 0, life: 0.6, rgb: '30,20,40' });
+  // the weapon itself carries the veins now (lancelot_*_dark sprites); only a faint black-red mist hangs about him
+  if (Math.random() < 0.12 && FX.near(f.x, f.y)) puffs.push({ x: f.x + (Math.random() - 0.5) * 30, y: f.y + (Math.random() - 0.5) * 30, vx: 0, vy: -20, r: 6, t: 0, life: 0.6, rgb: Math.random() < 0.5 ? '30,20,40' : '90,16,28' });
 }
 // the twin roses: red and yellow ribbons spiralling behind the charge
 function diarmuidTrail(f) {

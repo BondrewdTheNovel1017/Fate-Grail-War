@@ -258,6 +258,17 @@ SPR_EXTRA.lancelot_spear = { wvb: '-22 -10 156 20', weapon: function () { return
 SPR_EXTRA.lancelot_hammer = { wvb: '-10 -16 96 32', weapon: function () { return '<g stroke="#0b121a" stroke-width="2" stroke-linejoin="round"><rect x="-8" y="-3" width="66" height="6" rx="2.5" fill="#5a3a22"/><rect x="56" y="-14" width="22" height="28" rx="3" fill="#6b717c"/><rect x="56" y="-14" width="7" height="28" rx="2" fill="#4a4f59"/><path d="M78 -6 L86 0 L78 6Z" fill="#8a909a"/></g>'; } };
 // Kiritsugu's combat knife: a short dark blade, drawn while he cuts with his light attack
 SPR_EXTRA.kiritsugu_knife = { wvb: '-8 -8 50 16', weapon: function () { return '<defs>' + grad('kkn', '#eef2f5', '#7d8894') + '</defs><g stroke="#0b121a" stroke-width="1.6" stroke-linejoin="round"><rect x="-6" y="-2.6" width="14" height="5.2" rx="1.6" fill="#1d1f24"/><rect x="7" y="-4.2" width="2.6" height="8.4" fill="#3a3d44"/><path d="M9.6 -2.6 L36 -1.2 L41 0 L36 1.6 L9.6 2.6 Z" fill="url(#kkn)"/><path d="M12 -0.8 L34 -0.2" stroke="#5c6670" stroke-width=".8" fill="none"/></g>'; } };
+// Knight of Honour: whatever Lancelot seizes turns black, with red veins running along it (drawn into the weapon so they follow every swing)
+['sword', 'spear', 'hammer'].forEach(function (k) {
+  var src = SPR_EXTRA['lancelot_' + k], vb = src.wvb.split(' ').map(Number), x0 = vb[0], y0 = vb[1], w = vb[2], h = vb[3];
+  SPR_EXTRA['lancelot_' + k + '_dark'] = { wvb: src.wvb, weapon: function () {
+    var svg = src.weapon().replace(/fill="url\(#[^)]*\)"/g, 'fill="#1a0d12"').replace(/fill="#[0-9a-fA-F]{3,6}"/g, 'fill="#20101a"').replace(/stroke="#(?!0b121a)[0-9a-fA-F]{3,6}"/g, 'stroke="#4a1420"');
+    var veins = '', r = 0.37;
+    for (var i = 0; i < 5; i++) { var yy = y0 + h * (0.3 + 0.4 * ((i * 0.618) % 1)), x = x0 + w * 0.12, d = 'M' + x.toFixed(1) + ' ' + yy.toFixed(1);
+      while (x < x0 + w * 0.92) { r = (r * 9301 + 49297) % 233280 / 233280; x += w * (0.06 + 0.06 * r); yy += (r - 0.5) * h * 0.22; yy = Math.max(y0 + h * 0.2, Math.min(y0 + h * 0.8, yy)); d += ' L' + x.toFixed(1) + ' ' + yy.toFixed(1); }
+      veins += '<path d="' + d + '" stroke="#d8243a" stroke-width="' + (i % 2 ? 0.9 : 1.4) + '" fill="none" stroke-linecap="round" opacity=".9"/>'; }
+    return svg + '<g>' + veins + '</g>'; } };
+});
 SPR_EXTRA.lancelot_gun = { wvb: '-6 -14 84 28', weapon: function () { return '<g stroke="#0b121a" stroke-width="2" stroke-linejoin="round"><rect x="0" y="-9" width="22" height="18" rx="3" fill="#3a3d46"/><rect x="2" y="9" width="14" height="8" rx="2" fill="#5a4a2a"/><rect x="22" y="-7" width="46" height="4" rx="1.5" fill="#6b717c"/><rect x="22" y="-2" width="46" height="4" rx="1.5" fill="#7d838e"/><rect x="22" y="3" width="46" height="4" rx="1.5" fill="#6b717c"/><rect x="62" y="-9" width="6" height="18" rx="2" fill="#4a4f59"/><rect x="8" y="-5" width="8" height="10" rx="1.5" fill="#d9a73a" stroke-width="1.2"/></g>'; } };
 
 var medusa = mkS('medusa', 'Medusa', 'Rider', '#d96bb8',

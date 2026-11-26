@@ -71,7 +71,7 @@ function drawWeapon(f) {
   if (f.st === 'rec' && a) r = clamp(f.t / Math.max(f.recDur || 0.3, 0.05), 0, 1);
   if (d.id === 'lancelot') {
     if (f.key === 'np' && (f.st === 'wind' || f.st === 'act' || f.st === 'rec')) { I = IMG.lancelot_gun.weapon; g = GRIP.lancelot_gun; wp = 'gun'; }
-    else if (f.armT > 0 && f.arm >= 0) { var am = d.arms[f.arm]; I = IMG['lancelot_' + am.id].weapon; g = GRIP['lancelot_' + am.id]; wp = am.wpn; }
+    else if (f.armT > 0 && f.arm >= 0) { var am = d.arms[f.arm]; I = (IMG['lancelot_' + am.id + '_dark'] || IMG['lancelot_' + am.id]).weapon; g = GRIP['lancelot_' + am.id]; wp = am.wpn; }
     else wp = 'fist';
   }
   if (d.id === 'kiritsugu' && f.key === 'light' && a && (f.st === 'wind' || f.st === 'act' || f.st === 'rec')) { I = IMG.kiritsugu_knife.weapon; g = GRIP.kiritsugu_knife; wp = 'sword'; }
