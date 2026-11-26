@@ -4,12 +4,9 @@
   fxExtra = function (n, x, y, f) {
     var id = f && f.def ? f.def.id : '';
     if (id === 'caren' && n === 'skillfire') {
-      // the red shroud unwinds from her arm and snaps forward
-      var fa = f.face;
-      vfx(0.35, function (g, p) { g.save(); g.translate(x, y); g.rotate(fa); g.globalAlpha = 0.9 * (1 - p); g.fillStyle = '#c8283a'; g.beginPath(); g.moveTo(10, -4);
-        for (var i = 0; i <= 8; i++) { var u = i / 8; g.lineTo(10 + u * 70 * (0.4 + p), -4 - Math.sin(u * 7 + p * 14) * 6 * u); }
-        for (var j = 8; j >= 0; j--) { var v = j / 8; g.lineTo(10 + v * 70 * (0.4 + p), 4 - Math.sin(v * 7 + p * 14) * 6 * v); }
-        g.closePath(); g.fill(); g.restore(); });
+      // the ribbon around her lashes out: a red flare where it leaves the loop
+      var fa = f.face, ox = x + Math.cos(fa) * 34, oy = y + Math.sin(fa) * 34;
+      vfx(0.3, function (g, p) { g.save(); g.strokeStyle = 'rgba(200,40,58,' + (0.8 * (1 - p)) + ')'; g.lineWidth = 2.5; g.beginPath(); g.arc(ox, oy, 6 + 22 * p, 0, 6.283); g.stroke(); g.restore(); });
       return true;
     }
     if (id === 'caren' && n === 'sigfire') {
@@ -41,3 +38,28 @@
     g.closePath(); g.fill(); g.stroke(); g.restore(); return true;
   };
 })();
+
+/* the Shroud of Magdalene drifts around her like a dancer's ribbon; when she casts, its leading end unwinds toward her target */
+function drawCarenRibbon(f) {
+  var t = G.time, base = t * 1.5 + f.idx * 1.7, ext = 0;
+  if (f.key === 'skill' && f.act) { if (f.st === 'wind') ext = clamp(f.t / (f.windTotal || f.act.wind || 0.3), 0, 1); else if (f.st === 'act') ext = 1; else if (f.st === 'rec') ext = Math.max(0, 1 - f.t / 0.3); }
+  var N = 30, pts = [];
+  for (var i = 0; i < N; i++) {
+    var u = i / (N - 1), an = base + u * 4.6, r = 31 + 4 * Math.sin(t * 2.6 + u * 6);
+    var x = f.x + Math.cos(an) * r, y = f.y + Math.sin(an) * r * 0.88 + Math.sin(u * 9 + t * 4) * 2.5;
+    var k = Math.max(0, (u - 0.5) / 0.5) * ext;
+    if (k > 0) { var tx = f.x + Math.cos(f.face) * (36 + 90 * k), ty = f.y + Math.sin(f.face) * (36 + 90 * k) + Math.sin(u * 14 + t * 20) * 5 * k; x += (tx - x) * k; y += (ty - y) * k; }
+    pts.push([x, y, u]);
+  }
+  ctx.save(); ctx.lineCap = 'round';
+  [['#4a0a14', 2.4], ['#c8283a', 0]].forEach(function (L) {
+    ctx.strokeStyle = L[0];
+    for (var j = 1; j < pts.length; j++) { var w = 1.4 + 4 * Math.sin(Math.PI * pts[j][2]); ctx.lineWidth = w + L[1]; ctx.beginPath(); ctx.moveTo(pts[j - 1][0], pts[j - 1][1]); ctx.lineTo(pts[j][0], pts[j][1]); ctx.stroke(); }
+  });
+  ctx.restore();
+}
+var drawFighterC0 = drawFighter;
+drawFighter = function (f, i, ar) {
+  drawFighterC0(f, i, ar);
+  if (f.def.id === 'caren' && f.st !== 'dead' && !(f.hid && f.team !== (G.f[MEI] || {}).team)) drawCarenRibbon(f);
+};
