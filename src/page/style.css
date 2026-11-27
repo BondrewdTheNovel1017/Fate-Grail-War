@@ -476,3 +476,9 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 .top.open .tmenu { display: flex; }
 .top .tmenu button { min-width: 112px; text-align: right; }
 #menuT { font-size: 15px; line-height: 1; padding: 4px 9px; }
+
+/* event perks under the war HUD: an icon, the name and the time left; tap one to read what it does */
+.perks { display: none; } body.ingame .perks:not([hidden]) { position: absolute; z-index: 4; left: var(--gap); display: flex; flex-wrap: wrap; gap: 6px; max-width: min(400px, calc(100vw - var(--mm) - 40px)); pointer-events: auto; }
+.perks .pk { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 6px; border-radius: 999px; background: rgba(10,14,22,.78); border: 1px solid var(--pk, #e0b84a); color: #eee6d4; font: 600 12px/1.2 Inter, system-ui, sans-serif; cursor: pointer; }
+.perks .pk b { color: var(--pk, #e0b84a); font-size: 14px; font-weight: 700; }
+.perks .pk i { font-style: normal; opacity: .7; font-variant-numeric: tabular-nums; }

@@ -1006,3 +1006,15 @@ test('King\'s Banquet is a sanctuary: no one at the table can be hurt, even from
   assert.strictEqual(E.aiDayGoal(am), k, 'an AI team heads for the banquet');
   G.clock.t = 140; assert.notStrictEqual(E.aiDayGoal(am), k, 'and not with dusk close');
 });
+test('Event perks: each does what it says and runs out', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 3), { nights: 2 }); G.ai = G.ai.map(() => null);
+  const m = G.f.find((f) => f.team === 0 && f.def.isMaster), s = m.partner, foe = G.f.find((f) => f.team === 1 && !f.def.isMaster);
+  E.initMana(m); m.mana = 5; E.grantPerk(0, 'prana'); assert.strictEqual(m.mana, m.manaMax, 'prana refills mana');
+  const lvl = G.fields[0].lvl, max = G.fields[0].max; E.grantPerk(0, 'ward'); assert.ok(G.fields[0].max === max + 1 && G.fields[0].lvl === Math.min(max + 1, lvl + 1), 'ward raises the field');
+  const hp = s.hp; E.grantPerk(0, 'unshaken'); E.hurt(foe, s, { dmg: 20, key: 'light' }, 1); const took = hp - s.hp;
+  const hp2 = foe.hp; E.hurt(s, foe, { dmg: 20, key: 'light' }, 1); const took2 = hp2 - foe.hp;
+  assert.ok(took < took2 * 0.9, 'unshaken: less damage taken (' + took.toFixed(1) + ' vs ' + took2.toFixed(1) + ')');
+  G.time += E.PERKS.unshaken.dur + 1; assert.ok(!E.hasPerk(0, 'unshaken'), 'and it runs out');
+  G.event = { kind: 'berserk', f: foe, dmgBy: { 2: 40, 0: 10 } }; E.berserkPerk(G.event); assert.ok(E.hasPerk(2, 'unshaken') && !E.hasPerk(0, 'unshaken') || E.hasPerk(2, 'unshaken'), 'the team that fought the berserker hardest earns it');
+});

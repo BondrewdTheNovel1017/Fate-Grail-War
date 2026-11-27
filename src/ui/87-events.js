@@ -1,6 +1,17 @@
 /* ---- events on screen: headlines, the harbor beacon, the sealed school, skeleton familiars, the Grail's light ---- */
+// event perks: read out in full when earned; shown as chips under the HUD with the time left (tap one to read it again)
+var PERKT = 0;
+function perkHud() {
+  if (!G || G.mode !== 'war' || performance.now() < PERKT) return; PERKT = performance.now() + 500;
+  var el = $('#perks'); if (!el) return; var me = G.f[MEI], P = (G.perks && G.perks[me.team]) || {}, live = Object.keys(P).filter(function (id) { return PERKS[id] && P[id] > G.time; });
+  el.hidden = !live.length; if (!live.length) { el.innerHTML = ''; return; }
+  var hb = $('#hud').getBoundingClientRect(), db = $('#duel').getBoundingClientRect(); el.style.top = Math.round(hb.bottom - db.top + 6) + 'px';
+  el.innerHTML = live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
+}
+document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
 FX.event = function (kind, d, msg) {
   if (!G || !G.f[MEI]) return; var my = G.f[MEI].team, mine = d && d.team === my;
+  if (kind === 'perk') { var pk = PERKS[d.id]; if (pk && mine) { FX.banner(pk.icon + ' ' + pk.name, pk.desc); FX.snd('chant', G.f[MEI]); } else if (pk) note(teamName(d.team) + ' earned ' + pk.name + '.', pk.col); PERKT = 0; return; }
   if (kind === 'challenge') { var hn = knownName(d.host); if (mine) FX.banner('You issue a challenge', 'Your servant’s battle cry rings across Fuyuki. Hold the docks: if no one dares answer, a Command Seal is yours.'); else FX.banner('A Challenge at the Harbor', hn + ' of ' + teamName(d.team) + ' calls every servant to the docks. Answer it, or let it win by default.'); }
   else if (kind === 'accepted') note('The challenge is answered at the docks!', '#7fc4ee');
   else if (kind === 'unanswered') { if (mine) FX.banner('No one dared', 'The challenge stands unanswered. A Command Seal returns to you.'); else note(teamName(d.team) + '’s challenge went unanswered: they regain a Command Seal.'); }
@@ -146,6 +157,7 @@ var BANQ_M = ['Is this... really a good idea?', 'Don’t let your guard down.', 
 var banqT = 0, BANQ_SAID = null, BANQ_KEY = null;
 function banqUsed(k) { var key = k.x + ':' + k.y + ':' + (G.clock ? G.clock.n : 0); if (BANQ_KEY !== key) { BANQ_KEY = key; BANQ_SAID = {}; } return BANQ_SAID; }
 function banquetChatter() {
+  perkHud();
   if (!G.tasks || !isDay() || G.time < banqT) return; var k = G.tasks.filter(function (q) { return q.kind === 'banquet'; })[0]; if (!k) return;
   var here = G.f.filter(function (f) { return f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120 && FX.near(f.x, f.y); });
   if (here.filter(function (f) { return !f.def.isMaster; }).length < 2) return; // talk starts once two servants are at the table

@@ -483,6 +483,12 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 .top.open .tmenu { display: flex; }
 .top .tmenu button { min-width: 112px; text-align: right; }
 #menuT { font-size: 15px; line-height: 1; padding: 4px 9px; }
+
+/* event perks under the war HUD: an icon, the name and the time left; tap one to read what it does */
+.perks { display: none; } body.ingame .perks:not([hidden]) { position: absolute; z-index: 4; left: var(--gap); display: flex; flex-wrap: wrap; gap: 6px; max-width: min(400px, calc(100vw - var(--mm) - 40px)); pointer-events: auto; }
+.perks .pk { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 6px; border-radius: 999px; background: rgba(10,14,22,.78); border: 1px solid var(--pk, #e0b84a); color: #eee6d4; font: 600 12px/1.2 Inter, system-ui, sans-serif; cursor: pointer; }
+.perks .pk b { color: var(--pk, #e0b84a); font-size: 14px; font-weight: 700; }
+.perks .pk i { font-style: normal; opacity: .7; font-variant-numeric: tabular-nums; }
 </style>
 
 <main class="wrap">
@@ -609,6 +615,7 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 
 <section id="duel">
   <div class="hud" id="hud"></div>
+  <div class="perks" id="perks" hidden></div>
   <div id="pingTag" hidden></div>
   <div class="stage"><canvas id="cv" width="800" height="500"></canvas>
     <div class="top"><button type="button" id="restBtn" hidden>Rest until nightfall</button><button type="button" id="menuT" aria-expanded="false" aria-controls="tmenu" aria-label="Game menu">&#9776;</button><div class="tmenu" id="tmenu"><button type="button" id="snd">Sound on</button><button type="button" id="fs">Full screen</button><button type="button" id="pause">Pause</button><button type="button" id="quit">Quit</button></div></div>
@@ -1738,7 +1745,7 @@ function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x,
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
 // Noble Phantasms are rare: every mode builds momentum at NP_MOM of the base rate (Shirou's Trace keeps its own pace)
 var NP_MOM = 0.6;
-function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= NP_MOM; if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= NP_MOM; if (v > 0 && G.perks) v *= perkMom(f); if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {
@@ -1789,7 +1796,7 @@ function masterCost(key) { return key === 'np' ? MANA.sigCost : key === 'skill' 
 function starved(s) { var m = livingMaster(s); return !!(G.mode === 'war' && !s.def.isMaster && m && m.mana < MANA.starved); }
 function manaTick(m, dt) {
   if (m.manaMax === undefined) initMana(m);
-  m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * dt);
+  m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * (G.perks ? perkRegen(m) : 1) * dt);
   var s = m.partner; if (!s || s.st === 'dead' || s.def.isMaster) return;
   var drain = s.spirit === 2 ? 0 : MANA.upkeep; if (dist(m, s) > MANA.farDist) drain += MANA.farDrain;
   m.mana = Math.max(0, m.mana - drain * dt);
@@ -2225,7 +2232,8 @@ function hurt(att, def, a, mult, src) {
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
-  def.hp -= taken; def.stat.taken += taken; def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
+  taken *= perkDamageTaken(def);
+  def.hp -= taken; def.stat.taken += taken; perkHit(att, def, taken); def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   harmMana(att, def, taken);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
@@ -2759,7 +2767,7 @@ function startBerserk() {
 }
 function berserkTick(E, dt) {
   var f = E.f, B = EVT.berserk;
-  if (f.st === 'dead' || E.t >= E.dur) { endEvent(f.st === 'dead' ? 'The rampage is over.' : 'Its master regains control.'); return; }
+  if (f.st === 'dead' || E.t >= E.dur) { berserkPerk(E); endEvent(f.st === 'dead' ? 'The rampage is over.' : 'Its master regains control.'); return; }
   if (f.hp > f.def.hp * B.floor) f.hp = Math.max(f.def.hp * B.floor, f.hp - f.def.hp * B.drain * dt);
 }
 function rampTarget(f) { var best = null, bv = -1; servantsAlive().forEach(function (e) { if (e.team === f.team || e.spirit === 2) return; var d = dist(f, e); if (d > 3200) return; var v = e.hp - d * 0.05; if (v > bv) { bv = v; best = e; } }); return best; }
@@ -2812,7 +2820,7 @@ function schoolTick(E, dt) {
       if (G.mobs.some(function (m) { return !m.dead && Math.hypot(m.x - c.x, m.y - c.y) < EVT.school.contest; })) return;
       if (G.time - (f.lastHitT || -99) < 0.6) return;
       c.prog[f.team] = (c.prog[f.team] || 0) + dt;
-      if (c.prog[f.team] >= EVT.school.need) { c.up = false; c.by = f.team; FX.event('circle', { team: f.team, c: c, left: E.circles.filter(function (q) { return q.up; }).length }); var m = G.f.filter(function (q) { return q.team === f.team && q.def.isMaster && q.st !== 'dead'; })[0]; if (m) { m.mana = m.manaMax; } G.expo[f.team] = Math.max(0, (G.expo[f.team] || 0) - 30); }
+      if (c.prog[f.team] >= EVT.school.need) { c.up = false; c.by = f.team; if (!hasPerk(f.team, 'prana')) grantPerk(f.team, 'prana'); FX.event('circle', { team: f.team, c: c, left: E.circles.filter(function (q) { return q.up; }).length }); var m = G.f.filter(function (q) { return q.team === f.team && q.def.isMaster && q.st !== 'dead'; })[0]; if (m) { m.mana = m.manaMax; } G.expo[f.team] = Math.max(0, (G.expo[f.team] || 0) - 30); }
     });
   });
   if (!E.circles.some(function (c) { return c.up; })) { E.truceEnd = G.time + 20; endSchool(E, true); return; }
@@ -2871,6 +2879,7 @@ function banquetSeated(k) { return G.f.filter(function (f) { return f.st !== 'de
 function banquetDone(t, k) {
   var here = {}; G.f.forEach(function (f) { if (f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) here[f.team] = 1; });
   G.f.forEach(function (s) { if (s.st === 'dead' || s.def.isMaster) return; for (var q in here) if (+q !== s.team) learnName(+q, s, 'banquet'); });
+  grantPerk(t, 'wine');
 }
 /* ---- the Overseer's Summons: masters are called to the Church under truce ---- */
 function startSummons() {
@@ -2907,6 +2916,40 @@ function grailTick(E, dt) {
 }
 function grailPull(f) { var E = G.event; if (!E || E.kind !== 'grail') return null; return { x: E.x, y: E.y, r: E.r }; }
 function grailMad(f) { var E = G.event; return !!(E && E.kind === 'grail' && E.corrupt && !f.def.isMaster && Math.hypot(f.x - E.x, f.y - E.y) < 450); }
+/* ---- Event perks: rewards for taking part in events that give no Command Seal. Each is shown as an icon by the
+   team's health bars with its name and time left, and read out in full when earned (FX.event('perk')). ---- */
+var PERKS = {
+  prana: { name: 'Reclaimed Prana', icon: '◈', col: '#e0505e', dur: 240, desc: 'The life the Blood Fort stole flows back to you: your master’s mana refills, and regenerates half again as fast until dawn.' },
+  unshaken: { name: 'Unshaken', icon: '⛨', col: '#b39ddb', dur: 240, desc: 'You faced a servant in full madness and did not break. Your servant takes 15% less damage until dawn.' },
+  unmask: { name: 'Unmasked', icon: '◉', col: '#7fc4ee', dur: 240, desc: 'You saw through the false death. You know where that team is until dawn.' },
+  ward: { name: 'The Workshop Holds', icon: '▣', col: '#e0b84a', dur: 45, desc: 'You saved your home from the bomber. Your bounded field rises one level, and can now rise one level higher.' },
+  wine: { name: 'Wine of Kings', icon: '♛', col: '#e8c36a', dur: 300, desc: 'You drank at the King’s table as an equal. Your servant’s Noble Phantasm charges 20% faster until dawn.' }
+};
+function hasPerk(team, id) { var P = G.perks && G.perks[team]; return !!(P && P[id] > G.time); }
+function grantPerk(team, id, extra) {
+  if (team === undefined || team < 0 || !PERKS[id]) return;
+  G.perks = G.perks || {}; var P = G.perks[team] = G.perks[team] || {};
+  P[id] = G.time + PERKS[id].dur;
+  var m = G.f.filter(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead'; })[0];
+  if (id === 'prana' && m) { if (m.manaMax === undefined) initMana(m); m.mana = m.manaMax; }
+  if (id === 'ward' && G.fields && G.fields[team]) { var F = G.fields[team]; F.max += 1; F.lvl = Math.min(F.max, F.lvl + 1); }
+  if (id === 'unmask' && extra !== undefined) { G.intel = G.intel || {}; G.intel[team] = { team: extra, until: P[id] }; }
+  FX.event('perk', { team: team, id: id });
+}
+// hooks used by the fighting code
+function perkDamageTaken(def) { return !def.def.isMaster && hasPerk(def.team, 'unshaken') ? 0.85 : 1; }
+function perkMom(f) { return !f.def.isMaster && hasPerk(f.team, 'wine') ? 1.2 : 1; }
+function perkRegen(m) { return hasPerk(m.team, 'prana') ? 1.5 : 1; }
+// event bookkeeping: who hurt the rampaging Berserker, who struck through a false death
+function perkHit(att, def, taken) {
+  var E = G.event; if (!att || !E || att.team === def.team) return;
+  if (E.kind === 'berserk' && def === E.f) { E.dmgBy = E.dmgBy || {}; E.dmgBy[att.team] = (E.dmgBy[att.team] || 0) + taken; }
+  if (G.ghost && G.ghost[def.team] > G.time) { G.unmasked = G.unmasked || {}; var key = att.team + ':' + def.team; if (!G.unmasked[key]) { G.unmasked[key] = 1; grantPerk(att.team, 'unmask', def.team); } }
+}
+function berserkPerk(E) {
+  var best = -1, bd = 20; for (var t in (E.dmgBy || {})) if (E.dmgBy[t] > bd) { bd = E.dmgBy[t]; best = +t; }
+  if (best >= 0) grantPerk(best, 'unshaken');
+}
 /* ---- second batch of events: the Demolition, the Shadow, the Festival; and the Great Cavern as a fourth final site ---- */
 var EVT2 = {
   demo: { charges: 3, ring: 230, plant: 4, disarm: 5, dur: 150, fuse: 20, need: 2, blastR: 460, blastDmg: 45 },
@@ -2945,8 +2988,8 @@ function demoTick(E, dt) {
   });
   var n = E.charges.filter(function (c) { return c.planted; }).length;
   if (E.fuse < 0 && n === D.charges) { E.fuse = D.fuse; FX.event('fuse', E); }
-  if (E.fuse >= 0) { E.fuse -= dt; if (E.fuse <= 0) { if (n >= D.need) demolish(E); else { expose(E.team, 30); endEvent('Too few charges went off. The house stands.'); } return; } }
-  else if (E.t >= E.dur) { expose(E.team, 30); endEvent('The bomber ran out of time. The house stands.'); }
+  if (E.fuse >= 0) { E.fuse -= dt; if (E.fuse <= 0) { if (n >= D.need) demolish(E); else { expose(E.team, 30); grantPerk(E.target, 'ward'); endEvent('Too few charges went off. The house stands.'); } return; } }
+  else if (E.t >= E.dur) { expose(E.team, 30); grantPerk(E.target, 'ward'); endEvent('The bomber ran out of time. The house stands.'); }
 }
 function demolish(E) {
   var D = EVT2.demo, F = G.fields[E.target], h = G.homes.filter(function (q) { return q.team === E.target; })[0];
@@ -6984,8 +7027,19 @@ function drawDayArrow(cx, cy, zoom) {
   ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = o.col; ctx.fillText(o.lab, -Math.cos(ang) * 22, -Math.sin(ang) * 22 + 4); ctx.restore();
 }
 /* ---- events on screen: headlines, the harbor beacon, the sealed school, skeleton familiars, the Grail's light ---- */
+// event perks: read out in full when earned; shown as chips under the HUD with the time left (tap one to read it again)
+var PERKT = 0;
+function perkHud() {
+  if (!G || G.mode !== 'war' || performance.now() < PERKT) return; PERKT = performance.now() + 500;
+  var el = $('#perks'); if (!el) return; var me = G.f[MEI], P = (G.perks && G.perks[me.team]) || {}, live = Object.keys(P).filter(function (id) { return PERKS[id] && P[id] > G.time; });
+  el.hidden = !live.length; if (!live.length) { el.innerHTML = ''; return; }
+  var hb = $('#hud').getBoundingClientRect(), db = $('#duel').getBoundingClientRect(); el.style.top = Math.round(hb.bottom - db.top + 6) + 'px';
+  el.innerHTML = live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
+}
+document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
 FX.event = function (kind, d, msg) {
   if (!G || !G.f[MEI]) return; var my = G.f[MEI].team, mine = d && d.team === my;
+  if (kind === 'perk') { var pk = PERKS[d.id]; if (pk && mine) { FX.banner(pk.icon + ' ' + pk.name, pk.desc); FX.snd('chant', G.f[MEI]); } else if (pk) note(teamName(d.team) + ' earned ' + pk.name + '.', pk.col); PERKT = 0; return; }
   if (kind === 'challenge') { var hn = knownName(d.host); if (mine) FX.banner('You issue a challenge', 'Your servant’s battle cry rings across Fuyuki. Hold the docks: if no one dares answer, a Command Seal is yours.'); else FX.banner('A Challenge at the Harbor', hn + ' of ' + teamName(d.team) + ' calls every servant to the docks. Answer it, or let it win by default.'); }
   else if (kind === 'accepted') note('The challenge is answered at the docks!', '#7fc4ee');
   else if (kind === 'unanswered') { if (mine) FX.banner('No one dared', 'The challenge stands unanswered. A Command Seal returns to you.'); else note(teamName(d.team) + '’s challenge went unanswered: they regain a Command Seal.'); }
@@ -7131,6 +7185,7 @@ var BANQ_M = ['Is this... really a good idea?', 'Don’t let your guard down.', 
 var banqT = 0, BANQ_SAID = null, BANQ_KEY = null;
 function banqUsed(k) { var key = k.x + ':' + k.y + ':' + (G.clock ? G.clock.n : 0); if (BANQ_KEY !== key) { BANQ_KEY = key; BANQ_SAID = {}; } return BANQ_SAID; }
 function banquetChatter() {
+  perkHud();
   if (!G.tasks || !isDay() || G.time < banqT) return; var k = G.tasks.filter(function (q) { return q.kind === 'banquet'; })[0]; if (!k) return;
   var here = G.f.filter(function (f) { return f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120 && FX.near(f.x, f.y); });
   if (here.filter(function (f) { return !f.def.isMaster; }).length < 2) return; // talk starts once two servants are at the table
@@ -9499,7 +9554,7 @@ $('#snd').addEventListener('click', function () { AUD.on = !AUD.on; try { localS
 syncSnd();
 renderSetup(); renderNet(); shellBoot();
 requestAnimationFrame(frame);
-window.__duel = { get MAP() { return MAP; }, get DOWN() { return DOWN; }, get talk() { return typeof DOWNRUN !== 'undefined' && DOWNRUN ? DOWNRUN.lines.map(function (l) { return l[1]; }) : null; }, mapShot: function (sc, x0, y0, w, h, id) { var m = MAPS[id || 'city'], c = document.createElement('canvas'); x0 = x0 || 0; y0 = y0 || 0; w = w || (m.cityW || m.w); h = h || m.h; c.width = Math.round(w * sc); c.height = Math.round(h * sc); var g = c.getContext('2d'); g.scale(sc, sc); g.translate(-x0, -y0); var vr0 = VIEWR; VIEWR = { x0: x0, y0: y0, x1: x0 + w, y1: y0 + h }; var M0 = MAP; MAP = m; try { drawFloor(g, m); m.b.forEach(function (b, i) { drawBlock(g, b, i, m); }); (m.o || []).forEach(function (p) { drawObs(g, p); }); if (m.theme === 'city' && typeof drawOverhead === 'function') try { drawOverhead(g); } catch (e) {} } finally { VIEWR = vr0; MAP = M0; } return c.toDataURL('image/png'); }, thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { hurt: hurt, civStruck: civStruck, startSchool: startSchool, sendExecutors: sendExecutors, formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch,
+window.__duel = { get MAP() { return MAP; }, get DOWN() { return DOWN; }, get talk() { return typeof DOWNRUN !== 'undefined' && DOWNRUN ? DOWNRUN.lines.map(function (l) { return l[1]; }) : null; }, mapShot: function (sc, x0, y0, w, h, id) { var m = MAPS[id || 'city'], c = document.createElement('canvas'); x0 = x0 || 0; y0 = y0 || 0; w = w || (m.cityW || m.w); h = h || m.h; c.width = Math.round(w * sc); c.height = Math.round(h * sc); var g = c.getContext('2d'); g.scale(sc, sc); g.translate(-x0, -y0); var vr0 = VIEWR; VIEWR = { x0: x0, y0: y0, x1: x0 + w, y1: y0 + h }; var M0 = MAP; MAP = m; try { drawFloor(g, m); m.b.forEach(function (b, i) { drawBlock(g, b, i, m); }); (m.o || []).forEach(function (p) { drawObs(g, p); }); if (m.theme === 'city' && typeof drawOverhead === 'function') try { drawOverhead(g); } catch (e) {} } finally { VIEWR = vr0; MAP = M0; } return c.toDataURL('image/png'); }, thumb: thumb, ids: ORDER, net: { resolve: function () { netHostResolve(); }, self: function () { return netSelfPeer(); }, guests: function () { return netGuests().map(function (p) { return [p.peer, JSON.stringify(p.presence.req)]; }); } }, get G() { return G; }, get NET() { return NET; }, get MEI() { return MEI; }, get INTRO() { return INTRO; }, skipIntro: skipIntro, CFG: CFG, cam: cam, FX: FX, ev: { hurt: hurt, civStruck: civStruck, startSchool: startSchool, grantPerk: grantPerk, sendExecutors: sendExecutors, formPact: formPact, gilBetrayTick: gilBetrayTick, startHorror: startHorror, startBerserk: startBerserk, startFalseDeath: startFalseDeath, startBanquet: startBanquet, startGrail: startGrail, startChallenge: startChallenge, startDemolition: startDemolition, startShadow: startShadow, startFestival: startFestival, cavernSite: cavernSite, ruleBreak: ruleBreak }, netApplyInputs: netApplyInputs, simStep: simStep, STEP: STEP, startMatch: startMatch,
   // the effects lab: one fighter performs an action against a still target on the Training Hall (for screenshots)
   fxLab: function (id, key, foeId, d) { var D = function (k) { return MASTERS[k] || SERV_DUEL[k]; }; MEI = 0; NET.mirror = false; newGame([D(id), D(foeId || 'leonidas')], { map: 'arena', mode: 'duel' }); G.ai = [null, null]; enterGame(0); band.t = 0; INTRO = null; var f = G.f[0], o = G.f[1]; f.x = 640; f.y = 560; o.x = 640 + (d || 230); o.y = 560; f.face = 0; o.face = Math.PI; f.foe = o; o.foe = f; f.mom = 100; f.sta = 100; f.cd = 0; f.sigCd = 0; f.mp = 999; cam.x = f.x + (d || 230) / 2; cam.y = f.y; if (key) startAct(f, key); return { f: f.def.id, act: f.act && f.act.name }; },
   fxAct: function (key) { var f = G.f[0]; f.st = 'idle'; f.mom = 100; f.sta = 100; f.cd = 0; f.sigCd = 0; startAct(f, key); }, audioTest: audioTest, sounds: Object.keys(SND) };

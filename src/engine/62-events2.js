@@ -36,8 +36,8 @@ function demoTick(E, dt) {
   });
   var n = E.charges.filter(function (c) { return c.planted; }).length;
   if (E.fuse < 0 && n === D.charges) { E.fuse = D.fuse; FX.event('fuse', E); }
-  if (E.fuse >= 0) { E.fuse -= dt; if (E.fuse <= 0) { if (n >= D.need) demolish(E); else { expose(E.team, 30); endEvent('Too few charges went off. The house stands.'); } return; } }
-  else if (E.t >= E.dur) { expose(E.team, 30); endEvent('The bomber ran out of time. The house stands.'); }
+  if (E.fuse >= 0) { E.fuse -= dt; if (E.fuse <= 0) { if (n >= D.need) demolish(E); else { expose(E.team, 30); grantPerk(E.target, 'ward'); endEvent('Too few charges went off. The house stands.'); } return; } }
+  else if (E.t >= E.dur) { expose(E.team, 30); grantPerk(E.target, 'ward'); endEvent('The bomber ran out of time. The house stands.'); }
 }
 function demolish(E) {
   var D = EVT2.demo, F = G.fields[E.target], h = G.homes.filter(function (q) { return q.team === E.target; })[0];

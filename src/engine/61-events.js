@@ -170,7 +170,7 @@ function startBerserk() {
 }
 function berserkTick(E, dt) {
   var f = E.f, B = EVT.berserk;
-  if (f.st === 'dead' || E.t >= E.dur) { endEvent(f.st === 'dead' ? 'The rampage is over.' : 'Its master regains control.'); return; }
+  if (f.st === 'dead' || E.t >= E.dur) { berserkPerk(E); endEvent(f.st === 'dead' ? 'The rampage is over.' : 'Its master regains control.'); return; }
   if (f.hp > f.def.hp * B.floor) f.hp = Math.max(f.def.hp * B.floor, f.hp - f.def.hp * B.drain * dt);
 }
 function rampTarget(f) { var best = null, bv = -1; servantsAlive().forEach(function (e) { if (e.team === f.team || e.spirit === 2) return; var d = dist(f, e); if (d > 3200) return; var v = e.hp - d * 0.05; if (v > bv) { bv = v; best = e; } }); return best; }
@@ -223,7 +223,7 @@ function schoolTick(E, dt) {
       if (G.mobs.some(function (m) { return !m.dead && Math.hypot(m.x - c.x, m.y - c.y) < EVT.school.contest; })) return;
       if (G.time - (f.lastHitT || -99) < 0.6) return;
       c.prog[f.team] = (c.prog[f.team] || 0) + dt;
-      if (c.prog[f.team] >= EVT.school.need) { c.up = false; c.by = f.team; FX.event('circle', { team: f.team, c: c, left: E.circles.filter(function (q) { return q.up; }).length }); var m = G.f.filter(function (q) { return q.team === f.team && q.def.isMaster && q.st !== 'dead'; })[0]; if (m) { m.mana = m.manaMax; } G.expo[f.team] = Math.max(0, (G.expo[f.team] || 0) - 30); }
+      if (c.prog[f.team] >= EVT.school.need) { c.up = false; c.by = f.team; if (!hasPerk(f.team, 'prana')) grantPerk(f.team, 'prana'); FX.event('circle', { team: f.team, c: c, left: E.circles.filter(function (q) { return q.up; }).length }); var m = G.f.filter(function (q) { return q.team === f.team && q.def.isMaster && q.st !== 'dead'; })[0]; if (m) { m.mana = m.manaMax; } G.expo[f.team] = Math.max(0, (G.expo[f.team] || 0) - 30); }
     });
   });
   if (!E.circles.some(function (c) { return c.up; })) { E.truceEnd = G.time + 20; endSchool(E, true); return; }
@@ -282,6 +282,7 @@ function banquetSeated(k) { return G.f.filter(function (f) { return f.st !== 'de
 function banquetDone(t, k) {
   var here = {}; G.f.forEach(function (f) { if (f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) here[f.team] = 1; });
   G.f.forEach(function (s) { if (s.st === 'dead' || s.def.isMaster) return; for (var q in here) if (+q !== s.team) learnName(+q, s, 'banquet'); });
+  grantPerk(t, 'wine');
 }
 /* ---- the Overseer's Summons: masters are called to the Church under truce ---- */
 function startSummons() {

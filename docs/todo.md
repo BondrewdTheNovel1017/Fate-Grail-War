@@ -45,7 +45,7 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 **Events**
 - [ ] King's Banquet (done Nov 26: waits for two servants, no repeated lines; scripted conversations (31), sanctuary, AI goes there and leaves before dusk: all done): starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
 - [ ] Sealed School (done Nov 26: no one enters or leaves while sealed, skeletons targetable and never spawn on anyone, blood-red dome on the city map; still to do: reasons to go there, more content): polish; fix walking in from outside while sealed; give teams a reason to go there so they can be trapped; dragon-tooth warriors must be targetable and never spawn on top of anyone; flesh the event out.
-- [ ] Event rewards: every event needs a reason to take part. Command Seals only where it fits; otherwise a perk with an icon (a timed buff, intel, a field level, a true name...).
+- [x] (Nov 26) Event rewards (perks with icons; balance check on Saturday): every event needs a reason to take part. Command Seals only where it fits; otherwise a perk with an icon (a timed buff, intel, a field level, a true name...).
 
 **War setup options**
 - [x] (Nov 26) Draft modes: Standard (one servant of each class), True random, and lore pairings: Fourth War teams, Fifth War teams, applied to the remaining pairings or to all of them (including the player's).
