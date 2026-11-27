@@ -22,6 +22,10 @@ Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, 
 6. Base upgrades replace the ley-line task (`docs/truce-bases.md`).
 8. True names matter more, and the war's chronicle (`docs/ideas-approved.md`).
 9. Spirit form stops being a combat escape (`docs/ai-plans.md`).
+10. Clearer bars and segmented stamina (`docs/resources-strings.md`).
+
+## Phase 1b: combat strings (about two to three sessions)
+Lights into a heavy change the move by count; a full chain into a heavy is each character's signature finisher, servants and masters (`docs/resources-strings.md`). Rerun the duel and NP checks after.
    (Rho Aias's new look: done Nov 26.)
 7. The War Board and the False Death rework (`docs/events-3.md`).
 
@@ -34,7 +38,7 @@ Details and baselines: `docs/saturday.md`.
 4. Destructible props.
 
 ## Phase 2a: the hunt (about three sessions)
-Hidden homes and invisible fields, familiars you steer from home, traps for certain masters, a clearer day and night rhythm (`docs/ideas-approved.md`).
+Hidden homes and invisible fields, the mana rework (refill at home; `docs/resources-strings.md`), familiars you steer from home, traps for certain masters, a clearer day and night rhythm (`docs/ideas-approved.md`).
 
 ## Phase 2b: the event visual pass, then the third event batch (about four sessions)
 First a visual pass over every existing event, the Horror in the River first (`docs/truce-bases.md`).
