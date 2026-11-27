@@ -69,7 +69,7 @@ Story mode keeps the scripted Night 1 version (Assassin at the Tohsaka mansion).
 
 **Online:** new fighters mid-war need replication (guests build `G.f` once in `netBuild`); the dead guest's seat takes the invader; check `-s` room space.
 
-## Rho Aias, the new look
+## Rho Aias, the new look (built Nov 26: the flower is the back layer, opening back to front, breaking front first)
 
 Purple-pink layered shields: the front layer a five-lobed flower, the layers behind it round. EMIYA 7 layers (flower + 6), Shirou 4 (flower + 3), matching today's petal counts.
 
