@@ -994,3 +994,15 @@ test('War drafts: standard keeps one of each class, the lore wars field their ca
   assert.ok(five.some((t) => t.servant.id === 'heracles' && t.master.id === 'illya') && five.some((t) => t.servant.id === 'medea' && t.master.id === 'kuzuki'), 'lore pairs for rivals');
   const ids = five.map((t) => t.master.id); assert.strictEqual(new Set(ids).size, ids.length, 'no master twice');
 });
+test('King\'s Banquet is a sanctuary: no one at the table can be hurt, even from outside; AI teams go there and leave before dusk', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('iskandar', 'waver', 3), { nights: 2 }); G.ai = G.ai.map((a, i) => i ? E.mkAI(G.f[i], E.DIFF.knight) : null);
+  G.clock.phase = 'day'; G.clock.t = 10; G.clock.len = 150; G.tasks = []; E.startBanquet();
+  const k = G.tasks.find((q) => q.kind === 'banquet');
+  const guest = G.f.find((f) => f.team === 1 && !f.def.isMaster), shooter = G.f.find((f) => f.team === 2 && !f.def.isMaster);
+  guest.x = k.x; guest.y = k.y; shooter.x = k.x + 900; shooter.y = k.y;
+  assert.ok(E.inTruce(shooter, guest), 'the one outside cannot hurt the one at the table');
+  const am = G.f.find((f) => f.team === 2 && f.def.isMaster); am.x = 600; am.y = 3000;
+  assert.strictEqual(E.aiDayGoal(am), k, 'an AI team heads for the banquet');
+  G.clock.t = 140; assert.notStrictEqual(E.aiDayGoal(am), k, 'and not with dusk close');
+});

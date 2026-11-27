@@ -259,7 +259,9 @@ function truceZone(f) {
   if (G.tasks) for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && (k.kind === 'banquet' || f.x < MAP.cityW) && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) return k.kind; }
   return null;
 }
-function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a); return !!za && za === truceZone(b); }
+function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a), zb = truceZone(b); if (za === 'banquet' || zb === 'banquet') return true; return !!za && za === zb; }
+// the King's table is a sanctuary while the banquet runs: no one at it can be hurt or hurt anyone, even from outside
+function banquetLeft() { var c = G.clock; return c && !c.final && c.phase === 'day' ? c.len - c.t : 0; }
 // returns true if the blow is stopped by the truce; a human who strikes anyway breaks it, and pays
 function truceStops(att, def) {
   if (!att || !inTruce(att, def)) return false;

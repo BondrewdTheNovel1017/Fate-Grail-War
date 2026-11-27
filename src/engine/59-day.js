@@ -117,14 +117,19 @@ function finishTask(t, k) {
   FX.task(t, k, note);
 }
 // the AI's choice of what to do today
+var BANQ_LEAVE = 35; // seconds of daylight left when everyone heads home from the banquet
 function aiDayGoal(f) {
   var E = G.event;
   if (E && E.kind === 'school' && E.culprit !== f.team && (inSchool(f) || STUDENTS[f.def.id] || Math.hypot(f.x - E.x, f.y - E.y) < 3500)) { var c = null, cd = 1e9; E.circles.forEach(function (q) { var d = Math.hypot(f.x - q.x, f.y - q.y); if (q.up && d < cd) { cd = d; c = q; } }); if (c) return c; }
   if (!G.tasks || !G.tasks.length) return null;
+  // the banquet is safe ground: teams go to it even hurt, and leave in time to be home before dark
+  var bq = G.tasks.filter(function (k) { return k.kind === 'banquet' && !(k.done && k.done[f.team]); })[0];
+  if (bq && banquetLeft() > BANQ_LEAVE && taskFor(f.team, bq) && !G.f.some(function (e) { return e.team !== f.team && e.st !== 'dead' && !e.def.isMaster && Math.hypot(e.x - f.x, e.y - f.y) < 450 && knows(f, e); })) return bq;
   if (f.hp < f.def.hp * 0.6 || (f.partner && f.partner.hp < f.partner.def.hp * 0.5)) return null;
   var best = null, bs = -1e9;
   G.tasks.forEach(function (k) {
     if (!taskFor(f.team, k)) return;
+    if (k.kind === 'banquet' && banquetLeft() <= BANQ_LEAVE) return;
     var v = { fortify: 60, trace: 50, ley: 30, school: 45, banquet: k.host === f.team ? 120 : 40, summons: 45, relic: 55 }[k.kind] + (k.kind === 'fortify' && f.def.type === 'Mage family' ? 25 : 0) + (k.kind === 'school' && (G.expo[f.team] || 0) > 30 ? 30 : 0) - Math.hypot(f.x - k.x, f.y - k.y) / 120;
     if (G.f.some(function (e) { return e.team !== f.team && e.st !== 'dead' && Math.hypot(e.x - k.x, e.y - k.y) < 500 && knows(f, e); })) v -= 60;
     if (v > bs) { bs = v; best = k; }
