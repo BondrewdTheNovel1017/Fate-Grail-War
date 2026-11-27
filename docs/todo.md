@@ -43,7 +43,7 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [x] Caren's Sacrament heals too much: cooldown 22 → 40 s (owner chose the longer cooldown; full sim check on Saturday).
 
 **Events**
-- [ ] King's Banquet (done Nov 26: waits for two servants, no repeated lines; still to do: scripted conversations first, safe zone, AI going there and leaving before dusk): starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
+- [ ] King's Banquet (done Nov 26: waits for two servants, no repeated lines; scripted conversations added (31); still to do: safe zone, AI going there and leaving before dusk): starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
 - [ ] Sealed School (done Nov 26: no one enters or leaves while sealed, skeletons targetable and never spawn on anyone, blood-red dome on the city map; still to do: reasons to go there, more content): polish; fix walking in from outside while sealed; give teams a reason to go there so they can be trapped; dragon-tooth warriors must be targetable and never spawn on top of anyone; flesh the event out.
 - [ ] Event rewards: every event needs a reason to take part. Command Seals only where it fits; otherwise a perk with an icon (a timed buff, intel, a field level, a true name...).
 
@@ -51,7 +51,7 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [ ] Draft modes: Standard (one servant of each class), True random, and lore pairings: Fourth War teams, Fifth War teams, applied to the remaining pairings or to all of them (including the player's).
 
 **Dialogue**
-- [ ] Downtime talk between master and servant while walking or doing day tasks out of combat: rare, never spammed; pair-specific lines and multi-line conversations; Kiritsugu stays silent.
+- [x] (Nov 26) Downtime talk between master and servant while walking or doing day tasks out of combat: rare, never spammed; pair-specific lines and multi-line conversations; Kiritsugu stays silent.
 
 **AI overhaul**
 - [ ] A robust AI rebuild: always fight back when attacked; keep things hidden by day (no fights unless someone else starts one; ties in with the map plan's alleys and line-of-sight witnesses); no masters standing and staring at each other; "protect me" servants must not walk into and push their master. Cut orders down (maybe two simple ones) and let the AI decide the rest.
