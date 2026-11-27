@@ -51,7 +51,7 @@ function drawDayHud(x, y, mx0, my0, mw, mh) {
   scoutMiniMarks(c, my, mx0, my0, mw, mh, MW);
   c.font = '600 ' + (VW < 560 ? 12 : 14) + 'px "Barlow Condensed", sans-serif'; c.textAlign = 'right';
   list.slice(0, 7).forEach(function (k, i) {
-    var done = k.done[my], s = (done ? '✓ ' : '') + k.name + (done ? '' : '  ' + taskProgText(k, my)), tw = c.measureText(s).width + 16, yy = y + i * 20;
+    var done = k.done[my], s = (done ? '✓ ' : '') + k.name + (done ? '' : k.waiting ? '  (waiting for a second servant)' : '  ' + taskProgText(k, my)), tw = c.measureText(s).width + 16, yy = y + i * 20;
     c.fillStyle = 'rgba(8,14,20,.72)'; c.fillRect(x - tw, yy - 14, tw, 19); c.fillStyle = done ? 'rgba(201,195,176,.55)' : TASK_COL[k.kind]; c.fillText(s, x - 6, yy);
   });
 }

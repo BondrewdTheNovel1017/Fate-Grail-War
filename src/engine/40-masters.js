@@ -79,7 +79,7 @@ MASTERS.caren = MD({ id: 'caren', name: 'Caren Hortensia', type: 'Church', col: 
     light: { name: 'Shroud lash', kind: 'melee', dmg: 4, reach: 125, aiWant: 95, arc: 0.6, wind: 0.2, act: 0.07, rec: 0.22, lunge: 10, cost: 7, stag: 0.25, power: 1 },
     heavy: { name: 'Shroud whirl', kind: 'melee', dmg: 9, reach: 115, arc: 3.14, wind: 0.45, max: 1.0, act: 0.14, rec: 0.6, lunge: 0, cost: 20, stag: 0.5, power: 2 },
     skill: { name: 'Shroud of Magdalene', kind: 'proj', speed: 1000, range: 560, dmg: 2, root: 1.6, rootF: 0.8, wind: 0.35, act: 0.05, rec: 0.35, cd: 15, cost: 16, shape: 'shroud', size: 9, col: '#c8283a', aiRange: [140, 520] },
-    np: { name: 'Sacrament', kind: 'sacrament', self: 34, amount: 40, range: 380, wind: 0.6, act: 0.05, rec: 0.4, cost: 0, cd: 22, aiUse: 'mend' } });
+    np: { name: 'Sacrament', kind: 'sacrament', self: 34, amount: 40, range: 380, wind: 0.6, act: 0.05, rec: 0.4, cost: 0, cd: 40, aiUse: 'mend' } });
 MASTERS.ryuunosuke = MD({ id: 'ryuunosuke', name: 'Ryuunosuke Uryuu', type: 'Outsider', col: '#e07a3a', wpn: 'dagger', single: true, hp: 95, spd: 212, guard: 0.3, ranged: false, combo: 3, harmMana: true,
     brief: 'A cheerful killer with no magecraft at all. He earns mana only by doing harm: every wound he or his servant deals pays a little, every kill pays more, and nothing comes back on its own. By day he can vanish into a crowd; his Masterpiece, from behind, finishes a weakened master.',
     light: { name: 'Knife', kind: 'melee', dmg: 5, reach: 70, arc: 0.9, wind: 0.15, act: 0.06, rec: 0.18, lunge: 40, cost: 6, stag: 0.3, power: 1 },

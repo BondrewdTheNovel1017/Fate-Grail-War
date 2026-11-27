@@ -92,6 +92,8 @@ function tasksTick(dt) {
   if (!isDay() || !G.tasks.length) return;
   G.tasks.forEach(function (k) {
     if (dayActiveTick(k, dt)) return;
+    // the King's Banquet is a servants' table: nothing happens until at least two servants sit at it
+    if (k.kind === 'banquet' && banquetSeated(k) < 2) { k.waiting = true; return; } k.waiting = false;
     var teams = {};
     G.f.forEach(function (f) { if (f.st !== 'dead' && !f.inM && f.x < MAP.cityW && Math.hypot(f.x - k.x, f.y - k.y) < k.r && (f.def.isMaster || k.kind !== 'school')) teams[f.team] = 1; });
     for (var t in teams) {

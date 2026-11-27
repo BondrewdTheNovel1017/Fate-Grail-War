@@ -21,6 +21,8 @@ function dayActivities() {
     if (k.kind === 'fortify') {
       // the stones wait inside the workshop, around the summoning circle; the ward points ring the house outside
       var F = G.fields[k.team], wards = dayNodes(F.x, F.y, 200, 800, 3, 260), circ = (G.circles || []).filter(function (q) { return q.team === k.team; })[0];
+      // homes off the road network (the Einzbern castle in its forest): ward points on open ground around the field instead
+      for (var wt = 0; wards.length < 3 && wt < 40; wt++) { var op = openSpot(F.x, F.y, 320, 760); if (Math.hypot(op.x - F.x, op.y - F.y) > 200 && wards.every(function (o) { return Math.hypot(o.x - op.x, o.y - op.y) > 260; })) wards.push(op); }
       if (wards.length < 3 || !circ) return; // nowhere sensible: it stays a circle
       var stones = [0, 1, 2].map(function (i) { var a = -1.2 + i * 1.2; return { x: Math.round(circ.x + Math.cos(a) * 130), y: Math.round(circ.y + 90 + Math.sin(a) * 50) }; });
       k.act = 'stones'; k.stones = stones.map(function (p, i) { return { x: p.x, y: p.y, c: -1, ok: 0, tx: wards[i].x, ty: wards[i].y }; });

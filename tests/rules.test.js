@@ -949,3 +949,37 @@ test('Excalibur stops on the first one it strikes; a pillar rises there and hurt
   assert.ok(hp[1] - b.hp > 15 && hp[1] - b.hp < 40, 'a bystander in the circle takes only the pillar (' + (hp[1] - b.hp) + ')');
   assert.strictEqual(c.hp, hp[2], 'the beam stopped: nobody behind is hit');
 });
+test('Einzbern fortify is the ward-stone task too, though the castle is off the roads', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('caerwyn', 'irisviel', 3), { nights: 2 });
+  const t = G.f.find((f) => f.def.id === 'irisviel').team; E.startDay();
+  const k = G.tasks.find((q) => q.team === t && q.kind === 'fortify');
+  assert.ok(k && k.act === 'stones' && k.stones.length === 3, 'ward stones for the castle');
+});
+test('Church bounty: taking a life from the marked team confirms it', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 3), { nights: 2 }); G.ai = G.ai.map(() => null);
+  const me = G.f.find((f) => f.team === 0 && f.def.isMaster), foe = G.f.find((f) => f.team === 1 && !f.def.isMaster);
+  me.seals = 1; G.event = { kind: 'bounty', team: 1, t: 0 };
+  E.bountyClaim(foe, me);
+  assert.ok(!G.event && me.seals === 2, 'claimed, a seal regained');
+});
+test('King\'s Banquet: nothing happens until two servants sit at the table', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('iskandar', 'waver', 3), { nights: 2 }); G.ai = G.ai.map(() => null);
+  G.clock.phase = 'day'; G.tasks = []; E.startBanquet();
+  const k = G.tasks.find((q) => q.kind === 'banquet'), sv = G.f.filter((f) => !f.def.isMaster);
+  G.f.forEach((f) => { f.x = 600; f.y = 3000; }); sv[0].x = k.x; sv[0].y = k.y;
+  E.tasksTick(1); assert.ok(k.waiting && !Object.keys(k.prog).length, 'one servant: it waits');
+  sv[1].x = k.x + 40; sv[1].y = k.y; E.tasksTick(1); assert.ok(!k.waiting, 'two servants: it begins');
+});
+test('Sealed School: no one enters or leaves (masters included), and skeletons never rise on top of anyone', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('medusa', 'rin', 3), { nights: 2 }); G.ai = G.ai.map(() => null);
+  G.f.forEach((f) => { f.x = 600; f.y = 3000; }); E.startSchool(); const ev = G.event;
+  const d = E.MAP.doors.find((q) => q.room === 'school'), outsider = G.f.find((f) => f.def.isMaster && f.team !== ev.culprit);
+  assert.ok(E.schoolBars(outsider, d), 'a master outside is barred');
+  assert.ok(E.schoolHolds(outsider, d), 'and one inside could not leave');
+  const c = ev.circles[0]; G.f[0].x = c.x; G.f[0].y = c.y;
+  for (let i = 0; i < 20; i++) { const p = E.schoolSpawn(c); if (p) assert.ok(Math.hypot(p.x - c.x, p.y - c.y) > 0 && G.f.every((f) => Math.hypot(f.x - p.x, f.y - p.y) >= 150), 'clear of fighters'); }
+});

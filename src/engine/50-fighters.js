@@ -37,6 +37,13 @@ function aimFoe(f) {
   if (!sameZone(f, o) || dist(f, o) > AIM_R || !knowsExact(f, o)) return null;
   return o;
 }
+// a player with no enemy in reach turns to face the nearest hostile familiar (school skeletons, the river horror's spawn, Executors)
+function aimMob(f) {
+  if (G.mode !== 'war' || G.ai[f.idx] || !G.mobs || !G.mobs.length) return null;
+  var best = null, bd = 300;
+  G.mobs.forEach(function (m) { if (m.dead || m.scout || (m.team !== undefined && m.team === f.team)) return; var d = Math.hypot(m.x - f.x, m.y - f.y); if (d < bd && (f.x >= MAP.cityW) === (m.x >= MAP.cityW)) { bd = d; best = m; } });
+  return best;
+}
 function pickTarget(f) {
   if (f.lock && (f.lock.st === 'dead' || f.lock.spirit === 2 || (concealed(f.lock) && !knowsExact(f, f.lock)))) f.lock = null;
   if (f.lock) { f.foe = f.lock; return; }

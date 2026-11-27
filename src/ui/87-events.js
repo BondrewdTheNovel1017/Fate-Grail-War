@@ -12,7 +12,7 @@ FX.event = function (kind, d, msg) {
   else if (kind === 'horrorDawn') FX.banner('Dawn finds the horror still standing', 'The whole city saw it. Every team is under suspicion.');
   else if (kind === 'falsedeath') { if (mine) FX.banner('The world believes you dead', 'Your servant fell before witnesses, or seemed to. Until dawn, no one knows you are alive.'); else FX.banner(d.f.def.cls + ' has fallen', 'Struck down before witnesses at ' + teamName(d.team).replace('’s team', '’s door') + '. Or so it seems.'); }
   else if (kind === 'berserk') { if (mine) FX.banner('Your servant breaks loose', 'It hits harder and burns itself out, and it will not heed your orders. Everyone can see it.'); else FX.banner('Berserker Unchained', knownName(d.f) + ' of ' + teamName(d.team) + ' has broken its master’s control. Everyone can see it.'); }
-  else if (kind === 'school') { if (d.culprit === my) FX.banner('Your Rider seals the school', 'The bounded field drains everyone inside and feeds your master. Keep the circles standing.'); else FX.banner('Homurahara Academy Is Sealed', 'A bounded field drains everyone inside, and servants outside cannot enter. Break the three circles.'); FX.snd('marble:ubw', { x: d.x, y: d.y, idx: -1 }); }
+  else if (kind === 'school') { if (d.culprit === my) FX.banner('Your Rider seals the school', 'The bounded field drains everyone inside and feeds your master. Keep the circles standing.'); else FX.banner('Homurahara Academy Is Sealed', 'A blood-red bounded field drains everyone inside. No one can enter or leave until the three circles are broken.'); FX.snd('marble:ubw', { x: d.x, y: d.y, idx: -1 }); }
   else if (kind === 'circle') note('A circle shatters' + (d.left ? ' · ' + d.left + ' left' : '') + (d.team === my ? ' · mana restored' : ''), d.team === my ? '#ffd36b' : '#e9e4d3');
   else if (kind === 'oath') { if (mine) FX.banner('You broke the truce', 'Every master knows where you are. The city will remember.'); else note(teamName(d.team) + ' broke the truce!', '#f0a85a'); }
   else if (kind === 'banquet') FX.banner('The King’s Banquet', knownName(d.f) + ' sets a table at the Einzbern castle. No fighting there. Sit, and learn every guest’s true name, as they learn yours.');
@@ -71,11 +71,26 @@ function drawMobs(g) {
   });
 }
 // the barrier's dome, above everything
+// on the city map: a blood-red dome over Homurahara Academy and its yard while the seal holds
+function drawSchoolDome(g, t) {
+  var cx = 4050, cy = 2760, rx = 840, ry = 330, pl = 0.5 + 0.5 * Math.sin(t * 1.8);
+  g.save();
+  var rg = g.createRadialGradient(cx, cy, 40, cx, cy, rx); rg.addColorStop(0, 'rgba(150,10,24,' + (0.10 + 0.04 * pl) + ')'); rg.addColorStop(0.8, 'rgba(170,16,30,' + (0.20 + 0.05 * pl) + ')'); rg.addColorStop(1, 'rgba(200,24,40,' + (0.34 + 0.08 * pl) + ')');
+  g.fillStyle = rg; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 6.283); g.fill();
+  // the field's lattice: curved meridians and rings, slowly turning
+  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 6.283); g.clip();
+  g.strokeStyle = 'rgba(255,70,80,' + (0.22 + 0.08 * pl) + ')'; g.lineWidth = 2;
+  for (var i = -5; i <= 5; i++) { var k = i / 5.5 + Math.sin(t * 0.3) * 0.04; g.beginPath(); g.ellipse(cx, cy, Math.abs(k) * rx + 1, ry, 0, 0, 6.283); g.stroke(); }
+  for (var j = 1; j <= 3; j++) { g.beginPath(); g.ellipse(cx, cy, rx * j / 4, ry * j / 4, 0, 0, 6.283); g.stroke(); }
+  g.restore();
+  g.save(); g.strokeStyle = 'rgba(255,60,72,' + (0.75 + 0.2 * pl) + ')'; g.lineWidth = 6; g.shadowColor = '#ff2030'; g.shadowBlur = 18; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, 6.283); g.stroke(); g.restore();
+}
 function drawEventsOver(g) {
   var E = G && G.event; if (!E || E.kind !== 'school') return;
   var t = G.time; g.save(); g.globalAlpha = 0.18 + 0.06 * Math.sin(t * 1.5); g.strokeStyle = '#ff5060'; g.lineWidth = 3;
   for (var i = 0; i < 4; i++) { g.beginPath(); g.ellipse(E.x, E.y, E.r * (1 - i * 0.18), E.r * (1 - i * 0.18) * 0.55, 0, Math.PI, 2 * Math.PI); g.stroke(); }
   g.restore();
+  drawSchoolDome(g, t);
 }
 fxExtra = function (name, x, y) { if (name === 'bossDie') { for (var j = 0; j < 40; j++) { var a2 = j * 0.157; parts.push({ x: x + Math.cos(a2) * 60, y: y + Math.sin(a2) * 60, vx: Math.cos(a2) * 260, vy: Math.sin(a2) * 260, t: 0, life: 1.0, col: j % 2 ? '#6a2a7a' : '#2a0a2a' }); } shake = Math.max(shake, 16); return true; }
   if (name === 'mobDie') { for (var i = 0; i < 8; i++) { var a = i * 0.785; parts.push({ x: x, y: y, vx: Math.cos(a) * 120, vy: Math.sin(a) * 120, t: 0, life: 0.5, col: '#e8e2cc' }); } return true; } return false; };
@@ -128,13 +143,19 @@ var BANQ = {
   medea: ['How tiresome. Men and their wine.'], kojirou: ['A fine moon for wine. I shall have another.'], hassan: ['...'], cu: ['Not bad! Pour me another.'], emiya: ['I’ll pass. Someone has to stay sober.'], atalanta: ['I am not one for kings or their wine.'], diarmuid: ['To the honor of the table.'], medusa: ['...I will watch the door.'], gilles: ['Oh, the glory of it all!']
 };
 var BANQ_M = ['Is this... really a good idea?', 'Don’t let your guard down.', 'They’re all servants. Every one of them.', 'Just... don’t start a fight here.'];
-var banqT = 0;
+var banqT = 0, BANQ_SAID = null, BANQ_KEY = null;
+function banqUsed(k) { var key = k.x + ':' + k.y + ':' + (G.clock ? G.clock.n : 0); if (BANQ_KEY !== key) { BANQ_KEY = key; BANQ_SAID = {}; } return BANQ_SAID; }
 function banquetChatter() {
   if (!G.tasks || !isDay() || G.time < banqT) return; var k = G.tasks.filter(function (q) { return q.kind === 'banquet'; })[0]; if (!k) return;
-  var here = G.f.filter(function (f) { return f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120 && FX.near(f.x, f.y); }); if (here.length < 2) return;
+  var here = G.f.filter(function (f) { return f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120 && FX.near(f.x, f.y); });
+  if (here.filter(function (f) { return !f.def.isMaster; }).length < 2) return; // talk starts once two servants are at the table
   banqT = G.time + 3.5 + Math.random() * 2.5;
-  var f = (k.hostF && k.hostF.st !== 'dead' && Math.random() < 0.35 && here.indexOf(k.hostF) >= 0) ? k.hostF : here[Math.floor(Math.random() * here.length)];
-  var pool = f.def.isMaster ? BANQ_M : (BANQ[f.def.id] || ['To the Grail.']); showBubble(f, pool[Math.floor(Math.random() * pool.length)], 3.2);
+  // nobody says the same line twice at one banquet: pick a speaker who still has something new to say
+  var said = banqUsed(k), opts = [];
+  here.forEach(function (f) { var pool = f.def.isMaster ? BANQ_M : (BANQ[f.def.id] || ['To the Grail.']); pool.forEach(function (l) { if (!said[f.idx + '|' + l]) opts.push([f, l]); }); });
+  if (!opts.length) return;
+  var host = opts.filter(function (o) { return o[0] === k.hostF; }), pick = host.length && Math.random() < 0.35 ? host[Math.floor(Math.random() * host.length)] : opts[Math.floor(Math.random() * opts.length)];
+  said[pick[0].idx + '|' + pick[1]] = 1; showBubble(pick[0], pick[1], 3.2);
 }
 function grailHint(mx0, my0, mw, mh) { var my = G.f[MEI].team; if (!G.grailKnown || !G.grailKnown[my] || !G.grailSite || (G.event && G.event.kind === 'grail')) return; var MW = MAP.cityW || W, px = mx0 + G.grailSite.x / MW * mw, py = my0 + G.grailSite.y / H * mh, c = ctx; c.save(); c.strokeStyle = '#fff2c4'; c.lineWidth = 1.5; c.globalAlpha = 0.6 + 0.3 * Math.sin(G.time * 2); c.beginPath(); c.moveTo(px, py - 6); c.lineTo(px + 5, py); c.lineTo(px, py + 6); c.lineTo(px - 5, py); c.closePath(); c.stroke(); c.restore(); }
 // the Grail itself at the center: a white sun, or a black one ringed in red

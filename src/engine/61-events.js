@@ -111,9 +111,12 @@ function startBounty() {
   var gil = evAlive('gilles'), t = gil ? gil.team : ids.sort(function (a, b) { return (G.expo[b] || 0) - (G.expo[a] || 0) || (teamKills(b) - teamKills(a)); })[0];
   G.event = { kind: 'bounty', team: t, t: 0 }; G.reveal[t] = G.time + CLOCK.night; FX.event('bounty', G.event);
 }
-function bountyKill(f) {
-  var E = G.event; if (!E || E.kind !== 'bounty' || f.team !== E.team || f.def.isMaster || !f.killer || f.killer.team === E.team) return;
-  regainSeal(f.killer.team); FX.event('bountyWon', { team: f.killer.team, loser: f }); G.reveal[E.team] = 0; endEvent(null);
+// the bounty is confirmed when the marked team's servant or master falls, or loses a life to a seal rescue
+function bountyKill(f) { if (f && f.killer) bountyClaim(f, f.killer); }
+function bountyClaim(f, by) {
+  var E = G.event; if (!E || E.kind !== 'bounty' || !f || f.team !== E.team || !by || by.team === E.team) return;
+  var t = by.trueTeam !== undefined ? by.trueTeam : by.team;
+  regainSeal(t); FX.event('bountyWon', { team: t, loser: f }); G.reveal[E.team] = 0; endEvent(null);
 }
 /* ---- the Horror in the River: a giant familiar rises in the Mion and climbs toward the Fuyuki Bridge.
    Every team near it is in truce. Bring it down before dawn, or the whole city sees it. ---- */
@@ -185,11 +188,23 @@ function startSchool() {
 function inSchool(f) { var E = G.event; return !!(E && E.kind === 'school' && zoneOf(f) === 'school'); }
 function schoolRoom() { return (MAP.rooms || []).filter(function (r) { return r.id === 'school'; })[0]; }
 // the blood seal keeps out servants who were not inside when it rose (masters may come and go)
-function schoolBars(f, d) { var E = G.event; if (!E || E.kind !== 'school' || d.room !== 'school' || f.def.isMaster || E.allowed[f.idx]) return false; if (!(f.barT > G.time)) { f.barT = G.time + 3; FX.text(f, 'THE BLOOD SEAL BARS THE WAY'); } f.doorT = 0.5; return true; }
+function schoolBars(f, d) { var E = G.event; if (!E || E.kind !== 'school' || d.room !== 'school' || E.allowed[f.idx]) return false; if (!(f.barT > G.time)) { f.barT = G.time + 3; FX.text(f, 'THE BLOOD SEAL BARS THE WAY'); } f.doorT = 0.5; return true; }
+// skeletons rise near a circle but never on top of anyone: at least 150 from every fighter, on open floor
+function schoolSpawn(c) {
+  for (var i = 0; i < 16; i++) {
+    var a = rnd() * 6.283, d = 40 + rnd() * 140, x = c.x + Math.cos(a) * d, y = c.y + Math.sin(a) * d;
+    if (G.f.some(function (f) { return f.st !== 'dead' && Math.hypot(f.x - x, f.y - y) < 150; })) continue;
+    if (rectsIn(x - 20, y - 20, x + 20, y + 20).length) continue;
+    return { x: x, y: y };
+  }
+  return null;
+}
+// the blood seal keeps everyone inside until it breaks (the culprit's team may leave)
+function schoolHolds(f, d) { var E = G.event; if (!E || E.kind !== 'school' || d.room !== 'school' || f.team === E.culprit) return false; if (!(f.barT > G.time)) { f.barT = G.time + 3; FX.text(f, 'THE BLOOD SEAL HOLDS YOU IN'); } f.doorT = 0.5; return true; }
 function schoolTick(E, dt) {
-  // servants who were not inside when it rose cannot enter, even in spirit form; masters may come and go
+  // nobody who was outside when it rose can enter, master or servant, even in spirit form; those inside are trapped until it breaks
   G.f.forEach(function (f) {
-    if (f.st === 'dead' || f.def.isMaster || E.allowed[f.idx] || zoneOf(f) !== 'school') return;
+    if (f.st === 'dead' || E.allowed[f.idx] || zoneOf(f) !== 'school') return;
     { f.x = E.door.x; f.y = E.door.y + 90; f.kx = f.ky = 0; if (!(f.barT > G.time)) { f.barT = G.time + 4; FX.text(f, 'THE FIELD HOLDS YOU OUT'); } }
   });
   // the drain: never kills, but it wears everyone down
@@ -198,7 +213,7 @@ function schoolTick(E, dt) {
   if (E.culprit >= 0) { var cm = G.f.filter(function (f) { return f.team === E.culprit && f.def.isMaster && f.st !== 'dead'; })[0]; if (cm && cm.manaMax) cm.mana = Math.min(cm.manaMax, cm.mana + 1.5 * dt); }
   // familiars rise from the circles that still stand
   E.mobT -= dt; var up = E.circles.filter(function (c) { return c.up; });
-  if (E.mobT <= 0 && up.length) { E.mobT = EVT.school.mobEvery; var live = G.mobs.filter(function (m) { return !m.dead; }).length; for (var n = 0; n < up.length && live < EVT.school.mobMax; n++, live++) { var c = up[n]; G.mobs.push({ x: c.x + (rnd() - 0.5) * 80, y: c.y + (rnd() - 0.5) * 80, hp: EVT.school.mobHp, atkT: 1, t: 0, dead: false, vx: 0, vy: 0 }); } }
+  if (E.mobT <= 0 && up.length) { E.mobT = EVT.school.mobEvery; var live = G.mobs.filter(function (m) { return !m.dead; }).length; for (var n = 0; n < up.length && live < EVT.school.mobMax; n++, live++) { var c = up[n], sp = schoolSpawn(c); if (!sp) continue; G.mobs.push({ x: sp.x, y: sp.y, hp: EVT.school.mobHp, atkT: 1, t: 0, dead: false, vx: 0, vy: 0 }); } }
   mobsTick(E, dt);
   // breaking the circles: stand in one, uncontested by familiars, until it shatters; a hit sets you back a little
   E.circles.forEach(function (c) {
@@ -261,6 +276,7 @@ function startBanquet() {
   G.tasks.push({ kind: 'banquet', x: bx, y: by, r: EVT.banquet.r, name: 'The King’s Banquet', need: EVT.banquet.need, prog: {}, done: {}, host: host.team, hostF: host });
   FX.event('banquet', { host: host.team, f: host });
 }
+function banquetSeated(k) { return G.f.filter(function (f) { return f.st !== 'dead' && !f.def.isMaster && f.spirit !== 2 && Math.hypot(f.x - k.x, f.y - k.y) < k.r; }).length; }
 function banquetDone(t, k) {
   var here = {}; G.f.forEach(function (f) { if (f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) here[f.team] = 1; });
   G.f.forEach(function (s) { if (s.st === 'dead' || s.def.isMaster) return; for (var q in here) if (+q !== s.team) learnName(+q, s, 'banquet'); });

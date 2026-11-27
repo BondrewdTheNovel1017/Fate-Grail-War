@@ -91,7 +91,7 @@ function hurt(att, def, a, mult, src) {
   if (a.strip && a.key === 'np' && att && G.mode === 'war') ruleBreak(att, def);
   if (a.strip && def.wallT > 0) FX.shieldBroken(def, 'wall', att);
   if (a.strip) { breakField(def, 'FIELD BROKEN'); def.wallT = 0; def.veilT = 0; def.bleedT = 0; def.mom = 0; FX.text(def, 'STRIPPED'); FX.spark(def.x, def.y, '#d6b4ff', 14); }
-  FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(Math.round(taken)));
+  FX.spark(def.x, def.y, '#e2515c', a.power >= 2 ? 12 : 6); FX.text(def, String(taken > 0 ? Math.max(1, Math.round(taken)) : 0)); // never show 0 for a hit that hurt
   FX.snd(a.power >= 3 ? 'hitNP' : a.power >= 2 ? 'hitH' : 'hitL', def, { armor: ar });
   if (a.power >= 3) { FX.slow(0.5); FX.fx('npHit', def.x, def.y, def); }
   var hsv = a.hs !== undefined ? a.hs : (a.power >= 3 ? 0.16 : a.power >= 2 ? 0.09 : 0.045);
@@ -281,7 +281,7 @@ function stepF(f, dt) {
   f.guardT = f.guarding ? f.guardT + dt : 0;
   if (f.stDelay > 0) f.stDelay -= dt; else if (f.sta < 100) f.sta = Math.min(100, f.sta + (f.guarding ? 9 : 34 * (f.def.staRegen || 1) * (f.field ? 1.3 : 1)) * dt);
   var slow = (G.f.some(function (c) { return c.team !== f.team && !pactTeams(c.team, f.team) && inField(c, f); }) ? 0.88 : 1) * (f.wallT > 0 ? 0.6 : 1) * ((o.wallT > 0 && dist(f, o) < 270) ? 0.6 : 1) * ((o.def.gazeSlow && dist(f, o) < 270 && Math.abs(angDiff(o.face, angTo(o, f))) < 0.9) ? o.def.gazeSlow : 1);
-  var ao = aimFoe(f), toO = ao ? angTo(f, ao) : (Math.hypot(f.inp.mx, f.inp.my) > 0.2 ? Math.atan2(f.inp.my, f.inp.mx) : f.face); // a player only turns toward an enemy they can perceive
+  var ao = aimFoe(f), am = ao ? null : aimMob(f), toO = ao ? angTo(f, ao) : am ? angTo(f, am) : (Math.hypot(f.inp.mx, f.inp.my) > 0.2 ? Math.atan2(f.inp.my, f.inp.mx) : f.face); // a player only turns toward an enemy they can perceive (or a familiar close by)
   if (f.st === 'idle') {
     var sp = f.def.spd * (f.guarding ? 0.55 : 1) * (f.exh > 0 ? 0.5 : 1) * slow * (f.spirit === 2 ? 1.3 : f.spirit ? 0.5 : 1) * (f.hasteT > 0 ? 1.8 : 1) * (f.rootT > 0 ? 0 : 1) * (f.fslowT > G.time ? f.fslowK : 1) * (f.buffT > 0 ? 1.1 : 1);
     var L = Math.hypot(f.inp.mx, f.inp.my); if (L > 1) L = 1;

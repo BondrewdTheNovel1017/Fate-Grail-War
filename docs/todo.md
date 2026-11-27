@@ -37,14 +37,14 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 
 ## 5. Playtest notes (Nov 26, evening) — logged, not started
 **Quick fixes**
-- [ ] Einzbern "enhance barrier" day task: make it the same ward-stone carrying activity as everyone else's fortify (rune gathering), not a plain circle.
-- [ ] Kiritsugu's Calico shows "0" damage: any hit that deals more than 0 shows at least 1.
-- [ ] Church Bounty (hunt a master, earn a Command Seal): taking one of the target's lives (a seal rescue) also counts as confirmed, not only a kill.
-- [ ] Caren's Sacrament heals too much: lower the heal or lengthen the cooldown (sim-check).
+- [x] Einzbern "enhance barrier" day task: make it the same ward-stone carrying activity as everyone else's fortify (rune gathering), not a plain circle.
+- [x] Kiritsugu's Calico shows "0" damage: any hit that deals more than 0 shows at least 1.
+- [x] Church Bounty (hunt a master, earn a Command Seal): taking one of the target's lives (a seal rescue) also counts as confirmed, not only a kill.
+- [x] Caren's Sacrament heals too much: cooldown 22 → 40 s (owner chose the longer cooldown; full sim check on Saturday).
 
 **Events**
-- [ ] King's Banquet: starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
-- [ ] Sealed School: polish; fix walking in from outside while sealed; give teams a reason to go there so they can be trapped; dragon-tooth warriors must be targetable and never spawn on top of anyone; flesh the event out.
+- [ ] King's Banquet (done Nov 26: waits for two servants, no repeated lines; still to do: scripted conversations first, safe zone, AI going there and leaving before dusk): starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
+- [ ] Sealed School (done Nov 26: no one enters or leaves while sealed, skeletons targetable and never spawn on anyone, blood-red dome on the city map; still to do: reasons to go there, more content): polish; fix walking in from outside while sealed; give teams a reason to go there so they can be trapped; dragon-tooth warriors must be targetable and never spawn on top of anyone; flesh the event out.
 - [ ] Event rewards: every event needs a reason to take part. Command Seals only where it fits; otherwise a perk with an icon (a timed buff, intel, a field level, a true name...).
 
 **War setup options**
@@ -59,4 +59,4 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 **Combat**
 - [ ] Reality marbles (Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works): no NP charging inside one's own marble (stops chaining); a buff for its duration instead.
 - [ ] Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
-- [ ] Lancelot: keep his seized melee weapons and add two seized guns, an MP5 and a second real gun, each with a reload like Kiritsugu's.
+- [ ] Lancelot: keep his seized melee weapons and add two seized guns, an MP5 and a second real gun (not the Vulcan, which reads as an NP; offer choices), each with a reload like Kiritsugu's.

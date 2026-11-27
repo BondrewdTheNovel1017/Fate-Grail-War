@@ -92,6 +92,7 @@ var BSCRIPT = null;
 function banquetScript() {
   var k = G.tasks && G.tasks.filter(function (q) { return q.kind === 'banquet'; })[0]; if (!k || !isDay()) { BSCRIPT = null; return false; }
   var here = G.f.filter(function (f) { return f.st !== 'dead' && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120 && FX.near(f.x, f.y); }), ids = here.map(function (f) { return f.def.id; });
+  if (here.filter(function (f) { return !f.def.isMaster; }).length < 2) { BSCRIPT = null; return false; }
   if (!BSCRIPT) { var sc = BANQ_SCRIPTS.filter(function (s) { return !s.done && s.need.every(function (n) { return ids.indexOf(n) >= 0; }); })[0]; if (!sc) return false; sc.done = true; BSCRIPT = { sc: sc, i: 0, t: 0 }; }
   if (G.time < BSCRIPT.t) return true;
   var L = BSCRIPT.sc.lines[BSCRIPT.i]; if (!L) { BSCRIPT = null; banqT = G.time + 6; return false; }

@@ -175,6 +175,7 @@ function sealRescue(def, att) {
   var m = def.def.isMaster ? def : def.partner; if (!m || m.st === 'dead' || m.resc || sealsLeft(m) <= 0) return false;
   var sv = m.partner && m.partner.st !== 'dead' ? m.partner : null; if (!def.def.isMaster && def !== sv) return false;
   m.seals = sealsLeft(m) - 1; m.sealUsed.life = (m.sealUsed.life || 0) + 1;
+  if (att) bountyClaim(def, att); // a life taken confirms a Church bounty
   var home = teamHome(m.team, m), who = [m]; if (sv) who.push(sv);
   who.forEach(function (f) { f.resc = { t0: G.time, home: home, fell: f === def }; f.st = 'idle'; f.act = null; f.t = 0; f.kx = f.ky = 0; f.spirit = 0; f.lock = null; f.inp.mx = f.inp.my = 0; });
   def.hp = 1;
