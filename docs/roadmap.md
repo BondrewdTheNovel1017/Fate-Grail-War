@@ -200,7 +200,7 @@ Progression with alternate skills, lore Arena maps (phase 3's scene arenas doubl
 ## G. Fate/stay night stories (the shared opening, then one route)
 **Teams:** King Arthur and Shirou, EMIYA and Rin, Cú Chulainn and Kirei (Bazett in the prologue), Medusa and Shinji (Sakura's command), Medea and Kuzuki, Kojirou (Medea is his master), Heracles and Illya. Hidden: Gilgamesh with Kirei.
 
-**Phases:** about seven nights, night about 4 min, day about 2 min.
+**Phases:** Fate about seven nights, Unlimited Blade Works nine, Heaven's Feel seven; night about 4 min, day about 2 min.
 
 ### The shared opening (Nights 1–2)
 1. **The witness:** Archer and Lancer fight in the schoolyard; Shirou sees them. *Scene.*
@@ -227,37 +227,38 @@ Progression with alternate skills, lore Arena maps (phase 3's scene arenas doubl
   - **Excalibur against Enuma Elish, Avalon** (scene).
 - **Ending:** dawn on the hill; King Arthur's farewell.
 
-### Unlimited Blade Works route
-- **Night 3: Caster's pull:** Shirou is lured to the temple. Archer saves him (Caladbolg), then turns on him; Kojirou holds Archer off.
-- **Night 4: Blood Fort** (Sealed School): Rider is already dead inside (Shinji's servant killed off-screen); Shinji flees.
-- **Day 5: Shinji gets Gilgamesh** at the Church (off-screen headline).
-- **Night 5: Kuzuki** defeats Saber hand to hand; Shirou's overloaded Projection (scene).
-- **Night 6: Rule Breaker:**
-  - Caster takes Taiga hostage and breaks Shirou's contract (scene). Saber is Caster's (`ruleBreak`, kept for the story).
-  - **Archer's betrayal:** he joins Caster (a forced pact switch, scene).
-- **Day 7: The church and the castle:** Caster holds Saber at the Church. Gilgamesh kills Heracles and Illya at the Einzbern Castle (off-screen headline, or live if a player is there).
-- **Night 7: Lancer joins Rin's side.** Lancer against Archer (Rho Aias breaks). Rin's fist against Caster (scene); Archer kills Caster and Kuzuki, then takes Rin. Rin contracts Saber (scene).
-- **Night 8, the Einzbern Castle:** Shirou against Archer in Unlimited Blade Works (staged, the route's heart, scene). Lancer rescues Rin and kills Kirei (scene). Archer shields Shirou from Gilgamesh.
-- **Final, Ryuudou Temple:**
-  - Saber against Kojirou at the gate (live).
-  - **Shirou against Gilgamesh in Unlimited Blade Works by the lake** (scene).
-  - Rin pulls Shinji from the Grail; Archer's last arrow.
+### Unlimited Blade Works route (nine nights)
+The route's heart is Shirou against Archer on Night 8. Needs Shinji and Bazett first.
+- **Night 1 variation:** on the hill, Archer fires Caladbolg into Saber and Berserker; Shirou is hurt shielding Saber (scene).
+- **Day 2: The drained city:** Saber at school as Kiritsugu's acquaintance (downtime talk); Rin and Archer find Caster draining people in Shinto (battle-site task whose clues lead to the temple).
+- **Night 2: A truce at school:** Rin attacks Shirou for his seals (live, ends when one side yields); Rider attacks a student, Shirou is hurt shielding Rin, Rin drives Rider off (scene); Rin and Shirou truce (story pact).
+- **Day 3: Shinji's offer:** he reveals he is Rider's master and set the school's field; Shirou refuses (scene).
+- **Night 3: Caster's pull:** Shirou's movement is pulled toward the temple until Archer arrives; Caladbolg spares Caster, who reveals she is Assassin's master (scene); Archer turns on Shirou, Kojirou holds him off (scene).
+- **Day 4: Blood Fort Andromeda** (Sealed School): Rider is already dead inside; Shinji flees (scene).
+- **Night 4:** Shinji receives Gilgamesh from Kirei (off-screen headline); Rin and Shirou plan a strike on Caster's master.
+- **Night 5: Kuzuki** defeats Saber bare-handed (live); Shirou's overloaded Projection numbs his left side (scene; reduced strength until dawn).
+- **Day 6: Rule Breaker:** Caster holds Taiga hostage and breaks Shirou's contract (scene; `ruleBreak` made permanent for the story). Shirou is out of the war as a master.
+- **Night 6: Archer's betrayal:** Caster holds Saber at the Church; Archer joins Caster (forced pact switch, scene); Shirou saves Rin (scene: the matching pendants).
+- **Day 7: The winter castle falls:** Gilgamesh kills Heracles and Illya (headline, or live if a player is there); Lancer offers his help (story pact).
+- **Night 7: UBW revealed:** Lancer against Archer, Rho Aias breaks (live); Rin defeats Caster hand to hand (scene); Archer kills Caster and Kuzuki, opens Unlimited Blade Works, takes Rin; Rin contracts Saber (scene).
+- **Night 8: The castle:** Lancer rescues Rin, kills Kirei and falls (scene); Shirou against Archer in Unlimited Blade Works (staged, scene); Archer shields Shirou from Gilgamesh; the castle burns, Shinji is fused with the Grail.
+- **Night 9, final, Ryuudou Temple:** Saber against Kojirou at the gate (live); Shirou against Gilgamesh by the lake in UBW (scene); Rin pulls Shinji out; Excalibur destroys the Grail; Archer's last arrow ends Gilgamesh (scene).
 - **Ending:** Archer's farewell at sunrise.
 
-### Heaven's Feel route
-- **Night 3: The Shadow rises** (the Shadow event, from night 2): bodies in the streets; the Church's warning.
-- **Night 3: The temple falls:** True Assassin (Zouken's) kills Kojirou and Caster.
-- **Night 4: Saber is swallowed** by the Shadow (scene).
-- **Night 5: Saber Alter:** she returns black (Alter look) and destroys Heracles. *Scene:* Saber Alter's Excalibur Morgan.
-- **Night 5: Lancer falls** to True Assassin; Gilgamesh is devoured (headlines).
-- **Day 6: Rider's alliance:** Sakura's servant joins Shirou (a story pact, scene).
-- **Night 6: Archer's arm:** Archer is mortally wounded saving Illya and gives Shirou his arm (scene). The arm is a temporary Projection boost with a cost.
-- **Night 7: Shirou against Heracles, corrupted** (with the arm). *Scene:* the arm's shroud comes off.
-- **Final, the Great Cavern:**
-  - Shirou and Rider against Saber Alter (scene: Rho Aias and Bellerophon).
-  - Rin against Sakura (scene).
-  - Kirei against Shirou, fists (live).
-- **Ending:** spring, the cherry trees.
+### Heaven's Feel route (seven nights)
+Leans on systems we have: the Shadow event, the Alter look (`alterT`), the black Grail, the Great Cavern. Needs Shinji, Zouken, True Assassin, Saber Alter and Dark Sakura first.
+- **Night 1 variation:** Sakura stays at the Emiya house after dinner.
+- **Day 2: Sakura falls ill:** Shirou keeps her at his house (downtime talk; the house is her sanctuary); Rin warns him she is a Matou (scene).
+- **Night 2: The Shadow rises** (Shadow event moved to Night 2); True Assassin is summoned through Kojirou and kills him at the gate (scene); Caster and Kuzuki fall (headline).
+- **Night 3: Saber swallowed** by the Shadow (scene; Shirou plays on as a master alone); True Assassin takes Lancer's heart (headline).
+- **Day 4: An alliance:** Rider revealed as Sakura's servant, lent to Shinji (scene); Shirou, Rin and Archer agree to protect Sakura (story pact).
+- **Night 4: The black knight:** the Shadow devours Gilgamesh (headline); Saber Alter destroys Heracles in the Einzbern forest; Archer loses an arm covering Shirou and Illya (scene).
+- **Day 5: Shinji's end** (off-screen headline, worded carefully, never shown); Sakura accepts the Shadow.
+- **Night 5: The arm:** Dark Sakura takes Illya to the Great Cavern; Kirei and Shirou go after her (temporary pact); Archer gives Shirou his arm (scene; strong projections with a visible cost timer).
+- **Night 6: The black servants:** Shirou with the arm against corrupted Berserker (live); Shirou and Rider against Saber Alter: Rho Aias holds Excalibur, Bellerophon breaks her guard (scene).
+- **Night 7, final, the Great Cavern:** Rider against True Assassin (live); Rin against Dark Sakura with the Jeweled Sword, and holds her instead of striking (scene); Kirei against Shirou bare-handed (live); Rule Breaker frees Sakura; Illya closes the Grail at the cost of her life (scene).
+- **Ending:** spring, the cherry trees by the river.
+- **Tone:** the source's abuse stays off-screen and unspoken; Sakura's pain shows through the Shadow and her lines only.
 
 **Missing for Fate/stay night:**
 - **Shinji** (all routes).
@@ -265,7 +266,7 @@ Progression with alternate skills, lore Arena maps (phase 3's scene arenas doubl
 - **Zouken and True Assassin** (Heaven's Feel).
 - **Saber Alter and Dark Sakura** (Heaven's Feel; the Alter look exists now).
 - **Shirou's Avalon, Caliburn and Archer's-arm moments** (as scenes and timed boosts).
-- **Arenas:** temple gate, castle hall, forest clearing.
+- **Arenas, in build order:** Fuyuki Bridge, castle hall, temple gate, forest clearing, Great Cavern, Civic Hall theatre, parking garage (the full plan with endings is in the Claude Doc "Fate Grail War Roadmap").
 
 ## Sources consulted
 - Fate/Zero episode list (Wikipedia).
