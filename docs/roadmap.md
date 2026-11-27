@@ -25,6 +25,7 @@ Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, 
 8. True names matter more, and the war's chronicle (`docs/ideas-approved.md`).
 9. Spirit form stops being a combat escape (`docs/ai-plans.md`).
 10. Clearer bars and segmented stamina (`docs/resources-strings.md`).
+11. Bounded fields that matter (effects by level, class magic resistance) and Outsider homes without fields (`docs/fields-interiors.md`).
 
 ## Phase 1b: combat strings (about two to three sessions)
 Lights into a heavy change the move by count; a full chain into a heavy is each character's signature finisher, servants and masters (`docs/resources-strings.md`). Rerun the duel and NP checks after.
@@ -34,7 +35,7 @@ Lights into a heavy change the move by count; a full chain into a heavy is each 
 Details and baselines: `docs/saturday.md`.
 
 ## Phase 2: the new Fuyuki and the AI (about four to five sessions)
-1. Map step 1: the approved layout with residences and the Church sanctuary.
+1. Map step 1: the approved layout with residences and the Church sanctuary; fields and safe zones shaped to each property, family ward stones, accurate interiors (Tohsaka basement workshop, Matou worm pit, a richer Einzbern castle; `docs/fields-interiors.md`).
 2. The AI overhaul with alleys, line-of-sight witnesses and the daylight rules, the two orders, Stay with me and Act freely, and team plans with roles and stages (lures, feigned retreats, watching the door, home invasions with reasons, fair sabotage; `docs/ai-plans.md`); event zones rebuilt with it (the Banquet's approach and castle, visible truce areas; `docs/truce-bases.md`).
 3. Building shapes, lots, fences, props, and the docks with room to duel.
 4. Destructible props.
