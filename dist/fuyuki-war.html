@@ -7834,9 +7834,10 @@ var ENKIDU_LINES = ['Stay down, mongrel.', 'Know your place, mongrel.', 'Kneel, 
 var ENKIDU_DIVINE = ['Even the gods kneel to these chains.', 'Struggle, half-god. They only tighten.'];
 // a petal: the shape of one leaf (kept for other effects)
 function petal(g, len, w) { g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * 0.45, -w, len, 0); g.quadraticCurveTo(len * 0.45, w, 0, 0); g.closePath(); }
-// Rho Aias: purple-pink shields stacked in layers, a five-lobed flower in front and round layers behind.
+// Rho Aias: purple-pink shields stacked in layers, a five-lobed flower at the back (nearest the body) and round layers before it.
+// They open back to front; blows break the front layer first, so the flower is the last to go.
 // They stand upright facing the attack, so from above each layer is a thin lens across the line of fire.
-var RHO_LOOK = { W: 55, sq: 0.26, out: 40, gap: 3.5, open: 0.15, core: '180,92,224', rim: '255,154,216' };
+var RHO_LOOK = { W: 55, sq: 0.26, out: 36, gap: 3.5, open: 0.15, core: '180,92,224', rim: '255,154,216' };
 function rhoPath(g, R, lobes, sq) {
   g.beginPath();
   for (var i = 0; i <= 60; i++) { var th = i / 60 * 6.2832, r = lobes ? R * (0.8 + 0.2 * Math.cos(lobes * th)) : R; g.lineTo(Math.cos(th) * r * sq, Math.sin(th) * r); }
@@ -7847,36 +7848,36 @@ function drawRho(g, f) {
   var m = rhoMax(f); if (!m || f.st === 'dead') return;
   var L = RHO_LOOK, left = rhoPetals(f), flash = f.rhoFlash && G.time - f.rhoFlash < 0.35 ? 1 - (G.time - f.rhoFlash) / 0.35 : 0;
   var n = Math.ceil(left - 0.01);
-  if (f._rhoN !== undefined && n < f._rhoN) f._rhoBrk = { t: G.time, flower: f._rhoN === m, k: f._rhoN };
+  if (f._rhoN !== undefined && n < f._rhoN) f._rhoBrk = { t: G.time, flower: f._rhoN === 1, k: f._rhoN };
   f._rhoN = n;
-  // the counter beside the health bar: round pips, the flower pip last (it breaks first)
+  // the counter beside the health bar: the flower pip first (it breaks last), then round pips
   if (f === G.f[MEI] || f.guarding) {
     g.save(); for (var i = 0; i < m; i++) { var on = i < n, part = i === Math.floor(left) ? left - Math.floor(left) : 1;
       g.globalAlpha = on ? (i === Math.floor(left) && part < 1 ? 0.35 + 0.5 * part : 0.95) : 0.2;
-      g.fillStyle = on ? (i === m - 1 ? 'rgb(' + L.rim + ')' : 'rgb(' + L.core + ')') : '#5a5f70';
-      rhoPip(g, f.x - (m - 1) * 5 + i * 10, f.y + 40, i === m - 1); g.fill(); }
+      g.fillStyle = on ? (i === 0 ? 'rgb(' + L.rim + ')' : 'rgb(' + L.core + ')') : '#5a5f70';
+      rhoPip(g, f.x - (m - 1) * 5 + i * 10, f.y + 40, i === 0); g.fill(); }
     g.restore();
   }
   var brk = f._rhoBrk && G.time - f._rhoBrk.t < 0.3 ? f._rhoBrk : null;
   if (!f.guarding || (left <= 0 && !brk)) return;
   var open = Math.min(1, (f.guardT || 0) / L.open), cs = Math.cos(f.face), sn = Math.sin(f.face);
   g.save(); g.translate(f.x, f.y); g.rotate(f.face); g.globalCompositeOperation = 'lighter';
-  // back to front; layer j counts from the front (0 is the front one)
-  for (var j = n - 1; j >= 0; j--) {
-    var show = Math.max(0, Math.min(1, open * n - j)); if (show <= 0) continue;
-    var flower = j === 0 && n === m, front = j === 0, R = L.W * (0.6 + 0.4 * show) * (front ? 1 + flash * 0.08 : 1 - j * 0.02);
-    g.save(); g.translate(L.out - j * L.gap + (front ? flash * 3 : 0), 0);
-    var fade = (front ? 1 : 0.75 - j * 0.06) * show, sh = 0.05 * Math.sin(G.time * 5 + j);
+  // layer b counts from the back (0 is the flower, nearest the body); they open back to front
+  for (var b = 0; b < n; b++) {
+    var show = Math.max(0, Math.min(1, open * n - b)); if (show <= 0) continue;
+    var flower = b === 0, front = b === n - 1, R = L.W * (0.6 + 0.4 * show) * (front ? 1 + flash * 0.08 : 1 - (n - 1 - b) * 0.015);
+    g.save(); g.translate(L.out + b * L.gap + (front ? flash * 3 : 0), 0);
+    var fade = (front ? 1 : 0.8 - (n - 1 - b) * 0.05) * show, sh = 0.05 * Math.sin(G.time * 5 + b);
     var gr = g.createLinearGradient(0, -R, 0, R); gr.addColorStop(0, 'rgba(' + L.rim + ',.55)'); gr.addColorStop(0.5, 'rgba(' + L.core + ',.85)'); gr.addColorStop(1, 'rgba(' + L.rim + ',.55)');
     g.globalAlpha = (0.16 + 0.25 * flash + sh) * fade; g.fillStyle = gr; rhoPath(g, R, flower ? 5 : 0, L.sq); g.fill();
-    g.globalAlpha = (0.55 + 0.4 * flash) * fade; g.strokeStyle = front ? 'rgba(255,240,250,.95)' : 'rgba(' + L.rim + ',.9)'; g.lineWidth = front ? 1.6 : 1.1; rhoPath(g, R, flower ? 5 : 0, L.sq); g.stroke();
-    if (flower) { g.globalAlpha = 0.35 * fade; g.lineWidth = 1; g.beginPath(); for (var p = 0; p < 5; p++) { var th = p / 5 * 6.2832; g.moveTo(0, 0); g.lineTo(Math.cos(th) * R * L.sq, Math.sin(th) * R); } g.stroke(); }
+    g.globalAlpha = (0.55 + 0.4 * flash) * fade; g.strokeStyle = front ? 'rgba(255,240,250,.95)' : 'rgba(' + L.rim + ',.9)'; g.lineWidth = front || flower ? 1.6 : 1.1; rhoPath(g, R, flower ? 5 : 0, L.sq); g.stroke();
+    if (flower) { g.globalAlpha = 0.4 * fade; g.lineWidth = 1; g.beginPath(); for (var p = 0; p < 5; p++) { var th = p / 5 * 6.2832; g.moveTo(0, 0); g.lineTo(Math.cos(th) * R * L.sq, Math.sin(th) * R); } g.stroke(); }
     g.restore();
   }
   // the layer that just broke: cracks white, then gone
   if (brk) {
     var u = (G.time - brk.t) / 0.3, R2 = L.W * (1 + u * 0.15);
-    g.save(); g.translate(L.out + 4 + u * 10, 0); g.globalAlpha = 0.8 * (1 - u); g.strokeStyle = '#ffffff'; g.lineWidth = 1.4;
+    g.save(); g.translate(L.out + (brk.k - 1) * L.gap + 4 + u * 10, 0); g.globalAlpha = 0.8 * (1 - u); g.strokeStyle = '#ffffff'; g.lineWidth = 1.4;
     rhoPath(g, R2, brk.flower ? 5 : 0, L.sq); g.stroke();
     g.beginPath(); for (var c = 0; c < 6; c++) { var y0 = (c / 5 - 0.5) * R2 * 1.6; g.moveTo(0, y0 * 0.2); g.lineTo(((c % 2) ? 1 : -1) * R2 * L.sq * 0.8, y0); } g.stroke();
     g.restore();
