@@ -62,3 +62,9 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [ ] Reality marbles (Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works): no NP charging inside one's own marble (stops chaining); a buff for its duration instead.
 - [ ] (step 1 done Nov 26: armour through the charge, wind x1.3, damage x1.25, `tools/npcheck.js`; cancels 58% → 25%, damage per fired NP 21.5 → 39; still to do: tune per NP on Saturday, starting with Gilgamesh at 70% duel wins, and look at why many servants rarely reach their NP in duels; the owner will split NP charge times and all balance between the Arena and the Grail War, since NPs are mainly for the war's longer fights) Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
 - [x] (Nov 26) Lancelot: keep his seized melee weapons and add two seized guns (MP5 and shotgun; balance check Saturday), an MP5 and a second real gun (not the Vulcan, which reads as an NP; offer choices), each with a reload like Kiritsugu's.
+
+## 6. Events and story modes (planned Nov 26, see `docs/story-modes.md`)
+- [ ] Berserker Unchained only for Berserkers; otherwise The Grail's Taint (a servant turns Alter for a while, confirming a black Grail).
+- [ ] The Fuyuki Fire: final-night event at the Civic Hall (the building collapses, black mud flows around buildings, fire behind it).
+- [ ] Events setting: Random, Fourth War events, Fifth War events, Story (separate from team drafts).
+- [ ] Story modes with a beat director (canon off-screen, live on-screen, fallbacks, Canon meter): Fate/Zero first, then Fate/stay night's Fate, Unlimited Blade Works and Heaven's Feel routes.

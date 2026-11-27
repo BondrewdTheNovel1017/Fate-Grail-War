@@ -30,6 +30,10 @@ Always fight back when attacked; keep things hidden by day (no fights unless som
 ## 5. Map overhaul, step 1
 Draft 2 is approved (`docs/map-draft-2.png`, drawn by `tools/mapdraft.py`): the coastline outline, eight districts with one rival base each (closest rival bases 2,300 apart, today 1,423), all points of interest, three estate plots and five backup safehouses, the Uryuu storehouse for Ryuunosuke, Mount Enzou as its own lobe with the cave on a hidden trail. Step 1 builds the outline, districts, roads and base sites and moves every coordinate table with them.
 
+## Also ready to build (planned Nov 26, `docs/story-modes.md`)
+- Quick fix: Berserker Unchained for Berserkers only, The Grail's Taint otherwise.
+- The Events setting (Random, Fourth War, Fifth War), then the Fuyuki Fire, then the story modes.
+
 ## Later (owner picks the order)
 - Map overhaul steps 2–4: alleys, line-of-sight witnesses, daylight AI rules; non-square buildings, lots, fences and props; docks with container yards; destructible props (containers, crates, fences, lamp posts, vending machines).
 - Vehicles: wreckable parked cars, then traffic and sidewalks, then driving (Rider class drives best).
