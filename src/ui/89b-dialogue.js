@@ -86,6 +86,31 @@ var BANQ_SCRIPTS = [
   { need: ['gilgamesh', 'caerwyn'], lines: [['gilgamesh', 'Sit, Saber. You will drink my wine and listen.'], ['caerwyn', 'I did not come here to be lectured.'], ['gilgamesh', 'No. You came to be admired. I permit it.']] },
   { need: ['caerwyn', 'richard'], lines: [['richard', 'My king! To share a table with you is a dream!'], ['caerwyn', 'Richard. You were a far braver king than I.'], ['richard', 'Braver, perhaps. But never truer.']] },
   { need: ['gilgamesh', 'caren'], lines: [['caren', 'A king who drinks at another king\u2019s table. How humble of you.'], ['gilgamesh', 'Your tongue is sharper than your faith, nun. Pour, and I will permit it.']] },
+  // Iskandar hosts most banquets: he has something to say to every guest
+  { need: ['iskandar', 'richard'], lines: [['iskandar', 'A crusader king! Tell me, did you ever reach Jerusalem?'], ['richard', 'I saw it from a hill. Never set foot inside.'], ['iskandar', 'Ha! Then we are the same. I never saw the edge of the world.'], ['richard', 'To the places we never reached!']] },
+  { need: ['iskandar', 'atalanta'], lines: [['iskandar', 'The huntress of Arcadia! Sit, sit. You look ready to bolt.'], ['atalanta', 'I do not drink with men who conquer.'], ['iskandar', 'Then drink with a man who lost! I died young, you know.'], ['atalanta', '...One cup. For the children who never had a feast.']] },
+  { need: ['iskandar', 'emiya'], lines: [['iskandar', 'Archer! What does a hero with no name wish for?'], ['emiya', 'To have never been a hero at all.'], ['iskandar', 'A sad wish to bring to a feast.'], ['emiya', 'Then I will keep it to myself and pour the wine.']] },
+  { need: ['iskandar', 'heracles'], lines: [['iskandar', 'The greatest hero of Greece, at my table! Do you drink, Berserker?'], ['heracles', 'Rrrrh...'], ['iskandar', 'I will take that as yes. Someone fill his cup. Carefully.']] },
+  { need: ['iskandar', 'hassan'], lines: [['iskandar', 'Assassin! Come out of the shadows. A banquet needs every guest.'], ['hassan', '...I am here only because my master ordered it.'], ['iskandar', 'Then your master has good sense, for once.']] },
+  { need: ['iskandar', 'diarmuid'], lines: [['iskandar', 'Lancer of the Fianna! What does a knight that loyal want?'], ['diarmuid', 'Only to serve one lord to the end, this time.'], ['iskandar', 'A small wish. I like it. Drink to your lord!']] },
+  { need: ['iskandar', 'cu'], lines: [['iskandar', 'The Hound of Ulster! Have you come to drink or to fight?'], ['cu', 'Why not both? The wine first, though.'], ['iskandar', 'A man after my own heart!']] },
+  { need: ['iskandar', 'gilles'], lines: [['iskandar', 'Caster! You look pale, even for the dead.'], ['gilles', 'I seek only my saint, great king. Have you seen her?'], ['iskandar', '...I have not. Sit, and eat something.']] },
+  { need: ['iskandar', 'lancelot'], lines: [['iskandar', 'The black knight himself. Can you hear me in there?'], ['lancelot', 'Arrrthurrr...'], ['iskandar', 'Ah. Only one name left in him. Leave him be.']] },
+  { need: ['iskandar', 'medusa'], lines: [['iskandar', 'A Rider like me! What do you ride, my lady?'], ['medusa', 'Something you would not want to see up close.'], ['iskandar', 'Ha! Then we shall race one day.']] },
+  { need: ['iskandar', 'medea'], lines: [['iskandar', 'The witch of Colchis! Will you poison my wine?'], ['medea', 'If I wished to, you would never know.'], ['iskandar', 'Then I will drink it all and find out!']] },
+  { need: ['iskandar', 'kojirou'], lines: [['iskandar', 'Swordsman! You came all the way down from your gate?'], ['kojirou', 'The moon is better from a castle. And the wine is free.'], ['iskandar', 'A sensible man. I like you already.']] },
+  // the famous meetings, whoever hosts
+  { need: ['caerwyn', 'lancelot'], lines: [['caerwyn', 'Lancelot... is that you?'], ['lancelot', 'Ar... thur...'], ['caerwyn', 'Whatever you have become, you are still my knight. Sit with me.']] },
+  { need: ['caerwyn', 'gilles'], lines: [['gilles', 'Jeanne! My Jeanne, you have returned to me!'], ['caerwyn', 'I am not who you think. I am the King of Knights.'], ['gilles', 'No... no, I would know you anywhere.']] },
+  { need: ['caerwyn', 'diarmuid'], lines: [['diarmuid', 'King of Knights. I hope our blades meet with honour, not at this table.'], ['caerwyn', 'They will. Tonight we only drink.'], ['diarmuid', 'Then to tomorrow, and a fair fight.']] },
+  { need: ['caerwyn', 'emiya'], lines: [['caerwyn', 'Archer. You look at me as if we have met before.'], ['emiya', 'Have we? I could not say.'], ['caerwyn', 'You are a poor liar.']] },
+  { need: ['cu', 'emiya'], lines: [['cu', 'You again! Do you ever stop being sour?'], ['emiya', 'Do you ever stop talking?'], ['cu', 'Not at a feast. Pass the bottle, faker.']] },
+  { need: ['cu', 'diarmuid'], lines: [['cu', 'Two lancers at one table. Someone will get stabbed.'], ['diarmuid', 'Not before the food is served.'], ['cu', 'Ha! Fair.']] },
+  { need: ['medea', 'kojirou'], lines: [['kojirou', 'My mistress at a feast. I never thought I would see it.'], ['medea', 'Be quiet and guard the door.'], ['kojirou', 'The door is very safe. It is the wine I worry about.']] },
+  { need: ['gilgamesh', 'emiya'], lines: [['gilgamesh', 'A mongrel who copies treasures. You disgust me.'], ['emiya', 'And yet you keep looking.'], ['gilgamesh', 'Insolent. Drink before I change my mind.']] },
+  { need: ['gilgamesh', 'heracles'], lines: [['gilgamesh', 'Even mad, he sits like a king. Interesting.'], ['heracles', 'Rrrh.'], ['gilgamesh', 'Yes. You may stay.']] },
+  { need: ['richard', 'leonidas'], lines: [['richard', 'King Leonidas! Your stand at the Gates is a song in every land.'], ['leonidas', 'A short song. We did not live to sing it.'], ['richard', 'Then I will sing it for you!']] },
+  { need: ['atalanta', 'heracles'], lines: [['atalanta', 'Heracles. We sailed on the Argo together, once.'], ['heracles', 'Rrrh...'], ['atalanta', 'You were kinder then. I remember.']] },
   { need: ['gilgamesh', 'tokiomi'], lines: [['tokiomi', 'Your Majesty honours this table.'], ['gilgamesh', 'Silence, Tokiomi. Kings are speaking.']] }
 ];
 var BSCRIPT = null;
