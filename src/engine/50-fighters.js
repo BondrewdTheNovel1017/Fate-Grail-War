@@ -57,6 +57,7 @@ function newWar(teamsIn, opts) {
   opts = opts || {}; setMap(opts.map || 'city');
   var homes = MAP.homes ? assignHomes(teamsIn, null, opts.plots) : null;
   G = { f: [], proj: [], zones: [], time: 0, hitstop: 0, over: false, winner: null, seed: opts.seed || ((Date.now() ^ 0x9e3779b9) >>> 0), dimT: 0, ai: [], mode: 'war', marble: null, quick: !!opts.quick, circles: [] };
+  G.evSet = opts.events || 'random'; // which events this war can draw (EVSETS)
   teamsIn.forEach(function (t, ti) {
     // in the city each master starts at their summoning circle; the servant appears on it
     var spot = homes ? summonSpot(homes[ti]) : null;

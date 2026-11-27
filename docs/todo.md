@@ -64,9 +64,9 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [x] (Nov 26) Lancelot: keep his seized melee weapons and add two seized guns (MP5 and shotgun; balance check Saturday), an MP5 and a second real gun (not the Vulcan, which reads as an NP; offer choices), each with a reload like Kiritsugu's.
 
 ## 6. Events and story modes (planned Nov 26, see `docs/story-modes.md`)
-- [ ] Berserker Unchained only for Berserkers; otherwise The Grail's Taint (a servant turns Alter for a while, confirming a black Grail).
+- [x] (Nov 26) Berserker Unchained only for Berserkers; otherwise The Grail's Taint (a servant turns Alter for a while, confirming a black Grail).
 - [ ] The Fuyuki Fire: final-night event at the Civic Hall (the building collapses, black mud flows around buildings, fire behind it).
-- [ ] Events setting: Random, Fourth War events, Fifth War events, Story (separate from team drafts).
+- [x] (Nov 26, Story still to come) Events setting: Random, Fourth War events, Fifth War events, Story (separate from team drafts).
 - [ ] Story modes with a beat director (canon off-screen, live on-screen, fallbacks, Canon meter): Fate/Zero first, then Fate/stay night's Fate, Unlimited Blade Works and Heaven's Feel routes.
-- [ ] Grail circle: appear at midnight, start closing about 15 s later, much smaller (about 2,000 to 550 over about 180 s; today 4,200 to 750 over 330 s, 60 s after midnight).
+- [x] (Nov 26: 2,000 to 550 over 80 s after a 15 s hold, at the owner's request) Grail circle: appear at midnight, start closing about 15 s later, much smaller (about 2,000 to 550 over about 180 s; today 4,200 to 750 over 330 s, 60 s after midnight).
 - [ ] Cutscenes (only when a human is there; also in Random mode for canon meetings; in multiplayer the clock pauses for all while the war goes on), special duel arenas, ending scenes (see `docs/roadmap.md` A, C, D).

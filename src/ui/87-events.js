@@ -22,6 +22,7 @@ FX.event = function (kind, d, msg) {
   else if (kind === 'horrorDown') { if (d.team === my) FX.banner('The horror falls', 'Your blows did the most. A Command Seal, and the city’s gratitude.'); else FX.banner('The horror falls', (d.team >= 0 ? teamName(d.team) + ' dealt the final share.' : 'The river is quiet again.')); }
   else if (kind === 'horrorDawn') FX.banner('Dawn finds the horror still standing', 'The whole city saw it. Every team is under suspicion.');
   else if (kind === 'falsedeath') { if (mine) FX.banner('The world believes you dead', 'Your servant fell before witnesses, or seemed to. Until dawn, no one knows you are alive.'); else FX.banner(d.f.def.cls + ' has fallen', 'Struck down before witnesses at ' + teamName(d.team).replace('’s team', '’s door') + '. Or so it seems.'); }
+  else if (kind === 'taint') { var tn = knownName(d.f); if (mine) FX.banner('The Grail takes your servant', 'Black mud rose and swallowed it. It returns as an Alter: stronger, maddened, deaf to your orders, for a while. The Grail is corrupted, and whoever wins will inherit that.'); else FX.banner('The Grail\u2019s Taint', 'Black mud swallows ' + tn + ' and returns it as an Alter, maddened and stronger. The Grail is corrupted: it will descend black.'); FX.snd('marble:ubw', { x: d.f.x, y: d.f.y, idx: -1 }); }
   else if (kind === 'berserk') { if (mine) FX.banner('Your servant breaks loose', 'It hits harder and burns itself out, and it will not heed your orders. Everyone can see it.'); else FX.banner('Berserker Unchained', knownName(d.f) + ' of ' + teamName(d.team) + ' has broken its master’s control. Everyone can see it.'); }
   else if (kind === 'school') { if (d.culprit === my) FX.banner('Your Rider seals the school', 'The bounded field drains everyone inside and feeds your master. Keep the circles standing.'); else FX.banner('Homurahara Academy Is Sealed', 'A blood-red bounded field drains everyone inside. No one can enter or leave until the three circles are broken.'); FX.snd('marble:ubw', { x: d.x, y: d.y, idx: -1 }); }
   else if (kind === 'circle') note('A circle shatters' + (d.left ? ' · ' + d.left + ' left' : '') + (d.team === my ? ' · mana restored' : ''), d.team === my ? '#ffd36b' : '#e9e4d3');
@@ -114,7 +115,7 @@ function drawEventHud(x, y, mx0, my0, mw, mh) {
   else if (E.kind === 'school') s = 'SCHOOL SEALED · ' + E.circles.filter(function (q) { return q.up; }).length + ' circles · ' + fmtT(E.dur - E.t);
   else if (E.kind === 'horror') s = 'HORROR IN THE RIVER · ' + Math.ceil(100 * Math.max(0, E.boss.hp) / E.boss.max) + '%';
   else if (E.kind === 'falsedeath') s = E.team === G.f[MEI].team ? 'BELIEVED DEAD · UNTIL DAWN' : E.f.def.cls.toUpperCase() + ' HAS FALLEN';
-  else if (E.kind === 'berserk') s = 'BERSERKER UNCHAINED · ' + fmtT(E.dur - E.t);
+  else if (E.kind === 'berserk') s = (E.taint ? 'THE GRAIL\u2019S TAINT · ' : 'BERSERKER UNCHAINED · ') + fmtT(E.dur - E.t);
   else if (event2Hud(E)) s = event2Hud(E);
   else if (E.kind === 'grail') s = 'THE GRAIL' + (E.corrupt ? ', BLACK' : '') + ' · ' + E.name.replace(/^the /, '').toUpperCase();
   var col = EV_COL[E.kind] || '#e9e4d3';

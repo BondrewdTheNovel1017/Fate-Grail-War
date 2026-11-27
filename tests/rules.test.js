@@ -1038,3 +1038,16 @@ test('A servant charging a Noble Phantasm holds through ordinary blows; another 
   E.hurt(cu, ar, cu.A.heavy, 1); assert.strictEqual(ar.st, 'wind', 'a heavy blow does not break the charge');
   E.hurt(cu, ar, cu.A.np, 1); assert.notStrictEqual(ar.st, 'wind', 'a Noble Phantasm does');
 });
+test('Berserker Unchained takes only a Berserker; with none, the Grail\'s Taint makes an Alter and the Grail will be black', () => {
+  const E = loadEngine();
+  const G = E.newWar([{ servant: E.SERV.diarmuid, master: E.MASTERS.rin }, { servant: E.SERV.cu, master: E.MASTERS.kirei }, { servant: E.SERV.medea, master: E.MASTERS.kuzuki }], { nights: 2 });
+  G.ai = G.ai.map(() => null); const cu = G.f.find((f) => f.def.id === 'cu'); cu.stat.taken = 500;
+  E.startBerserk(); assert.ok(G.event && G.event.taint && G.event.f === cu && cu.alterT > G.time && G.taintSeen, 'the most wounded turns Alter');
+  const H = E.newWar([{ servant: E.SERV.diarmuid, master: E.MASTERS.rin }, { servant: E.SERV.heracles, master: E.MASTERS.illya }], { nights: 2 });
+  E.startBerserk(); assert.ok(H.event && !H.event.taint && H.event.f.def.id === 'heracles', 'a Berserker when there is one');
+});
+test('Event sets: the Fourth War set only deals Fate/Zero events', () => {
+  const E = loadEngine();
+  const G = E.newWar(E.warTeams('richard', 'rin', 7), { nights: 3, events: 'fourth' }); E.buildDecks();
+  assert.ok(G.deck.night.every((k) => ['challenge', 'bounty', 'horror', 'falsedeath', 'berserk', 'demo'].includes(k)) && G.deck.day.every((k) => ['banquet', 'summons'].includes(k)), JSON.stringify(G.deck));
+});

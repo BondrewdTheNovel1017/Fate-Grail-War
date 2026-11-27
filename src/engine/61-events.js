@@ -12,16 +12,22 @@ var EVT = {
   summons: { x: 1450, y: 3220, r: 280, need: 20 },
   horror: { hp: 1400, r: 110, path: [[6000, 4300], [6000, 2620]], spd: 70, slamEvery: 2.1, slamR: 125, slamDmg: 16, truceR: 1100 },
   berserk: { dur: 90, dmg: 1.3, drain: 0.01, floor: 0.25 },
-  grail: { at: 60, r0: 4200, r1: 750, shrink: 330, dmg: 3, dmgC: 5, heal: 2, poolEvery: 3.5 }
+  grail: { at: 0, hold: 15, r0: 2000, r1: 550, shrink: 80, dmg: 3, dmgC: 5, heal: 2, poolEvery: 3.5 }
 };
 var GRAIL_SITES = [{ x: 1500, y: 1060, name: 'Ryuudou Temple' }, { x: 1300, y: 3080, name: 'the Fuyuki Church hill' }, { x: 10450, y: 5050, name: 'the Fuyuki Civic Hall' }];
 var NIGHT_DECK = { challenge: 'diarmuid', bounty: 'gilles', horror: 'gilles', falsedeath: 'hassan', berserk: ['heracles', 'lancelot'], demo: 'kiritsugu', shadow: null }, DAY_DECK = { school: 'medusa', banquet: 'iskandar', summons: 'caren', festival: null };
 function eventsOn() { return clockOn() && !G.quick && MAP.cityW; }
 function evAlive(id) { return G.f.filter(function (f) { return f.def.id === id && f.st !== 'dead'; })[0]; }
 function loreHost(ids) { if (!ids) return null; ids = [].concat(ids); for (var i = 0; i < ids.length; i++) { var f = evAlive(ids[i]); if (f) return f; } return null; }
+// event sets (war setup): random draws from every event; the Fourth and Fifth War sets keep to that war's events
+var EVSETS = {
+  fourth: { night: ['challenge', 'bounty', 'horror', 'falsedeath', 'berserk', 'demo'], day: ['banquet', 'summons'] },
+  fifth: { night: ['shadow', 'berserk', 'challenge', 'bounty'], day: ['school', 'summons', 'festival'] }
+};
 function buildDecks() {
-  function deal(D) { return Object.keys(D).map(function (k) { return { k: k, s: rnd() + (loreHost(D[k]) ? 0.7 : 0) }; }).sort(function (a, b) { return b.s - a.s; }).map(function (q) { return q.k; }); }
-  G.deck = { night: deal(NIGHT_DECK), day: deal(DAY_DECK) };
+  var set = EVSETS[G.evSet];
+  function deal(D, which) { return Object.keys(D).filter(function (k) { return !set || set[which].indexOf(k) >= 0; }).map(function (k) { return { k: k, s: rnd() + (loreHost(D[k]) ? 0.7 : 0) }; }).sort(function (a, b) { return b.s - a.s; }).map(function (q) { return q.k; }); }
+  G.deck = { night: deal(NIGHT_DECK, 'night'), day: deal(DAY_DECK, 'day') };
   if (G.forceSchool) G.deck.day = ['school'].concat(G.deck.day.filter(function (k) { return k !== 'school'; }));
 }
 function grailSite() { if (!G.grailSite) { var cv = cavernSite(); G.grailSite = cv && rnd() < EVT2.cavern.chance ? cv : GRAIL_SITES[Math.floor(rnd() * GRAIL_SITES.length)]; } return G.grailSite; }
@@ -76,7 +82,7 @@ function startNight(k) {
   if (k === 'challenge') startChallenge(); else if (k === 'bounty') startBounty(); else if (k === 'horror') startHorror(); else if (k === 'falsedeath') startFalseDeath(); else if (k === 'berserk') startBerserk(); else if (k === 'demo') startDemolition(); else if (k === 'shadow') startShadow();
   if (!G.event) G.clock.evDone = true;
 }
-function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); if (E.kind === 'berserk' && E.f) E.f.rampT = 0; FX.event('end', E, msg); }
+function endEvent(msg) { var E = G.event; if (!E) return; G.event = null; if (G.clock) G.clock.evDone = true; G.mobs = (G.mobs || []).filter(function (m) { return m.exec || m.keep; }); if (E.kind === 'berserk' && E.f) { E.f.rampT = 0; E.f.alterT = 0; } FX.event('end', E, msg); }
 function masterOf(team) { return G.f.filter(function (f) { return f.team === team && f.def.isMaster && f.st !== 'dead'; })[0]; }
 function regainSeal(team) {
   var m = masterOf(team); if (!m) return false;
@@ -161,12 +167,15 @@ function startFalseDeath() {
 function ghosted(f, e) { return !!(G.ghost && G.ghost[e.team] > G.time && !(sameZone(f, e) && dist(f, e) < 220) && !(f.lastHit && f.lastHit.by && f.lastHit.by.team === e.team && G.time - (f.lastHitT || -99) < 4)); }
 /* ---- Berserker Unchained: a master loses control, and the servant runs wild ---- */
 function startBerserk() {
-  var B = EVT.berserk, h = loreHost(['heracles', 'lancelot']);
-  if (h && !masterOf(h.team)) h = null;
-  if (!h) { var pool = servantsAlive().filter(function (f) { return masterOf(f.team); }).sort(function (a, b) { var ma = masterOf(a.team), mb = masterOf(b.team); return ma.hp / ma.def.hp - mb.hp / mb.def.hp; }); h = pool[0]; }
+  // a Berserker breaks loose; with none left, the Grail's mud takes the most wounded servant instead and returns it as an Alter
+  var B = EVT.berserk, berserkers = servantsAlive().filter(function (f) { return f.def.cls === 'Berserker' && masterOf(f.team); });
+  var h = loreHost(['heracles', 'lancelot']); if (h && !masterOf(h.team)) h = null; if (!h) h = berserkers[0] || null;
+  var taint = !h;
+  if (taint) h = servantsAlive().filter(function (f) { return masterOf(f.team); }).sort(function (a, b) { return (b.stat.taken || 0) - (a.stat.taken || 0); })[0];
   if (!h) return;
   h.rampT = G.time + B.dur; G.reveal[h.team] = h.rampT; if (h.spirit) h.spirit = 0;
-  G.event = { kind: 'berserk', f: h, team: h.team, t: 0, dur: B.dur }; FX.event('berserk', G.event);
+  if (taint) { h.alterT = h.rampT; G.taintSeen = true; } // the Grail has shown its corruption: it will descend black
+  G.event = { kind: 'berserk', taint: taint, f: h, team: h.team, t: 0, dur: B.dur }; FX.event(taint ? 'taint' : 'berserk', G.event);
 }
 function berserkTick(E, dt) {
   var f = E.f, B = EVT.berserk;
@@ -297,11 +306,11 @@ function summonsDone(t) {
    corrupted, its mud wells up inside the ring and maddens the servants near its center ---- */
 function startGrail() {
   var g = EVT.grail, site = grailSite(), dead = G.f.filter(function (f) { return f.st === 'dead' && !f.def.isMaster; }).length;
-  var corrupt = site.cavern || G.shadowSeen || rnd() < Math.min(0.75, 0.25 + 0.04 * dead);
+  var corrupt = site.cavern || G.shadowSeen || G.taintSeen || rnd() < Math.min(0.75, 0.25 + 0.04 * dead);
   G.event = { kind: 'grail', x: site.x, y: site.y, name: site.name, r: site.cavern ? EVT2.cavern.r0 : g.r0, t: 0, corrupt: corrupt, pools: [], poolT: 3, cavern: !!site.cavern }; G.clock.evDone = true; FX.event('grail', G.event);
 }
 function grailTick(E, dt) {
-  var g = EVT.grail, r0 = E.cavern ? EVT2.cavern.r0 : g.r0, r1 = E.cavern ? EVT2.cavern.r1 : g.r1; E.r = r1 + (r0 - r1) * Math.max(0, 1 - E.t / g.shrink);
+  var g = EVT.grail, r0 = E.cavern ? EVT2.cavern.r0 : g.r0, r1 = E.cavern ? EVT2.cavern.r1 : g.r1; E.r = r1 + (r0 - r1) * Math.max(0, 1 - Math.max(0, E.t - (g.hold || 0)) / g.shrink); // appears at midnight, holds a moment, then closes
   G.f.forEach(function (f) {
     if (f.st === 'dead' || f.inM) return;
     if (E.cavern) { if (!inCavern(f)) { if (E.t > EVT2.cavern.grace) { var kc = g.dmgC * dt; f.hp -= kc; f.stat.taken += kc; if (f.hp <= 0) { f.cause = 'grail'; kill(f, true); } } return; } }

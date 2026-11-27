@@ -17,7 +17,7 @@ function buildHud() {
 function startMatch() {
   MEI = 0; NET.mirror = false; NET.hosting = false; NET.game = null;
   var teams = warTeams(CFG.servant, CFG.master, CFG.teams, null, CFG.draft, CFG.draftScope), spawn = [0].concat(shuffled([1, 2, 3, 4, 5, 6]));
-  newWar(teams, { playAs: CFG.playAs, spawnOrder: spawn, nights: CFG.nights || 3 });
+  newWar(teams, { playAs: CFG.playAs, spawnOrder: spawn, nights: CFG.nights || 3, events: CFG.events || 'random' });
   for (var k2 = 1; k2 < G.f.length; k2++) G.ai[k2] = mkAI(G.f[k2], DIFF[CFG.diff]);
   enterGame(teams.length);
 }
