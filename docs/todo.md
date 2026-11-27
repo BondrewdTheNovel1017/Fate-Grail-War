@@ -1,15 +1,17 @@
 # Queue (owner's requests, organized)
 
+**Next session: see `docs/saturday.md`** (balance pass split by mode, reality marbles, the school, the AI overhaul, map overhaul step 1).
+
 Order: fix what every game feels first (bugs and the AI), then small direct requests, then larger features. New masters have their own list in `docs/future-masters.md`. Tick items off here as they land.
 
 ## 1. Every game: bugs and feel
-- [ ] **Events not showing in real wars.** In a playtest no event appeared, and any that did weren't shown on the map or in text, although the sims draw an event every phase. Find why (human wars versus the sim), then make every event announce itself clearly (banner, log line, minimap marker, objective arrow) and happen a little more often.
-- [ ] **AI pass: feel alive and intelligent.**
+- [x] **Events not showing in real wars.** In a playtest no event appeared, and any that did weren't shown on the map or in text, although the sims draw an event every phase. Find why (human wars versus the sim), then make every event announce itself clearly (banner, log line, minimap marker, objective arrow) and happen a little more often.
+- [x] **AI pass: feel alive and intelligent.**
   - A Hassan circled the player without attacking: check Assassin AI, concealment, and Zabaniya's `aiKeep` step-back (it may hold range too long and never commit).
   - A Kiritsugu stood and stared from afar: check ranged-master AI when the target is known but outside its preferred band, and the `knows`/`aimFoe` gating.
   - The AI rushes straight back out after a seal rescue: it should recover at home and regroup with its partner first.
   - Goal: varied, readable behaviour (flanking, baiting, retreating to heal, cover and doors, pressing an advantage, protecting the master) instead of hovering. Measure in the sims (time attacking versus idling near a known enemy).
-- [ ] **Cleaner UI.** Text and UI cover the play area. Audit what's on screen in a war (banners, notices, bubbles, task text, HUD) and move, shrink or fade it so the centre stays clear.
+- [x] **Cleaner UI.** Text and UI cover the play area. Audit what's on screen in a war (banners, notices, bubbles, task text, HUD) and move, shrink or fade it so the centre stays clear.
 
 ## 2. Small direct requests
 - [x] **Kiritsugu:** light attacks become a combat knife (melee); guns stay on heavy, skill and signature. Double Accel (Time Alter) also speeds his attacks for its duration, balanced with the sims.
@@ -21,7 +23,7 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 
 ## 3. Map structure
 - [x] **Base spacing (light fix done Nov 26):** estates take the farthest free plot, three plots moved off the hill to the east, the Mackenzie House moved south (`tools/basecheck.js`: closest rival bases now average 1584, worst 1423, was 1041 and 762). Remaining close pairs are canon neighbours: Tohsaka–Matou 1450 and Emiya–Church 1423; ask the owner before moving either.
-- [ ] **(original note) Base spacing.** Homes aren't evenly spread; some neighbour each other (for example Tohsaka and Matou). Steps: (1) measure every home/plot distance and how often wars start two teams close together; (2) light fix: `assignHomes` gives estates and safehouses the plot farthest from every other base; (3) only if needed, a rework with spread plots and homes placed randomly each war at a minimum distance. The Einzbern castle stays fixed (courtyard and Banquet), probably the Church too (Executors, events); decide about Tohsaka, Matou and Emiya before reworking. Moving a home moves its doors, summoning spot and nav links.
+- [x] **(original note, superseded by the map overhaul) Base spacing.** Homes aren't evenly spread; some neighbour each other (for example Tohsaka and Matou). Steps: (1) measure every home/plot distance and how often wars start two teams close together; (2) light fix: `assignHomes` gives estates and safehouses the plot farthest from every other base; (3) only if needed, a rework with spread plots and homes placed randomly each war at a minimum distance. The Einzbern castle stays fixed (courtyard and Banquet), probably the Church too (Executors, events); decide about Tohsaka, Matou and Emiya before reworking. Moving a home moves its doors, summoning spot and nav links.
 
 - [x] **Ryuudou Temple as its own northern area** (done Nov 26: houses and the hill street west of the avenue removed, woods out to x 3000, lake behind the temple, cave mouth on the west hillside with its own path; stairs unchanged). The temple stands alone on a hill or mountain to the north, with woods around it and nothing built to its left or right. Keep the stairs up the hill as they are. Add a lake behind the temple. Move the cavern entrance out of the temple grounds to the side of the hill in the surrounding area (a tree currently blocks it). Run `tools/mapcheck.js`, the reachability tests and the Great Cavern event checks after.
 
@@ -43,7 +45,7 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [x] Caren's Sacrament heals too much: cooldown 22 → 40 s (owner chose the longer cooldown; full sim check on Saturday).
 
 **Events**
-- [ ] King's Banquet (done Nov 26: waits for two servants, no repeated lines; scripted conversations (31), sanctuary, AI goes there and leaves before dusk: all done): starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
+- [x] King's Banquet (done Nov 26: waits for two servants, no repeated lines; scripted conversations (31), sanctuary, AI goes there and leaves before dusk: all done): starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
 - [ ] Sealed School (done Nov 26: no one enters or leaves while sealed, skeletons targetable and never spawn on anyone, blood-red dome on the city map; still to do: reasons to go there, more content): polish; fix walking in from outside while sealed; give teams a reason to go there so they can be trapped; dragon-tooth warriors must be targetable and never spawn on top of anyone; flesh the event out.
 - [x] (Nov 26) Event rewards (perks with icons; balance check on Saturday): every event needs a reason to take part. Command Seals only where it fits; otherwise a perk with an icon (a timed buff, intel, a field level, a true name...).
 
@@ -58,5 +60,5 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 
 **Combat**
 - [ ] Reality marbles (Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works): no NP charging inside one's own marble (stops chaining); a buff for its duration instead.
-- [ ] (step 1 done Nov 26: armour through the charge, wind x1.3, damage x1.25, `tools/npcheck.js`; cancels 58% → 25%, damage per fired NP 21.5 → 39; still to do: tune per NP on Saturday, starting with Gilgamesh at 70% duel wins, and look at why many servants rarely reach their NP in duels) Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
+- [ ] (step 1 done Nov 26: armour through the charge, wind x1.3, damage x1.25, `tools/npcheck.js`; cancels 58% → 25%, damage per fired NP 21.5 → 39; still to do: tune per NP on Saturday, starting with Gilgamesh at 70% duel wins, and look at why many servants rarely reach their NP in duels; the owner will split NP charge times and all balance between the Arena and the Grail War, since NPs are mainly for the war's longer fights) Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
 - [x] (Nov 26) Lancelot: keep his seized melee weapons and add two seized guns (MP5 and shotgun; balance check Saturday), an MP5 and a second real gun (not the Vulcan, which reads as an NP; offer choices), each with a reload like Kiritsugu's.
