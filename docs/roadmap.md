@@ -1,6 +1,6 @@
 # Roadmap: everything planned, in order (revised Nov 26, evening)
 
-Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/events-3.md` (the third event batch, the False Death rework and the War Board, Rho Aias's look), `docs/todo.md` (the full queue). Session counts are rough.
+Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/truce-bases.md` (truces, event zones, the event visual pass, base upgrades), `docs/events-3.md` (the third event batch, the False Death rework and the War Board, Rho Aias's look), `docs/todo.md` (the full queue). Session counts are rough.
 
 **Rules for the order:**
 - Cheap fixes every war feels go first.
@@ -12,24 +12,27 @@ Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, 
 - Berserker Unchained takes only a Berserker; otherwise **The Grail's Taint** (an Alter servant, confirming a black Grail).
 - The **Events** setting: Random, Fourth War events, Fifth War events.
 
-## Phase 1: balance and combat (Saturday, about two to three sessions)
+## Phase 1: balance, combat and the truce fix (Saturday, about three to four sessions)
+0. The truce fix first: AI never strikes under a truce, self-defence never breaks an oath, a warning before it does (`docs/truce-bases.md`).
 1. War and Arena values for every tunable number.
 2. Per-NP tuning, war first (Gilgamesh first).
 3. Reality marbles: no NP charging inside your own marble, and a buff instead.
 4. Fledgling Growth and Mage killer passives.
 5. The rest of the Sealed School.
-6. Rho Aias's new look (small; `docs/events-3.md`).
+6. Base upgrades replace the ley-line task (`docs/truce-bases.md`).
+   (Rho Aias's new look: done Nov 26.)
 7. The War Board and the False Death rework (`docs/events-3.md`).
 
 Details and baselines: `docs/saturday.md`.
 
 ## Phase 2: the new Fuyuki and the AI (about four to five sessions)
 1. Map step 1: the approved layout with residences and the Church sanctuary.
-2. The AI overhaul with alleys, line-of-sight witnesses and the daylight rules, and the two orders, Stay with me and Act freely.
+2. The AI overhaul with alleys, line-of-sight witnesses and the daylight rules, the two orders, Stay with me and Act freely, and one goal per team; event zones rebuilt with it (the Banquet's approach and castle, visible truce areas; `docs/truce-bases.md`).
 3. Building shapes, lots, fences, props, and the docks with room to duel.
 4. Destructible props.
 
-## Phase 2b: the third event batch (about three sessions)
+## Phase 2b: the event visual pass, then the third event batch (about four sessions)
+First a visual pass over every existing event, the Horror in the River first (`docs/truce-bases.md`).
 Thirteen story moments built as events (`docs/events-3.md`): scripted beats in story mode, dealt from the deck in normal wars with lore hosts and stand-ins, like today's events. Small ones first (The Overseer Falls, The Hundred Faces, Bluebeard's Siege, The Gate of Ryuudou, A Day in Shinto; these can come earlier when a session has room), then the middle ones, then The King Returns and The Vessel Taken.
 
 ## Phase 2c: after death (about two sessions)

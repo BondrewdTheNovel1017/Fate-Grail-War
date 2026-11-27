@@ -4,6 +4,9 @@ The overall order of everything is in `docs/roadmap.md`; this page is phases 0 a
 
 Everything open, in the order I'd take it. Each step ends with `npm test`, a rebuild, a publish and a push. The full queue stays in `docs/todo.md`; the map and vehicle plans are in `docs/map-overhaul.md`.
 
+## 0. The truce fix (first; `docs/truce-bases.md`)
+AI never targets or swings at truce partners; self-defence never breaks an oath; a warning before a human's blow breaks it; truce rings and a TRUCE chip; tests and sim counters. Then base upgrades in place of the ley-line task.
+
 ## 1. Balance pass, split by mode (owner, Nov 26)
 The owner will balance the Arena and the Grail War separately: "the only way to be balanced". NPs in particular are mainly for the war's longer fights.
 - **First, the plumbing:** give every tunable number a war value and an Arena value. Arena duels already build from `SERV_DUEL` (duel-length stats) and master duels from `MDUEL`; extend that so `NP_RW` (NP charge and damage), NP momentum, perk strengths and gun numbers can differ per mode, and the war keeps its own.
@@ -27,7 +30,6 @@ Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works: no NP ch
 Already done: no one enters or leaves while sealed, targetable skeletons that never spawn on anyone, the blood-red dome, the Reclaimed Prana perk. Still to do: reasons to go there (so teams get trapped), and more content (waves, breaking the seal from inside, a payoff for surviving).
 
 ## 3b. Quick looks and fixes (`docs/events-3.md`)
-- Rho Aias's new look: purple-pink stacked layers, a five-lobed flower in front and round layers behind, drawn edge-on top-down; only `src/ui/89e-rho.js`.
 - The War Board drop-down (key I) and the False Death rework (no global death banners; Church notices and rumors; the False Death rides on fights, not the deck).
 
 ## 4. AI overhaul (best done with the map overhaul)
