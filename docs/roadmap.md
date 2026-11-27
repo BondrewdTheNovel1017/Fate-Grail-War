@@ -30,7 +30,7 @@ Details and baselines: `docs/saturday.md`.
 4. Destructible props.
 
 ## Phase 2b: the third event batch (about three sessions)
-Twelve new events drawn from the stories, generic enough for any war (`docs/events-3.md`). Small ones first (The Grail Stirs, The Church Goes Dark, Common Enemy, The Gatekeeper, Knives in the Dark, Night of the Siege, A Crowded Day; these can come earlier when a session has room), then The Stray Servant and The Drained City, then The Witness (needs Phase 2's witnesses), then The Abduction and The Eighth Servant.
+Thirteen story moments built as events (`docs/events-3.md`): scripted beats in story mode, dealt from the deck in normal wars with lore hosts and stand-ins, like today's events. Small ones first (The Overseer Falls, The Hundred Faces, Bluebeard's Siege, The Gate of Ryuudou, A Day in Shinto; these can come earlier when a session has room), then the middle ones, then The King Returns and The Vessel Taken.
 
 ## Phase 2c: after death (about two sessions)
 Spectator mode (small), then Alter invasions: a dead player returns for a while as an Alter of a fallen servant (`docs/events-3.md`).
