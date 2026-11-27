@@ -1,0 +1,18 @@
+servant     tries/duel  cancelled  dmg per fired NP  win%
+caerwyn          0.10        33%              60.3    60
+richard          0.55        21%              52.7    47
+leonidas         0.50        23%               0.0    42
+atalanta         0.02       100%               0.0    55
+emiya            0.62        22%              26.2    55
+heracles         0.60        36%              23.1    57
+hassan           0.15        11%               4.7    42
+diarmuid         0.05        33%              16.9    30
+cu               0.05         0%              23.9    43
+gilgamesh        0.70        26%             104.8    70
+iskandar         0.05        67%              62.6    45
+gilles           0.07        50%              26.6    53
+lancelot         0.32        21%              34.1    45
+medusa           0.00         0%               0.0    58
+medea            0.13        38%              19.4    45
+kojirou          0.47        11%              27.0    53
+ALL                 25% cancelled       39.0 avg dmg per fired NP

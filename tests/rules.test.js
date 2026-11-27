@@ -738,13 +738,14 @@ test('Zabaniya: the cursed arm reaches a foe beyond sword reach, in a narrow lin
   const h = G.f[0], r = G.f[1]; G.ai = [null, null];
   h.x = 500; h.y = 500; r.x = 750; r.y = 500; h.face = 0; r.face = Math.PI; h.foe = r; r.foe = h; h.mom = 100;
   const hp0 = r.hp; assert.ok(E.startAct(h, 'np'));
-  for (let i = 0; i < 60 * 1.5; i++) { r.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); }
+  const zw = h.A.np.wind; // the charge time (it scales with NP_RW)
+  for (let i = 0; i < 60 * (zw + 0.5); i++) { r.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); }
   assert.ok(r.hp < hp0, 'it lands from 250 away');
   const G2 = E.newGame(E.SERV.hassan, E.SERV.richard, { map: 'arena' });
   const h2 = G2.f[0], r2 = G2.f[1]; G2.ai = [null, null];
   h2.x = 500; h2.y = 500; r2.x = 680; r2.y = 500; h2.face = 0; h2.foe = r2; r2.foe = h2; h2.mom = 100;
   const hp1 = r2.hp; assert.ok(E.startAct(h2, 'np'));
-  for (let i = 0; i < 48; i++) E.simStep(E.STEP);
+  for (let i = 0; i < Math.ceil(60 * zw * 0.96); i++) E.simStep(E.STEP);
   r2.y = 680; // stepped out of the line once his aim is locked
   for (let i = 0; i < 60 * 0.9; i++) { r2.inp = { mx: 0, my: 0 }; E.simStep(E.STEP); }
   assert.strictEqual(r2.hp, hp1, 'a step out of the line beats it');
@@ -1028,4 +1029,12 @@ test('Lancelot\'s seized guns: their own magazine; the MP5 bursts, a shotgun she
   seize('shotgun'); const before = G.proj.length; E.startAct(L, 'light'); step(16);
   assert.strictEqual(L.ammo, 5, 'one shell'); 
   L.ammo = 0; step(5); assert.ok(L.reloadT > 0, 'an empty gun reloads'); step(60 * 2.6); assert.strictEqual(L.ammo, 6, 'reloaded');
+});
+test('A servant charging a Noble Phantasm holds through ordinary blows; another Noble Phantasm still breaks it', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.SERV.caerwyn, E.SERV.cu, { map: 'arena' }); G.ai = [null, null];
+  const ar = G.f[0], cu = G.f[1]; ar.x = 400; ar.y = 600; cu.x = 480; cu.y = 600; ar.mom = 100;
+  E.startAct(ar, 'np'); E.simStep(E.STEP);
+  E.hurt(cu, ar, cu.A.heavy, 1); assert.strictEqual(ar.st, 'wind', 'a heavy blow does not break the charge');
+  E.hurt(cu, ar, cu.A.np, 1); assert.notStrictEqual(ar.st, 'wind', 'a Noble Phantasm does');
 });

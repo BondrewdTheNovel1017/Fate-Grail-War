@@ -58,5 +58,5 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 
 **Combat**
 - [ ] Reality marbles (Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works): no NP charging inside one's own marble (stops chaining); a buff for its duration instead.
-- [ ] Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
+- [ ] (step 1 done Nov 26: armour through the charge, wind x1.3, damage x1.25, `tools/npcheck.js`; cancels 58% → 25%, damage per fired NP 21.5 → 39; still to do: tune per NP on Saturday, starting with Gilgamesh at 70% duel wins, and look at why many servants rarely reach their NP in duels) Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
 - [x] (Nov 26) Lancelot: keep his seized melee weapons and add two seized guns (MP5 and shotgun; balance check Saturday), an MP5 and a second real gun (not the Vulcan, which reads as an NP; offer choices), each with a reload like Kiritsugu's.

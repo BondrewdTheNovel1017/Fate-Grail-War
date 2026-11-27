@@ -107,9 +107,11 @@ function useSeal(f, kind) {
   return true;
 }
 function press(f, name) { f.buf.name = name; f.buf.t = 0.18; }
+function npCharging(f) { return !!(f.act && f.act.npArmor && f.key === 'np' && f.st === 'wind'); }
 function armored(f) {
   if (f.wallT > 0) return true;
   if (f.sealArm && f.key === 'np' && (f.st === 'wind' || f.st === 'act' || f.st === 'rec')) return true; // a seal-forced NP cannot be stopped
+  if (npCharging(f)) return true; // a servant charging a Noble Phantasm holds through ordinary blows
   return !!(f.act && f.act.armor && (f.st === 'wind' || f.st === 'act' || f.st === 'rec'));
 }
 function setStag(f, dur) {

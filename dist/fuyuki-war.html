@@ -1333,6 +1333,7 @@ var BASE = {
   light: { kind: 'melee', wind: 0.26, act: 0.08, rec: 0.2, dmg: 8, reach: 100, arc: 0.9, cost: 7, stag: 0.32, power: 1, lunge: 34 },
   heavy: { kind: 'melee', wind: 0.45, max: 1.0, act: 0.14, rec: 0.62, dmg: 22, reach: 115, arc: 1.0, cost: 20, stag: 0.6, power: 2, gb: true, lunge: 70 }
 };
+var NP_RW = { wind: 1.3, dmg: 1.25 };
 function build(def) {
   var A = {};
   A.light = Object.assign({}, BASE.light, def.light || {}, { key: 'light' });
@@ -1340,6 +1341,8 @@ function build(def) {
   A.heavy = Object.assign({}, BASE.heavy, def.heavy || {}, { key: 'heavy' });
   A.skill = Object.assign({ wind: 0.3, act: 0.1, rec: 0.4, dmg: 0, cost: 12, stag: 0.5, power: 1, arc: 1, reach: 100 }, def.skill, { key: 'skill' });
   A.np = Object.assign({ wind: 1.2, act: 0.2, rec: 0.9, dmg: 40, cost: 0, stag: 0.9, power: 3, unblock: true, arc: 1 }, def.np, { key: 'np' });
+  // servants' Noble Phantasms: a longer charge that ordinary blows cannot break, and more damage when it lands (NP_RW; tuned per NP later)
+  if (!def.isMaster) { A.np.wind *= NP_RW.wind; if (A.np.dmg) A.np.dmg *= NP_RW.dmg; A.np.npArmor = true; }
   if (A.np.kind === 'ubw') A.np.sword = Object.assign({ kind: 'proj', key: 'np', power: 1, stag: 0.15, cost: 0, arc: 0 }, def.np.sword);
   ['light', 'heavy', 'np'].forEach(function (k) { if (A[k].kind === 'barrage') A[k].bullet = Object.assign({}, A[k], { kind: 'proj', unblock: false, power: 1, key: k }); });
   if (def.arms) A.arms = def.arms.map(function (m) { return { id: m.id, name: m.name, wpn: m.wpn, mag: m.mag, aiWant: m.aiWant, light: Object.assign({}, BASE.light, m.light, { key: 'light' }), heavy: Object.assign({}, BASE.heavy, m.heavy, { key: 'heavy' }) }; });
@@ -1738,9 +1741,11 @@ function useSeal(f, kind) {
   return true;
 }
 function press(f, name) { f.buf.name = name; f.buf.t = 0.18; }
+function npCharging(f) { return !!(f.act && f.act.npArmor && f.key === 'np' && f.st === 'wind'); }
 function armored(f) {
   if (f.wallT > 0) return true;
   if (f.sealArm && f.key === 'np' && (f.st === 'wind' || f.st === 'act' || f.st === 'rec')) return true; // a seal-forced NP cannot be stopped
+  if (npCharging(f)) return true; // a servant charging a Noble Phantasm holds through ordinary blows
   return !!(f.act && f.act.armor && (f.st === 'wind' || f.st === 'act' || f.st === 'rec'));
 }
 function setStag(f, dur) {
@@ -2244,7 +2249,7 @@ function hurt(att, def, a, mult, src) {
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
   taken *= perkDamageTaken(def);
-  def.hp -= taken; def.stat.taken += taken; perkHit(att, def, taken); def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
+  def.hp -= taken; def.stat.taken += taken; if (a.key === 'np' && att && att !== def) att.stat.npDmg = (att.stat.npDmg || 0) + taken; perkHit(att, def, taken); def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   harmMana(att, def, taken);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
   gainMom(def, taken * 0.35);
@@ -2269,6 +2274,7 @@ function hurt(att, def, a, mult, src) {
   var arrowFlinch = a.kind === 'proj' && a.power < 2 && (def.st === 'wind' || def.st === 'act');
   if (arrowFlinch) { /* light arrows do not break a wind-up */ }
   else if (a.noStag) { /* bullets chip without stunning */ }
+  else if (npCharging(def) && a.power < 3 && a.kind !== 'grab') { /* only another Noble Phantasm or a grab breaks an NP's charge */ }
   else if (!ar || a.power >= 2) { if (!(ar && a.power === 2 && def.wallT > 0)) setStag(def, ar ? Math.min(a.stag, 0.4) : a.stag); }
   var dx = def.x - (s ? s.x : def.x), dy = def.y - (s ? s.y : def.y), L = Math.hypot(dx, dy) || 1, kb = a.kb !== undefined ? a.kb : (a.power >= 2 ? 210 : 90);
   def.kx = dx / L * kb; def.ky = dy / L * kb;
@@ -2287,6 +2293,7 @@ function startAct(f, key) {
   f.hidAct = !!(f.hid && key !== 'np'); if (key === 'np') { f.hid = false; f.hidAct = false; }
   f.quietT = 0; f.hid = false; if (f.cnc) { f.cnc = false; f.cncCd = G.time + 3; }
   f.act = a; f.key = key; f.st = 'wind'; f.t = 0; f.hitDone = false; f.atkId++;
+  if (key === 'np') f.stat.npTry = (f.stat.npTry || 0) + 1; // counted for the NP balance report
   f.sta -= a.cost; f.stDelay = 0.7;
   if (f.sta <= 0) { f.sta = 0; f.exh = 1.0; f.stDelay = 0.9; FX.snd('exhaust', f); }
   f.curWind = a.wind * (key === 'light' && f.combo > 0 ? 0.8 : 1);
@@ -2338,6 +2345,7 @@ function spawnProj(f, a, mult, ang, idx) {
   G.proj.push({ x: sx0, y: sy0, vx: Math.cos(ang) * a.speed, vy: Math.sin(ang) * a.speed, owner: f, a: a, mult: mult, range: a.range, trav: 0, dead: false });
 }
 function strikeInit(f) {
+  if (f.key === 'np') f.stat.npFire = (f.stat.npFire || 0) + 1;
   var a = f.act, o = f.foe, mult = 1;
   if (f.key === 'light') {
     var n = f.def.combo; mult = (f.combo >= n - 1 && !f.A.lightSeq) ? 1.35 : 1;
