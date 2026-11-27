@@ -48,7 +48,7 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [ ] Event rewards: every event needs a reason to take part. Command Seals only where it fits; otherwise a perk with an icon (a timed buff, intel, a field level, a true name...).
 
 **War setup options**
-- [ ] Draft modes: Standard (one servant of each class), True random, and lore pairings: Fourth War teams, Fifth War teams, applied to the remaining pairings or to all of them (including the player's).
+- [x] (Nov 26) Draft modes: Standard (one servant of each class), True random, and lore pairings: Fourth War teams, Fifth War teams, applied to the remaining pairings or to all of them (including the player's).
 
 **Dialogue**
 - [x] (Nov 26) Downtime talk between master and servant while walking or doing day tasks out of combat: rare, never spammed; pair-specific lines and multi-line conversations; Kiritsugu stays silent.

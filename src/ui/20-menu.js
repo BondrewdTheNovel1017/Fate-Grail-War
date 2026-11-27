@@ -176,10 +176,14 @@ function renderSetup() {
   $('#mdetail').innerHTML = entityDetailHTML('m', CFG.master, 'your master');
   $('#masters').innerHTML = entityRosterHTML('m', CFG.master, 'data-master', false);
   $('#rivals').innerHTML = [[7, 'Full war: 7 teams, every class'], [4, '4 teams'], [3, '3 teams']].map(function (n) { return '<button type="button" class="chip" data-teams="' + n[0] + '" aria-pressed="' + (CFG.teams === n[0]) + '">' + n[1] + '</button>'; }).join('');
+  var DRAFTS = [['standard', 'Standard: one of each class'], ['random', 'True random'], ['fourth', 'Fourth War teams'], ['fifth', 'Fifth War teams']];
+  $('#draftC').innerHTML = DRAFTS.map(function (d) { return '<button type="button" class="chip" data-draft="' + d[0] + '" aria-pressed="' + ((CFG.draft || 'standard') === d[0]) + '">' + d[1] + '</button>'; }).join('');
+  var lore = CFG.draft === 'fourth' || CFG.draft === 'fifth'; $('#scopeO').hidden = !lore;
+  $('#scopeC').innerHTML = [['others', 'Rivals only (keep my pick)'], ['all', 'Everyone, me included']].map(function (d) { return '<button type="button" class="chip" data-scope="' + d[0] + '" aria-pressed="' + ((CFG.draftScope || 'others') === d[0]) + '">' + d[1] + '</button>'; }).join('');
   document.querySelectorAll('#nightsC').forEach(function (el) { el.innerHTML = [[3, '3 nights (about 25 min)'], [5, '5 nights (about 40 min)']].map(function (n) { return '<button type="button" class="chip" data-nights="' + n[0] + '" aria-pressed="' + ((CFG.nights || 3) === n[0]) + '">' + n[1] + '</button>'; }).join(''); });
   $('#diff').innerHTML = Object.keys(DIFF).map(function (k) { return '<button type="button" class="chip" data-d="' + k + '" aria-pressed="' + (CFG.diff === k) + '">' + DIFF[k].name + ' &middot; ' + DIFF[k].desc + '</button>'; }).join('');
   $('#spd').innerHTML = [[1, 'Normal'], [0.8, 'Relaxed (80%)'], [0.65, 'Slow (65%)']].map(function (q) { return '<button type="button" class="chip" data-s="' + q[0] + '" aria-pressed="' + (CFG.speed === q[0]) + '">' + q[1] + '</button>'; }).join('');
-  $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams &middot; starting at ' + (MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : 'a safehouse');
+  $('#summary').innerHTML = '<b>' + esc(shortName(SERV[CFG.servant].name)) + '</b> with <b>' + MASTERS[CFG.master].name + '</b> &middot; playing the ' + CFG.playAs + ' &middot; ' + CFG.teams + ' teams &middot; ' + ({ random: 'true random draft', fourth: 'Fourth War teams', fifth: 'Fifth War teams' }[CFG.draft] || 'standard draft') + (CFG.draft === 'fourth' || CFG.draft === 'fifth' ? (CFG.draftScope === 'all' ? ' for everyone' : ' for rivals') : '') + ' &middot; starting at ' + (MASTER_HOME[CFG.master] ? MAPS.city.homes[MASTER_HOME[CFG.master]].name : 'a safehouse');
   setFeat($('#sfeat'), 's', CFG.servant); setFeat($('#mfeat'), 'm', CFG.master); $('#warCard').innerHTML = warCardHTML();
   if (CFG.game === 'arena') renderArena();
   applySteps();
@@ -192,6 +196,8 @@ document.addEventListener('click', function (e) {
   if ((el = t.closest('[data-master]'))) { CFG.master = el.dataset.master; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-nights]'))) { CFG.nights = +el.dataset.nights; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-teams]'))) { CFG.teams = +el.dataset.teams; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-draft]'))) { CFG.draft = el.dataset.draft; saveCfg(); renderSetup(); return; }
+  if ((el = t.closest('[data-scope]'))) { CFG.draftScope = el.dataset.scope; saveCfg(); renderSetup(); return; }
   if ((el = t.closest('[data-stance]'))) { var my = G && G.f[MEI]; if (NET.mirror && my && my.def.isMaster) { NET.so = el.dataset.stance; my.partner.stance = NET.so; renderStances(); return; } if (my && my.partner && my.def.isMaster) { my.partner.stance = el.dataset.stance; my.partner.anchor = null; FX.text(my.partner, ({ protect: 'PROTECTING', charge: 'CHARGE!', hold: 'HOLDING', passive: 'STANDING DOWN', retreat: 'RETREATING', spirit: 'SPIRIT FORM' })[el.dataset.stance]); renderStances(); } return; }
   var ch = t.closest('.chip');
   if (ch && ch.dataset.d) { CFG.diff = ch.dataset.d; saveCfg(); renderSetup(); }

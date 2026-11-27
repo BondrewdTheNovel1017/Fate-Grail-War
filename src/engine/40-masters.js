@@ -108,11 +108,47 @@ Object.keys(MASTERS).forEach(function (k) { MASTERS[k].A = build(MASTERS[k]); })
 var CLASSES = ['Saber', 'Archer', 'Lancer', 'Rider', 'Caster', 'Assassin', 'Berserker'];
 function shuffled(a, rnd) { a = a.slice(); rnd = rnd || Math.random; for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 // one team per class: the player's team first, then one random servant of every other class, each with a different master
-function warTeams(myServ, myMaster, nTeams, rnd) {
-  rnd = rnd || Math.random; var mine = SERV[myServ] || SERV[ORDER[0]], teams = [{ servant: mine, master: MASTERS[myMaster] || MASTERS[MASTER_ORDER[0]] }];
+/* war drafts: standard (one servant of each class), random (any servants, classes may repeat), and the lore teams of the
+   Fourth and Fifth Wars, for the rivals only or for every team including the player's (scope 'all') */
+var LORE_WARS = {
+  fourth: [['caerwyn', 'kiritsugu'], ['diarmuid', 'kayneth'], ['iskandar', 'waver'], ['gilgamesh', 'tokiomi'], ['hassan', 'kirei'], ['lancelot', 'kariya'], ['gilles', 'ryuunosuke']],
+  fifth: [['caerwyn', 'shirou'], ['emiya', 'rin'], ['cu', 'kirei'], ['medusa', 'sakura'], ['medea', 'kuzuki'], ['kojirou', null], ['heracles', 'illya']] // Kojirou was called by Medea: any free master takes him
+};
+function warTeams(myServ, myMaster, nTeams, rnd, draft, scope) {
+  rnd = rnd || Math.random; draft = draft || 'standard';
+  if (LORE_WARS[draft]) return loreTeams(draft, myServ, myMaster, nTeams, rnd, scope === 'all');
+  var mine = SERV[myServ] || SERV[ORDER[0]], teams = [{ servant: mine, master: MASTERS[myMaster] || MASTERS[MASTER_ORDER[0]] }];
+  if (draft === 'random') {
+    var sp = shuffled(ORDER.filter(function (id) { return id !== mine.id; }), rnd), mp = shuffled(MASTER_ORDER.filter(function (m) { return m !== teams[0].master.id; }), rnd);
+    for (var r = 0; r < Math.max(1, Math.min(6, nTeams - 1)); r++) teams.push({ servant: SERV[sp[r]], master: MASTERS[mp[r % mp.length]] });
+    return teams;
+  }
   var cls = shuffled(CLASSES.filter(function (c) { return c !== mine.cls; }), rnd).slice(0, Math.max(1, Math.min(6, nTeams - 1)));
   var ms = shuffled(MASTER_ORDER.filter(function (m) { return m !== teams[0].master.id; }), rnd);
   cls.forEach(function (c, i) { var pool = ORDER.filter(function (id) { return SERV[id].cls === c; }); teams.push({ servant: SERV[pool[Math.floor(rnd() * pool.length)]], master: MASTERS[ms[i % ms.length]] }); });
+  return teams;
+}
+function loreTeams(war, myServ, myMaster, nTeams, rnd, all) {
+  var L = LORE_WARS[war].slice(), teams = [], usedM = {}, usedS = {};
+  if (all) {
+    // the player plays the lore team of their chosen master, else of their chosen servant, else the first
+    var pick = L.filter(function (t) { return t[1] === myMaster; })[0] || L.filter(function (t) { return t[0] === myServ; })[0] || L[0];
+    L.splice(L.indexOf(pick), 1); L.unshift(pick);
+  } else {
+    teams.push({ servant: SERV[myServ] || SERV[ORDER[0]], master: MASTERS[myMaster] || MASTERS[MASTER_ORDER[0]] });
+    usedS[teams[0].servant.id] = 1; usedM[teams[0].master.id] = 1;
+    L = shuffled(L, rnd);
+  }
+  L.forEach(function (t) {
+    if (teams.length >= Math.max(2, Math.min(7, nTeams)) || usedS[t[0]] || (t[1] && usedM[t[1]])) return;
+    teams.push({ servant: SERV[t[0]], master: t[1] ? MASTERS[t[1]] : null }); usedS[t[0]] = 1; if (t[1]) usedM[t[1]] = 1;
+  });
+  // anyone left without a master (Kojirou, or a lore master the player took) gets a free one
+  var free = shuffled(MASTER_ORDER.filter(function (m) { return !usedM[m]; }), rnd);
+  teams.forEach(function (t) { if (!t.master) { var m = free.shift(); t.master = MASTERS[m]; usedM[m] = 1; } });
+  // a short draft (the player took a lore servant or master) is filled from the rest of the roster
+  var restS = shuffled(ORDER.filter(function (id) { return !usedS[id]; }), rnd);
+  while (teams.length < Math.max(2, Math.min(7, nTeams)) && restS.length && free.length) teams.push({ servant: SERV[restS.shift()], master: MASTERS[free.shift()] });
   return teams;
 }
 var ORDER = ['caerwyn', 'richard', 'leonidas', 'atalanta', 'emiya', 'heracles', 'hassan', 'diarmuid', 'cu', 'gilgamesh', 'iskandar', 'gilles', 'lancelot', 'medusa', 'medea', 'kojirou'];

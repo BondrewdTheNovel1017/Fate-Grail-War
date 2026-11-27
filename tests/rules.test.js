@@ -983,3 +983,14 @@ test('Sealed School: no one enters or leaves (masters included), and skeletons n
   const c = ev.circles[0]; G.f[0].x = c.x; G.f[0].y = c.y;
   for (let i = 0; i < 20; i++) { const p = E.schoolSpawn(c); if (p) assert.ok(Math.hypot(p.x - c.x, p.y - c.y) > 0 && G.f.every((f) => Math.hypot(f.x - p.x, f.y - p.y) >= 150), 'clear of fighters'); }
 });
+test('War drafts: standard keeps one of each class, the lore wars field their canon teams', () => {
+  const E = loadEngine();
+  const st = E.warTeams('richard', 'rin', 7, Math.random, 'standard'), cls = st.map((t) => t.servant.cls);
+  assert.strictEqual(new Set(cls).size, 7, 'seven classes');
+  const four = E.warTeams('caerwyn', 'kiritsugu', 7, Math.random, 'fourth', 'all');
+  assert.deepStrictEqual(four.map((t) => t.servant.id + '/' + t.master.id).sort(), E.LORE_WARS.fourth.map((t) => t[0] + '/' + t[1]).sort(), 'the Fourth War exactly');
+  const five = E.warTeams('richard', 'rin', 7, Math.random, 'fifth', 'others');
+  assert.ok(five[0].servant.id === 'richard' && five[0].master.id === 'rin' && five.length === 7, 'my pick kept, seven teams');
+  assert.ok(five.some((t) => t.servant.id === 'heracles' && t.master.id === 'illya') && five.some((t) => t.servant.id === 'medea' && t.master.id === 'kuzuki'), 'lore pairs for rivals');
+  const ids = five.map((t) => t.master.id); assert.strictEqual(new Set(ids).size, ids.length, 'no master twice');
+});
