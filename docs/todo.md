@@ -1,6 +1,6 @@
 # Queue (owner's requests, organized)
 
-**Next session: see `docs/saturday.md`** (balance pass split by mode, reality marbles, the school, the AI overhaul, map overhaul step 1).
+**Overall order: `docs/roadmap.md`. Next session: `docs/saturday.md`** (balance pass split by mode, reality marbles, the school, the AI overhaul, map overhaul step 1).
 
 Order: fix what every game feels first (bugs and the AI), then small direct requests, then larger features. New masters have their own list in `docs/future-masters.md`. Tick items off here as they land.
 
@@ -68,3 +68,5 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [ ] The Fuyuki Fire: final-night event at the Civic Hall (the building collapses, black mud flows around buildings, fire behind it).
 - [ ] Events setting: Random, Fourth War events, Fifth War events, Story (separate from team drafts).
 - [ ] Story modes with a beat director (canon off-screen, live on-screen, fallbacks, Canon meter): Fate/Zero first, then Fate/stay night's Fate, Unlimited Blade Works and Heaven's Feel routes.
+- [ ] Grail circle: appear at midnight, start closing about 15 s later, much smaller (about 2,000 to 550 over about 180 s; today 4,200 to 750 over 330 s, 60 s after midnight).
+- [ ] Cutscenes (only when a human is there; also in Random mode for canon meetings; in multiplayer the clock pauses for all while the war goes on), special duel arenas, ending scenes (see `docs/roadmap.md` A, C, D).

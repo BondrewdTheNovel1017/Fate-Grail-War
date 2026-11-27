@@ -1,5 +1,7 @@
 # Saturday plan (prepared Nov 26)
 
+The overall order of everything is in `docs/roadmap.md`; this page is phases 0 and 1 in detail.
+
 Everything open, in the order I'd take it. Each step ends with `npm test`, a rebuild, a publish and a push. The full queue stays in `docs/todo.md`; the map and vehicle plans are in `docs/map-overhaul.md`.
 
 ## 1. Balance pass, split by mode (owner, Nov 26)
@@ -31,6 +33,7 @@ Always fight back when attacked; keep things hidden by day (no fights unless som
 Draft 2 is approved (`docs/map-draft-2.png`, drawn by `tools/mapdraft.py`): the coastline outline, eight districts with one rival base each (closest rival bases 2,300 apart, today 1,423), all points of interest, three estate plots and five backup safehouses, the Uryuu storehouse for Ryuunosuke, Mount Enzou as its own lobe with the cave on a hidden trail. Step 1 builds the outline, districts, roads and base sites and moves every coordinate table with them.
 
 ## Also ready to build (planned Nov 26, `docs/story-modes.md`)
+- Grail circle: appear at midnight, close soon after, much smaller.
 - Quick fix: Berserker Unchained for Berserkers only, The Grail's Taint otherwise.
 - The Events setting (Random, Fourth War, Fifth War), then the Fuyuki Fire, then the story modes.
 
