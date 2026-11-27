@@ -11,7 +11,9 @@ Mirrors the Claude Doc "Fate Grail War Roadmap".
 2. Self-defence never breaks an oath: a blow at someone who struck or swung at you or your partner in the last 5 s is free; the starter is the oath-breaker.
 3. A warning first: a human's first blow in a truce is stopped with "You stand under a truce. Strike again to break it."; only a second blow within 4 s breaks the oath.
 4. Truce zones drawn on the ground (pale ring) and a TRUCE chip on the HUD while inside.
-5. Tests for each rule; sim counters for truce blows stopped and oaths broken by AI (target 0).
+5. Friendly means friendly: under a truce the AI does not face, swing, cast or call combat lines at truce partners; it uses truce lines (`TRUCE_PAIRS`, Banquet scripts).
+6. An event held at a home (the Banquet at the Einzbern castle): the host's field is off for guests while it runs.
+7. Tests for each rule; sim counters for truce blows stopped and oaths broken by AI (target 0).
 
 ## Event zones, with the AI overhaul (Phase 2)
 - Each truce event zone has a heart (the table, the river's edge), an approach (the road in) and an edge. The approach protects anyone heading in who has not struck anyone in the last 30 s.

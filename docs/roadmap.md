@@ -4,6 +4,23 @@ Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, 
 
 **Fate Grail War 2.0:** Phases 1 to 2c are the 2.0 overhaul (truce fix, balance, strings, resources, the new Fuyuki, the AI, the hunt, the event visual pass and new events, play after death). Story modes follow as 2.1 (Fate/Zero) and 2.2 (the Fate/stay night routes).
 
+## The 2.0 update list, in order
+Each update: I build it, send it to the preview, you try it and ask for changes, then I move on.
+
+**2.0-A, fix and feel:** 1 preview build and dev scenarios; 2 the truce fix (AI friendly in truces, no swings or combat lines, self-defence, warning, rings, host field off for guests); 3 clearer bars; 4 spirit form; 5 fields that matter, Outsider homes; 6 base upgrades; 7 war and Arena values; 8 NP tuning and reality marbles; 9 Fledgling and Mage killer; 10 true names and the chronicle; 11 War Board and False Death; 12 the Sealed School.
+**2.0-B, strings:** 13 the system (engine, AI, Codex); 14 finishers batch 1 (King Arthur, EMIYA, Heracles, Kiritsugu, Kirei); 15 finishers batches 2-6; 16 openers and mids, rerun duel checks.
+**2.0-C, new Fuyuki and the AI:** 17 the new map with shaped fields and safe zones, ward stones; 18 interiors; 19 AI team plans, one rule set, event zones; 20 alleys, witnesses, daylight rules, two orders; 21 home invasions, lures, sabotage; 22 houses, fences, props, docks, destructibles.
+**2.0-D, the hunt:** 23 hidden homes; 24 mana rework; 25 familiars; 26 traps; 27 day and night rhythm.
+**2.0-E, events:** 28 visual pass (Horror first); 29 small events; 30 middle events; 31 large events.
+**2.0-F, after death:** 32 spectator; 33 Alter invasions.
+**Then:** 2.1 story foundations, guided first night, Fate/Zero; 2.2 Fifth War characters and routes; later vehicles, progression, maps.
+
+## How each update is reviewed
+- A separate preview artifact gets each update first; the main game and site change only after you approve.
+- Dev scenarios in the preview (`#dev` on the link): jump straight to a moment (start an event, set the clock, full NP bar, stand in a level-3 field, try a string on a dummy, an AI invasion). Built on `__duel`, `fxLab` and the event starters.
+- With each update: what changed, screenshots or frame strips, the scenario to try, and the tunable numbers with their values.
+- Then I wait for your go.
+
 **Rules for the order:**
 - Cheap fixes every war feels go first.
 - Foundations before what is built on them.
