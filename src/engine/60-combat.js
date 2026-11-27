@@ -188,7 +188,7 @@ function strikeInit(f) {
   if (f.key === 'np' && !f.def.isMaster) { if (a.breaksMarble) breakMarble(f); FX.snd('npfire:' + f.def.id, f, a); FX.fx('npfire', f.x, f.y, f); }
   if (k === 'melee') { if (a.arc) meleeCheck(f, a.lunge > 100 ? Object.assign({}, a, { reach: a.reach + a.lunge * 0.85 }) : a, mult); }
   else if (k === 'proj') { spawnProj(f, a, mult, f.face, 0); if (a.breakT) { f.brokenT = a.breakT + a.rec; FX.text(f, 'BLADE SHATTERED'); FX.fx('swordBreak', f.x + Math.cos(f.face) * 40, f.y + Math.sin(f.face) * 40, f); } }
-  else if (k === 'volley') { var vn = a.ammo && hasMag(f) ? Math.min(a.count, f.ammo) : a.count; for (var vi = 0; vi < vn; vi++) { if (a.ammo && hasMag(f)) takeRound(f); spawnProj(f, a, mult, f.face + (vi - (vn - 1) / 2) * a.spread, vi); } FX.shake(3); }
+  else if (k === 'volley') { var vn = a.ammo && hasMag(f) ? Math.min(a.count, f.ammo) : a.count, shells = 0; if (a.shells && hasMag(f)) { shells = Math.min(a.shells, f.ammo); for (var sh = 0; sh < shells; sh++) takeRound(f); vn = Math.round(a.count * shells / a.shells); } for (var vi = 0; vi < vn; vi++) { if (a.ammo && hasMag(f) && !a.shells) takeRound(f); spawnProj(f, a, mult, f.face + (vi - (vn - 1) / 2) * a.spread, vi); } FX.shake(3); }
   else if (k === 'aoe') {
     enemiesOf(f).forEach(function (e) { if (dist(f, e) <= a.r + FR) { var r = hurt(f, e, a, 1); if (r === 'hit' || r === 'gbreak') { var an = angTo(f, e); e.kx = Math.cos(an) * 260; e.ky = Math.sin(an) * 260; } } });
     if (f.key !== 'np') { FX.spark(f.x, f.y, '#f0a93b', 16); FX.shake(7); FX.fx('slam', f.x, f.y, f); } else { FX.shake(14); }
@@ -197,7 +197,7 @@ function strikeInit(f) {
     var bx = o.x - Math.cos(o.face) * 62, by = o.y - Math.sin(o.face) * 62;
     f.x = clamp(bx, 30, W - 30); f.y = clamp(by, 30, H - 30); f.face = angTo(f, o); f.crit = 2.2; FX.spark(f.x, f.y, '#9aa7b3', 12); FX.fx('shadowIn', f.x, f.y, f);
   }
-  else if (k === 'arm') { f.arm = Math.floor(rnd() * f.A.arms.length); f.armT = a.dur; FX.text(f, f.A.arms[f.arm].name.toUpperCase()); FX.fx('arm', f.x, f.y, f); FX.shake(3); }
+  else if (k === 'arm') { f.arm = Math.floor(rnd() * f.A.arms.length); f.armT = a.dur; if (f.A.arms[f.arm].mag) { f.ammo = f.A.arms[f.arm].mag.size; f.reloadT = 0; } FX.text(f, f.A.arms[f.arm].name.toUpperCase()); FX.fx('arm', f.x, f.y, f); FX.shake(3); }
   else if (k === 'barrage') { f.barN = 0; f.barT = 0; }
   else if (k === 'sacrament') sacrament(f, a);
   else if (k === 'fade') startFade(f, a);
@@ -267,7 +267,7 @@ function stepF(f, dt) {
     if (f.def.trace) traceTick(f, dt);
     if (f.def.stigmata) stigmataTick(f, dt);
     if (f.def.id === 'emiya' || f.def.trace) rhoTick(f, dt);
-    if (f.def.mag) ammoTick(f, dt);
+    if (hasMag(f)) ammoTick(f, dt);
     if (MAP.doors) doorTick(f, dt);
     if (f.def.isMaster && G.mode === 'war') manaTick(f, dt);
     if (f.sigCd > 0) f.sigCd -= dt; if (f.silenceT > 0) f.silenceT -= dt; if (f.shieldT > 0) f.shieldT -= dt; if (f.rootT > 0) f.rootT -= dt; if (f.buffT > 0) f.buffT -= dt; if (f.reinfT > 0) f.reinfT -= dt;

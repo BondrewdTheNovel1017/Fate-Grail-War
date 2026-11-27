@@ -12,7 +12,9 @@ function build(def) {
   A.np = Object.assign({ wind: 1.2, act: 0.2, rec: 0.9, dmg: 40, cost: 0, stag: 0.9, power: 3, unblock: true, arc: 1 }, def.np, { key: 'np' });
   if (A.np.kind === 'ubw') A.np.sword = Object.assign({ kind: 'proj', key: 'np', power: 1, stag: 0.15, cost: 0, arc: 0 }, def.np.sword);
   ['light', 'heavy', 'np'].forEach(function (k) { if (A[k].kind === 'barrage') A[k].bullet = Object.assign({}, A[k], { kind: 'proj', unblock: false, power: 1, key: k }); });
-  if (def.arms) A.arms = def.arms.map(function (m) { return { id: m.id, name: m.name, wpn: m.wpn, light: Object.assign({}, BASE.light, m.light, { key: 'light' }), heavy: Object.assign({}, BASE.heavy, m.heavy, { key: 'heavy' }) }; });
+  if (def.arms) A.arms = def.arms.map(function (m) { return { id: m.id, name: m.name, wpn: m.wpn, mag: m.mag, aiWant: m.aiWant, light: Object.assign({}, BASE.light, m.light, { key: 'light' }), heavy: Object.assign({}, BASE.heavy, m.heavy, { key: 'heavy' }) }; });
+  // seized guns fire bursts: each burst needs its bullet, built as for any barrage
+  if (A.arms) A.arms.forEach(function (m) { ['light', 'heavy'].forEach(function (k) { if (m[k].kind === 'barrage') m[k].bullet = Object.assign({}, m[k], { kind: 'proj', unblock: false, power: 1, key: k }); }); });
   return A;
 }
 var SERV = {
@@ -74,14 +76,21 @@ var SERV = {
     skill: { name: 'Sea Horrors', kind: 'rain', wind: 0.5, act: 0.1, rec: 0.45, dmg: 15, count: 3, spread: 120, zr: 84, delay: 0.7, zshape: 'tentacle', cd: 5, cost: 12, aiRange: [140, 520], desc: 'Three horrors rise from the ground under the enemy after a short delay.' },
     np: { name: "Prelati's Spellbook", kind: 'rain', wind: 1.4, act: 0.2, rec: 1.0, dmg: 16, count: 8, spread: 230, zr: 90, delay: 0.95, zshape: 'tentacle', gb: true, aiMin: 120, aiMax: 560, desc: 'Eight horrors burst from the ground across a wide area. Watch the circles and keep moving.' } },
   lancelot: { id: 'lancelot', name: 'Lancelot du Lac', cls: 'Berserker', col: '#7d7fb5', wpn: 'fist', hp: 200, spd: 236, dmg: 1.03, guard: 0.43, combo: 4, recMul: 0.9, momMul: 1.3,
-    brief: 'The black knight, lost to madness. Bare fists until he seizes a weapon, and a stolen minigun for a Noble Phantasm.',
+    brief: 'The black knight, lost to madness. Bare fists until he seizes a weapon (blades, a hammer, even an MP5 or a shotgun), and a stolen minigun for a Noble Phantasm.',
     light: { reach: 80, wind: 0.2, rec: 0.18, dmg: 7, lunge: 30, cost: 6 }, heavy: { reach: 98, dmg: 19, wind: 0.42, rec: 0.58, lunge: 60 },
     arms: [
       { id: 'sword', name: 'Longsword', wpn: 'sword', light: { reach: 122, dmg: 9, wind: 0.24, cost: 7 }, heavy: { reach: 138, dmg: 25, wind: 0.46 } },
       { id: 'spear', name: 'Spear', wpn: 'spear', light: { reach: 152, dmg: 8, wind: 0.26, arc: 0.5, lunge: 40, cost: 7 }, heavy: { reach: 170, dmg: 22, wind: 0.46, arc: 0.55 } },
-      { id: 'hammer', name: 'Warhammer', wpn: 'club', light: { reach: 108, dmg: 12, wind: 0.34, rec: 0.3, cost: 9 }, heavy: { reach: 124, dmg: 34, wind: 0.64 } }
+      { id: 'hammer', name: 'Warhammer', wpn: 'club', light: { reach: 108, dmg: 12, wind: 0.34, rec: 0.3, cost: 9 }, heavy: { reach: 124, dmg: 34, wind: 0.64 } },
+      // seized guns: each comes with its own magazine and reloads like Kiritsugu's
+      { id: 'mp5', name: 'MP5', wpn: 'gun', mag: { size: 30, reload: 2.0 }, aiWant: 300,
+        light: { name: 'MP5 burst', kind: 'barrage', ammo: true, act: 0.24, rate: 0.08, dmg: 2.2, speed: 1700, range: 560, spread: 0.06, wind: 0.12, rec: 0.2, max: 0, reach: 0, lunge: 0, cost: 4, shape: 'tracer', stag: 0.05, gb: false },
+        heavy: { name: 'MP5 long burst', kind: 'barrage', ammo: true, act: 1.0, rate: 0.07, dmg: 2.0, speed: 1700, range: 600, spread: 0.1, wind: 0.3, rec: 0.5, max: 0, reach: 0, lunge: 0, cost: 14, shape: 'tracer', stag: 0.05, gb: false } },
+      { id: 'shotgun', name: 'Shotgun', wpn: 'gun', mag: { size: 6, reload: 2.4 }, aiWant: 170,
+        light: { name: 'Shotgun blast', kind: 'volley', ammo: true, shells: 1, count: 6, spread: 0.11, dmg: 3, speed: 1500, range: 300, wind: 0.22, rec: 0.42, max: 0, reach: 0, lunge: 0, cost: 8, shape: 'tracer', stag: 0.3 },
+        heavy: { name: 'Both barrels', kind: 'volley', ammo: true, shells: 2, count: 10, spread: 0.1, dmg: 3.2, speed: 1500, range: 280, wind: 0.42, rec: 0.7, max: 0, reach: 0, lunge: 0, cost: 16, shape: 'tracer', stag: 0.6, power: 2 } }
     ],
-    skill: { name: 'Seize Arms', kind: 'arm', wind: 0.35, act: 0.1, rec: 0.4, dmg: 0, cost: 12, cd: 11, dur: 9, desc: 'He snatches a weapon from the nearest thing. For 9 seconds it replaces his fists as his light and heavy attacks.' },
+    skill: { name: 'Seize Arms', kind: 'arm', wind: 0.35, act: 0.1, rec: 0.4, dmg: 0, cost: 12, cd: 11, dur: 9, desc: 'He snatches a weapon from the nearest thing: a sword, a spear, a warhammer, an MP5 or a shotgun, each turned black and veined with red. For 9 seconds it replaces his fists as his light and heavy attacks. The guns come loaded and reload when empty.' },
     np: { name: 'Knight of Owner', sub: 'A Knight Does Not Die Empty-Handed', kind: 'barrage', wind: 1.1, act: 1.4, rec: 0.9, dmg: 2.7, speed: 1500, range: 760, rate: 0.055, spread: 0.07, track: 1.5, power: 1, noStag: true, kb: 14, hs: 0.012, stag: 0.1, unblock: false, shape: 'tracer', aiMin: 140, aiMax: 600, desc: 'He turns a machine gun into a Noble Phantasm and sprays a stream of bullets, tracking you slowly.' } },
   medusa: { id: 'medusa', name: 'Medusa', cls: 'Rider', col: '#d96bb8', wpn: 'chain', hp: 188, spd: 262, dmg: 1.12, guard: 0.5, combo: 4, recMul: 0.9, gazeSlow: 0.82,
     brief: 'A fast gorgon who fights with a spiked rondel on a chain. Her gaze slows you, and her chain hooks you in.',

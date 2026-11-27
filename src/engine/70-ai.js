@@ -124,7 +124,8 @@ function aiTick(ai, dt) {
   var flee = null;
   for (var j = 0; j < G.zones.length; j++) { var z = G.zones[j]; if (z.owner !== f && !z.done && Math.hypot(f.x - z.x, f.y - z.y) < z.r + 30 && z.t > cfg.react * 0.6) { flee = z; break; } }
   var mx = 0, my = 0;
-  var wantRange = f.def.ranged ? 380 : A.light.aiWant || (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14); // aiWant: a whip strikes from closer than its tip
+  var heldArm = f.armT > 0 && f.arm >= 0 && A.arms ? A.arms[f.arm] : null;
+  var wantRange = f.def.ranged ? 380 : heldArm && heldArm.aiWant ? heldArm.aiWant : A.light.aiWant || (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14); // aiWant: a whip strikes from closer than its tip
   if (A.np.aiKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = A.np.aiKeep; } else ai.keepT = 0; // a reach-NP fighter steps back to cast it from out of sword reach
   if (f.st === 'idle' || f.st === 'rec') {
     if (ai.plantT > 0) ai.plantT -= dt;

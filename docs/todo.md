@@ -59,4 +59,4 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 **Combat**
 - [ ] Reality marbles (Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works): no NP charging inside one's own marble (stops chaining); a buff for its duration instead.
 - [ ] Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
-- [ ] Lancelot: keep his seized melee weapons and add two seized guns, an MP5 and a second real gun (not the Vulcan, which reads as an NP; offer choices), each with a reload like Kiritsugu's.
+- [x] (Nov 26) Lancelot: keep his seized melee weapons and add two seized guns (MP5 and shotgun; balance check Saturday), an MP5 and a second real gun (not the Vulcan, which reads as an NP; offer choices), each with a reload like Kiritsugu's.

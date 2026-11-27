@@ -1018,3 +1018,14 @@ test('Event perks: each does what it says and runs out', () => {
   G.time += E.PERKS.unshaken.dur + 1; assert.ok(!E.hasPerk(0, 'unshaken'), 'and it runs out');
   G.event = { kind: 'berserk', f: foe, dmgBy: { 2: 40, 0: 10 } }; E.berserkPerk(G.event); assert.ok(E.hasPerk(2, 'unshaken') && !E.hasPerk(0, 'unshaken') || E.hasPerk(2, 'unshaken'), 'the team that fought the berserker hardest earns it');
 });
+test('Lancelot\'s seized guns: their own magazine; the MP5 bursts, a shotgun shell throws a spread, and both reload', () => {
+  const E = loadEngine();
+  const G = E.newGame(E.SERV.lancelot, E.SERV.cu, { map: 'arena' }); G.ai = [null, null];
+  const L = G.f[0], o = G.f[1]; L.x = 400; L.y = 600; o.x = 600; o.y = 600; L.face = 0;
+  const step = (n) => { for (let i = 0; i < n; i++) { G.f.forEach((f) => { f.inp = { mx: 0, my: 0 }; }); E.simStep(E.STEP); } };
+  const seize = (id) => { L.arm = L.A.arms.findIndex((a) => a.id === id); L.armT = 9; L.ammo = L.A.arms[L.arm].mag.size; L.reloadT = 0; };
+  seize('mp5'); E.startAct(L, 'light'); step(40); assert.ok(L.ammo <= 27 && L.ammo >= 25, 'MP5 burst spent about three rounds (' + L.ammo + ')');
+  seize('shotgun'); const before = G.proj.length; E.startAct(L, 'light'); step(16);
+  assert.strictEqual(L.ammo, 5, 'one shell'); 
+  L.ammo = 0; step(5); assert.ok(L.reloadT > 0, 'an empty gun reloads'); step(60 * 2.6); assert.strictEqual(L.ammo, 6, 'reloaded');
+});
