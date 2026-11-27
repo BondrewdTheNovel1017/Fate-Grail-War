@@ -1,128 +1,274 @@
-# Roadmap: everything planned, in the recommended order (Nov 26)
+# Roadmap: everything planned, in order (revised Nov 26, evening)
 
-Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (events and story modes), `docs/future-masters.md` (new masters), `docs/todo.md` (the full queue). Session counts are rough.
+Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/todo.md` (the full queue). Session counts are rough.
 
-The order follows three rules:
-1. **Cheap fixes that every war feels go first.**
-2. **Foundations before what is built on them:** balance plumbing before tuning, the map before the AI that uses alleys, destructible props before the Fuyuki Fire, the beat director and cutscenes before any story.
-3. **Characters before the stories that need them.**
+**Rules for the order:**
+- Cheap fixes every war feels go first.
+- Foundations before what is built on them.
+- Characters before the stories that need them.
 
-## Phase 0: quick wins (under one session)
-1. **Grail circle (owner):**
-   - **Today:** the Grail appears 60 s after midnight with a 4,200-unit circle that takes 330 s to shrink to 750.
-   - **Change:** it appears **at midnight** and begins closing about 15 s later. Start at about **2,000** across and close to about **550** over about **180 s**. Check that the war still ends in a sensible time (`npm run sim`).
-2. **Berserker Unchained for Berserkers only; The Grail's Taint otherwise.** A servant turns Alter for a while and confirms a black Grail; this builds the Alter look reused later.
-3. **The Events setting:** Random, Fourth War events, Fifth War events (the story option comes in phase 4).
+## Phase 0: quick wins (done Nov 26)
+- The Grail appears at midnight, holds 15 s, then closes from 2,000 to 550 over 1 min 20 s.
+- Berserker Unchained takes only a Berserker; otherwise **The Grail's Taint** (an Alter servant, confirming a black Grail).
+- The **Events** setting: Random, Fourth War events, Fifth War events.
 
 ## Phase 1: balance and combat (Saturday, about two sessions)
-1. **Plumbing:** give every tunable number a war value and an Arena value (NP charge and damage, NP momentum, perks, guns).
-2. **Tune, war first, then the Arena:** each servant's NP (Gilgamesh first), King Arthur, Caren's Sacrament, Ryuunosuke, the five perks, Lancelot's guns, war pacing with the Banquet. Tools and baselines are listed in `docs/saturday.md`.
-3. **Reality marbles:** no NP charging inside your own marble; a buff for its duration instead.
-4. **Master type passives:** Fledgling Growth and Mage killer now. The Church sanctuary waits for phase 2, since it needs the Church as a shared home.
-5. **Sealed School content:** reasons to go there, waves, breaking the seal from inside, a payoff.
+1. War and Arena values for every tunable number.
+2. Per-NP tuning, war first (Gilgamesh first).
+3. Reality marbles: no NP charging inside your own marble, and a buff instead.
+4. Fledgling Growth and Mage killer passives.
+5. The rest of the Sealed School.
+
+Details and baselines: `docs/saturday.md`.
 
 ## Phase 2: the new Fuyuki and the AI (about four to five sessions)
-1. **Map step 1:** build the approved outline, districts, roads and base sites (draft 2): every point of interest, three estates, five safehouses, the Uryuu storehouse, Kuzuki at the temple, the Church shared by Kirei and Caren as a sanctuary, Mount Enzou with the hidden cave trail.
-2. **AI overhaul with map step 2:**
-   - Dark alleys and line-of-sight witnesses.
-   - The daylight rules: hide, fight only if attacked, use alleys and interiors.
-   - Always fight back; no staring.
-   - Protecting servants hold a spot near their master.
-   - The two orders, **Stay with me** and **Act freely**.
-3. **Map step 3:** non-square buildings, lots, fences, gardens, poles and wires, props; the docks with container yards and room to duel.
-4. **Destructible props:** containers, crates, fences, lamp posts, vending machines (whole, dented, torn, wrecked).
+1. Map step 1: the approved layout with residences and the Church sanctuary.
+2. The AI overhaul with alleys, line-of-sight witnesses and the daylight rules, and the two orders, Stay with me and Act freely.
+3. Building shapes, lots, fences, props, and the docks with room to duel.
+4. Destructible props.
 
 ## Phase 3: story foundations (about three sessions)
-1. **Cutscene system** (section A below).
-2. **Beat director** (section B, and `docs/story-modes.md` section 4).
-3. **Special arenas for duels and scenes** (section C).
+1. **Scene system** (section A): portable in-world scenes, staged scenes and transitions, multiplayer pausing, settings.
+2. **Beat director** (section B).
+3. **Scene arenas** (section C).
 4. **Ending scenes** (section D).
-5. **The Fuyuki Fire** (uses the destructible props).
+5. **The Fuyuki Fire**: the Civic Hall collapses, mud flows around buildings, fire follows.
+6. **Canon moments in Random mode:** the portable scenes from section E that need no story (first meetings, betrayals, unmaskings).
 
-## Phase 4: Fate/Zero story (about two sessions)
-The whole cast is in the roster. Fourteen beats, about half of them existing events (section E).
+## Phase 4: Fate/Zero story (about two sessions; section F)
 
-## Phase 5: Fifth War characters, then Fate/stay night (about six to eight sessions)
-1. **Characters first:** Shinji, Bazett, Zouken, True Assassin (a Hassan variant), Saber Alter (Alter look), Dark Sakura. Ayaka comes in the same batch of new masters.
-2. **The routes, in this order:** Fate (fewest new characters), then Unlimited Blade Works, then Heaven's Feel (section F).
+## Phase 5: Fifth War characters, then the routes (about six to eight sessions; section G)
+- **Characters first:** Shinji, Bazett, Zouken, True Assassin, Saber Alter, Dark Sakura; Ayaka in the same batch.
+- **Then the routes:** Fate, then Unlimited Blade Works, then Heaven's Feel.
 
 ## Phase 6: vehicles (about three sessions)
-Parked cars you can wreck, then traffic and sidewalks, then driving, with Rider class driving best.
+Wreckable parked cars, then traffic and sidewalks, then driving.
 
 ## Phase 7: longer-term
-Progression with alternate skills; lore Arena maps (several are built in phase 3 as scene arenas and can be reused); new large war maps (Snowfield, Trifas).
+Progression with alternate skills, lore Arena maps (phase 3's scene arenas double as these), new large maps.
 
 ---
 
-## A. Cutscenes (owner, Nov 26)
-- **When one plays:** when a story beat happens **correctly** (its cast is there and the canon moment occurs), and **only if a human is there to see it**: a player within range, or one of the cast. With no one there, the beat resolves off-screen with a headline instead.
-- **Also in Random mode:** canon moments trigger cutscenes whenever the right cast meets. For example, King Arthur first meets Lancelot, Kirei kills Tokiomi, Iskandar meets King Arthur, or Rider's last charge when Iskandar and Gilgamesh face each other on the bridge.
-- **Multiplayer:**
-  - A scene plays only when **every player it needs is on the board**: alive, in the war, and near the place.
-  - While it plays, **the war clock pauses for everyone**, but the war keeps going: players not in the scene keep moving and fighting.
-  - The fighters in the scene are frozen and can't be targeted until it ends.
-  - Scenes are short (about 10–25 s) and skippable once every involved player presses skip.
-- **How it's built:** scenes are data, not code. A list of shots, each with:
-  - Camera moves.
-  - Actor moves (walk to, face, attack pose).
-  - Dialogue lines, original wording.
-  - Effects (FX calls), title cards and letterbox bars.
+## A. How scenes flow (story mode and Random mode)
+**The question:** what if King Arthur and Lancelot meet somewhere other than the canon parking garage? Should the game cut away to a cutscene?
 
-  The scene runner plays them on top of the live game. Guests get the scene as one FX event and play it themselves.
+**The answer: mostly no.** Most scenes play **in the world, where the characters already are**. The camera eases in rather than cutting, and the scene hands play back exactly where it started. Only a few scenes need a particular place, and those reach it through the story itself or through a transition the lore already provides.
+
+### Three kinds of scene
+1. **Portable scenes (most of them).** They happen wherever the trigger happens:
+   - **Lead-in (about 0.6 s):** time slows, letterbox bars slide in, the camera eases to frame the actors at their current spots.
+   - **Marks:** the actors take positions *relative to where they stand* (for example, 120 apart facing each other), moved along the ground to the nearest open spot, never teleported through walls.
+   - **Body:** dialogue bubbles in original wording, poses and effects drawn with the real abilities (Lancelot's helm cracking uses his own sprite and the hit effects).
+   - **Hand-back:** the camera returns, the bars slide out, and everyone keeps their position. The actors get 1 s of protection, then the fight resumes.
+   - **Generic wording:** lines never name a place unless the scene knows it is there, so "the garage" is never said on a rooftop.
+   - **Variants:** a scene can have variants by setting (street, indoors, forest, bridge, rooftop) and time (day, night) for its opening line, the lighting and small props (rain, sparks).
+2. **Staged scenes (a few).** These need their place: Rider's last charge on Fuyuki Bridge, Kiritsugu against Kirei in the burning Civic Hall, the Great Cavern, the temple gate. Two ways to reach them:
+   - **In story mode,** the beat director gathers the cast there first. The AI travels, players get an objective arrow and a banner, and the scene starts when the cast arrives.
+   - **In Random mode,** a staged scene plays only if the cast meets at or near its place. Otherwise its portable variant plays where they are.
+3. **Transitions (when the story must move people).** No hard cuts. The game uses what the lore already gives:
+   - **Reality marbles move everyone by nature:** Ionioi Hetairoi and Unlimited Blade Works already take fighters into their own world, so those scenes play inside the marble wherever it opens.
+   - **The Grail's mud:** on the final night, the black mud can swallow two rivals and bring them up inside the burning Civic Hall theatre (Kiritsugu and Kirei), shown as a black wave crossing the screen.
+   - **A challenge or invitation:** "Kirei waits for you at the Civic Hall." The player chooses to go, so it never feels forced.
+
+### Triggers, interruptions, multiplayer
+- **When a scene plays:**
+  - Its conditions are met: the cast is present and the moment happens (a health threshold, a first meeting, an NP landing).
+  - **A human is there to see it:** a player within view, or a player in the cast.
+  - **No other hostile is close** (about 600). If one is, the scene waits a few seconds; if the chance passes, it is skipped and the moment simply happens in play.
+- **During a scene:** the actors are frozen and can't be targeted, and others can't hurt them. Anyone else nearby sees the bubbles over their heads.
+- **Multiplayer:**
+  - A scene plays only when **every player it needs is on the board**.
+  - **The war clock pauses for everyone,** while the war goes on for players not in the scene. Their screens show a small "scene in progress" mark at the actors' place.
+  - Skip needs every involved player to press skip. Guests receive the scene as one FX event and play it locally.
+- **Settings:** Scenes: All / Story only / Off. Each scene plays once per war. Typical length 8–20 s; endings may be longer.
+- **Built as data:** each scene is a list of shots: camera moves, actor marks and poses, lines, effects, title cards. Adding a scene never means new code.
 
 ## B. Beat director (summary)
 - **Beats:** each has a time window, cast, place, AI setup, outcome and fallbacks.
-- **Off-screen, canon happens; on-screen, the fight is real.**
-- **Soft plot armor:** AI avoids killing scheduled cast early and saves seals for them; a player can kill anyone.
-- **Fallbacks:** substitute host, skip or alternate beat. A Canon meter tracks the drift, and the ending card names it.
+- **Off-screen, canon happens** (a headline reports it). **On-screen, the fight is real.**
+- **Soft plot armor:** AI avoids killing scheduled cast early and saves seals for them; players can kill anyone.
+- **Fallbacks:** substitute, skip or alternate beat. A **Canon meter** tracks the drift and names the ending.
 - **Players:** canon scenes are optional objectives with rewards; declining breaks nothing.
-- **Multiplayer:** the host runs the director (`G.story`); beats and scenes reach guests as FX events.
-- **Lengths:** each story sets its own nights, days and phase lengths. Fate/Zero runs about seven nights, with a four-night short version.
+- **Multiplayer:** the host runs it (`G.story`); beats reach guests as FX events.
+- **Lengths:** each story sets its own nights, days and phase lengths.
 
-## C. Special arenas (rooms in the interior strip, entered through the beat)
-- **Kiritsugu and Kirei:** the Civic Hall's inner theatre, burning, with the Grail above.
-- **Kiritsugu and Kayneth:** the Einzbern Castle hall (Volumen Hydrargyrum against Origin Rounds).
-- **King Arthur and Lancelot:** the parking garage under the Civic Hall.
-- **Rider's last charge:** Fuyuki Bridge, a long straight stage.
-- **King Arthur and Kojirou:** the Ryuudou Temple gate and steps.
-- **Shirou and Archer:** the Einzbern Castle (and Unlimited Blade Works).
-- **Heracles in the Einzbern forest clearing:** his seven deaths.
-- **The Great Cavern:** already in the game.
+## C. Scene arenas (rooms entered through a story beat or a transition)
+- **Civic Hall theatre, burning:** Kiritsugu and Kirei; the Grail overhead.
+- **Einzbern Castle hall:** Kiritsugu and Kayneth; later Shirou and Archer (Unlimited Blade Works route).
+- **Parking garage under the Civic Hall:** King Arthur and Lancelot.
+- **Fuyuki Bridge:** Rider's last charge.
+- **Ryuudou Temple gate and steps:** Kojirou.
+- **Einzbern forest clearing:** Heracles.
+- **The Great Cavern:** already built.
 
 ## D. Ending scenes
-- **Every war:** the winning pair's wish, as a short scene with their own lines.
-- **A black Grail:** the corrupted wish, or, if the Fuyuki Fire covered the Grail, the burning city.
+- **Every war:** the winner's wish, with the pair's own lines.
+- **Black Grail:** the corrupted wish, or the burning city after the Fuyuki Fire.
 - **Story endings:**
-  - **Fate/Zero:** Kiritsugu destroys the Grail; the fire; Waver at the shore.
-  - **Fate:** King Arthur at Camlann's hill at dawn.
+  - **Fate/Zero:** Kiritsugu orders the Grail destroyed; the fire; Waver at the shore.
+  - **Fate:** dawn on the hill; King Arthur's farewell.
   - **Unlimited Blade Works:** Archer's farewell at sunrise.
   - **Heaven's Feel:** spring, the cherry trees.
-- **Divergent endings:** titled by the Canon meter, written for the most common outcomes (for example "The King of Conquerors Claims the Grail").
+- **Divergent endings,** named by the Canon meter, for common outcomes (for example "The King of Conquerors Claims the Grail", "No One Was Left").
 
-## E. Fate/Zero beats (detail in `docs/story-modes.md` section 5)
+## E. Canon moments in any war (portable scenes, also in Random mode)
 
-| # | Beat | When | Built from | Cutscene |
-|---|---|---|---|---|
-| 1 | Assassin "dies" at the Tohsaka Mansion | Prologue | False Death | Gilgamesh's rain of treasures, from the garden |
-| 2 | Battle at the Docks | Night 1 | Challenge, plus entrances | Iskandar's entrance and announcement; Gilgamesh on the lamp post |
-| 3 | The Hyatt | Day 2 | Demolition | The tower floor falls |
-| 4 | The Einzbern Forest | Night 2 | Kayneth against Kiritsugu, in the castle hall arena | Origin Rounds against Volumen Hydrargyrum |
-| 5 | Bounty on Caster | Night 2 | Church Bounty | The overseer's announcement |
-| 6 | The King's Banquet | Day 3 | Banquet, three-king script | Ionioi Hetairoi answers the Assassins |
-| 7 | The Horror in the River | Night 3 | Horror, plus breaking Gáe Buidhe | Lancer breaks his spear; Excalibur ends it |
-| 8 | Irisviel is taken | Day 4 | Rescue objective | The abduction |
-| 9 | The Self Geas Scroll | Night 4 | Pact betrayal | Lancer's curse |
-| 10 | Kirei's betrayal | Night 5 | `gilBetrayTick` | The King's offer to Kirei |
-| 11 | Rider's last charge | Night 5 | Bridge arena duel | Ionioi Hetairoi against Enuma Elish; Waver spared |
-| 12 | The Knight of the Lake | Night 6 | Garage arena duel | Lancelot's helm falls |
-| 13 | Kiritsugu and Kirei | Final | Civic Hall theatre arena | Their last exchange |
-| 14 | The Fuyuki Fire | Final | New event | Kiritsugu's order to destroy the Grail; the mud spills |
+| Moment | Trigger | Scene |
+|---|---|---|
+| King Arthur meets Lancelot | First time they fight | Lancelot's roar of her name; she doesn't yet know him |
+| The Knight of the Lake | Lancelot below 30% health fighting King Arthur | His helm cracks and falls; her recognition |
+| Iskandar's introduction | First time Iskandar meets another servant | He announces his name and offers to recruit them |
+| Kings meet | Iskandar, Gilgamesh and King Arthur in one place | A short exchange of their wishes (the Banquet's full scene is in its event) |
+| The Eighth Contract | Kirei kills Tokiomi (`gilBetrayTick`) | The King's offer to Kirei |
+| Lancer's honour | Diarmuid's master dies by betrayal, or the Self Geas Scroll | Lancer's curse on those who betrayed him |
+| Archer and the boy | EMIYA meets Shirou | Archer's cold stare, a few words neither understands yet |
+| Rule Breaker takes a servant | Medea's NP lands on a servant | The contract tears; the servant's new mark |
+| Alter returns | The Grail's Taint | The mud closes, then opens on the changed servant |
+| Gate of Babylon unveiled | Gilgamesh first uses his NP | The golden ripples open behind him |
+| Unlimited Blade Works | EMIYA or Shirou opens the marble | The chant's first and last lines, the field of swords |
+| Ionioi Hetairoi | Iskandar opens the marble | The army behind him, the desert wind |
+| The black sun | A corrupted Grail descends | The black sun opens over the site |
 
-## F. Fate/stay night beats (detail in `docs/story-modes.md` section 6)
-**Shared opening:** the witness at the school (Lancer against Archer; Shirou chased and saved; Saber summoned in the shed), the Church, Berserker on the hill.
+## F. Fate/Zero story (six nights)
+**Teams:** King Arthur and Kiritsugu (with Irisviel), Diarmuid and Kayneth, Iskandar and Waver, Gilgamesh and Tokiomi, Hassan and Kirei, Lancelot and Kariya, Gilles and Ryuunosuke.
 
-| Route | Beats | Cutscenes | Needs |
-|---|---|---|---|
-| Fate | Blood Fort at school; temple gate (Kojirou); Caster's ambush; Einzbern forest (Heracles' seven deaths); a day in Shinto; Gilgamesh kills Caster's team; final at Ryuudou Temple | Excalibur against Enuma Elish; Avalon | Shinji |
-| Unlimited Blade Works | Archer's betrayal; Rule Breaker takes Saber; Gilgamesh at the castle; Shirou against Archer; Lancer's last order; final in Unlimited Blade Works | Unlimited Blade Works chant; Archer's farewell | Shinji, Bazett |
-| Heaven's Feel | The Shadow rises; True Assassin kills Kojirou and Caster; Saber falls (Saber Alter); Heracles against Saber Alter; Shirou takes Archer's arm; Rider allies; final in the Great Cavern | Saber Alter's return; Rider's mask comes off | Shinji, Zouken, True Assassin, Saber Alter, Dark Sakura |
+**Phases:** night about 5 min, day about 2 min; the full story runs about 45 min (a short version merges nights 4 and 5).
+
+**Night 1: The War Begins**
+1. **Summonings** (intro): each master's summoning. *Scene:* Kiritsugu and Irisviel find King Arthur is a woman.
+2. **Assassin falls at the Tohsaka Mansion** (False Death). *Scene, staged at the mansion garden:* Gilgamesh on the roof; a rain of treasures. The Assassin team is "dead" until dawn.
+3. **The Harbour Duel** (Challenge, at the docks). Diarmuid calls King Arthur out.
+   - *Scene 1:* the challenge. Her left hand is wounded by Gáe Buidhe, a lasting debuff until Lancer's spear breaks.
+   - *Scene 2:* Iskandar's chariot crashes between them; he announces his name and wish.
+   - *Scene 3:* Gilgamesh on a lamp post; Lancelot's attack.
+   - *Off-screen fallback:* a headline reports the duel's outcome.
+4. **Kayneth orders Lancer to finish Saber;** Iskandar drives him off. *Live fight.*
+
+**Day 2: Moves in the Dark**
+5. **The Church watches:** Kirei "withdraws" and shelters at the Church (the Assassin team's base is the Church).
+6. **Scouting** (existing scouts): AI masters send familiars.
+
+**Night 2: Fire and Forest**
+7. **The Hyatt** (Demolition, Kayneth's floor). *Scene, staged outside the tower:* the floors fold down. Kayneth survives in his bounded field.
+8. **Bounty on Caster** (Church Bounty, host Gilles). *Scene:* the overseer's announcement.
+9. **The Einzbern Forest:** Caster's horrors attack the castle. King Arthur and Diarmuid fight them together (a temporary truce); Diarmuid's spear breaks Caster's grimoire. *Scene:* the grimoire's pages burn.
+10. **Kiritsugu against Kayneth** in the castle hall (arena). *Scene:* Volumen Hydrargyrum against the Origin Round. Kayneth's circuits burn (his kit is silenced for the rest of the war; Lancer's mana comes from Sola-Ui).
+11. **Kirei against Irisviel and Maiya** in the forest. *Live fight;* Avalon saves Irisviel.
+
+**Day 3: The King's Banquet**
+12. **The Banquet** (existing; three kings). *Scenes:*
+    - The three wishes.
+    - The Assassin swarm.
+    - **Ionioi Hetairoi** destroys them (the Assassin team is truly out).
+13. **Rider and Waver burn Caster's lair** (a day task near the river for Iskandar's team: removes Caster's familiars).
+
+**Night 3: The Horror in the River**
+14. **Caster's leviathan** (Horror) rises in the Mion River; truce for all.
+    - *Scene:* the alliance.
+    - *Live:* the fight.
+    - **Kiritsugu snipes Ryuunosuke** (a Kiritsugu objective; scene from the rooftop).
+    - **Diarmuid breaks Gáe Buidhe** to free Saber's hand (Lancer's choice if both live; scene).
+    - **Excalibur ends it** (scene).
+15. **Tokiomi dismisses Kariya;** Kirei rescues him (off-screen).
+
+**Day 4: The Self Geas Scroll**
+16. **Kiritsugu's offer:** a truce with Kayneth under a binding scroll (the pact system). *Scene:* the signing.
+17. **Kayneth kills Risei at the Church** (off-screen headline): the overseer is gone, so the Church sends no more bounties.
+
+**Night 4: Betrayals**
+18. **The scroll's trap:** Maiya's rifle; Kayneth's seal forces Lancer's suicide. *Scene:* Lancer's curse.
+19. **The Eighth Contract:** Kirei kills Tokiomi and contracts Gilgamesh (`gilBetrayTick`). *Scene:* "Forgive me, Teacher."
+20. **Irisviel collapses;** her role as the vessel is revealed (Kiritsugu's team: she leaves the field and rests at the castle).
+
+**Day 5: The Abduction**
+21. **Irisviel is taken;** Maiya falls defending her. *Scene:* the empty car on the road.
+22. **The chase:** King Arthur on a motorcycle against Iskandar's chariot (a vehicle beat once vehicles exist; until then a run along the river road). *Live,* ending with the chariot destroyed.
+
+**Night 5: The Last Night**
+23. **Rider's last charge** on Fuyuki Bridge (staged).
+    - *Scene:* Waver offers his last seals; Iskandar refuses.
+    - **Ionioi Hetairoi against Enuma Elish.**
+    - *Scene:* Waver spared by the King.
+24. **The Knight of the Lake** in the parking garage (staged; or portable anywhere). *Scene:* the helm falls; Lancelot's last words.
+25. **Midnight: the Grail descends at the Civic Hall,** black.
+26. **Kiritsugu against Kirei** in the burning theatre (staged; mud transition). *Scene:* the Origin Round; their last words.
+27. **The Final Command:** if Kiritsugu holds the Grail, two seals order King Arthur to destroy it. *Scene.*
+28. **The Fuyuki Fire** (new event). *Ending scene:* the burning city; Kiritsugu finds a boy in the ashes.
+
+**Missing for this story:** nothing in the roster. New systems: the scene system, the beat director, the Fuyuki Fire. New arenas: castle hall, bridge, garage, theatre.
+
+## G. Fate/stay night stories (the shared opening, then one route)
+**Teams:** King Arthur and Shirou, EMIYA and Rin, Cú Chulainn and Kirei (Bazett in the prologue), Medusa and Shinji (Sakura's command), Medea and Kuzuki, Kojirou (Medea is his master), Heracles and Illya. Hidden: Gilgamesh with Kirei.
+
+**Phases:** about seven nights, night about 4 min, day about 2 min.
+
+### The shared opening (Nights 1–2)
+1. **The witness:** Archer and Lancer fight in the schoolyard; Shirou sees them. *Scene.*
+2. **Shirou dies and lives:** Lancer kills the witness; Rin saves him with her pendant. *Scene* (a fade, no gore).
+3. **The summoning in the shed:** Lancer comes again and Saber appears in the moonlight. *Scene* (the war's opening summoning for Shirou's team).
+4. **Rin and Archer:** Saber nearly kills Archer; Shirou stops her with a seal. *Scene.*
+5. **The Church:** Kirei explains the war (Overseer's Summons). *Scene.*
+6. **Berserker on the hill:** Illya's greeting; Heracles. *Live;* Shirou shields Saber from a blow (scene).
+
+### Fate route
+- **Day 3:** Shirou brings Saber into daily life (downtime talk; a Shinto day task).
+- **Night 3: Rider's barrier at the school:** Shinji reveals himself as Rider's master (scene) and offers an alliance; refusing starts his grudge.
+- **Night 3: The temple gate:** Saber goes alone to Ryuudou and duels Kojirou (staged). *Scene:* Tsubame Gaeshi.
+- **Day 4: Sword lessons;** Illya in the park (a peaceful meeting; truce).
+- **Night 4: Blood Fort Andromeda** (Sealed School). *Scenes:* Shirou calls Saber with a seal; Excalibur against Bellerophon over the city.
+- **Day 5: The winter castle:** Illya captures Shirou (rescue objective at the Einzbern castle).
+- **Night 5: The castle stand:** Archer holds Berserker off alone, Unlimited Blade Works (scene); Shirou traces Caliburn, and with Saber they kill Heracles' last lives (scene).
+- **Day 6: The comas:** Caster drains the city; Sakura is taken to the temple (rescue objective).
+- **Night 6: The temple:** the rescue; Gilgamesh appears and kills Caster and Kuzuki. *Scene:* "So you are the Saber of ten years ago."
+- **Day 7: The date:** Shirou and Saber in Shinto (day task with downtime talk); it ends in an argument (scene).
+- **Night 7: Gilgamesh attacks:** Shirou traces Avalon. *Scene.* Lancer holds Gilgamesh and dies (scene). Kirei takes Illya.
+- **Final, Ryuudou Temple:**
+  - Kirei against Shirou (live).
+  - **Excalibur against Enuma Elish, Avalon** (scene).
+- **Ending:** dawn on the hill; King Arthur's farewell.
+
+### Unlimited Blade Works route
+- **Night 3: Caster's pull:** Shirou is lured to the temple. Archer saves him (Caladbolg), then turns on him; Kojirou holds Archer off.
+- **Night 4: Blood Fort** (Sealed School): Rider is already dead inside (Shinji's servant killed off-screen); Shinji flees.
+- **Day 5: Shinji gets Gilgamesh** at the Church (off-screen headline).
+- **Night 5: Kuzuki** defeats Saber hand to hand; Shirou's overloaded Projection (scene).
+- **Night 6: Rule Breaker:**
+  - Caster takes Taiga hostage and breaks Shirou's contract (scene). Saber is Caster's (`ruleBreak`, kept for the story).
+  - **Archer's betrayal:** he joins Caster (a forced pact switch, scene).
+- **Day 7: The church and the castle:** Caster holds Saber at the Church. Gilgamesh kills Heracles and Illya at the Einzbern Castle (off-screen headline, or live if a player is there).
+- **Night 7: Lancer joins Rin's side.** Lancer against Archer (Rho Aias breaks). Rin's fist against Caster (scene); Archer kills Caster and Kuzuki, then takes Rin. Rin contracts Saber (scene).
+- **Night 8, the Einzbern Castle:** Shirou against Archer in Unlimited Blade Works (staged, the route's heart, scene). Lancer rescues Rin and kills Kirei (scene). Archer shields Shirou from Gilgamesh.
+- **Final, Ryuudou Temple:**
+  - Saber against Kojirou at the gate (live).
+  - **Shirou against Gilgamesh in Unlimited Blade Works by the lake** (scene).
+  - Rin pulls Shinji from the Grail; Archer's last arrow.
+- **Ending:** Archer's farewell at sunrise.
+
+### Heaven's Feel route
+- **Night 3: The Shadow rises** (the Shadow event, from night 2): bodies in the streets; the Church's warning.
+- **Night 3: The temple falls:** True Assassin (Zouken's) kills Kojirou and Caster.
+- **Night 4: Saber is swallowed** by the Shadow (scene).
+- **Night 5: Saber Alter:** she returns black (Alter look) and destroys Heracles. *Scene:* Saber Alter's Excalibur Morgan.
+- **Night 5: Lancer falls** to True Assassin; Gilgamesh is devoured (headlines).
+- **Day 6: Rider's alliance:** Sakura's servant joins Shirou (a story pact, scene).
+- **Night 6: Archer's arm:** Archer is mortally wounded saving Illya and gives Shirou his arm (scene). The arm is a temporary Projection boost with a cost.
+- **Night 7: Shirou against Heracles, corrupted** (with the arm). *Scene:* the arm's shroud comes off.
+- **Final, the Great Cavern:**
+  - Shirou and Rider against Saber Alter (scene: Rho Aias and Bellerophon).
+  - Rin against Sakura (scene).
+  - Kirei against Shirou, fists (live).
+- **Ending:** spring, the cherry trees.
+
+**Missing for Fate/stay night:**
+- **Shinji** (all routes).
+- **Bazett** (prologue in every route).
+- **Zouken and True Assassin** (Heaven's Feel).
+- **Saber Alter and Dark Sakura** (Heaven's Feel; the Alter look exists now).
+- **Shirou's Avalon, Caliburn and Archer's-arm moments** (as scenes and timed boosts).
+- **Arenas:** temple gate, castle hall, forest clearing.
+
+## Sources consulted
+- Fate/Zero episode list (Wikipedia).
+- Unlimited Blade Works route day by day (TYPE-MOON Wiki).
+- Fate/stay night (2006) episode list (Wikipedia).
+- Heaven's Feel films (Wikipedia).
