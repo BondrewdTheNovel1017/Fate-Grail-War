@@ -7833,30 +7833,53 @@ MORE_LINES.shirou = MORE_LINES.shirou || {}; MORE_LINES.shirou.rho = ['Trace on.
 LINES.emiya = LINES.emiya || {}; LINES.emiya.rho = MORE_LINES.emiya.rho; LINES.shirou = LINES.shirou || {}; LINES.shirou.rho = MORE_LINES.shirou.rho;
 var ENKIDU_LINES = ['Stay down, mongrel.', 'Know your place, mongrel.', 'Kneel, mongrel.', 'Enkidu. Hold them.', 'You came too close, mongrel.'];
 var ENKIDU_DIVINE = ['Even the gods kneel to these chains.', 'Struggle, half-god. They only tighten.'];
-// a petal: the shape of one layer of the shield
+// a petal: the shape of one leaf (kept for other effects)
 function petal(g, len, w) { g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * 0.45, -w, len, 0); g.quadraticCurveTo(len * 0.45, w, 0, 0); g.closePath(); }
+// Rho Aias: purple-pink shields stacked in layers, a five-lobed flower in front and round layers behind.
+// They stand upright facing the attack, so from above each layer is a thin lens across the line of fire.
+var RHO_LOOK = { W: 55, sq: 0.26, out: 40, gap: 3.5, open: 0.15, core: '180,92,224', rim: '255,154,216' };
+function rhoPath(g, R, lobes, sq) {
+  g.beginPath();
+  for (var i = 0; i <= 60; i++) { var th = i / 60 * 6.2832, r = lobes ? R * (0.8 + 0.2 * Math.cos(lobes * th)) : R; g.lineTo(Math.cos(th) * r * sq, Math.sin(th) * r); }
+  g.closePath();
+}
+function rhoPip(g, x, y, flower) { g.beginPath(); for (var i = 0; i <= 30; i++) { var th = i / 30 * 6.2832, r = flower ? 4.6 * (0.72 + 0.28 * Math.cos(5 * th)) : 3.4; g.lineTo(x + Math.cos(th - 1.5708) * r, y + Math.sin(th - 1.5708) * r); } g.closePath(); }
 function drawRho(g, f) {
   var m = rhoMax(f); if (!m || f.st === 'dead') return;
-  var left = rhoPetals(f), flash = f.rhoFlash && G.time - f.rhoFlash < 0.35 ? 1 - (G.time - f.rhoFlash) / 0.35 : 0;
-  // petals beside the health bar so you can always count them
+  var L = RHO_LOOK, left = rhoPetals(f), flash = f.rhoFlash && G.time - f.rhoFlash < 0.35 ? 1 - (G.time - f.rhoFlash) / 0.35 : 0;
+  var n = Math.ceil(left - 0.01);
+  if (f._rhoN !== undefined && n < f._rhoN) f._rhoBrk = { t: G.time, flower: f._rhoN === m, k: f._rhoN };
+  f._rhoN = n;
+  // the counter beside the health bar: round pips, the flower pip last (it breaks first)
   if (f === G.f[MEI] || f.guarding) {
-    g.save(); for (var i = 0; i < m; i++) { var on = i < Math.ceil(left - 0.01), part = i === Math.floor(left) ? left - Math.floor(left) : 1;
-      g.globalAlpha = on ? (i === Math.floor(left) && part < 1 ? 0.35 + 0.5 * part : 0.9) : 0.18; g.fillStyle = on ? '#ffd2dc' : '#6a7486';
-      g.save(); g.translate(f.x - (m - 1) * 5 + i * 10, f.y + 40); g.rotate(-Math.PI / 2); petal(g, 9, 4); g.fill(); g.restore(); }
+    g.save(); for (var i = 0; i < m; i++) { var on = i < n, part = i === Math.floor(left) ? left - Math.floor(left) : 1;
+      g.globalAlpha = on ? (i === Math.floor(left) && part < 1 ? 0.35 + 0.5 * part : 0.95) : 0.2;
+      g.fillStyle = on ? (i === m - 1 ? 'rgb(' + L.rim + ')' : 'rgb(' + L.core + ')') : '#5a5f70';
+      rhoPip(g, f.x - (m - 1) * 5 + i * 10, f.y + 40, i === m - 1); g.fill(); }
     g.restore();
   }
-  if (!f.guarding || left <= 0) return;
-  // the flower: open in front while guarding, flaring when struck
-  var n = Math.ceil(left - 0.01), R = 56 + flash * 8, cx = f.x + Math.cos(f.face) * 30, cy = f.y + Math.sin(f.face) * 30;
-  g.save(); g.translate(cx, cy); g.rotate(f.face);
-  g.globalCompositeOperation = 'lighter';
-  for (var k = 0; k < m; k++) {
-    var alive = k < n, an = (k - (m - 1) / 2) * (1.6 / Math.max(1, m - 1)) * (m > 4 ? 1 : 0.8);
-    g.save(); g.rotate(an); g.translate(-6, 0);
-    g.globalAlpha = alive ? 0.22 + 0.35 * flash + 0.05 * Math.sin(G.time * 6 + k) : 0.05;
-    var gr = g.createLinearGradient(0, 0, R, 0); gr.addColorStop(0, 'rgba(255,220,230,.2)'); gr.addColorStop(1, 'rgba(255,170,195,.9)');
-    g.fillStyle = gr; petal(g, R, 13); g.fill();
-    g.strokeStyle = 'rgba(255,240,245,.9)'; g.lineWidth = 1.2; g.globalAlpha = alive ? 0.5 + 0.4 * flash : 0.06; petal(g, R, 13); g.stroke();
+  var brk = f._rhoBrk && G.time - f._rhoBrk.t < 0.3 ? f._rhoBrk : null;
+  if (!f.guarding || (left <= 0 && !brk)) return;
+  var open = Math.min(1, (f.guardT || 0) / L.open), cs = Math.cos(f.face), sn = Math.sin(f.face);
+  g.save(); g.translate(f.x, f.y); g.rotate(f.face); g.globalCompositeOperation = 'lighter';
+  // back to front; layer j counts from the front (0 is the front one)
+  for (var j = n - 1; j >= 0; j--) {
+    var show = Math.max(0, Math.min(1, open * n - j)); if (show <= 0) continue;
+    var flower = j === 0 && n === m, front = j === 0, R = L.W * (0.6 + 0.4 * show) * (front ? 1 + flash * 0.08 : 1 - j * 0.02);
+    g.save(); g.translate(L.out - j * L.gap + (front ? flash * 3 : 0), 0);
+    var fade = (front ? 1 : 0.75 - j * 0.06) * show, sh = 0.05 * Math.sin(G.time * 5 + j);
+    var gr = g.createLinearGradient(0, -R, 0, R); gr.addColorStop(0, 'rgba(' + L.rim + ',.55)'); gr.addColorStop(0.5, 'rgba(' + L.core + ',.85)'); gr.addColorStop(1, 'rgba(' + L.rim + ',.55)');
+    g.globalAlpha = (0.16 + 0.25 * flash + sh) * fade; g.fillStyle = gr; rhoPath(g, R, flower ? 5 : 0, L.sq); g.fill();
+    g.globalAlpha = (0.55 + 0.4 * flash) * fade; g.strokeStyle = front ? 'rgba(255,240,250,.95)' : 'rgba(' + L.rim + ',.9)'; g.lineWidth = front ? 1.6 : 1.1; rhoPath(g, R, flower ? 5 : 0, L.sq); g.stroke();
+    if (flower) { g.globalAlpha = 0.35 * fade; g.lineWidth = 1; g.beginPath(); for (var p = 0; p < 5; p++) { var th = p / 5 * 6.2832; g.moveTo(0, 0); g.lineTo(Math.cos(th) * R * L.sq, Math.sin(th) * R); } g.stroke(); }
+    g.restore();
+  }
+  // the layer that just broke: cracks white, then gone
+  if (brk) {
+    var u = (G.time - brk.t) / 0.3, R2 = L.W * (1 + u * 0.15);
+    g.save(); g.translate(L.out + 4 + u * 10, 0); g.globalAlpha = 0.8 * (1 - u); g.strokeStyle = '#ffffff'; g.lineWidth = 1.4;
+    rhoPath(g, R2, brk.flower ? 5 : 0, L.sq); g.stroke();
+    g.beginPath(); for (var c = 0; c < 6; c++) { var y0 = (c / 5 - 0.5) * R2 * 1.6; g.moveTo(0, y0 * 0.2); g.lineTo(((c % 2) ? 1 : -1) * R2 * L.sq * 0.8, y0); } g.stroke();
     g.restore();
   }
   g.restore();
@@ -7882,8 +7905,8 @@ function drawChains(g, f) {
     g.restore(); return true;
   };
   var fx0 = fxExtra; fxExtra = function (n, x, y, f) {
-    if (n === 'rho') { var ff = f.f; ff.rhoFlash = G.time; if (f.lost > 0 && FX.near(x, y)) for (var s = 0; s < 6 * f.lost; s++) { var an = ff.face + (Math.random() - 0.5) * 1.8, sp = 120 + Math.random() * 200; parts.push({ x: ff.x + Math.cos(ff.face) * 40, y: ff.y + Math.sin(ff.face) * 40, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, t: 0, life: 0.5, col: Math.random() < 0.5 ? '#ffd2dc' : '#ffffff' }); } return true; }
-    if (n === 'rhoBreak') { ringFx(x, y, 10, 120, '#ffb6c8', 0.45, 6); FX.spark(x, y, '#ffd2dc', 26); flashFx('#ffd2dc', 0.12, 0.2); return true; }
+    if (n === 'rho') { var ff = f.f; ff.rhoFlash = G.time; if (f.lost > 0 && FX.near(x, y)) for (var s = 0; s < 6 * f.lost; s++) { var an = ff.face + (Math.random() - 0.5) * 1.8, sp = 120 + Math.random() * 200; parts.push({ x: ff.x + Math.cos(ff.face) * 40, y: ff.y + Math.sin(ff.face) * 40, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, t: 0, life: 0.5, col: Math.random() < 0.4 ? '#b45ce0' : Math.random() < 0.6 ? '#ff9ad8' : '#ffffff' }); } return true; }
+    if (n === 'rhoBreak') { ringFx(x, y, 10, 120, '#ff9ad8', 0.45, 6); FX.spark(x, y, '#c77ae6', 26); flashFx('#e7b0f0', 0.12, 0.2); return true; }
     return fx0 ? fx0(n, x, y, f) : false;
   };
 })();
