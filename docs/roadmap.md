@@ -1,6 +1,6 @@
 # Roadmap: everything planned, in order (revised Nov 26, evening)
 
-Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/truce-bases.md` (truces, event zones, the event visual pass, base upgrades), `docs/events-3.md` (the third event batch, the False Death rework and the War Board, Rho Aias's look), `docs/todo.md` (the full queue). Session counts are rough.
+Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/ideas-approved.md` (chronicle, true names, hidden homes, familiars, traps, tutorial), `docs/truce-bases.md` (truces, event zones, the event visual pass, base upgrades), `docs/events-3.md` (the third event batch, the False Death rework and the War Board, Rho Aias's look), `docs/todo.md` (the full queue). Session counts are rough.
 
 **Rules for the order:**
 - Cheap fixes every war feels go first.
@@ -20,6 +20,7 @@ Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, 
 4. Fledgling Growth and Mage killer passives.
 5. The rest of the Sealed School.
 6. Base upgrades replace the ley-line task (`docs/truce-bases.md`).
+8. True names matter more, and the war's chronicle (`docs/ideas-approved.md`).
    (Rho Aias's new look: done Nov 26.)
 7. The War Board and the False Death rework (`docs/events-3.md`).
 
@@ -31,6 +32,9 @@ Details and baselines: `docs/saturday.md`.
 3. Building shapes, lots, fences, props, and the docks with room to duel.
 4. Destructible props.
 
+## Phase 2a: the hunt (about three sessions)
+Hidden homes and invisible fields, familiars you steer from home, traps for certain masters, a clearer day and night rhythm (`docs/ideas-approved.md`).
+
 ## Phase 2b: the event visual pass, then the third event batch (about four sessions)
 First a visual pass over every existing event, the Horror in the River first (`docs/truce-bases.md`).
 Thirteen story moments built as events (`docs/events-3.md`): scripted beats in story mode, dealt from the deck in normal wars with lore hosts and stand-ins, like today's events. Small ones first (The Overseer Falls, The Hundred Faces, Bluebeard's Siege, The Gate of Ryuudou, A Day in Shinto; these can come earlier when a session has room), then the middle ones, then The King Returns and The Vessel Taken.
@@ -39,6 +43,7 @@ Thirteen story moments built as events (`docs/events-3.md`): scripted beats in s
 Spectator mode (small), then Alter invasions: a dead player returns for a while as an Alter of a fallen servant (`docs/events-3.md`).
 
 ## Phase 3: story foundations (about three sessions)
+(Also the guided first night, a tutorial on the scene system; `docs/ideas-approved.md`.)
 1. **Scene system** (section A): portable in-world scenes, staged scenes and transitions, multiplayer pausing, settings.
 2. **Beat director** (section B).
 3. **Scene arenas** (section C).
