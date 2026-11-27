@@ -26,6 +26,10 @@ Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works: no NP ch
 ## 3. Sealed School, the rest
 Already done: no one enters or leaves while sealed, targetable skeletons that never spawn on anyone, the blood-red dome, the Reclaimed Prana perk. Still to do: reasons to go there (so teams get trapped), and more content (waves, breaking the seal from inside, a payoff for surviving).
 
+## 3b. Quick looks and fixes (`docs/events-3.md`)
+- Rho Aias's new look: purple-pink stacked layers, a five-lobed flower in front and round layers behind, drawn edge-on top-down; only `src/ui/89e-rho.js`.
+- The War Board drop-down (key I) and the False Death rework (no global death banners; Church notices and rumors; the False Death rides on fights, not the deck).
+
 ## 4. AI overhaul (best done with the map overhaul)
 Always fight back when attacked; keep things hidden by day (no fights unless someone else starts one; alleys and line-of-sight witnesses come with the map); no masters standing and staring; "protect me" servants hold a spot near their master instead of pushing into them. Orders cut to two: **Stay with me** and **Act freely**; the AI decides the rest.
 

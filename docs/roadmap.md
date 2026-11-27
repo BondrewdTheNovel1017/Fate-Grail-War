@@ -1,6 +1,6 @@
 # Roadmap: everything planned, in order (revised Nov 26, evening)
 
-Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/todo.md` (the full queue). Session counts are rough.
+Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/events-3.md` (the third event batch, the False Death rework and the War Board, Rho Aias's look), `docs/todo.md` (the full queue). Session counts are rough.
 
 **Rules for the order:**
 - Cheap fixes every war feels go first.
@@ -12,12 +12,14 @@ Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, 
 - Berserker Unchained takes only a Berserker; otherwise **The Grail's Taint** (an Alter servant, confirming a black Grail).
 - The **Events** setting: Random, Fourth War events, Fifth War events.
 
-## Phase 1: balance and combat (Saturday, about two sessions)
+## Phase 1: balance and combat (Saturday, about two to three sessions)
 1. War and Arena values for every tunable number.
 2. Per-NP tuning, war first (Gilgamesh first).
 3. Reality marbles: no NP charging inside your own marble, and a buff instead.
 4. Fledgling Growth and Mage killer passives.
 5. The rest of the Sealed School.
+6. Rho Aias's new look (small; `docs/events-3.md`).
+7. The War Board and the False Death rework (`docs/events-3.md`).
 
 Details and baselines: `docs/saturday.md`.
 
@@ -26,6 +28,9 @@ Details and baselines: `docs/saturday.md`.
 2. The AI overhaul with alleys, line-of-sight witnesses and the daylight rules, and the two orders, Stay with me and Act freely.
 3. Building shapes, lots, fences, props, and the docks with room to duel.
 4. Destructible props.
+
+## Phase 2b: the third event batch (about three sessions)
+Twelve new events drawn from the stories, generic enough for any war (`docs/events-3.md`). Small ones first (The Grail Stirs, The Church Goes Dark, Common Enemy, The Gatekeeper, Knives in the Dark, Night of the Siege, A Crowded Day; these can come earlier when a session has room), then The Stray Servant and The Drained City, then The Witness (needs Phase 2's witnesses), then The Abduction and The Eighth Servant.
 
 ## Phase 3: story foundations (about three sessions)
 1. **Scene system** (section A): portable in-world scenes, staged scenes and transitions, multiplayer pausing, settings.
@@ -256,8 +261,8 @@ Leans on systems we have: the Shadow event, the Alter look (`alterT`), the black
 - **Day 5: Shinji's end** (off-screen headline, worded carefully, never shown); Sakura accepts the Shadow.
 - **Night 5: The arm:** Dark Sakura takes Illya to the Great Cavern; Kirei and Shirou go after her (temporary pact); Archer gives Shirou his arm (scene; strong projections with a visible cost timer).
 - **Night 6: The black servants:** Shirou with the arm against corrupted Berserker (live); Shirou and Rider against Saber Alter: Rho Aias holds Excalibur, Bellerophon breaks her guard (scene).
-- **Night 7, final, the Great Cavern:** Rider against True Assassin (live); Rin against Dark Sakura with the Jeweled Sword, and holds her instead of striking (scene); Kirei against Shirou bare-handed (live); Rule Breaker frees Sakura; Illya closes the Grail at the cost of her life (scene).
-- **Ending:** spring, the cherry trees by the river.
+- **Night 7, final, the Great Cavern:** Rider against True Assassin (live); Rin against Dark Sakura with the Jeweled Sword, and holds her instead of striking (scene); Kirei against Shirou bare-handed (live); Rule Breaker frees Sakura; Shirou means to destroy the Grail with his last Projection, but Illya takes his place, closes it and carries his soul out (scene).
+- **Ending, the true ending (the only one we use):** Rin keeps the soul Illya saved and finds Shirou a new body; the next spring Sakura, with Rider beside her, meets him under the cherry trees by the river.
 - **Tone:** the source's abuse stays off-screen and unspoken; Sakura's pain shows through the Shadow and her lines only.
 
 **Missing for Fate/stay night:**
