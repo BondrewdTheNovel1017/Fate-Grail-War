@@ -34,3 +34,29 @@ Order: fix what every game feels first (bugs and the AI), then small direct requ
 - [ ] **New large war maps**, chosen before a war: Snowfield (Fate/strange Fake), Trifas (Apocrypha), Fourth-War Fuyuki (Fate/Zero). Each needs homes with interiors, roads and nav, event and Grail sites, civilian routes and the full sim pass. Start with one.
 
 - [ ] Ryuunosuke war check (Nov 26, 20 seeded wars each, `tools/masterwar.js`): Ryuunosuke 3 wins, Rin 6, Kirei 5; raising his harm income to 0.45/30 did not help (1 win), so income is not the gap. Within noise for now; re-check with more wars after the map overhaul.
+
+## 5. Playtest notes (Nov 26, evening) — logged, not started
+**Quick fixes**
+- [ ] Einzbern "enhance barrier" day task: make it the same ward-stone carrying activity as everyone else's fortify (rune gathering), not a plain circle.
+- [ ] Kiritsugu's Calico shows "0" damage: any hit that deals more than 0 shows at least 1.
+- [ ] Church Bounty (hunt a master, earn a Command Seal): taking one of the target's lives (a seal rescue) also counts as confirmed, not only a kill.
+- [ ] Caren's Sacrament heals too much: lower the heal or lengthen the cooldown (sim-check).
+
+**Events**
+- [ ] King's Banquet: starts only once at least two servants are at the table; no line repeated in one banquet; prefer cohesive scripted conversations for the servants present, generic lines only when none fit; the courtyard is a temporary safe zone; servants go to it often and leave before dusk.
+- [ ] Sealed School: polish; fix walking in from outside while sealed; give teams a reason to go there so they can be trapped; dragon-tooth warriors must be targetable and never spawn on top of anyone; flesh the event out.
+- [ ] Event rewards: every event needs a reason to take part. Command Seals only where it fits; otherwise a perk with an icon (a timed buff, intel, a field level, a true name...).
+
+**War setup options**
+- [ ] Draft modes: Standard (one servant of each class), True random, and lore pairings: Fourth War teams, Fifth War teams, applied to the remaining pairings or to all of them (including the player's).
+
+**Dialogue**
+- [ ] Downtime talk between master and servant while walking or doing day tasks out of combat: rare, never spammed; pair-specific lines and multi-line conversations; Kiritsugu stays silent.
+
+**AI overhaul**
+- [ ] A robust AI rebuild: always fight back when attacked; keep things hidden by day (no fights unless someone else starts one; ties in with the map plan's alleys and line-of-sight witnesses); no masters standing and staring at each other; "protect me" servants must not walk into and push their master. Cut orders down (maybe two simple ones) and let the AI decide the rest.
+
+**Combat**
+- [ ] Reality marbles (Iskandar's Ionioi Hetairoi, EMIYA's and Shirou's Unlimited Blade Works): no NP charging inside one's own marble (stops chaining); a buff for its duration instead.
+- [ ] Noble Phantasms should feel stronger and land: slower charge allowed if they gain hyper armor and more damage; keep balance (measure how often NPs are cancelled and how much they deal today).
+- [ ] Lancelot: keep his seized melee weapons and add two seized guns, an MP5 and a second real gun, each with a reload like Kiritsugu's.
