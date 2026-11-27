@@ -1363,7 +1363,7 @@ var SERV = {
     brief: 'A sovereign swordswoman. Her blade hides in wind, which she can release as a cutting gust, and ends it with Excalibur\'s golden light.',
     light: { reach: 108 }, heavy: { reach: 122 },
     skill: { name: 'Strike Air', kind: 'proj', shape: 'wind', wind: 0.3, act: 0.14, rec: 0.35, lunge: 120, speed: 1700, range: 470, dmg: 22, rad: 26, stag: 0.6, power: 2, cd: 9, cost: 12, reach: 0, desc: 'She dashes in and releases the wind that hides her sword: a thin cone of compressed air that hits hard at range. For a moment the golden blade shows, then the wind wraps around it again.' },
-    np: { name: 'Excalibur', sub: 'Sword of Promised Victory', kind: 'proj', wave: true, beam: true, wind: 1.8, act: 0.1, rec: 1.3, dmg: 72, speed: 2400, range: 1100, stag: 1.0, aiMin: 240, aiMax: 800, desc: 'A sweeping beam of light across the arena. Cannot be blocked. Dodge at the moment it fires, or hide behind a pillar.' } },
+    np: { name: 'Excalibur', sub: 'Sword of Promised Victory', kind: 'proj', wave: true, beam: true, wind: 1.8, act: 0.1, rec: 1.3, dmg: 45, pillar: { r: 130, delay: 0.35, dmg: 30, zshape: 'excal', key: 'np' }, speed: 2400, range: 1100, stag: 1.0, aiMin: 240, aiMax: 800, desc: 'A beam of golden light that stops on the first one it strikes; a moment later a pillar of light rises there, hurting everyone in it. Cannot be blocked. Dodge at the moment it fires, step out of the circle, or hide behind cover.' } },
   diarmuid: { id: 'diarmuid', name: 'Diarmuid Ua Duibhne', cls: 'Lancer', col: '#4fa860', wpn: 'spear', hp: 190, spd: 236, dmg: 1.0, guard: 0.6, combo: 3, recMul: 0.95, guardPierce: 0.4,
     brief: 'Twin-spear duelist. Cursed wounds that keep bleeding and strikes that gnaw through a guard.',
     light: { reach: 140, wind: 0.25 }, heavy: { reach: 156 },
@@ -2493,8 +2493,8 @@ function stepProj(dt) {
     p.x += ox; p.y += oy; p.trav += Math.hypot(ox, oy);
     var es = enemiesOf(p.owner), tgt = p.owner.foe;
     if (p.trav > p.range || p.x < 0 || p.y < 0 || p.x > W || p.y > H) p.dead = true;
-    if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
-    var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
+    if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; p.wall = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
+    var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; p.wall = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
     for (var wi = 0; wi < es.length && !p.dead; wi++) { var we = es[wi]; if ((!p.a.wave || p.a.beam || p.a.key === 'np') && !p.a.strip && we.wallT > 0 && dist(p, we) < 190) { p.dead = true; FX.spark(p.x, p.y, '#ffd36b', 8); if (p.a.key === 'np') { FX.text(we, 'NP BLOCKED'); FX.fx('wallBlock', p.x, p.y, we); } } }
     if (!p.dead && G.civ && G.civ.length && p.x < (MAP.cityW || 0) && hitCivsAt(p.x, p.y, p.a.rad || 6, p.owner)) p.dead = !p.a.beam && !p.a.wave;
     if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg, p.owner.team)) p.dead = !p.a.beam && !p.a.wave;
@@ -2502,9 +2502,11 @@ function stepProj(dt) {
       tgt = es[ti]; if (tgt.fadeT > 0) continue; // lost in the crowd: shots pass him by
       var dx = tgt.x - sx, dy = tgt.y - sy, seg = Math.hypot(ox, oy) || 1, tt = clamp((dx * ox + dy * oy) / (seg * seg), 0, 1);
       var cx = sx + ox * tt, cy = sy + oy * tt;
-      if (Math.hypot(tgt.x - cx, tgt.y - cy) < FR + (p.a.beam ? 34 * (p.a.bw || 1) : p.a.wave ? 26 : (p.a.rad || 4))) { var hr = hurt(p.owner, tgt, p.a, p.mult, p); p.dead = true; if (p.a.pull && hr === 'hit' && p.owner.st !== 'dead') { var ow = p.owner; ow.pull = 0.22; ow.ripo = 1.4; FX.text(ow, 'CHAIN PULL'); FX.snd('chain', ow); if (ow.st === 'rec') ow.recDur = Math.min(ow.recDur, ow.t + 0.28); } }
+      if (Math.hypot(tgt.x - cx, tgt.y - cy) < FR + (p.a.beam ? 34 * (p.a.bw || 1) : p.a.wave ? 26 : (p.a.rad || 4))) { var hr = hurt(p.owner, tgt, p.a, p.mult, p); p.dead = true; if (hr === 'hit') p.pillarAt = { x: tgt.x, y: tgt.y }; if (p.a.pull && hr === 'hit' && p.owner.st !== 'dead') { var ow = p.owner; ow.pull = 0.22; ow.ripo = 1.4; FX.text(ow, 'CHAIN PULL'); FX.snd('chain', ow); if (ow.st === 'rec') ow.recDur = Math.min(ow.recDur, ow.t + 0.28); } }
     }
     if (p.dead && p.a.beam) p.owner.beamEnd = { x: p.x, y: p.y, t: G.time };
+    // Excalibur: where the beam strikes someone (or a wall) a pillar of light rises a moment later
+    if (p.dead && p.a.pillar && (p.pillarAt || p.wall)) { var pa = p.pillarAt || p; G.zones.push({ x: pa.x, y: pa.y, r: p.a.pillar.r, delay: p.a.pillar.delay, t: 0, owner: p.owner, a: p.a.pillar, done: false }); FX.fx('excalMark', pa.x, pa.y, p.owner); }
     if (p.dead && p.a.explode && !p.exploded) explode(p);
     if (p.dead) G.proj.splice(i, 1);
   }
@@ -4503,8 +4505,8 @@ function INFO(d) {
       passives: ['Finisher: the third light strike deals +35%.', 'Solid guard: blocks 78% of damage.', 'The beam is a projectile, so a pillar between you and her stops it.'],
       skill: 'A 0.25 second self-cast. She releases the wind: for ' + sk.dur + ' seconds her blade is unveiled in a blaze of light, every strike hits 20% harder, and her melee reaches 25% farther than the warning shows (up from 10%). It deals no damage by itself.',
       skillBeat: 'Treat every red warning as too short while her blade glows: stand back a little more, or dodge in rather than away. It only lasts ' + sk.dur + ' seconds and has a 10 second cooldown.',
-      np: 'After a ' + np.wind + ' second cast she fires a beam of light 1,100 units long. It deals about ' + R(np.dmg * m) + ' damage to whoever it hits, cannot be blocked, and is wider than an arrow. The beam arrives almost instantly after the cast, and she is open for 1.2 seconds afterward.',
-      npBeat: 'Dodge in the instant it fires, not before. A pillar between you and her stops it. Hit her during the cast to cancel it and drain her momentum.' },
+      np: 'After a ' + np.wind + ' second cast she fires a beam of light 1,100 units long. It stops on the first one it strikes for about ' + R(np.dmg * m) + ' damage, cannot be blocked, and is wider than an arrow. ' + SERV.caerwyn.A.np.pillar.delay + ' seconds later a pillar of light rises where it struck (or where it hit a wall): about ' + R(SERV.caerwyn.A.np.pillar.dmg * m) + ' more to everyone within ' + SERV.caerwyn.A.np.pillar.r + '. She is open for 1.2 seconds afterward.',
+      npBeat: 'Dodge in the instant it fires, not before; if someone beside you is struck, step out of the gold circle before the pillar rises. A pillar between you and her stops it. Hit her during the cast to cancel it and drain her momentum.' },
     hassan: {
       pname: "Assassin's Edge", pdesc: 'Melee strikes against an enemy who is facing away deal 20% more damage. Shadow Step puts him behind you, so the two work together. His dodge charges also refill 20% faster.',
       style: 'The fastest Servant, with the longest chain: five quick light hits, the last 35% stronger. Low health and a weak guard. He wants to stay on you, so make him pay for it.',
@@ -5773,13 +5775,14 @@ function drawWorld() {
   g.strokeStyle = '#5a7388'; g.lineWidth = 8; g.strokeRect(0, 0, W, H);
   G.zones.forEach(function (z) {
     if (!visL(z.owner)) return;
-    var p = clamp(z.t / z.delay, 0, 1), zs = z.a.zshape || 'arrow', zc = (zs === 'flame' || zs === 'pillar') ? '255,140,60' : rgbOf(z.owner.def.col);
+    var p = clamp(z.t / z.delay, 0, 1), zs = z.a.zshape || 'arrow', zc = (zs === 'flame' || zs === 'pillar') ? '255,140,60' : zs === 'excal' ? '255,210,110' : rgbOf(z.owner.def.col);
     g.beginPath(); g.arc(z.x, z.y, z.r, 0, 6.283); g.fillStyle = z.done ? 'rgba(' + zc + ',.5)' : 'rgba(' + zc + ',' + (0.08 + 0.2 * p) + ')'; g.fill();
     g.strokeStyle = 'rgba(' + zc + ',.9)'; g.lineWidth = 2; g.stroke();
     if (!z.done) {
       g.beginPath(); g.arc(z.x, z.y, z.r * p, 0, 6.283); g.strokeStyle = 'rgba(' + zc + ',.6)'; g.stroke();
       if (zs === 'arrow' && p > 0.2) { var hx = z.x + (1 - p) * 110, hy = z.y - (1 - p) * 320; g.strokeStyle = '#e9e4d3'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(hx + 18, hy - 56); g.lineTo(hx, hy); g.stroke(); g.fillStyle = '#e9e4d3'; g.beginPath(); g.arc(hx, hy, 3.5, 0, 6.283); g.fill(); }
       if (zs === 'sword' && p > 0.15) { var hy2 = z.y - (1 - p) * 300; g.strokeStyle = '#d8dde2'; g.lineWidth = 4; g.beginPath(); g.moveTo(z.x, hy2 - 40); g.lineTo(z.x, hy2); g.stroke(); g.strokeStyle = '#7a1f2a'; g.lineWidth = 5; g.beginPath(); g.moveTo(z.x - 9, hy2 - 40); g.lineTo(z.x + 9, hy2 - 40); g.stroke(); }
+      if (zs === 'excal') runeCircle(g, z.x, z.y, z.r * (0.6 + 0.35 * p), '#ffd36b', G.time * 2, 0.4 + 0.5 * p);
       if (zs === 'pillar') runeCircle(g, z.x, z.y, z.r * (0.5 + 0.45 * p), '#ff8a3a', G.time * 3, 0.4 + 0.5 * p);
       if (zs === 'flame' || zs === 'pillar') { for (var fi = 0; fi < 6; fi++) { var fa = fi * 1.047 + G.time * 3, fr = z.r * 0.55 * p; g.beginPath(); g.arc(z.x + Math.cos(fa) * fr, z.y + Math.sin(fa) * fr, 6 + 6 * p, 0, 6.283); g.fillStyle = 'rgba(255,' + Math.round(150 + 60 * Math.sin(G.time * 9 + fi)) + ',60,' + (0.4 + 0.4 * p) + ')'; g.fill(); } g.beginPath(); g.moveTo(z.x - 14, z.y + 10); g.lineTo(z.x + 14, z.y - 10); g.moveTo(z.x + 14, z.y + 10); g.lineTo(z.x - 14, z.y - 10); g.strokeStyle = '#ffd36b'; g.lineWidth = 3; g.stroke(); }
       if (zs === 'tentacle') { g.strokeStyle = 'rgba(' + zc + ',.9)'; g.lineCap = 'round'; for (var ti = 0; ti < 4; ti++) { var ta = ti * 1.571 + G.time * 1.5, tl = z.r * 0.6 * p; g.lineWidth = 7 * p + 2; g.beginPath(); g.moveTo(z.x, z.y); g.quadraticCurveTo(z.x + Math.cos(ta) * tl * 0.5 + Math.sin(G.time * 7 + ti) * 6, z.y + Math.sin(ta) * tl * 0.5, z.x + Math.cos(ta) * tl, z.y + Math.sin(ta) * tl); g.stroke(); } }
@@ -8356,6 +8359,65 @@ drawFighter = function (f, i, ar) {
   if (f.def.id === 'ryuunosuke') ryuKnifeTrail(f);
   if (f.bleedT > 0 && f.burnFx) drawBurning(f);
   if (f.rootT > 0) drawBound(f);
+};
+/* ---- Excalibur: motes of light gather while she charges; where the beam strikes, a gold circle, then a pillar of light that breaks into motes ---- */
+(function () {
+  var prev = fxExtra;
+  fxExtra = function (n, x, y, f) {
+    if (n === 'excalMark') {
+      // the gold circle that warns where the pillar will rise
+      ringFx(x, y, 20, 130, '#ffd36b', 0.35, 4);
+      return true;
+    }
+    if (n === 'arrowLand' && f && f.a && f.a.zshape === 'excal') {
+      var r = f.r || 130;
+      flashFx('#fff2c4', 0.3, 0.18); FX.shake(6); decal('scorch', x, y, { r: r * 0.5, life: 8 });
+      // the pillar, seen from above: light rising straight up at the viewer, a blinding disc with rays bursting outward, then fading
+      vfx(1.1, function (g, p) {
+        var al = p < 0.12 ? p / 0.12 : 1 - (p - 0.12) / 0.88, rr = r * (0.55 + 0.45 * Math.min(1, p * 4)) * (1 - 0.25 * p);
+        g.save(); g.globalCompositeOperation = 'lighter';
+        var rg = g.createRadialGradient(x, y, 0, x, y, rr * 1.35); rg.addColorStop(0, 'rgba(255,255,245,' + (0.95 * al) + ')'); rg.addColorStop(0.35, 'rgba(255,235,170,' + (0.75 * al) + ')'); rg.addColorStop(0.75, 'rgba(255,195,80,' + (0.3 * al) + ')'); rg.addColorStop(1, 'rgba(255,170,40,0)');
+        g.fillStyle = rg; g.beginPath(); g.arc(x, y, rr * 1.35, 0, 6.283); g.fill();
+        // rays: the column's edge seen end-on, streaking out from the disc and turning slowly
+        for (var k = 0; k < 16; k++) {
+          var a = k * 0.3927 + p * 0.6, len = rr * (1.2 + 0.5 * Math.sin(k * 1.7)) * (0.8 + 0.6 * p), wd = 0.05 + 0.03 * (k % 3);
+          var lg = g.createLinearGradient(x, y, x + Math.cos(a) * len, y + Math.sin(a) * len); lg.addColorStop(0, 'rgba(255,245,210,' + (0.55 * al) + ')'); lg.addColorStop(1, 'rgba(255,200,90,0)');
+          g.fillStyle = lg; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a - wd) * len, y + Math.sin(a - wd) * len); g.lineTo(x + Math.cos(a + wd) * len, y + Math.sin(a + wd) * len); g.closePath(); g.fill();
+        }
+        g.strokeStyle = 'rgba(255,240,200,' + (0.7 * al) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(x, y, rr * 0.55, 0, 6.283); g.stroke();
+        g.restore();
+      });
+      // then it breaks into motes of light that drift and fade
+      for (var i = 0; i < 26; i++) (function () {
+        var a = Math.random() * 6.283, d = Math.random() * r * 0.9, mx = x + Math.cos(a) * d, my = y + Math.sin(a) * d * 0.8, rise = 60 + Math.random() * 140, sw = Math.random() * 6.283, sz = 1.6 + Math.random() * 2.4, life = 1.2 + Math.random() * 0.8, delay = 0.25 + Math.random() * 0.4;
+        vfx(life + delay, function (g, p) {
+          var q = (p * (life + delay) - delay) / life; if (q < 0) return;
+          var al = q < 0.2 ? q / 0.2 : 1 - (q - 0.2) / 0.8, ou = 1 + rise / 260 * q, px = x + (mx - x) * ou + Math.sin(sw + q * 5) * 6, py = y + (my - y) * ou + Math.cos(sw + q * 4) * 6;
+          g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = 'rgba(255,225,140,' + (0.9 * al) + ')'; g.beginPath(); g.arc(px, py, sz, 0, 6.283); g.fill();
+          g.fillStyle = 'rgba(255,240,200,' + (0.25 * al) + ')'; g.beginPath(); g.arc(px, py, sz * 3, 0, 6.283); g.fill(); g.restore();
+        });
+      })();
+      return true;
+    }
+    return prev ? prev(n, x, y, f) : false;
+  };
+})();
+// while she charges Excalibur, motes of light spiral in around her
+function drawExcalCharge(f) {
+  var p = clamp(f.t / (f.windTotal || f.curWind || 1.8), 0, 1), t = G.time, n = 18;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (var i = 0; i < n; i++) {
+    var ph = (t * 0.7 + i / n) % 1, a = i * 2.4 + t * (1 + p * 2), r = (90 - 60 * ph) * (1 - p * 0.35), al = Math.sin(Math.PI * ph) * (0.4 + 0.6 * p);
+    var x = f.x + Math.cos(a) * r, y = f.y + Math.sin(a) * r, sz = 1.4 + 1.8 * p;
+    ctx.fillStyle = 'rgba(255,220,130,' + (0.9 * al) + ')'; ctx.beginPath(); ctx.arc(x, y, sz, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(255,240,200,' + (0.2 * al) + ')'; ctx.beginPath(); ctx.arc(x, y, sz * 3.2, 0, 6.283); ctx.fill();
+  }
+  ctx.restore();
+}
+var drawFighterX0 = drawFighter;
+drawFighter = function (f, i, ar) {
+  drawFighterX0(f, i, ar);
+  if (f.def.id === 'caerwyn' && f.key === 'np' && f.st === 'wind' && !(f.hid && f.team !== (G.f[MEI] || {}).team)) drawExcalCharge(f);
 };
 /* ---- online play on the hosted site: rooms over the game's own WebSocket relay (server/hub.js) ----
    The same calls as the claude.ai room (join, presence, peers, onPeers, onConnection, leave), so the lobby and

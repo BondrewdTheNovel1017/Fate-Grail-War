@@ -395,8 +395,8 @@ function stepProj(dt) {
     p.x += ox; p.y += oy; p.trav += Math.hypot(ox, oy);
     var es = enemiesOf(p.owner), tgt = p.owner.foe;
     if (p.trav > p.range || p.x < 0 || p.y < 0 || p.x > W || p.y > H) p.dead = true;
-    if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
-    var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
+    if (RECTS.length && !p.owner.inM) { var RQ = rectsIn(sx, sy, p.x, p.y); for (var rq = 0; rq < RQ.length; rq++) if (!RQ[rq].nb && segRect(sx, sy, p.x, p.y, RQ[rq], 0)) { p.dead = true; p.wall = true; FX.spark(p.x, p.y, '#8aa0b2', 4); break; } }
+    var PL = p.owner.inM ? [] : pillarsIn(sx, sy, p.x, p.y); for (var k = 0; k < PL.length && !p.dead; k++) { var pl = PL[k]; if (!pl.nb && Math.hypot(p.x - pl.x, p.y - pl.y) < pl.r) { p.dead = true; p.wall = true; FX.spark(p.x, p.y, '#8aa0b2', 4); } }
     for (var wi = 0; wi < es.length && !p.dead; wi++) { var we = es[wi]; if ((!p.a.wave || p.a.beam || p.a.key === 'np') && !p.a.strip && we.wallT > 0 && dist(p, we) < 190) { p.dead = true; FX.spark(p.x, p.y, '#ffd36b', 8); if (p.a.key === 'np') { FX.text(we, 'NP BLOCKED'); FX.fx('wallBlock', p.x, p.y, we); } } }
     if (!p.dead && G.civ && G.civ.length && p.x < (MAP.cityW || 0) && hitCivsAt(p.x, p.y, p.a.rad || 6, p.owner)) p.dead = !p.a.beam && !p.a.wave;
     if (!p.dead && G.mobs && G.mobs.length && hitMobsAt(p.x, p.y, p.a.rad || 6, p.a.dmg * (p.mult || 1) * p.owner.def.dmg, p.owner.team)) p.dead = !p.a.beam && !p.a.wave;
@@ -404,9 +404,11 @@ function stepProj(dt) {
       tgt = es[ti]; if (tgt.fadeT > 0) continue; // lost in the crowd: shots pass him by
       var dx = tgt.x - sx, dy = tgt.y - sy, seg = Math.hypot(ox, oy) || 1, tt = clamp((dx * ox + dy * oy) / (seg * seg), 0, 1);
       var cx = sx + ox * tt, cy = sy + oy * tt;
-      if (Math.hypot(tgt.x - cx, tgt.y - cy) < FR + (p.a.beam ? 34 * (p.a.bw || 1) : p.a.wave ? 26 : (p.a.rad || 4))) { var hr = hurt(p.owner, tgt, p.a, p.mult, p); p.dead = true; if (p.a.pull && hr === 'hit' && p.owner.st !== 'dead') { var ow = p.owner; ow.pull = 0.22; ow.ripo = 1.4; FX.text(ow, 'CHAIN PULL'); FX.snd('chain', ow); if (ow.st === 'rec') ow.recDur = Math.min(ow.recDur, ow.t + 0.28); } }
+      if (Math.hypot(tgt.x - cx, tgt.y - cy) < FR + (p.a.beam ? 34 * (p.a.bw || 1) : p.a.wave ? 26 : (p.a.rad || 4))) { var hr = hurt(p.owner, tgt, p.a, p.mult, p); p.dead = true; if (hr === 'hit') p.pillarAt = { x: tgt.x, y: tgt.y }; if (p.a.pull && hr === 'hit' && p.owner.st !== 'dead') { var ow = p.owner; ow.pull = 0.22; ow.ripo = 1.4; FX.text(ow, 'CHAIN PULL'); FX.snd('chain', ow); if (ow.st === 'rec') ow.recDur = Math.min(ow.recDur, ow.t + 0.28); } }
     }
     if (p.dead && p.a.beam) p.owner.beamEnd = { x: p.x, y: p.y, t: G.time };
+    // Excalibur: where the beam strikes someone (or a wall) a pillar of light rises a moment later
+    if (p.dead && p.a.pillar && (p.pillarAt || p.wall)) { var pa = p.pillarAt || p; G.zones.push({ x: pa.x, y: pa.y, r: p.a.pillar.r, delay: p.a.pillar.delay, t: 0, owner: p.owner, a: p.a.pillar, done: false }); FX.fx('excalMark', pa.x, pa.y, p.owner); }
     if (p.dead && p.a.explode && !p.exploded) explode(p);
     if (p.dead) G.proj.splice(i, 1);
   }

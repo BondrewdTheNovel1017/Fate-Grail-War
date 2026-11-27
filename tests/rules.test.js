@@ -938,3 +938,14 @@ test('Ryuunosuke: Fade into the Crowd lets shots pass him, and needs a crowd in 
   const W = E.newWar(E.warTeams('richard', 'ryuunosuke', 2), { nights: 1 }); const rw = W.f.find((f) => f.def.id === 'ryuunosuke');
   W.clock.phase = 'night'; assert.ok(!E.fadeAllowed(rw), 'no crowd at night');
 });
+test('Excalibur stops on the first one it strikes; a pillar rises there and hurts everyone in it, but not those beyond', () => {
+  const E = loadEngine();
+  const G = E.newGame([E.SERV.caerwyn, E.SERV.cu, E.SERV.emiya, E.SERV.medusa], { map: 'arena', teams: [0, 1, 1, 1] }); G.ai = G.ai.map(() => null);
+  const [ar, a, b, c] = G.f; ar.x = 300; ar.y = 600; ar.face = 0; a.x = 700; a.y = 600; b.x = 760; b.y = 680; c.x = 1000; c.y = 600;
+  [a, b, c].forEach((f) => { f.guarding = false; }); const hp = [a.hp, b.hp, c.hp]; ar.mom = 100;
+  E.startAct(ar, 'np');
+  for (let i = 0; i < 60 * 3.2; i++) { G.f.forEach((f) => { f.inp = { mx: 0, my: 0 }; }); E.simStep(E.STEP); }
+  assert.ok(hp[0] - a.hp > 60, 'struck one takes the beam and the pillar (' + (hp[0] - a.hp) + ')');
+  assert.ok(hp[1] - b.hp > 15 && hp[1] - b.hp < 40, 'a bystander in the circle takes only the pillar (' + (hp[1] - b.hp) + ')');
+  assert.strictEqual(c.hp, hp[2], 'the beam stopped: nobody behind is hit');
+});
