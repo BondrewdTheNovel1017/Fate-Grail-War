@@ -2,6 +2,8 @@
 
 Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, vehicles, props, residences, master passives), `docs/story-modes.md` (first story plan), `docs/future-masters.md` (new masters), `docs/ideas-approved.md` (chronicle, true names, hidden homes, familiars, traps, tutorial), `docs/truce-bases.md` (truces, event zones, the event visual pass, base upgrades), `docs/events-3.md` (the third event batch, the False Death rework and the War Board, Rho Aias's look), `docs/todo.md` (the full queue). Session counts are rough.
 
+**Fate Grail War 2.0:** Phases 1 to 2c are the 2.0 overhaul (truce fix, balance, strings, resources, the new Fuyuki, the AI, the hunt, the event visual pass and new events, play after death). Story modes follow as 2.1 (Fate/Zero) and 2.2 (the Fate/stay night routes).
+
 **Rules for the order:**
 - Cheap fixes every war feels go first.
 - Foundations before what is built on them.
