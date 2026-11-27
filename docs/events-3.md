@@ -1,4 +1,4 @@
-# Third event batch, the False Death rework, the War Board, Rho Aias's look (planned Nov 26)
+# Third event batch, the False Death rework, the War Board, after-death play, Rho Aias's look (planned Nov 26)
 
 Mirrors the Claude Doc "Fate Grail War Roadmap". Not built yet.
 
@@ -43,6 +43,30 @@ Story mode keeps the scripted Night 1 version (Assassin at the Tohsaka mansion).
 - Also per row: last known district and time, exposure, pact.
 - Einzbern teams only: "The Grail waits for N more." Always true.
 - Data: `G.board[team]` per viewing team, written by sightings, deaths seen, Church notices, rumors and pacts; the AI reads its own team's board. Online, each guest gets only its team's board (check `NET.dropped`). The end screen shows the truth.
+
+## After death: spectating and Alter invasions
+
+**Spectator mode (small):** when your team falls, choose watch, invade (when open) or leave. Follow any living fighter (Tab or tap) or a free camera; the minimap shows everyone; the War Board shows the truth. Online, the host picks in the lobby what spectators see: everything, or only what the team they follow sees (default, so a dead friend on voice chat cannot scout). Mostly UI; guests already receive the whole war.
+
+**Alter invasions (larger):** the Grail's mud raises a fallen servant as an Alter (the Taint's `alterT` look), played by a dead player for a while.
+
+| Rule | Proposal | Why |
+|---|---|---|
+| When it opens | From Night 2, once a servant has died; never in a phase's first minute | The mud needs the fallen |
+| Who returns | Your own fallen servant, else any fallen servant | The Grail holds the defeated |
+| How many | One invader at a time; 3-minute gap; each player at most twice a war | The war stays about the living |
+| Strength | About 65% health, no master, seals or rescue; mud-fed mana, NP charges at half speed; scales down when two teams stand | Matters without deciding the war |
+| Length | Up to 3 minutes or until it falls; dissolves at dawn | An invasion, not a second life |
+| Target | Invader picks a team; the leading team is marked and pays more | Pulls the war together |
+| Who sees it | Felt by everyone (a black stain on the map) | Fair warning |
+| What it can win | Nothing: never takes the Grail, ignored by win checks (like `trueTeam`); score for damage and kills on the end screen | The result stays with the living |
+| Rewards for the living | Downing it: momentum and the perk Purified (mud damage halved until dawn) | Worth fighting |
+| Final night | Only with a corrupted Grail, from the mud pools, before the circle closes | Matches the black Grail |
+| Offline | The player can invade after dying; the AI can too, as the Taint does now | Same feature solo |
+
+**Balance:** `npm run sim` with forced invasions (an invader should decide the winner in at most about 1 war in 10), then online tests. War values only.
+
+**Online:** new fighters mid-war need replication (guests build `G.f` once in `netBuild`); the dead guest's seat takes the invader; check `-s` room space.
 
 ## Rho Aias, the new look
 

@@ -32,6 +32,9 @@ Details and baselines: `docs/saturday.md`.
 ## Phase 2b: the third event batch (about three sessions)
 Twelve new events drawn from the stories, generic enough for any war (`docs/events-3.md`). Small ones first (The Grail Stirs, The Church Goes Dark, Common Enemy, The Gatekeeper, Knives in the Dark, Night of the Siege, A Crowded Day; these can come earlier when a session has room), then The Stray Servant and The Drained City, then The Witness (needs Phase 2's witnesses), then The Abduction and The Eighth Servant.
 
+## Phase 2c: after death (about two sessions)
+Spectator mode (small), then Alter invasions: a dead player returns for a while as an Alter of a fallen servant (`docs/events-3.md`).
+
 ## Phase 3: story foundations (about three sessions)
 1. **Scene system** (section A): portable in-world scenes, staged scenes and transitions, multiplayer pausing, settings.
 2. **Beat director** (section B).
