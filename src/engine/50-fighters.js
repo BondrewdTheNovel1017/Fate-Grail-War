@@ -126,7 +126,7 @@ function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x,
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
 // Noble Phantasms are rare: every mode builds momentum at NP_MOM of the base rate (Shirou's Trace keeps its own pace)
 var NP_MOM = 0.6;
-function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= NP_MOM; if (v > 0 && G.perks) v *= perkMom(f); if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= NP_MOM; if (v > 0 && G.perks) v *= perkMom(f); if (v > 0 && G.upg) v *= upgMom(f); if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {

@@ -523,6 +523,17 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 .pad.hasmana .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #5aa0ff calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); }
 .pad.manalow .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #8a6ad8 calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); animation: staBlink 1s steps(2) infinite; }
 body.ingame .hud.war .hc.me .bar.sta { height: 6px; }
+/* base upgrades panel (2.0 update 6) */
+#upgPanel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 62; width: min(460px, calc(100vw - 24px)); max-height: 80vh; overflow: auto; background: #15120ef2; border: 1px solid #7a6334; border-radius: 12px; padding: 12px 14px; color: #ece3cf; font: 13px/1.35 Inter, system-ui, sans-serif; box-shadow: 0 14px 40px #000a; }
+#upgPanel .uph { display: flex; align-items: center; gap: 10px; } #upgPanel .uph b { font: 600 18px/1.1 "Barlow Condensed", sans-serif; letter-spacing: .04em; color: #ffd36b; } #upgPanel .uph span { flex: 1; color: #c9b88a; }
+#upgPanel .uph button { background: #2a241b; color: #ece3cf; border: 1px solid #4a3f2c; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+#upgPanel .upn { margin: 6px 0 8px; color: #bfb398; }
+#upgPanel .upr { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid #3a3122; }
+#upgPanel .upi { font-size: 20px; text-align: center; color: #ffd36b; }
+#upgPanel .upt b { display: block; } #upgPanel .upt i { color: #ffd36b; font-style: normal; font-weight: 500; font-size: 12px; }
+#upgPanel .upt span { display: block; color: #8f866f; font-size: 12px; } #upgPanel .upt span.got { color: #9fe0a8; } #upgPanel .upt span.next { color: #ece3cf; }
+#upgPanel .upr button { min-width: 72px; min-height: 36px; border-radius: 8px; border: 1px solid #c9a04a; background: #3a2e14; color: #ffe3a0; font-weight: 600; cursor: pointer; }
+#upgPanel .upr button[disabled] { opacity: .4; cursor: default; border-color: #4a3f2c; background: #221c14; color: #9c9073; }
 </style>
 
 <main class="wrap">
@@ -1796,7 +1807,7 @@ function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x,
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
 // Noble Phantasms are rare: every mode builds momentum at NP_MOM of the base rate (Shirou's Trace keeps its own pace)
 var NP_MOM = 0.6;
-function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= NP_MOM; if (v > 0 && G.perks) v *= perkMom(f); if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= NP_MOM; if (v > 0 && G.perks) v *= perkMom(f); if (v > 0 && G.upg) v *= upgMom(f); if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3; if (v > 0 && G && G.mode === 'war' && !G.quick && !f.def.trace) v *= 0.45; if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {
@@ -1847,7 +1858,7 @@ function masterCost(key) { return key === 'np' ? MANA.sigCost : key === 'skill' 
 function starved(s) { var m = livingMaster(s); return !!(G.mode === 'war' && !s.def.isMaster && m && m.mana < MANA.starved); }
 function manaTick(m, dt) {
   if (m.manaMax === undefined) initMana(m);
-  if (!(m.fieldSup > G.time)) m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * (G.perks ? perkRegen(m) : 1) * dt);
+  if (!(m.fieldSup > G.time)) m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * (G.perks ? perkRegen(m) : 1) * (G.upg ? upgManaMul(m) : 1) * dt);
   var s = m.partner; if (!s || s.st === 'dead' || s.def.isMaster) return;
   var drain = s.spirit === 2 ? 0 : MANA.upkeep; if (dist(m, s) > MANA.farDist) drain += MANA.farDrain;
   m.mana = Math.max(0, m.mana - drain * dt);
@@ -1939,7 +1950,7 @@ function clockTick(dt) {
   }
   // resting at home by day: wounds close, mana returns
   // in one's own home wounds close at any hour (faster by day, when the whole yard counts)
-  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day' && !(inside && f.def.type === 'Outsider')) return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
+  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = (c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night) * (G.upg ? upgHealMul(f.team) : 1); f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day' && !(inside && f.def.type === 'Outsider')) return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
   civTick(dt); tasksTick(dt); execTick(dt); scoutsTick(dt); rescueTick(dt);
 }
@@ -2097,6 +2108,7 @@ function initFields() {
     G.seenBy[t] = {}; G.tn[t] = {};
   });
   G.f.forEach(function (f) { if (!f.def.isMaster) G.tn[f.team][f.def.id] = true; });
+  initUpgrades();
   if (G.clock) newPhaseEvents();
 }
 function fieldR(F) { return FIELD.baseR + FIELD.perLvl * F.lvl; }
@@ -2112,26 +2124,29 @@ function fieldAt(f) { if (!G.fields) return null; for (var t in G.fields) { var 
 function ownField(f) { var F = G.fields && G.fields[f.team]; return F && F.lvl > 0 && inHomeField(F, f) ? F : null; }
 function fieldsTick(dt) {
   if (!G.fields) return;
+  aiUpgrades();
   for (var t in G.fields) {
     var F = G.fields[t]; if (F.lvl > 0 && !fieldAlive(F)) { F.lvl = 0; FX.field('fade', F, null); }
     if (F.lvl <= 0) continue;
-    var intr = [], hostsTruce = fieldHostsTruce(F);
+    var intr = [], hostsTruce = fieldHostsTruce(F), uAl = upg(F.team, 'alarm'), uMi = upg(F.team, 'mire'), slowK = Math.max(0.6, FIELD.slow[F.lvl] - (uMi ? 0.08 : 0));
     G.f.forEach(function (e) {
       if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = !hostsTruce && inHomeField(F, e);
+      // Alarm Wards, rank 2: the alarm reaches beyond the field (felt only: no slowing or bolts out there)
+      if (!inside && uAl >= 2 && !hostsTruce && !concealed(e) && !unfelt(e) && e.x < MAP.cityW && Math.hypot(e.x - F.x, e.y - F.y) <= fieldR(F) + 300) G.seenBy[F.team][e.idx] = G.time + 30;
       if (inside && !concealed(e) && !truceZone(e)) {
-        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e);
+        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + (uAl ? 30 : FIELD.seen); if (uMi >= 2) e.fieldNoDodge = G.time + 0.3; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e);
           // level 2: the field starves intruders (no mana regeneration, no healing in spirit form); level 4: no slipping into spirit form
           if (F.lvl >= FIELD.starve) e.fieldSup = G.time + 0.3;
           if (F.lvl >= FIELD.noSpirit) e.fieldNoSp = G.time + 0.3; }
-        if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }
+        if (slowK < 1) { e.fslowT = G.time + 0.3; e.fslowK = slowK; }
       }
       if (inside && !F.inside[e.idx] && e.idx !== undefined && !unfelt(e)) FX.field('enter', F, e);
       F.inside[e.idx] = inside && !unfelt(e);
     });
     // a strong field strikes at intruders who are materialized
-    var bt = FIELD.bolt[F.lvl];
-    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)], bd = e.def.hp * FIELD.boltPct[Math.min(F.lvl, 5)] * fieldResist(e); FX.field('bolt', F, e); hurt(null, e, { dmg: bd, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
+    var uTh = upg(F.team, 'thunder'), bl = Math.min(5, F.lvl + (uTh && F.lvl === 2 ? 1 : 0)), bt = FIELD.bolt[bl] * (uTh >= 2 ? 0.5 : 1);
+    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)], bd = e.def.hp * FIELD.boltPct[bl] * (uTh >= 2 ? 1.5 : 1) * fieldResist(e); FX.field('bolt', F, e); hurt(null, e, { dmg: bd, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
     else F.boltT = Math.max(F.boltT, 1.5);
   }
 }
@@ -2150,7 +2165,7 @@ function traceKill(f) { if (!clockOn() || isDay() || f.x > MAP.cityW) return; va
 function startDay() {
   G.tasks = [];
   if (!G.fields) return;
-  LEY.forEach(function (l) { G.tasks.push({ kind: 'ley', x: l.x, y: l.y, r: 170, name: l.name, need: DAYTASK.ley, prog: {}, done: {} }); });
+  // (2.0) the ley-line task is gone: base upgrades, earned by fortifying, took its place
   G.tasks.push({ kind: 'school', x: SCHOOL.x, y: SCHOOL.y, r: 260, name: SCHOOL.name, need: DAYTASK.school, prog: {}, done: {} });
   var tr = G.traces.slice().reverse(), picked = [];
   tr.forEach(function (q) { if (picked.length < 3 && !picked.some(function (p) { return Math.hypot(p.x - q.x, p.y - q.y) < 900; })) picked.push(q); });
@@ -2186,7 +2201,7 @@ function tasksTick(dt) {
 }
 function finishTask(t, k) {
   var m = G.f.filter(function (f) { return f.team === t && f.def.isMaster && f.st !== 'dead'; })[0], note = '';
-  if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); note = 'Bounded field strengthened to level ' + F.lvl; }
+  if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); grantPick(t); note = 'Bounded field strengthened to level ' + F.lvl + ' · a base upgrade to choose'; }
   else if (k.kind === 'ley') { if (m) { m.mana = m.manaMax; m.manaBonus = 40; } note = 'Mana overflows: full mana and 40 stored'; }
   else if (k.kind === 'school') { G.expo[t] = Math.max(0, (G.expo[t] || 0) - 35); if (m) m.mana = m.manaMax; note = 'A normal school day: suspicion fades'; }
   else if (k.kind === 'relic') { relicDone(t, k); note = 'The relic is yours. Your servant hits a little harder for the rest of the war'; }
@@ -2294,7 +2309,7 @@ function hurt(att, def, a, mult, src) {
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
-  taken *= perkDamageTaken(def);
+  taken *= perkDamageTaken(def); if (G.upg) taken *= upgDamageTaken(def);
   if (G.dbgHurt) G.dbgHurt.push([att ? att.def.id + att.team : '-', def.def.id + def.team, Math.round(taken), a.key || a.kind || '', att ? inTruce(att, def) : null]);
   def.hp -= taken; def.stat.taken += taken; if (a.key === 'np' && att && att !== def) att.stat.npDmg = (att.stat.npDmg || 0) + taken; perkHit(att, def, taken); def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   harmMana(att, def, taken);
@@ -2388,6 +2403,7 @@ function startAct(f, key) {
   return true;
 }
 function startDodge(f) {
+  if (f.fieldNoDodge > G.time) { if (!G.ai[f.idx] && G.time > (f.spMsgT || 0)) { f.spMsgT = G.time + 1; FX.text(f, 'THE MIRE HOLDS YOU'); } return; }
   if (f.dodges <= 0) { FX.snd('nodge', f); return; }
   if (f.sta <= 0 || f.exh > 0) return;
   var mx = f.inp.mx, my = f.inp.my, L = Math.hypot(mx, my);
@@ -3073,6 +3089,63 @@ function berserkPerk(E) {
   var best = -1, bd = 20; for (var t in (E.dmgBy || {})) if (E.dmgBy[t] > bd) { bd = E.dmgBy[t]; best = +t; }
   if (best >= 0) grantPerk(best, 'unshaken');
 }
+/* ---- base upgrades (2.0 update 6): fortifying the home earns a pick; each upgrade has two ranks ----
+   G.upg[team] = { picks, have: { id: rank } }. A Mage family starts with one pick and a Caster's temple with one more.
+   A human chooses inside their own home (the panel in the UI, button 'upg_<id>'); an AI team picks by its master's taste.
+   A demolished home loses its upgrades; unspent picks are kept. */
+var UPGRADES = {
+  thunder: { name: 'Thunder Wards', icon: '⚡', r: ['Bolts strike intruders from field level 2', 'Bolts strike twice as often and half again as hard'] },
+  spring: { name: 'Healing Spring', icon: '❁', r: ['Healing at home x1.5', 'Healing at home x2'] },
+  alarm: { name: 'Alarm Wards', icon: '☎', r: ['Intruders stay marked for 30 s after they are felt', 'The alarm reaches 300 beyond the field'] },
+  mire: { name: 'Binding Mire', icon: '≈', r: ['Intruders are slowed more', 'No dodging inside the field'] },
+  well: { name: 'Mana Well', icon: '✦', r: ['The master’s mana refills twice as fast at home', 'Three times as fast, and the servant’s NP charges 20% faster at home'] },
+  veil: { name: 'Veil', icon: '◐', r: ['Rival scouts cannot find your home', 'Your field cannot be seen by rivals'] },
+  bulwark: { name: 'Bulwark', icon: '▣', r: ['Demolition charges take half again as long to plant', 'Masters inside take 25% less damage'] }
+};
+var UPG_ORDER = ['thunder', 'spring', 'alarm', 'mire', 'well', 'veil', 'bulwark'];
+// what each master reaches for first (others: the default order)
+var UPG_TASTE = {
+  kayneth: ['thunder', 'bulwark', 'mire'], tokiomi: ['thunder', 'well', 'spring'], rin: ['well', 'thunder', 'spring'], kiritsugu: ['alarm', 'veil', 'mire'],
+  irisviel: ['veil', 'spring', 'alarm'], illya: ['well', 'thunder', 'veil'], sakura: ['mire', 'well', 'veil'], kariya: ['mire', 'spring', 'alarm'],
+  waver: ['alarm', 'bulwark', 'spring'], kirei: ['alarm', 'spring', 'bulwark'], shirou: ['spring', 'bulwark', 'alarm'], caren: ['spring', 'alarm', 'veil'],
+  kuzuki: ['spring', 'well', 'bulwark'], ryuunosuke: ['veil', 'spring', 'alarm']
+};
+function initUpgrades() {
+  G.upg = {};
+  for (var t in G.fields) {
+    var F = G.fields[t], m = teamMaster(+t), picks = (m && m.def.type === 'Mage family' ? 1 : 0) + (F.temple ? 1 : 0);
+    G.upg[t] = { picks: picks, have: {} };
+  }
+}
+// at home: inside one's own rooms, or on the grounds close to the house
+function atHome(f) { var F = G.fields && G.fields[f.team]; return inOwnHome(f) || !!(F && f.x < MAP.cityW && Math.hypot(f.x - F.x, f.y - F.y) < 300); }
+function upg(team, id) { var U = G.upg && G.upg[team]; return U ? U.have[id] || 0 : 0; }
+function upgCan(team, id) { var U = G.upg && G.upg[team]; return !!(U && U.picks > 0 && UPGRADES[id] && (U.have[id] || 0) < 2); }
+function chooseUpgrade(f, id) {
+  var t = f.team; if (!upgCan(t, id)) return false;
+  if (!G.ai[f.idx] && !atHome(f)) { FX.text(f, 'CHOOSE AT YOUR HOME'); return false; }
+  var U = G.upg[t]; U.have[id] = (U.have[id] || 0) + 1; U.picks--;
+  FX.event('upgrade', { team: t, id: id, rank: U.have[id] });
+  return true;
+}
+function grantPick(team) { var U = G.upg && G.upg[team]; if (U) { U.picks++; FX.event('upgradePick', { team: team }); } }
+function aiUpgrades() {
+  if (!G.upg) return;
+  for (var t in G.upg) {
+    var U = G.upg[t]; if (U.picks <= 0) continue; var m = teamMaster(+t); if (!m) continue;
+    // a team with a human in it (master or servant) chooses for itself
+    if (G.f.some(function (f) { return f.team === +t && !G.ai[f.idx]; })) continue;
+    var taste = (UPG_TASTE[m.def.id] || []).concat(UPG_ORDER), pick = null;
+    for (var i = 0; i < taste.length && !pick; i++) if ((U.have[taste[i]] || 0) === 0) pick = taste[i];
+    for (var j = 0; j < taste.length && !pick; j++) if ((U.have[taste[j]] || 0) < 2) pick = taste[j];
+    if (pick) chooseUpgrade(m, pick); else U.picks = 0;
+  }
+}
+// effects read elsewhere
+function upgHealMul(team) { return 1 + 0.5 * upg(team, 'spring'); }
+function upgManaMul(m) { var r = upg(m.team, 'well'); return r && inOwnHome(m) ? 1 + r : 1; }
+function upgMom(f) { return !f.def.isMaster && upg(f.team, 'well') >= 2 && inOwnHome(f) ? 1.2 : 1; }
+function upgDamageTaken(def) { return def.def.isMaster && upg(def.team, 'bulwark') >= 2 && inOwnHome(def) ? 0.75 : 1; }
 /* ---- second batch of events: the Demolition, the Shadow, the Festival; and the Great Cavern as a fourth final site ---- */
 var EVT2 = {
   demo: { charges: 3, ring: 230, plant: 4, disarm: 5, dur: 150, fuse: 20, need: 2, blastR: 460, blastDmg: 45 },
@@ -3106,7 +3179,7 @@ function demoTick(E, dt) {
   G.f.forEach(function (f) { if (f.team === E.target) G.seenBy[E.target][a.idx] = G.time + 2; });
   if (a.st === 'dead' && E.fuse < 0) { expose(E.team, 30); endEvent('The bomber is down. The house stands.'); return; }
   E.charges.forEach(function (c) {
-    if (!c.planted && a.st !== 'dead' && Math.hypot(a.x - c.x, a.y - c.y) < c.r && a.st !== 'stag') { c.prog += dt; if (c.prog >= D.plant) { c.planted = true; c.prog = 0; c.dis = 0; FX.event('charge', E); } }
+    if (!c.planted && a.st !== 'dead' && Math.hypot(a.x - c.x, a.y - c.y) < c.r && a.st !== 'stag') { c.prog += dt; if (c.prog >= D.plant * (upg(E.target, 'bulwark') ? 1.5 : 1)) { c.planted = true; c.prog = 0; c.dis = 0; FX.event('charge', E); } }
     if (c.planted) { var def = G.f.some(function (f) { return f.team === E.target && f.st !== 'dead' && f.spirit !== 2 && Math.hypot(f.x - c.x, f.y - c.y) < c.r && G.time - (f.lastHitT || -99) > 0.6; }); if (def) { c.dis += dt; if (c.dis >= D.disarm) { c.planted = false; c.dis = 0; FX.event('disarm', E); } } else c.dis = Math.max(0, c.dis - dt * 0.5); }
   });
   var n = E.charges.filter(function (c) { return c.planted; }).length;
@@ -3118,6 +3191,7 @@ function demolish(E) {
   var D = EVT2.demo, F = G.fields[E.target], h = G.homes.filter(function (q) { return q.team === E.target; })[0];
   G.f.forEach(function (f) { if (f.st !== 'dead' && f.spirit !== 2 && f.x < MAP.cityW && Math.hypot(f.x - F.x, f.y - F.y) < D.blastR) hurt(null, f, { dmg: D.blastDmg, power: 3, stag: 1.0, kind: 'proj', key: 'blast', hs: 0.1, unblock: true }, 1, { x: F.x, y: F.y }); });
   var b = h && homeBlock(h); if (b) { b.ruin = true; b.k = 'rubble'; }
+  if (G.upg && G.upg[E.target]) G.upg[E.target].have = {}; // the upgrades were in the house
   (MAP.doors || []).forEach(function (d) { if (F.rooms.indexOf(d.room) >= 0) d.ruined = true; });
   // the backup base: a small safehouse on a free plot
   var used = G.homes.map(function (q) { return [q.x, q.y - 120]; }), free = MAP.plots.filter(function (p) { return !used.some(function (u) { return Math.hypot(u[0] - p[0], u[1] - p[1]) < 300; }) && !MAP.b.some(function (q) { return q.gen && Math.hypot(q.x - p[0], q.y - p[1]) < 200; }); });
@@ -3777,7 +3851,7 @@ function sendScouts() {
   var hs = humansAlive();
   Object.keys(G.fields).forEach(function (ts) {
     var t = +ts, m = teamMaster(t); if (!m || !G.ai[m.idx] || rnd() > DAYP.scoutChance) return;
-    var rivals = Object.keys(G.fields).map(Number).filter(function (o) { return o !== t && !pactTeams(o, t) && teamFighters(o).length; });
+    var rivals = Object.keys(G.fields).map(Number).filter(function (o) { return o !== t && !pactTeams(o, t) && teamFighters(o).length && upg(o, 'veil') < 1; });
     if (!rivals.length) return;
     var hum = rivals.filter(function (o) { return hs.some(function (f) { return f.team === o; }); }), pool = hum.length && rnd() < 0.7 ? hum : rivals, tg = pool[Math.floor(rnd() * pool.length)];
     var F = G.fields[tg]; if (!F) return;
@@ -5581,6 +5655,7 @@ function doButton(f, b) {
   if (f.turnT > G.time) return; // Rule Breaker: this servant is not yours right now
   if (b === 'target') { cycleTarget(f); return; }
   if (b === 'pact') { pactButton(f); return; }
+  if (b.indexOf('upg_') === 0) { chooseUpgrade(f, b.slice(4)); return; }
   if (b === 'contract') { var cc = contractCandidate(f, CONTRACT_RANGE + 40); if (!cc || !formContract(f, cc)) FX.text(f, 'NOBODY TO CONTRACT WITH'); return; }
   if (b.indexOf('seal_') === 0) { if (f.def.isMaster) { if (!useSeal(f, b.slice(5))) FX.text(f, f.sealUsed[b.slice(5)] ? 'SEAL ALREADY USED' : 'NO SERVANT'); } return; }
   if (b === 'block') f.inp.guard = true;
@@ -7026,7 +7101,7 @@ var TASK_ICON = { fortify: 'Fortify', ley: 'Ley line', trace: 'Investigate', sch
 function drawFields(g, vr, t) {
   if (!G || !G.fields) return;
   for (var k in G.fields) {
-    var F = G.fields[k]; if (F.lvl <= 0) continue; var r = fieldR(F);
+    var F = G.fields[k]; if (F.lvl <= 0) continue; if (F.team !== G.f[MEI].team && G.upg && upg(F.team, 'veil') >= 2) continue; var r = fieldR(F);
     if (!vis(vr, F.x - r, F.y - r, F.x + r, F.y + r)) continue;
     var col = teamColOf(F.team), al = 0.16 + F.lvl * 0.05;
     g.save(); g.strokeStyle = col; g.globalAlpha = al; g.lineWidth = 4; g.setLineDash([26, 14]); g.lineDashOffset = -t * 12; g.beginPath(); g.arc(F.x, F.y, r, 0, 6.283); g.stroke();
@@ -7169,10 +7244,11 @@ function perkHud() {
   var el = $('#perks'); if (!el) return; var me = G.f[MEI], P = (G.perks && G.perks[me.team]) || {}, live = Object.keys(P).filter(function (id) { return PERKS[id] && P[id] > G.time; });
   var tz = me.st !== 'dead' && truceZone(me) && !(G.oath && G.oath[me.team]);
   var ef = null; if (me.st !== 'dead' && !tz && G.fields) for (var ft in G.fields) { var FF = G.fields[ft]; if (+ft !== me.team && FF.lvl > 0 && !pactTeams(+ft, me.team) && inHomeField(FF, me)) { ef = FF; break; } }
-  el.hidden = !live.length && !tz && !ef; if (!live.length && !tz && !ef) { el.innerHTML = ''; return; }
+  var up = G.upg && G.upg[me.team] && G.upg[me.team].picks > 0 && me.st !== 'dead';
+  el.hidden = !live.length && !tz && !ef && !up; if (!live.length && !tz && !ef && !up) { el.innerHTML = ''; return; }
   var hb = $('#hud').getBoundingClientRect(), db = $('#duel').getBoundingClientRect(); el.style.top = Math.round(hb.bottom - db.top + 6) + 'px';
   var efTxt = ef ? 'Enemy field L' + ef.lvl + (unfelt(me) ? ' · unfelt' : ' · slowed' + (ef.lvl >= FIELD.starve ? ', no mana' : '') + (ef.lvl >= 3 ? ', bolts' : '') + (ef.lvl >= FIELD.noSpirit ? ', no spirit form' : '')) : '';
-  el.innerHTML = (tz ? '<button type="button" class="pk" data-truce="1" style="--pk:#9fd0ff" title="No fighting here"><b>⚑</b>Truce · no fighting</button>' : '') + (ef ? '<button type="button" class="pk" data-efield="1" style="--pk:#e27a7a" title="Inside a rival bounded field"><b>⚡</b>' + esc(efTxt) + '</button>' : '') + live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
+  el.innerHTML = (up ? '<button type="button" class="pk" data-upg="1" style="--pk:#ffd36b" title="Choose a base upgrade"><b>✦</b>Base upgrade · ' + G.upg[me.team].picks + '</button>' : '') + (tz ? '<button type="button" class="pk" data-truce="1" style="--pk:#9fd0ff" title="No fighting here"><b>⚑</b>Truce · no fighting</button>' : '') + (ef ? '<button type="button" class="pk" data-efield="1" style="--pk:#e27a7a" title="Inside a rival bounded field"><b>⚡</b>' + esc(efTxt) + '</button>' : '') + live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
 }
 document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-efield]')) { FX.banner('⚡ A rival bounded field', 'Level 1 slows you and tells its owner you are here. Level 2 also stops your mana and your healing in spirit form. Level 3 adds bolts every few seconds (servants resist by class: Sabers, Lancers and Archers most, Casters and Assassins least; masters take them whole). Level 4 also keeps you from spirit form.'); return; } if (e.target.closest && e.target.closest('[data-truce]')) { FX.banner('⚑ Truce', 'No one here may fight, and no AI will strike you. Your first blow is stopped with a warning; a second breaks the oath. Striking back at someone who just attacked you is self-defence.'); return; } var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
 FX.event = function (kind, d, msg) {
@@ -8920,6 +8996,31 @@ drawFighterFx = function (g, f) {
   }
   g.restore();
 };
+/* ---- base upgrades: the chip (in #perks, from perkHud) opens this panel; choosing goes through the 'upg_<id>' button so it works online ---- */
+function upgPanel(open) {
+  var el = $('#upgPanel');
+  if (!el) { el = document.createElement('div'); el.id = 'upgPanel'; el.hidden = true; document.body.appendChild(el);
+    el.addEventListener('click', function (e) { var t = e.target.closest('button'); if (!t) return; e.stopPropagation(); if (t.dataset.uclose) { upgPanel(false); return; } if (t.dataset.upick && !t.disabled) { btnDown('upg_' + t.dataset.upick); setTimeout(upgRender, 120); } });
+    ['keydown', 'pointerdown', 'touchstart'].forEach(function (ev) { el.addEventListener(ev, function (e) { e.stopPropagation(); }); }); }
+  el.hidden = !open; if (open) upgRender();
+}
+function upgRender() {
+  var el = $('#upgPanel'); if (!el || el.hidden || !G) return; var me = G.f[MEI], U = G.upg && G.upg[me.team]; if (!U) { el.hidden = true; return; }
+  var home = atHome(me);
+  el.innerHTML = '<div class="uph"><b>Base upgrades</b><span>' + U.picks + ' to choose</span><button data-uclose="1" aria-label="Close">✕</button></div>' +
+    '<p class="upn">' + (home ? 'Each upgrade has two ranks. Fortifying your home earns another pick.' : 'Return to your home to choose. Fortifying it earns more picks.') + '</p>' +
+    UPG_ORDER.map(function (id) { var u = UPGRADES[id], r = U.have[id] || 0, can = home && U.picks > 0 && r < 2;
+      return '<div class="upr"><div class="upi">' + u.icon + '</div><div class="upt"><b>' + esc(u.name) + ' <i>' + (r ? 'rank ' + r : '') + '</i></b>' +
+        u.r.map(function (tx, k) { return '<span class="' + (k < r ? 'got' : k === r ? 'next' : '') + '">' + (k + 1) + '. ' + esc(tx) + '</span>'; }).join('') + '</div>' +
+        '<button data-upick="' + id + '"' + (can ? '' : ' disabled') + '>' + (r >= 2 ? 'Full' : 'Choose') + '</button></div>'; }).join('');
+}
+var upgEv0 = FX.event;
+FX.event = function (kind, d, msg) {
+  if (kind === 'upgrade' && G && G.f[MEI]) { var mine = d.team === G.f[MEI].team, u = UPGRADES[d.id]; if (mine) { FX.banner(u.icon + ' ' + u.name + (d.rank > 1 ? ' II' : ''), u.r[d.rank - 1]); PERKT = 0; upgRender(); } return; }
+  if (kind === 'upgradePick' && G && G.f[MEI]) { if (d.team === G.f[MEI].team) { note('A base upgrade to choose: tap ✦ under your health bars.', '#ffd36b'); PERKT = 0; } return; }
+  upgEv0(kind, d, msg);
+};
+document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-upg]')) upgPanel(true); });
 /* ---- online play on the hosted site: rooms over the game's own WebSocket relay (server/hub.js) ----
    The same calls as the claude.ai room (join, presence, peers, onPeers, onConnection, leave), so the lobby and
    netsync work unchanged. One socket per game code carries all of its rooms; presence patches are coalesced and
@@ -9195,7 +9296,7 @@ function netApplyInputs() {
     var I = p.presence.inp, pv = NET.prev[pe] || (NET.prev[pe] = {});
     if (f.turnT > G.time) return;
     f.inp.mx = clamp(+I.mx || 0, -1, 1); f.inp.my = clamp(+I.my || 0, -1, 1); f.inp.guard = !!I.g; f.inp.heavy = !!I.h;
-    var c = I.c || {}; Object.keys(c).forEach(function (b) { var n = +c[b] || 0; if (pv[b] === undefined) pv[b] = n > 0 ? n - 1 : 0; if (n > pv[b]) { pv[b] = n; if (/^(light|heavy|dodge|skill|np|spirit|target|contract|pact|seal_np|seal_heal|seal_warp)$/.test(b)) doButton(f, b); } });
+    var c = I.c || {}; Object.keys(c).forEach(function (b) { var n = +c[b] || 0; if (pv[b] === undefined) pv[b] = n > 0 ? n - 1 : 0; if (n > pv[b]) { pv[b] = n; if (/^(light|heavy|dodge|skill|np|spirit|target|contract|pact|seal_np|seal_heal|seal_warp|upg_[a-z]+)$/.test(b)) doButton(f, b); } });
     if (I.so && f.def.isMaster && f.partner && I.so !== pv.so && STANCES.some(function (q) { return q[0] === I.so; })) { pv.so = I.so; f.partner.stance = I.so; f.partner.anchor = null; }
     if (I.lk !== pv.lk) { pv.lk = I.lk; var t = G.f[I.lk | 0]; f.lock = (I.lk >= 0 && t && t.team !== f.team && t.st !== 'dead') ? t : null; }
     if (I.pt) { NET.pingEcho = NET.pingEcho || {}; NET.pingEcho[pe] = I.pt; }
@@ -9891,6 +9992,7 @@ function devDo(k) {
     sv.x = me3.x + 220; sv.y = me3.y; sv.kx = sv.ky = 0; sv.spirit = 2; sv.spiritAt = G.time; sv.inM = me3.inM;
     devSay(knownName(sv) + ' waits in spirit form beside you. A servant of yours within 300 sees its shimmer; step away and it vanishes.');
   }
+  else if (k === 'pick') { grantPick(devMe().team); devSay('A base upgrade pick added. Go home and tap ✦ under your health bars.'); }
   else if (k === 'field3') {
     var me = devMe(), best = null, bd = 1e9;
     for (var t in G.fields) { if (+t === me.team) continue; var o = G.f.filter(function (x) { return x.team === +t && x.home; })[0]; if (!o) continue; var d = Math.hypot(o.home[0] - me.x, o.home[1] - me.y); if (d < bd) { bd = d; best = t; } }
@@ -9907,7 +10009,7 @@ function devRender() {
     '<h4>Clock</h4>' + ['night|1|Night 1', 'day|2|Day 2', 'night|2|Night 2', 'day|3|Day 3', 'night|3|Night 3', 'grail|0|The Grail (midnight)'].map(function (s) { var p = s.split('|'); return '<button data-dvp="' + p[0] + '" data-n="' + p[1] + '">' + p[2] + '</button>'; }).join('') +
     '<h4>Events now</h4>' + DEV_EVENTS.map(function (e) { return '<button data-dve="' + e[1] + '">' + e[2] + '</button>'; }).join('') +
     '<h4>You and your partner</h4>' + b('heal', 'Full health') + b('np', 'Full NP bar') + b('mana', 'Full mana and stamina') + b('seals', 'Restore seals') + b('god', 'Cannot fall', DEVST.god) +
-    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') + b('rivalSpirit', 'Rival servant in spirit form beside me') +
+    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('pick', 'Give me an upgrade pick') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') + b('rivalSpirit', 'Rival servant in spirit form beside me') +
     '<h4>Effects lab</h4><div class="dvl"><select id="devLabId">' + opt('caerwyn') + '</select><select id="devLabKey"><option>light</option><option>heavy</option><option>skill</option><option selected>np</option><option>-</option></select><select id="devLabFoe">' + opt('leonidas') + '</select>' + b('lab', 'Stage it') + '</div>';
 }
 function devToggle(on) {

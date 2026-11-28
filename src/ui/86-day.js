@@ -20,7 +20,7 @@ var TASK_ICON = { fortify: 'Fortify', ley: 'Ley line', trace: 'Investigate', sch
 function drawFields(g, vr, t) {
   if (!G || !G.fields) return;
   for (var k in G.fields) {
-    var F = G.fields[k]; if (F.lvl <= 0) continue; var r = fieldR(F);
+    var F = G.fields[k]; if (F.lvl <= 0) continue; if (F.team !== G.f[MEI].team && G.upg && upg(F.team, 'veil') >= 2) continue; var r = fieldR(F);
     if (!vis(vr, F.x - r, F.y - r, F.x + r, F.y + r)) continue;
     var col = teamColOf(F.team), al = 0.16 + F.lvl * 0.05;
     g.save(); g.strokeStyle = col; g.globalAlpha = al; g.lineWidth = 4; g.setLineDash([26, 14]); g.lineDashOffset = -t * 12; g.beginPath(); g.arc(F.x, F.y, r, 0, 6.283); g.stroke();

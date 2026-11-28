@@ -26,6 +26,7 @@ function initFields() {
     G.seenBy[t] = {}; G.tn[t] = {};
   });
   G.f.forEach(function (f) { if (!f.def.isMaster) G.tn[f.team][f.def.id] = true; });
+  initUpgrades();
   if (G.clock) newPhaseEvents();
 }
 function fieldR(F) { return FIELD.baseR + FIELD.perLvl * F.lvl; }
@@ -41,26 +42,29 @@ function fieldAt(f) { if (!G.fields) return null; for (var t in G.fields) { var 
 function ownField(f) { var F = G.fields && G.fields[f.team]; return F && F.lvl > 0 && inHomeField(F, f) ? F : null; }
 function fieldsTick(dt) {
   if (!G.fields) return;
+  aiUpgrades();
   for (var t in G.fields) {
     var F = G.fields[t]; if (F.lvl > 0 && !fieldAlive(F)) { F.lvl = 0; FX.field('fade', F, null); }
     if (F.lvl <= 0) continue;
-    var intr = [], hostsTruce = fieldHostsTruce(F);
+    var intr = [], hostsTruce = fieldHostsTruce(F), uAl = upg(F.team, 'alarm'), uMi = upg(F.team, 'mire'), slowK = Math.max(0.6, FIELD.slow[F.lvl] - (uMi ? 0.08 : 0));
     G.f.forEach(function (e) {
       if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = !hostsTruce && inHomeField(F, e);
+      // Alarm Wards, rank 2: the alarm reaches beyond the field (felt only: no slowing or bolts out there)
+      if (!inside && uAl >= 2 && !hostsTruce && !concealed(e) && !unfelt(e) && e.x < MAP.cityW && Math.hypot(e.x - F.x, e.y - F.y) <= fieldR(F) + 300) G.seenBy[F.team][e.idx] = G.time + 30;
       if (inside && !concealed(e) && !truceZone(e)) {
-        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e);
+        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + (uAl ? 30 : FIELD.seen); if (uMi >= 2) e.fieldNoDodge = G.time + 0.3; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e);
           // level 2: the field starves intruders (no mana regeneration, no healing in spirit form); level 4: no slipping into spirit form
           if (F.lvl >= FIELD.starve) e.fieldSup = G.time + 0.3;
           if (F.lvl >= FIELD.noSpirit) e.fieldNoSp = G.time + 0.3; }
-        if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }
+        if (slowK < 1) { e.fslowT = G.time + 0.3; e.fslowK = slowK; }
       }
       if (inside && !F.inside[e.idx] && e.idx !== undefined && !unfelt(e)) FX.field('enter', F, e);
       F.inside[e.idx] = inside && !unfelt(e);
     });
     // a strong field strikes at intruders who are materialized
-    var bt = FIELD.bolt[F.lvl];
-    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)], bd = e.def.hp * FIELD.boltPct[Math.min(F.lvl, 5)] * fieldResist(e); FX.field('bolt', F, e); hurt(null, e, { dmg: bd, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
+    var uTh = upg(F.team, 'thunder'), bl = Math.min(5, F.lvl + (uTh && F.lvl === 2 ? 1 : 0)), bt = FIELD.bolt[bl] * (uTh >= 2 ? 0.5 : 1);
+    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)], bd = e.def.hp * FIELD.boltPct[bl] * (uTh >= 2 ? 1.5 : 1) * fieldResist(e); FX.field('bolt', F, e); hurt(null, e, { dmg: bd, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
     else F.boltT = Math.max(F.boltT, 1.5);
   }
 }
@@ -79,7 +83,7 @@ function traceKill(f) { if (!clockOn() || isDay() || f.x > MAP.cityW) return; va
 function startDay() {
   G.tasks = [];
   if (!G.fields) return;
-  LEY.forEach(function (l) { G.tasks.push({ kind: 'ley', x: l.x, y: l.y, r: 170, name: l.name, need: DAYTASK.ley, prog: {}, done: {} }); });
+  // (2.0) the ley-line task is gone: base upgrades, earned by fortifying, took its place
   G.tasks.push({ kind: 'school', x: SCHOOL.x, y: SCHOOL.y, r: 260, name: SCHOOL.name, need: DAYTASK.school, prog: {}, done: {} });
   var tr = G.traces.slice().reverse(), picked = [];
   tr.forEach(function (q) { if (picked.length < 3 && !picked.some(function (p) { return Math.hypot(p.x - q.x, p.y - q.y) < 900; })) picked.push(q); });
@@ -115,7 +119,7 @@ function tasksTick(dt) {
 }
 function finishTask(t, k) {
   var m = G.f.filter(function (f) { return f.team === t && f.def.isMaster && f.st !== 'dead'; })[0], note = '';
-  if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); note = 'Bounded field strengthened to level ' + F.lvl; }
+  if (k.kind === 'fortify') { var F = G.fields[t]; F.lvl = Math.min(F.max, F.lvl + 1); grantPick(t); note = 'Bounded field strengthened to level ' + F.lvl + ' · a base upgrade to choose'; }
   else if (k.kind === 'ley') { if (m) { m.mana = m.manaMax; m.manaBonus = 40; } note = 'Mana overflows: full mana and 40 stored'; }
   else if (k.kind === 'school') { G.expo[t] = Math.max(0, (G.expo[t] || 0) - 35); if (m) m.mana = m.manaMax; note = 'A normal school day: suspicion fades'; }
   else if (k.kind === 'relic') { relicDone(t, k); note = 'The relic is yours. Your servant hits a little harder for the rest of the war'; }

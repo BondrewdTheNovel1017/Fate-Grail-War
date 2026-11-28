@@ -114,7 +114,7 @@ function sendScouts() {
   var hs = humansAlive();
   Object.keys(G.fields).forEach(function (ts) {
     var t = +ts, m = teamMaster(t); if (!m || !G.ai[m.idx] || rnd() > DAYP.scoutChance) return;
-    var rivals = Object.keys(G.fields).map(Number).filter(function (o) { return o !== t && !pactTeams(o, t) && teamFighters(o).length; });
+    var rivals = Object.keys(G.fields).map(Number).filter(function (o) { return o !== t && !pactTeams(o, t) && teamFighters(o).length && upg(o, 'veil') < 1; });
     if (!rivals.length) return;
     var hum = rivals.filter(function (o) { return hs.some(function (f) { return f.team === o; }); }), pool = hum.length && rnd() < 0.7 ? hum : rivals, tg = pool[Math.floor(rnd() * pool.length)];
     var F = G.fields[tg]; if (!F) return;

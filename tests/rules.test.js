@@ -340,7 +340,7 @@ test('Presence Concealment: the Assassin vanishes, strikes from hiding, and is f
   assert.ok(!h.cnc, 'attacking ends it');
 });
 
-test('days: fortify, ley lines, battle sites and Noble Phantasms reveal what they should', () => {
+test('days: fortify (and its upgrade pick), battle sites and Noble Phantasms reveal what they should; no ley-line task', () => {
   const E = loadEngine(), M = E.MASTERS, S = E.SERV;
   const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.cu, master: M.waver }], { nights: 3 });
   const cu = G.f.find((f) => f.def.id === 'cu'), rin = G.f.find((f) => f.def.id === 'rin');
@@ -349,7 +349,7 @@ test('days: fortify, ley lines, battle sites and Noble Phantasms reveal what the
   const tr = G.tasks.find((k) => k.kind === 'trace'), fo = G.tasks.find((k) => k.kind === 'fortify' && k.team === 0), ley = G.tasks.find((k) => k.kind === 'ley');
   E.finishTask(0, tr); assert.ok(G.tn[0].cu, 'the battle site gives Cu Chulainn away');
   const l0 = G.fields[0].lvl; E.finishTask(0, fo); assert.strictEqual(G.fields[0].lvl, l0 + 1);
-  E.finishTask(0, ley); assert.ok(rin.manaBonus > 0 && rin.mana === rin.manaMax);
+  assert.ok(!ley, 'the ley-line task is gone'); assert.strictEqual(G.upg[0].picks, 2, 'Rin (Mage family) starts with a pick and fortifying adds one');
   const rich = G.f.find((f) => f.def.id === 'richard'); cu.x = rich.x = 3700; cu.y = rich.y = 4700; rich.x += 200;
   assert.ok(!G.tn[1].richard); rich.mom = 100; E.press(rich, 'np'); for (let i = 0; i < 90; i++) E.simStep(E.STEP);
   assert.ok(G.tn[1].richard, 'using a Noble Phantasm in sight reveals the true name');
@@ -1141,4 +1141,25 @@ test('bounded fields by level: slow, then starve, then bolts weighed by magic re
   assert.ok(E.fieldResist(G.f.find((f) => f.def.id === 'richard')) < E.fieldResist(med) && E.fieldResist(med) < E.fieldResist(sh), 'Sabers resist most, masters least');
   F.lvl = 3; F.boltT = 0; const h0 = med.hp + sh.hp; for (let i = 0; i < 10; i++) { E.fieldsTick(0.5); }
   assert.ok(med.hp + sh.hp < h0, 'level 3 strikes intruders with bolts');
+});
+
+test('base upgrades: chosen at home, two ranks each, the AI picks by taste, effects apply', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.rin }, { servant: S.cu, master: M.kayneth }, { servant: S.kojirou, master: M.kuzuki }], { nights: 3 });
+  G.ai.forEach((a, i) => { G.ai[i] = null; }); G.deck = { night: [], day: [] }; G.clock.pending = null; G.clock.evDone = true;
+  const rin = G.f.find((f) => f.def.id === 'rin'), F = G.fields[rin.team];
+  assert.strictEqual(G.upg[rin.team].picks, 1, 'a Mage family starts with a pick');
+  assert.strictEqual(G.upg[G.f.find((f) => f.def.id === 'kuzuki').team].picks, 0, 'an Outsider does not');
+  rin.x = 200; rin.y = 6000; assert.ok(!E.chooseUpgrade(rin, 'spring'), 'not outside the home');
+  rin.x = rin.home[0]; rin.y = rin.home[1]; assert.ok(E.chooseUpgrade(rin, 'spring'), 'inside the home'); assert.strictEqual(E.upg(rin.team, 'spring'), 1);
+  assert.strictEqual(E.upgHealMul(rin.team), 1.5); assert.ok(!E.chooseUpgrade(rin, 'spring'), 'no pick left');
+  E.grantPick(rin.team); E.chooseUpgrade(rin, 'spring'); E.grantPick(rin.team); assert.ok(!E.chooseUpgrade(rin, 'spring'), 'two ranks at most');
+  E.chooseUpgrade(rin, 'thunder'); assert.strictEqual(E.upg(rin.team, 'thunder'), 1);
+  // Thunder Wards: bolts already at level 2
+  const cu = G.f.find((f) => f.def.id === 'cu'); G.f.forEach((f) => { if (f.team !== rin.team) { f.x = 200; f.y = 6000; } });
+  cu.x = F.x + 60; cu.y = F.y; F.lvl = 2; F.boltT = 0; const h0 = cu.hp; for (let i = 0; i < 10; i++) E.fieldsTick(0.5); assert.ok(cu.hp < h0, 'level 2 field strikes with Thunder Wards');
+  // the AI chooses by its master's taste: Kayneth reaches for Thunder Wards
+  const kay = G.f.find((f) => f.def.id === 'kayneth'); G.ai[kay.idx] = E.mkAI(kay, E.DIFF.knight); G.ai[kay.partner.idx] = E.mkAI(kay.partner, E.DIFF.knight); E.grantPick(kay.team); E.aiUpgrades();
+  assert.strictEqual(E.upg(kay.team, 'thunder'), 1, 'Kayneth picks Thunder Wards');
+  E.grantPick(rin.team); G.ai[rin.idx] = E.mkAI(rin, E.DIFF.knight); E.aiUpgrades(); assert.strictEqual(G.upg[rin.team].picks, 1, 'a team with a human servant keeps its pick for the player');
 });

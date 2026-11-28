@@ -11,6 +11,7 @@ function doButton(f, b) {
   if (f.turnT > G.time) return; // Rule Breaker: this servant is not yours right now
   if (b === 'target') { cycleTarget(f); return; }
   if (b === 'pact') { pactButton(f); return; }
+  if (b.indexOf('upg_') === 0) { chooseUpgrade(f, b.slice(4)); return; }
   if (b === 'contract') { var cc = contractCandidate(f, CONTRACT_RANGE + 40); if (!cc || !formContract(f, cc)) FX.text(f, 'NOBODY TO CONTRACT WITH'); return; }
   if (b.indexOf('seal_') === 0) { if (f.def.isMaster) { if (!useSeal(f, b.slice(5))) FX.text(f, f.sealUsed[b.slice(5)] ? 'SEAL ALREADY USED' : 'NO SERVANT'); } return; }
   if (b === 'block') f.inp.guard = true;

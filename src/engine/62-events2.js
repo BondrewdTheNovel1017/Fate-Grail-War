@@ -31,7 +31,7 @@ function demoTick(E, dt) {
   G.f.forEach(function (f) { if (f.team === E.target) G.seenBy[E.target][a.idx] = G.time + 2; });
   if (a.st === 'dead' && E.fuse < 0) { expose(E.team, 30); endEvent('The bomber is down. The house stands.'); return; }
   E.charges.forEach(function (c) {
-    if (!c.planted && a.st !== 'dead' && Math.hypot(a.x - c.x, a.y - c.y) < c.r && a.st !== 'stag') { c.prog += dt; if (c.prog >= D.plant) { c.planted = true; c.prog = 0; c.dis = 0; FX.event('charge', E); } }
+    if (!c.planted && a.st !== 'dead' && Math.hypot(a.x - c.x, a.y - c.y) < c.r && a.st !== 'stag') { c.prog += dt; if (c.prog >= D.plant * (upg(E.target, 'bulwark') ? 1.5 : 1)) { c.planted = true; c.prog = 0; c.dis = 0; FX.event('charge', E); } }
     if (c.planted) { var def = G.f.some(function (f) { return f.team === E.target && f.st !== 'dead' && f.spirit !== 2 && Math.hypot(f.x - c.x, f.y - c.y) < c.r && G.time - (f.lastHitT || -99) > 0.6; }); if (def) { c.dis += dt; if (c.dis >= D.disarm) { c.planted = false; c.dis = 0; FX.event('disarm', E); } } else c.dis = Math.max(0, c.dis - dt * 0.5); }
   });
   var n = E.charges.filter(function (c) { return c.planted; }).length;
@@ -43,6 +43,7 @@ function demolish(E) {
   var D = EVT2.demo, F = G.fields[E.target], h = G.homes.filter(function (q) { return q.team === E.target; })[0];
   G.f.forEach(function (f) { if (f.st !== 'dead' && f.spirit !== 2 && f.x < MAP.cityW && Math.hypot(f.x - F.x, f.y - F.y) < D.blastR) hurt(null, f, { dmg: D.blastDmg, power: 3, stag: 1.0, kind: 'proj', key: 'blast', hs: 0.1, unblock: true }, 1, { x: F.x, y: F.y }); });
   var b = h && homeBlock(h); if (b) { b.ruin = true; b.k = 'rubble'; }
+  if (G.upg && G.upg[E.target]) G.upg[E.target].have = {}; // the upgrades were in the house
   (MAP.doors || []).forEach(function (d) { if (F.rooms.indexOf(d.room) >= 0) d.ruined = true; });
   // the backup base: a small safehouse on a free plot
   var used = G.homes.map(function (q) { return [q.x, q.y - 120]; }), free = MAP.plots.filter(function (p) { return !used.some(function (u) { return Math.hypot(u[0] - p[0], u[1] - p[1]) < 300; }) && !MAP.b.some(function (q) { return q.gen && Math.hypot(q.x - p[0], q.y - p[1]) < 200; }); });

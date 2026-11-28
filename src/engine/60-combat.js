@@ -77,7 +77,7 @@ function hurt(att, def, a, mult, src) {
   if (def.def.bc && def.hp < def.def.hp * 0.3) taken *= 0.85;
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
-  taken *= perkDamageTaken(def);
+  taken *= perkDamageTaken(def); if (G.upg) taken *= upgDamageTaken(def);
   if (G.dbgHurt) G.dbgHurt.push([att ? att.def.id + att.team : '-', def.def.id + def.team, Math.round(taken), a.key || a.kind || '', att ? inTruce(att, def) : null]);
   def.hp -= taken; def.stat.taken += taken; if (a.key === 'np' && att && att !== def) att.stat.npDmg = (att.stat.npDmg || 0) + taken; perkHit(att, def, taken); def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   harmMana(att, def, taken);
@@ -171,6 +171,7 @@ function startAct(f, key) {
   return true;
 }
 function startDodge(f) {
+  if (f.fieldNoDodge > G.time) { if (!G.ai[f.idx] && G.time > (f.spMsgT || 0)) { f.spMsgT = G.time + 1; FX.text(f, 'THE MIRE HOLDS YOU'); } return; }
   if (f.dodges <= 0) { FX.snd('nodge', f); return; }
   if (f.sta <= 0 || f.exh > 0) return;
   var mx = f.inp.mx, my = f.inp.my, L = Math.hypot(mx, my);

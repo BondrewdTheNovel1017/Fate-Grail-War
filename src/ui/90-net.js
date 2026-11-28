@@ -185,7 +185,7 @@ function netApplyInputs() {
     var I = p.presence.inp, pv = NET.prev[pe] || (NET.prev[pe] = {});
     if (f.turnT > G.time) return;
     f.inp.mx = clamp(+I.mx || 0, -1, 1); f.inp.my = clamp(+I.my || 0, -1, 1); f.inp.guard = !!I.g; f.inp.heavy = !!I.h;
-    var c = I.c || {}; Object.keys(c).forEach(function (b) { var n = +c[b] || 0; if (pv[b] === undefined) pv[b] = n > 0 ? n - 1 : 0; if (n > pv[b]) { pv[b] = n; if (/^(light|heavy|dodge|skill|np|spirit|target|contract|pact|seal_np|seal_heal|seal_warp)$/.test(b)) doButton(f, b); } });
+    var c = I.c || {}; Object.keys(c).forEach(function (b) { var n = +c[b] || 0; if (pv[b] === undefined) pv[b] = n > 0 ? n - 1 : 0; if (n > pv[b]) { pv[b] = n; if (/^(light|heavy|dodge|skill|np|spirit|target|contract|pact|seal_np|seal_heal|seal_warp|upg_[a-z]+)$/.test(b)) doButton(f, b); } });
     if (I.so && f.def.isMaster && f.partner && I.so !== pv.so && STANCES.some(function (q) { return q[0] === I.so; })) { pv.so = I.so; f.partner.stance = I.so; f.partner.anchor = null; }
     if (I.lk !== pv.lk) { pv.lk = I.lk; var t = G.f[I.lk | 0]; f.lock = (I.lk >= 0 && t && t.team !== f.team && t.st !== 'dead') ? t : null; }
     if (I.pt) { NET.pingEcho = NET.pingEcho || {}; NET.pingEcho[pe] = I.pt; }

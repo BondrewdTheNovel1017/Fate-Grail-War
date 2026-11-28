@@ -512,3 +512,14 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 .pad.hasmana .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #5aa0ff calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); }
 .pad.manalow .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #8a6ad8 calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); animation: staBlink 1s steps(2) infinite; }
 body.ingame .hud.war .hc.me .bar.sta { height: 6px; }
+/* base upgrades panel (2.0 update 6) */
+#upgPanel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 62; width: min(460px, calc(100vw - 24px)); max-height: 80vh; overflow: auto; background: #15120ef2; border: 1px solid #7a6334; border-radius: 12px; padding: 12px 14px; color: #ece3cf; font: 13px/1.35 Inter, system-ui, sans-serif; box-shadow: 0 14px 40px #000a; }
+#upgPanel .uph { display: flex; align-items: center; gap: 10px; } #upgPanel .uph b { font: 600 18px/1.1 "Barlow Condensed", sans-serif; letter-spacing: .04em; color: #ffd36b; } #upgPanel .uph span { flex: 1; color: #c9b88a; }
+#upgPanel .uph button { background: #2a241b; color: #ece3cf; border: 1px solid #4a3f2c; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+#upgPanel .upn { margin: 6px 0 8px; color: #bfb398; }
+#upgPanel .upr { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid #3a3122; }
+#upgPanel .upi { font-size: 20px; text-align: center; color: #ffd36b; }
+#upgPanel .upt b { display: block; } #upgPanel .upt i { color: #ffd36b; font-style: normal; font-weight: 500; font-size: 12px; }
+#upgPanel .upt span { display: block; color: #8f866f; font-size: 12px; } #upgPanel .upt span.got { color: #9fe0a8; } #upgPanel .upt span.next { color: #ece3cf; }
+#upgPanel .upr button { min-width: 72px; min-height: 36px; border-radius: 8px; border: 1px solid #c9a04a; background: #3a2e14; color: #ffe3a0; font-weight: 600; cursor: pointer; }
+#upgPanel .upr button[disabled] { opacity: .4; cursor: default; border-color: #4a3f2c; background: #221c14; color: #9c9073; }

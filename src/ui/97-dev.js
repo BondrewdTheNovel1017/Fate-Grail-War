@@ -91,6 +91,7 @@ function devDo(k) {
     sv.x = me3.x + 220; sv.y = me3.y; sv.kx = sv.ky = 0; sv.spirit = 2; sv.spiritAt = G.time; sv.inM = me3.inM;
     devSay(knownName(sv) + ' waits in spirit form beside you. A servant of yours within 300 sees its shimmer; step away and it vanishes.');
   }
+  else if (k === 'pick') { grantPick(devMe().team); devSay('A base upgrade pick added. Go home and tap ✦ under your health bars.'); }
   else if (k === 'field3') {
     var me = devMe(), best = null, bd = 1e9;
     for (var t in G.fields) { if (+t === me.team) continue; var o = G.f.filter(function (x) { return x.team === +t && x.home; })[0]; if (!o) continue; var d = Math.hypot(o.home[0] - me.x, o.home[1] - me.y); if (d < bd) { bd = d; best = t; } }
@@ -107,7 +108,7 @@ function devRender() {
     '<h4>Clock</h4>' + ['night|1|Night 1', 'day|2|Day 2', 'night|2|Night 2', 'day|3|Day 3', 'night|3|Night 3', 'grail|0|The Grail (midnight)'].map(function (s) { var p = s.split('|'); return '<button data-dvp="' + p[0] + '" data-n="' + p[1] + '">' + p[2] + '</button>'; }).join('') +
     '<h4>Events now</h4>' + DEV_EVENTS.map(function (e) { return '<button data-dve="' + e[1] + '">' + e[2] + '</button>'; }).join('') +
     '<h4>You and your partner</h4>' + b('heal', 'Full health') + b('np', 'Full NP bar') + b('mana', 'Full mana and stamina') + b('seals', 'Restore seals') + b('god', 'Cannot fall', DEVST.god) +
-    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') + b('rivalSpirit', 'Rival servant in spirit form beside me') +
+    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('pick', 'Give me an upgrade pick') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') + b('rivalSpirit', 'Rival servant in spirit form beside me') +
     '<h4>Effects lab</h4><div class="dvl"><select id="devLabId">' + opt('caerwyn') + '</select><select id="devLabKey"><option>light</option><option>heavy</option><option>skill</option><option selected>np</option><option>-</option></select><select id="devLabFoe">' + opt('leonidas') + '</select>' + b('lab', 'Stage it') + '</div>';
 }
 function devToggle(on) {
