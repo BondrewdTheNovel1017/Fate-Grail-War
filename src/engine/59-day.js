@@ -5,7 +5,10 @@
    Presence Concealment slips through. Fields slow intruders and, when strong, fire on them.
    By day each team chooses what to do: fortify the home, draw on a ley line, investigate where
    last night's battles happened (and learn a servant's true name), or, for the students, go to school. */
-var FIELD = { baseR: 380, perLvl: 70, slow: [1, 1, 0.9, 0.86, 0.82, 0.78], bolt: [0, 0, 0, 7, 5, 3.5], boltDmg: 7, home: [1, 1, 1.06, 1.08, 1.12, 1.15], seen: 5 };
+var FIELD = { baseR: 380, perLvl: 70, slow: [1, 0.9, 0.86, 0.82, 0.78, 0.74], bolt: [0, 0, 0, 4, 3, 2.5], boltPct: [0, 0, 0, 0.04, 0.06, 0.08], home: [1, 1, 1.06, 1.08, 1.12, 1.15], seen: 5, starve: 2, noSpirit: 4 };
+// magic resistance by class: how much of a field's bolt reaches a servant (masters take it all)
+var FIELD_MR = { Saber: 0.35, Lancer: 0.4, Archer: 0.45, Rider: 0.65, Berserker: 0.7, Caster: 0.9, Assassin: 0.9 };
+function fieldResist(e) { return e.def.isMaster ? 1 : (FIELD_MR[e.def.cls] || 0.7); }
 var DAYTASK = { fortify: 35, ley: 30, trace: 22, school: 30, contest: 320 };
 var LEY = [{ x: 1500, y: 1060, name: 'Ryuudou Temple ley line' }, { x: 1260, y: 3060, name: 'Church hill ley line' }, { x: 10450, y: 5050, name: 'Civic Hall ley line' }];
 var SCHOOL = { x: 4050, y: 2720, name: 'Homurahara Academy' }, STUDENTS = { shirou: 1, rin: 1, sakura: 1 };
@@ -15,6 +18,8 @@ function initFields() {
   G.homes.forEach(function (h) {
     var t = h.team, m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0], s = m && m.partner;
     var lvl = m && m.def.type === 'Mage family' ? 2 : 1, max = m && m.def.type === 'Mage family' ? 4 : 3, temple = !!(s && s.def.cls === 'Caster');
+    // an Outsider has no magecraft to raise a bounded field: the home still shelters (healing, mana) but guards nothing, unless a Caster builds one
+    if (m && m.def.type === 'Outsider' && !temple) { lvl = 0; max = 0; }
     if (temple) { lvl += 1; max += 1; }
     var rooms = (MAP.rooms || []).filter(function (r) { return (h.canon && (r.id === h.key || (h.key === 'emiya' && r.id === 'shed'))) || r.id === h.room; }).map(function (r) { return r.id; });
     G.fields[t] = { team: t, x: h.x, y: h.y, lvl: lvl, max: max, temple: temple, rooms: rooms, boltT: 3, name: h.name, inside: {} };
@@ -44,7 +49,10 @@ function fieldsTick(dt) {
       if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = !hostsTruce && inHomeField(F, e);
       if (inside && !concealed(e) && !truceZone(e)) {
-        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e); }
+        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e);
+          // level 2: the field starves intruders (no mana regeneration, no healing in spirit form); level 4: no slipping into spirit form
+          if (F.lvl >= FIELD.starve) e.fieldSup = G.time + 0.3;
+          if (F.lvl >= FIELD.noSpirit) e.fieldNoSp = G.time + 0.3; }
         if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }
       }
       if (inside && !F.inside[e.idx] && e.idx !== undefined && !unfelt(e)) FX.field('enter', F, e);
@@ -52,7 +60,7 @@ function fieldsTick(dt) {
     });
     // a strong field strikes at intruders who are materialized
     var bt = FIELD.bolt[F.lvl];
-    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2 && !e.def.isMaster; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)]; FX.field('bolt', F, e); hurt(null, e, { dmg: FIELD.boltDmg + F.lvl * 2, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
+    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)], bd = e.def.hp * FIELD.boltPct[Math.min(F.lvl, 5)] * fieldResist(e); FX.field('bolt', F, e); hurt(null, e, { dmg: bd, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
     else F.boltT = Math.max(F.boltT, 1.5);
   }
 }

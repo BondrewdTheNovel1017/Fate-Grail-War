@@ -30,7 +30,7 @@ function masterCost(key) { return key === 'np' ? MANA.sigCost : key === 'skill' 
 function starved(s) { var m = livingMaster(s); return !!(G.mode === 'war' && !s.def.isMaster && m && m.mana < MANA.starved); }
 function manaTick(m, dt) {
   if (m.manaMax === undefined) initMana(m);
-  m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * (G.perks ? perkRegen(m) : 1) * dt);
+  if (!(m.fieldSup > G.time)) m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * (G.perks ? perkRegen(m) : 1) * dt);
   var s = m.partner; if (!s || s.st === 'dead' || s.def.isMaster) return;
   var drain = s.spirit === 2 ? 0 : MANA.upkeep; if (dist(m, s) > MANA.farDist) drain += MANA.farDrain;
   m.mana = Math.max(0, m.mana - drain * dt);

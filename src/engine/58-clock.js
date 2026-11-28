@@ -40,7 +40,7 @@ function clockTick(dt) {
   }
   // resting at home by day: wounds close, mana returns
   // in one's own home wounds close at any hour (faster by day, when the whole yard counts)
-  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day') return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
+  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day' && !(inside && f.def.type === 'Outsider')) return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
   civTick(dt); tasksTick(dt); execTick(dt); scoutsTick(dt); rescueTick(dt);
 }

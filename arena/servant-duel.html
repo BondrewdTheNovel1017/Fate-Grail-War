@@ -1843,7 +1843,7 @@ function masterCost(key) { return key === 'np' ? MANA.sigCost : key === 'skill' 
 function starved(s) { var m = livingMaster(s); return !!(G.mode === 'war' && !s.def.isMaster && m && m.mana < MANA.starved); }
 function manaTick(m, dt) {
   if (m.manaMax === undefined) initMana(m);
-  m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * (G.perks ? perkRegen(m) : 1) * dt);
+  if (!(m.fieldSup > G.time)) m.mana = Math.min(m.manaMax, m.mana + m.manaRegen * (G.perks ? perkRegen(m) : 1) * dt);
   var s = m.partner; if (!s || s.st === 'dead' || s.def.isMaster) return;
   var drain = s.spirit === 2 ? 0 : MANA.upkeep; if (dist(m, s) > MANA.farDist) drain += MANA.farDrain;
   m.mana = Math.max(0, m.mana - drain * dt);
@@ -1935,7 +1935,7 @@ function clockTick(dt) {
   }
   // resting at home by day: wounds close, mana returns
   // in one's own home wounds close at any hour (faster by day, when the whole yard counts)
-  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day') return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
+  G.f.forEach(function (f) { if (f.st === 'dead' || !f.home || f.resc) return; var inside = inOwnHome(f); if (!inside && (c.phase !== 'day' || Math.hypot(f.x - f.home[0], f.y - f.home[1]) > 700)) return; if (c.phase !== 'day' && !inside) return; var rate = c.phase === 'day' ? HOME_REGEN.day : HOME_REGEN.night; f.hp = Math.min(f.def.hp, f.hp + f.def.hp * rate * dt); if (c.phase !== 'day' && !(inside && f.def.type === 'Outsider')) return; if (f.manaMax) f.mana = Math.min(f.manaMax, f.mana + f.manaRegen * dt); });
   for (var t in G.expo) G.expo[t] = Math.max(0, G.expo[t] - EXPO.decay * dt);
   civTick(dt); tasksTick(dt); execTick(dt); scoutsTick(dt); rescueTick(dt);
 }
@@ -2072,7 +2072,10 @@ function civTick(dt) {
    Presence Concealment slips through. Fields slow intruders and, when strong, fire on them.
    By day each team chooses what to do: fortify the home, draw on a ley line, investigate where
    last night's battles happened (and learn a servant's true name), or, for the students, go to school. */
-var FIELD = { baseR: 380, perLvl: 70, slow: [1, 1, 0.9, 0.86, 0.82, 0.78], bolt: [0, 0, 0, 7, 5, 3.5], boltDmg: 7, home: [1, 1, 1.06, 1.08, 1.12, 1.15], seen: 5 };
+var FIELD = { baseR: 380, perLvl: 70, slow: [1, 0.9, 0.86, 0.82, 0.78, 0.74], bolt: [0, 0, 0, 4, 3, 2.5], boltPct: [0, 0, 0, 0.04, 0.06, 0.08], home: [1, 1, 1.06, 1.08, 1.12, 1.15], seen: 5, starve: 2, noSpirit: 4 };
+// magic resistance by class: how much of a field's bolt reaches a servant (masters take it all)
+var FIELD_MR = { Saber: 0.35, Lancer: 0.4, Archer: 0.45, Rider: 0.65, Berserker: 0.7, Caster: 0.9, Assassin: 0.9 };
+function fieldResist(e) { return e.def.isMaster ? 1 : (FIELD_MR[e.def.cls] || 0.7); }
 var DAYTASK = { fortify: 35, ley: 30, trace: 22, school: 30, contest: 320 };
 var LEY = [{ x: 1500, y: 1060, name: 'Ryuudou Temple ley line' }, { x: 1260, y: 3060, name: 'Church hill ley line' }, { x: 10450, y: 5050, name: 'Civic Hall ley line' }];
 var SCHOOL = { x: 4050, y: 2720, name: 'Homurahara Academy' }, STUDENTS = { shirou: 1, rin: 1, sakura: 1 };
@@ -2082,6 +2085,8 @@ function initFields() {
   G.homes.forEach(function (h) {
     var t = h.team, m = G.f.filter(function (f) { return f.team === t && f.def.isMaster; })[0], s = m && m.partner;
     var lvl = m && m.def.type === 'Mage family' ? 2 : 1, max = m && m.def.type === 'Mage family' ? 4 : 3, temple = !!(s && s.def.cls === 'Caster');
+    // an Outsider has no magecraft to raise a bounded field: the home still shelters (healing, mana) but guards nothing, unless a Caster builds one
+    if (m && m.def.type === 'Outsider' && !temple) { lvl = 0; max = 0; }
     if (temple) { lvl += 1; max += 1; }
     var rooms = (MAP.rooms || []).filter(function (r) { return (h.canon && (r.id === h.key || (h.key === 'emiya' && r.id === 'shed'))) || r.id === h.room; }).map(function (r) { return r.id; });
     G.fields[t] = { team: t, x: h.x, y: h.y, lvl: lvl, max: max, temple: temple, rooms: rooms, boltT: 3, name: h.name, inside: {} };
@@ -2111,7 +2116,10 @@ function fieldsTick(dt) {
       if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
       var inside = !hostsTruce && inHomeField(F, e);
       if (inside && !concealed(e) && !truceZone(e)) {
-        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e); }
+        if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e);
+          // level 2: the field starves intruders (no mana regeneration, no healing in spirit form); level 4: no slipping into spirit form
+          if (F.lvl >= FIELD.starve) e.fieldSup = G.time + 0.3;
+          if (F.lvl >= FIELD.noSpirit) e.fieldNoSp = G.time + 0.3; }
         if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }
       }
       if (inside && !F.inside[e.idx] && e.idx !== undefined && !unfelt(e)) FX.field('enter', F, e);
@@ -2119,7 +2127,7 @@ function fieldsTick(dt) {
     });
     // a strong field strikes at intruders who are materialized
     var bt = FIELD.bolt[F.lvl];
-    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2 && !e.def.isMaster; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)]; FX.field('bolt', F, e); hurt(null, e, { dmg: FIELD.boltDmg + F.lvl * 2, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
+    if (bt && intr.length) { F.boltT -= dt; if (F.boltT <= 0) { F.boltT = bt; var tg = intr.filter(function (e) { return e.spirit !== 2; }); if (tg.length) { var e = tg[Math.floor(rnd() * tg.length)], bd = e.def.hp * FIELD.boltPct[Math.min(F.lvl, 5)] * fieldResist(e); FX.field('bolt', F, e); hurt(null, e, { dmg: bd, power: 1, stag: 0.15, spell: true, kind: 'proj', key: 'field', hs: 0.04 }, 1, { x: F.x, y: F.y }); } } }
     else F.boltT = Math.max(F.boltT, 1.5);
   }
 }
@@ -2326,6 +2334,7 @@ function spiritCan(f) {
   var busy = Math.max(f.lastHitT === undefined ? -99 : f.lastHitT, f.lastDealT === undefined ? -99 : f.lastDealT), wait = 0, why = '';
   if (G.time - busy < SPIRIT.lock) { wait = SPIRIT.lock - (G.time - busy); why = 'IN COMBAT'; }
   else if (G.time < (f.spiritCd || 0)) { wait = f.spiritCd - G.time; why = 'SPIRIT FORM'; }
+  else if (f.fieldNoSp > G.time) { wait = 1; why = 'THE FIELD HOLDS YOU'; }
   if (!why) return true;
   if (!G.ai[f.idx] && G.time > (f.spMsgT || 0)) { f.spMsgT = G.time + 1; FX.text(f, why + ': ' + Math.ceil(wait) + 'S'); }
   return false;
@@ -2333,6 +2342,7 @@ function spiritCan(f) {
 function spiritLeft(f) { if (G.mode === 'war') f.spiritCd = G.time + SPIRIT.reenter; }
 function spiritHeal(f, dt) {
   if (G.mode !== 'war') { f.hp = Math.min(f.def.hp, f.hp + 2 * dt); return; }
+  if (f.fieldSup > G.time) return;
   if (G.time - Math.max(f.spiritAt || 0, f.lastHitT === undefined ? -99 : f.lastHitT) < SPIRIT.quiet) return;
   var cap = f.def.hp * (inOwnHome(f) ? 1 : SPIRIT.cap); if (f.hp >= cap) return;
   var m = f.partner; if (m && m.st !== 'dead' && m.manaMax) { if (m.mana <= 0) return; m.mana = Math.max(0, m.mana - SPIRIT.mana * dt); }
@@ -7154,11 +7164,13 @@ function perkHud() {
   if (!G || G.mode !== 'war' || performance.now() < PERKT) return; PERKT = performance.now() + 500;
   var el = $('#perks'); if (!el) return; var me = G.f[MEI], P = (G.perks && G.perks[me.team]) || {}, live = Object.keys(P).filter(function (id) { return PERKS[id] && P[id] > G.time; });
   var tz = me.st !== 'dead' && truceZone(me) && !(G.oath && G.oath[me.team]);
-  el.hidden = !live.length && !tz; if (!live.length && !tz) { el.innerHTML = ''; return; }
+  var ef = null; if (me.st !== 'dead' && !tz && G.fields) for (var ft in G.fields) { var FF = G.fields[ft]; if (+ft !== me.team && FF.lvl > 0 && !pactTeams(+ft, me.team) && inHomeField(FF, me)) { ef = FF; break; } }
+  el.hidden = !live.length && !tz && !ef; if (!live.length && !tz && !ef) { el.innerHTML = ''; return; }
   var hb = $('#hud').getBoundingClientRect(), db = $('#duel').getBoundingClientRect(); el.style.top = Math.round(hb.bottom - db.top + 6) + 'px';
-  el.innerHTML = (tz ? '<button type="button" class="pk" data-truce="1" style="--pk:#9fd0ff" title="No fighting here"><b>⚑</b>Truce · no fighting</button>' : '') + live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
+  var efTxt = ef ? 'Enemy field L' + ef.lvl + (unfelt(me) ? ' · unfelt' : ' · slowed' + (ef.lvl >= FIELD.starve ? ', no mana' : '') + (ef.lvl >= 3 ? ', bolts' : '') + (ef.lvl >= FIELD.noSpirit ? ', no spirit form' : '')) : '';
+  el.innerHTML = (tz ? '<button type="button" class="pk" data-truce="1" style="--pk:#9fd0ff" title="No fighting here"><b>⚑</b>Truce · no fighting</button>' : '') + (ef ? '<button type="button" class="pk" data-efield="1" style="--pk:#e27a7a" title="Inside a rival bounded field"><b>⚡</b>' + esc(efTxt) + '</button>' : '') + live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
 }
-document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-truce]')) { FX.banner('⚑ Truce', 'No one here may fight, and no AI will strike you. Your first blow is stopped with a warning; a second breaks the oath. Striking back at someone who just attacked you is self-defence.'); return; } var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
+document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-efield]')) { FX.banner('⚡ A rival bounded field', 'Level 1 slows you and tells its owner you are here. Level 2 also stops your mana and your healing in spirit form. Level 3 adds bolts every few seconds (servants resist by class: Sabers, Lancers and Archers most, Casters and Assassins least; masters take them whole). Level 4 also keeps you from spirit form.'); return; } if (e.target.closest && e.target.closest('[data-truce]')) { FX.banner('⚑ Truce', 'No one here may fight, and no AI will strike you. Your first blow is stopped with a warning; a second breaks the oath. Striking back at someone who just attacked you is self-defence.'); return; } var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
 FX.event = function (kind, d, msg) {
   if (!G || !G.f[MEI]) return; var my = G.f[MEI].team, mine = d && d.team === my;
   if (kind === 'perk') { var pk = PERKS[d.id]; if (pk && mine) { FX.banner(pk.icon + ' ' + pk.name, pk.desc); FX.snd('chant', G.f[MEI]); } else if (pk) note(teamName(d.team) + ' earned ' + pk.name + '.', pk.col); PERKT = 0; return; }

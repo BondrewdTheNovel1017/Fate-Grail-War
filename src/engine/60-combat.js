@@ -121,6 +121,7 @@ function spiritCan(f) {
   var busy = Math.max(f.lastHitT === undefined ? -99 : f.lastHitT, f.lastDealT === undefined ? -99 : f.lastDealT), wait = 0, why = '';
   if (G.time - busy < SPIRIT.lock) { wait = SPIRIT.lock - (G.time - busy); why = 'IN COMBAT'; }
   else if (G.time < (f.spiritCd || 0)) { wait = f.spiritCd - G.time; why = 'SPIRIT FORM'; }
+  else if (f.fieldNoSp > G.time) { wait = 1; why = 'THE FIELD HOLDS YOU'; }
   if (!why) return true;
   if (!G.ai[f.idx] && G.time > (f.spMsgT || 0)) { f.spMsgT = G.time + 1; FX.text(f, why + ': ' + Math.ceil(wait) + 'S'); }
   return false;
@@ -128,6 +129,7 @@ function spiritCan(f) {
 function spiritLeft(f) { if (G.mode === 'war') f.spiritCd = G.time + SPIRIT.reenter; }
 function spiritHeal(f, dt) {
   if (G.mode !== 'war') { f.hp = Math.min(f.def.hp, f.hp + 2 * dt); return; }
+  if (f.fieldSup > G.time) return;
   if (G.time - Math.max(f.spiritAt || 0, f.lastHitT === undefined ? -99 : f.lastHitT) < SPIRIT.quiet) return;
   var cap = f.def.hp * (inOwnHome(f) ? 1 : SPIRIT.cap); if (f.hp >= cap) return;
   var m = f.partner; if (m && m.st !== 'dead' && m.manaMax) { if (m.mana <= 0) return; m.mana = Math.max(0, m.mana - SPIRIT.mana * dt); }
