@@ -494,3 +494,21 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 #devPanel .dvl{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 #devPanel select{background:#2a241b;color:#ece3cf;border:1px solid #4a3f2c;border-radius:6px;padding:5px;font:inherit;font-size:12px;max-width:31%}
 @media (max-width:600px){#devBtn{top:calc(max(4px,env(safe-area-inset-top,0px)) + 40px)}#devPanel{top:calc(max(4px,env(safe-area-inset-top,0px)) + 70px)}}
+/* clearer bars (2.0 update 3): stamina in segments (one segment = one dodge), dim while regen waits, flashing on the last segment, red when spent */
+.bar.sta { height: 7px; }
+.bar.sta::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--seg, 12%) - 1.5px), rgba(6,10,16,.9) calc(var(--seg, 12%) - 1.5px) var(--seg, 12%)); }
+.bar.sta.paused i { filter: brightness(.6) saturate(.6); }
+.bar.sta.low i { background: #ffb347; animation: staBlink .5s steps(2) infinite; }
+.bar.sta.exh i { background: #d8434d; }
+.bar.sta.exh { box-shadow: 0 0 6px rgba(216,67,77,.7); }
+@keyframes staBlink { 50% { filter: brightness(1.6); } }
+/* rings on the controls: stamina around Light, mana around Skill */
+.pad .b[data-b="light"]::after, .pad.hasmana .b[data-b="skill"]::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)); mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)); }
+.pad .b[data-b="light"]::after { background: repeating-conic-gradient(from 180deg, transparent 0 1.2deg, transparent 1.2deg var(--seg, 43deg)), conic-gradient(from 180deg, var(--stc, #7ed69a) calc(var(--sta, 1) * 1turn), rgba(10,16,24,.55) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)), repeating-conic-gradient(from 180deg, transparent 0 2deg, #000 2deg var(--seg, 43deg)); -webkit-mask-composite: source-in; mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)) intersect, repeating-conic-gradient(from 180deg, transparent 0 2deg, #000 2deg var(--seg, 43deg)); }
+.pad[data-st="paused"] { --stc: #4f8a62; } .pad[data-st="low"] { --stc: #ffb347; } .pad[data-st="exh"] { --stc: #d8434d; }
+.pad[data-st="low"] .b[data-b="light"]::after { animation: staBlink .5s steps(2) infinite; }
+.pad.hasmana .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #5aa0ff calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); }
+.pad.manalow .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #8a6ad8 calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); animation: staBlink 1s steps(2) infinite; }
+body.ingame .hud.war .hc.me .bar.sta { height: 6px; }

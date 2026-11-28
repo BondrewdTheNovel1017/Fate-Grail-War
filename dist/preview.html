@@ -505,6 +505,24 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 #devPanel .dvl{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 #devPanel select{background:#2a241b;color:#ece3cf;border:1px solid #4a3f2c;border-radius:6px;padding:5px;font:inherit;font-size:12px;max-width:31%}
 @media (max-width:600px){#devBtn{top:calc(max(4px,env(safe-area-inset-top,0px)) + 40px)}#devPanel{top:calc(max(4px,env(safe-area-inset-top,0px)) + 70px)}}
+/* clearer bars (2.0 update 3): stamina in segments (one segment = one dodge), dim while regen waits, flashing on the last segment, red when spent */
+.bar.sta { height: 7px; }
+.bar.sta::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--seg, 12%) - 1.5px), rgba(6,10,16,.9) calc(var(--seg, 12%) - 1.5px) var(--seg, 12%)); }
+.bar.sta.paused i { filter: brightness(.6) saturate(.6); }
+.bar.sta.low i { background: #ffb347; animation: staBlink .5s steps(2) infinite; }
+.bar.sta.exh i { background: #d8434d; }
+.bar.sta.exh { box-shadow: 0 0 6px rgba(216,67,77,.7); }
+@keyframes staBlink { 50% { filter: brightness(1.6); } }
+/* rings on the controls: stamina around Light, mana around Skill */
+.pad .b[data-b="light"]::after, .pad.hasmana .b[data-b="skill"]::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)); mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)); }
+.pad .b[data-b="light"]::after { background: repeating-conic-gradient(from 180deg, transparent 0 1.2deg, transparent 1.2deg var(--seg, 43deg)), conic-gradient(from 180deg, var(--stc, #7ed69a) calc(var(--sta, 1) * 1turn), rgba(10,16,24,.55) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)), repeating-conic-gradient(from 180deg, transparent 0 2deg, #000 2deg var(--seg, 43deg)); -webkit-mask-composite: source-in; mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)) intersect, repeating-conic-gradient(from 180deg, transparent 0 2deg, #000 2deg var(--seg, 43deg)); }
+.pad[data-st="paused"] { --stc: #4f8a62; } .pad[data-st="low"] { --stc: #ffb347; } .pad[data-st="exh"] { --stc: #d8434d; }
+.pad[data-st="low"] .b[data-b="light"]::after { animation: staBlink .5s steps(2) infinite; }
+.pad.hasmana .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #5aa0ff calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); }
+.pad.manalow .b[data-b="skill"]::after { background: conic-gradient(from 180deg, #8a6ad8 calc(var(--mana, 0) * 1turn), rgba(10,16,24,.55) 0); animation: staBlink 1s steps(2) infinite; }
+body.ingame .hud.war .hc.me .bar.sta { height: 6px; }
 </style>
 
 <main class="wrap">
@@ -8815,6 +8833,55 @@ drawGroundFx = function (g) {
     });
   }
   truceGfx0(g);
+};
+/* ---- clearer bars (2.0 update 3): stamina you can count, where your eyes already are ----
+   One stamina segment is one dodge. The bar dims while regeneration is paused after an action, flashes (with a soft cue)
+   when one segment is left, and turns red while exhausted. A thin segmented arc under your own fighter shows the same,
+   only when stamina is not full; on the controls, a ring around Light (stamina) and around Skill (mana). */
+var BARS = { arcR: 46, arcSpan: 2.2, fade: 0.25 };
+function staSeg(f) { return 12 * (f.def.dodgeCost || 1); }
+function staState(f) { return f.exh > 0 ? 'exh' : f.sta < staSeg(f) ? 'low' : f.stDelay > 0 ? 'paused' : ''; }
+SND.staLow = function (o, out, t) { tone(o, out, t, 'sine', 700, 660, 0.07, 0.05, 0.004); tone(o, out, t + 0.09, 'sine', 540, 520, 0.08, 0.045, 0.004); };
+var BARST = { low: false, arcA: 0, lastT: 0 };
+var barsHud0 = hud;
+hud = function () {
+  barsHud0();
+  var me = G.f[MEI]; if (!me) return;
+  HUD.forEach(function (h) {
+    var f = h.f; if (!f || !h.bst) return; var b = h.bst.parentNode, seg = staSeg(f), st = staState(f);
+    b.style.setProperty('--seg', (seg).toFixed(2) + '%');
+    if (b.dataset.st !== st) { b.dataset.st = st; b.classList.toggle('paused', st === 'paused'); b.classList.toggle('low', st === 'low'); b.classList.toggle('exh', st === 'exh'); }
+  });
+  // the soft cue, once each time your stamina drops to its last segment
+  var low = me.st !== 'dead' && me.sta < staSeg(me) && me.exh <= 0;
+  if (low && !BARST.low) FX.snd('staLow', me);
+  BARST.low = low;
+  // rings on the controls: stamina around Light, mana around Skill (a servant reads its master's)
+  var pad = document.querySelector('.pad'); if (pad) {
+    pad.style.setProperty('--sta', clamp(me.sta / 100, 0, 1).toFixed(3)); pad.style.setProperty('--seg', (staSeg(me) / 100 * 360).toFixed(1) + 'deg');
+    pad.dataset.st = staState(me);
+    var mm = me.def.isMaster ? me : me.partner, hasM = G.mode === 'war' && mm && mm.manaMax;
+    pad.style.setProperty('--mana', hasM ? clamp(mm.mana / mm.manaMax, 0, 1).toFixed(3) : '0'); pad.classList.toggle('hasmana', !!hasM);
+    pad.classList.toggle('manalow', !!(hasM && mm.mana < mm.manaMax * 0.25));
+  }
+};
+// the arc under your own fighter: a thin segmented crescent below the feet, drawn over the fighter so the cape never hides it
+var barsFfx0 = drawFighterFx;
+drawFighterFx = function (g, f) {
+  barsFfx0(g, f);
+  var me = G && G.f && G.f[MEI]; if (!me || f !== me || me.st === 'dead' || !running) return;
+  var now = performance.now() / 1000, dt = Math.min(0.1, now - (BARST.lastT || now)); BARST.lastT = now;
+  var want = me.sta < 99.5 || me.exh > 0 ? 1 : 0; BARST.arcA += (want - BARST.arcA) * Math.min(1, dt / BARS.fade * 3);
+  if (BARST.arcA < 0.02) return;
+  var st = staState(me), seg = staSeg(me), n = Math.ceil(100 / seg), r = BARS.arcR, span = BARS.arcSpan, a0 = Math.PI / 2 - span / 2, step = span / n, gap = 0.035;
+  var col = st === 'exh' ? '#e2525c' : st === 'low' ? (Math.sin(now * 14) > 0 ? '#ffd36b' : '#ff9a3c') : '#7ed69a';
+  g.save(); g.globalAlpha = BARST.arcA * (st === 'paused' ? 0.55 : 0.9); g.lineCap = 'butt';
+  for (var i = 0; i < n; i++) {
+    var lo = i * seg, fill = clamp((me.sta - lo) / seg, 0, 1), s0 = a0 + (n - 1 - i) * step + gap, s1 = s0 + step - gap * 2;
+    g.lineWidth = 6.5; g.strokeStyle = 'rgba(8,12,18,.7)'; g.beginPath(); g.arc(me.x, me.y, r, s0, s1); g.stroke();
+    if (fill > 0) { g.lineWidth = 4.2; g.strokeStyle = col; g.beginPath(); g.arc(me.x, me.y, r, s1 - (s1 - s0) * fill, s1); g.stroke(); }
+  }
+  g.restore();
 };
 /* ---- online play on the hosted site: rooms over the game's own WebSocket relay (server/hub.js) ----
    The same calls as the claude.ai room (join, presence, peers, onPeers, onConnection, leave), so the lobby and
