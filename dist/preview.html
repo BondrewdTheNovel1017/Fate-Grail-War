@@ -9640,8 +9640,9 @@ var LORE_F = 's';
 document.addEventListener('click', function (e) { var el = e.target.closest && e.target.closest('[data-lore]'); if (el) renderLore(el.dataset.lore); });
 renderLore();
 /* ---- the dev menu: jump straight to any moment, for reviewing updates without playing for an hour ----
-   On in the preview build (DEV_BUILD) or with #dev on the link. The backquote key or the DEV button opens it. */
-var DEVON = (typeof DEV_BUILD !== 'undefined' && DEV_BUILD) || /(^|[#&])dev\b/.test(location.hash || '');
+   Only in the preview build (DEV_BUILD), never in the main game or the site, and never in an online match.
+   The backquote key or the DEV button opens it. */
+var DEVON = typeof DEV_BUILD !== 'undefined' && DEV_BUILD;
 var DEVST = { open: false, god: false, frozen: null, iv: null };
 var DEV_EVENTS = [
   ['night', 'challenge', 'Challenge at the docks'], ['night', 'bounty', 'Church Bounty'], ['night', 'horror', 'Horror in the River'],
@@ -9652,10 +9653,12 @@ var DEV_PLACES = [
   ['home', 'My home'], ['rival', 'Nearest rival home'], ['church', 'Fuyuki Church'], ['docks', 'The docks'], ['river', 'The river (Horror path)'],
   ['school', 'Homurahara Academy'], ['temple', 'Ryuudou Temple'], ['civic', 'Civic Hall']
 ];
+function devOnline() { if (typeof netInMatch === 'function' && netInMatch()) { devSay('The dev menu is off in online matches.'); return true; } return false; }
 function devMe() { return G && G.f ? G.f[MEI] : null; }
 function devSay(t) { if (typeof note === 'function' && running) note(t); var s = $('#devMsg'); if (s) s.textContent = t; }
 function devInWar() { if (!G || !running) { devSay('Start a war first (Quick war).'); return false; } if (G.mode !== 'war' || !G.clock) { devSay('This needs a Grail War with nights and days.'); return false; } return true; }
 function devPhase(ph, n) {
+  if (devOnline()) return;
   if (!devInWar()) return; var c = G.clock;
   if (G.event && G.event.kind !== 'grail') endEvent(null);
   G.event = null; c.t = 0; c.midnight = false; c.final = false;
@@ -9668,6 +9671,7 @@ function devPhase(ph, n) {
   devSay(ph === 'grail' ? 'Midnight: the Grail descends.' : (ph === 'day' ? 'Day ' : 'Night ') + c.n + ', no event dealt. Start one below.');
 }
 function devEvent(k) {
+  if (devOnline()) return;
   if (!devInWar()) return; var c = G.clock, row = DEV_EVENTS.filter(function (e) { return e[1] === k; })[0];
   if (row[0] === 'day' && (c.phase !== 'day' || c.final)) devPhase('day', c.n + (c.phase === 'night' ? 1 : 0));
   if (row[0] === 'night' && (c.phase !== 'night' || c.final)) devPhase('night', Math.min(c.n, c.nights - 1) || 1);
@@ -9679,6 +9683,7 @@ function devEvent(k) {
   devSay(on ? row[2] + ' started.' : row[2] + " could not start now (it needs conditions this war doesn't have yet).");
 }
 function devGoTo(where) {
+  if (devOnline()) return;
   if (!devInWar()) return; var me = devMe(), p = null, i;
   if (where === 'home') p = me.home ? { x: me.home[0], y: me.home[1] } : null;
   else if (where === 'rival') {
@@ -9698,6 +9703,7 @@ function devGoTo(where) {
 }
 function devMine() { var me = devMe(); return me ? [me].concat(me.partner && me.partner.st !== 'dead' ? [me.partner] : []) : []; }
 function devDo(k) {
+  if (devOnline()) return;
   if (k === 'quick') { if (running) endMatch(); CFG.game = 'war'; startMatch(); if (INTRO) skipIntro(); devSay('Quick war started.'); return; }
   if (k === 'skip') { if (INTRO) { skipIntro(); devSay('Intro skipped.'); } return; }
   if (k === 'speed') { speedMul = speedMul > 1 ? CFG.speed || 1 : 3; devRender(); devSay('Game speed x' + speedMul + '.'); return; }
@@ -9755,9 +9761,8 @@ function devInit() {
 }
 // "Cannot fall": a killing blow on you or your partner leaves them standing at full health
 var devKill0 = kill;
-kill = function (f, noRevive) { if (DEVST.god && devMine().indexOf(f) >= 0) { f.hp = f.def.hp; return; } return devKill0(f, noRevive); };
+kill = function (f, noRevive) { if (DEVON && DEVST.god && devMine().indexOf(f) >= 0) { f.hp = f.def.hp; return; } return devKill0(f, noRevive); };
 devInit();
-window.addEventListener('hashchange', function () { if (!DEVON && /(^|[#&])dev\b/.test(location.hash || '')) { DEVON = true; devInit(); } });
 $('#fs').addEventListener('click', function () { var d = $('#duel'); try { if (document.fullscreenElement) document.exitFullscreen(); else if (d.requestFullscreen) d.requestFullscreen().catch(function () {}); } catch (e) {} });
 document.addEventListener('fullscreenchange', function () { $('#fs').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
 function closePops() { ['ordPop', 'sealPop'].forEach(function (id) { $('#' + id).hidden = true; }); $('#ordBtn').setAttribute('aria-expanded', 'false'); $('#sealBtn').setAttribute('aria-expanded', 'false'); }

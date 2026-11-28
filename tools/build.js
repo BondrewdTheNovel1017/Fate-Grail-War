@@ -18,13 +18,13 @@ function uiSource() { return list('src/ui').map(read).join(''); }
 function topNames(src) { const names = new Set(); src.replace(/^(?:function\s+([A-Za-z_$][\w$]*)|var\s+([A-Za-z_$][\w$]*))/gm, (m, f, v) => { names.add(f || v); return m; }); return names; }
 function nameClashes() { const e = topNames(engineSource()), u = topNames(uiSource()); return [...e].filter((n) => u.has(n)); }
 
-function buildPage(arena, hosted, dev) {
+function buildPage(arena, hosted, dev, full) {
   const clash = nameClashes(); if (clash.length) throw new Error('engine and UI both declare: ' + clash.join(', ') + ' (rename the engine one)');
   const js = '(function () {\n' + (arena ? 'var ARENA_ENTRY = true;\n' : '') + (hosted ? 'var NET_WS = true;\n' : '') + (dev ? 'var DEV_BUILD = true;\n' : '') + '/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
   const css = read('src/page/style.css').replace(/\n$/, '');
   const page = read('src/page/template.html').replace('{{CSS}}', () => css).replace('{{JS}}', () => js);
   // the hosted site is a plain web page, so it carries its own doctype, viewport and base reset (claude.ai adds these to artifacts)
-  return hosted || dev ? '<!doctype html>\n<html lang="en">\n' + page.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<style>html{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>') : page;
+  return hosted || dev || full ? '<!doctype html>\n<html lang="en">\n' + page.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<style>html{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>') : page;
 }
 
 module.exports = { engineSource, uiSource, buildPage, nameClashes };
@@ -32,7 +32,7 @@ module.exports = { engineSource, uiSource, buildPage, nameClashes };
 if (require.main === module) {
   const out = path.join(ROOT, 'dist', 'fuyuki-war.html');
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  const html = buildPage();
+  const html = buildPage(false, false, false, true);
   fs.writeFileSync(out, html);
   console.log('built ' + path.relative(ROOT, out) + ' (' + Math.round(html.length / 1024) + ' KB)');
   // The Arena entry page: the same game and the same sprites, opening on the Arena setup.
