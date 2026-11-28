@@ -8,11 +8,11 @@ Detailed plans: `docs/saturday.md` (next session), `docs/map-overhaul.md` (map, 
 Each update: I build it, send it to the preview, you try it and ask for changes, then I move on.
 
 **2.0-A, fix and feel:** 1 preview build and dev scenarios; 2 the truce fix (AI friendly in truces, no swings or combat lines, self-defence, warning, rings, host field off for guests); 3 clearer bars; 4 spirit form; 5 fields that matter, Outsider homes; 6 base upgrades; 7 war and Arena values; 8 NP tuning and reality marbles; 9 Fledgling and Mage killer; 10 true names and the chronicle; 11 War Board and False Death; 12 the Sealed School.
-**2.0-B, strings:** 13 the system (engine, AI, Codex); 14 finishers batch 1 (King Arthur, EMIYA, Heracles, Kiritsugu, Kirei); 15 finishers batches 2-6; 16 openers and mids, rerun duel checks.
-**2.0-C, new Fuyuki and the AI:** 17 the new map with shaped fields and safe zones, ward stones; 18 interiors; 19 AI team plans, one rule set, event zones; 20 alleys, witnesses, daylight rules, two orders; 21 home invasions, lures, sabotage; 22 houses, fences, props, docks, destructibles.
-**2.0-D, the hunt:** 23 hidden homes; 24 mana rework; 25 familiars; 26 traps; 27 day and night rhythm.
-**2.0-E, events:** 28 visual pass (Horror first); 29 small events; 30 middle events; 31 large events.
-**2.0-F, after death:** 32 spectator; 33 Alter invasions.
+**2.0-B, weapons and strings:** 13 the weapons and looks pass (King Arthur and Excalibur accurate, empty hands for those without weapons, weapons in proportion, resting positions, drawing and putting away, livelier swings; `docs/looks-weapons.md`); 14 the strings system (engine, AI, Codex); 15 finishers batch 1 (King Arthur, EMIYA, Heracles, Kiritsugu, Kirei); 16 finishers batches 2-6; 17 openers and mids, rerun duel checks.
+**2.0-C, new Fuyuki and the AI:** 18 the new map with shaped fields and safe zones, ward stones; 19 interiors; 20 AI team plans, one rule set, event zones; 21 alleys, witnesses, daylight rules, two orders; 22 home invasions, lures, sabotage; 23 houses, fences, props, docks, destructibles.
+**2.0-D, the hunt:** 24 hidden homes; 25 mana rework; 26 familiars; 27 traps; 28 day and night rhythm.
+**2.0-E, events:** 29 visual pass (Horror first); 30 small events; 31 middle events; 32 large events.
+**2.0-F, after death:** 33 spectator; 34 Alter invasions.
 **Then:** 2.1 story foundations, guided first night, Fate/Zero; 2.2 Fifth War characters and routes; later vehicles, progression, maps.
 
 ## How each update is reviewed

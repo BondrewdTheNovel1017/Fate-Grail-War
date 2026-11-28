@@ -1,0 +1,12 @@
+# Looks and weapons (update 13 of 2.0, planned Nov 27)
+
+Mirrors the Claude Doc "Fate Grail War Roadmap". Comes before the combat strings, which build on it.
+
+- **King Arthur, more accurate:** blue dress and silver plate (breastplate, gauntlets, armored skirt panels) in proportion; blonde braided bun with her single stray lock; green eyes. Invisible Air hides the blade as a wind shimmer until Strike Air or the NP reveals it.
+- **Excalibur, more accurate:** broad straight double-edged blade; gold crossguard and pommel with blue on grip and guard; a blue-and-gold engraved band down the centre. During the NP charge the light builds from that band outward.
+- **Empty hands** for those without weapons; casting effects appear only as they cast: Illya (hair-wire birds take shape beside her), Irisviel (wire from her fingers), Sakura (shadow from the ground), Kariya (worms from his arm), Waver (Gandr from a pointed finger), Rin (a gem appears between her fingers for gem shots; Gandr from a finger), Kayneth (mercury from its flask at his side), Caren (the ribbon), Kuzuki (fists), Kirei (Black Keys appear between his fingers as he strikes). Lore items stay: Tokiomi's ruby cane, Medea's staff, Gilles' spellbook, Kiritsugu's guns and knife, Shirou's traced blades, Ryuunosuke's knife.
+- **Accurate weapons in proportion:** a size for each weapon against the body. EMIYA's Kanshou and Bakuya smaller (short falchions); Kojirou's Monohoshizao very long; Diarmuid's red long and yellow short spears; Cu's red spear; Leonidas' spear and round shield; Heracles' stone axe-sword; Iskandar's Kupriotes sword; Atalanta's bow; Richard's sword; Medusa's chained nails; Hassan's dirk; Lancelot's arms with dark veins.
+- **Resting positions:** swords lowered or across the back, spears upright, bow low, guns down, shield on the arm; in combat weapons turn toward the target (as now).
+- **Drawing and putting away:** a short flourish on entering and leaving combat; summoned or traced weapons appear and vanish with their own effect (like Gilgamesh's gates): EMIYA's and Shirou's tracing lines, Lancelot's spreading veins, Excalibur's wind.
+- **Livelier swings:** wind-up, a full arc following through, recovery to guard; a short trail in the weapon's colour; heavies carry body weight (a step in, a shoulder turn).
+- **Checked with** `fxLab` screenshots (rest, draw, swing, put away) in batches reviewed in the preview.
