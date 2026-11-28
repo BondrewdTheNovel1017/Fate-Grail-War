@@ -61,7 +61,10 @@ function threatened(f, e) {
 function aiTick(ai, dt) {
   var f = ai.f, o = f.foe, cfg = ai.cfg, A = f.A;
   var inp = f.inp;
+  if (!o) { inp.mx = inp.my = 0; inp.guard = false; inp.heavy = false; return; }
   if (f.st === 'dead' || o.st === 'dead' || G.over) { inp.mx = inp.my = 0; inp.guard = false; inp.heavy = false; return; }
+  // under a truce the other side is a guest, not a target: no facing, no swings, no casting
+  if (G.mode === 'war' && inTruce(f, o)) { f.lock = null; inp.mx = inp.my = 0; inp.guard = false; inp.heavy = false; return; }
   ai.t += dt; ai.cool -= dt; ai.orbitT -= dt;
   if (ai.orbitT <= 0) { ai.orbit = Math.random() < 0.5 ? 1 : -1; ai.orbitT = 1 + Math.random() * 1.6; }
   var d = dist(f, o), toO = angTo(f, o);

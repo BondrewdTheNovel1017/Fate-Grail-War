@@ -1678,7 +1678,7 @@ function newGame(dA, dB, opts) {
 }
 /* ---- targeting: every fighter has a team; f.foe is the current target (nearest living enemy).
    Hits are checked against every enemy, so more fighters can be added with addFighter(). ---- */
-function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !e.resc && !pactTeams(e.team, f.team) && !(G.ai[f.idx] && pactParley(e.team, f.team)) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
+function enemiesOf(f) { var r = []; for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e !== f && e.team !== f.team && !e.resc && !pactTeams(e.team, f.team) && !(G.ai[f.idx] && pactParley(e.team, f.team)) && e.st !== 'dead' && e.spirit !== 2 && !!e.inM === !!f.inM && !(G.mode === 'war' && G.ai[f.idx] && inTruce(f, e)) && !(G.mode === 'war' && contractable(f, e))) r.push(e); } return r; }
 // What a human player perceives as their target in the war: known, in the same place and within sight.
 // Their auto-facing, the HUD target card, the camera lean and the off-screen arrow all follow this, so they never point across the city.
 var AIM_R = 1300;
@@ -2091,10 +2091,10 @@ function fieldsTick(dt) {
   for (var t in G.fields) {
     var F = G.fields[t]; if (F.lvl > 0 && !fieldAlive(F)) { F.lvl = 0; FX.field('fade', F, null); }
     if (F.lvl <= 0) continue;
-    var intr = [];
+    var intr = [], hostsTruce = fieldHostsTruce(F);
     G.f.forEach(function (e) {
       if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
-      var inside = inHomeField(F, e);
+      var inside = !hostsTruce && inHomeField(F, e);
       if (inside && !concealed(e) && !truceZone(e)) {
         if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e); }
         if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }
@@ -2195,6 +2195,7 @@ function livePartner(f) { return !!(f.partner && f.partner.st !== 'dead'); }
 function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
   if (def.st === 'dead' || G.over || def.resc) return 'none';
+  noteAggr(att, def);
   if (truceStops(att, def)) return 'none';
   if (att && att.team !== def.team && pactTeams(att.team, def.team)) return 'none';
   if (def.spirit === 2) return 'none';
@@ -2267,6 +2268,7 @@ function hurt(att, def, a, mult, src) {
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
   taken *= perkDamageTaken(def);
+  if (G.dbgHurt) G.dbgHurt.push([att ? att.def.id + att.team : '-', def.def.id + def.team, Math.round(taken), a.key || a.kind || '', att ? inTruce(att, def) : null]);
   def.hp -= taken; def.stat.taken += taken; if (a.key === 'np' && att && att !== def) att.stat.npDmg = (att.stat.npDmg || 0) + taken; perkHit(att, def, taken); def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   harmMana(att, def, taken);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
@@ -2300,6 +2302,13 @@ function hurt(att, def, a, mult, src) {
 }
 
 /* ---- actions ---- */
+// an AI standing under a truce with a rival close by keeps its hands still: no blows, no casting at them (support stays allowed)
+var TRUCE_SUPPORT = { heal: 1, buff: 1, gift: 1, sacrament: 1, fade: 1, conceal: 1 };
+function aiTruceHold(f, a) {
+  if (G.mode !== 'war' || !G.ai[f.idx] || !truceZone(f) || (a && TRUCE_SUPPORT[a.kind])) return false;
+  for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e.team !== f.team && e.st !== 'dead' && dist(f, e) < 900 && inTruce(f, e)) return true; }
+  return false;
+}
 var HASTE_ATK = 1.35;
 function startAct(f, key) {
   var a = f.A[key];
@@ -2308,6 +2317,7 @@ function startAct(f, key) {
   if ((key === 'light' || key === 'heavy') && f.brokenT > 0) { FX.text(f, 'NO BLADE'); return false; }
   if ((key === 'light' || key === 'heavy') && !canFire(f, a)) return false;
   if (f.sta <= 0 || f.exh > 0) return false;
+  if (aiTruceHold(f, a)) return false;
   f.hidAct = !!(f.hid && key !== 'np'); if (key === 'np') { f.hid = false; f.hidAct = false; }
   f.quietT = 0; f.hid = false; if (f.cnc) { f.cnc = false; f.cncCd = G.time + 3; }
   f.act = a; f.key = key; f.st = 'wind'; f.t = 0; f.hitDone = false; f.atkId++;
@@ -2902,13 +2912,29 @@ function truceZone(f) {
   if (G.tasks) for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && (k.kind === 'banquet' || f.x < MAP.cityW) && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) return k.kind; }
   return null;
 }
-function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a), zb = truceZone(b); if (za === 'banquet' || zb === 'banquet') return true; return !!za && za === zb; }
+function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a), zb = truceZone(b); if (za === 'banquet' || zb === 'banquet' || za === 'summons' || zb === 'summons') return true; return !!za && za === zb; }
 // the King's table is a sanctuary while the banquet runs: no one at it can be hurt or hurt anyone, even from outside
 function banquetLeft() { var c = G.clock; return c && !c.final && c.phase === 'day' ? c.len - c.t : 0; }
-// returns true if the blow is stopped by the truce; a human who strikes anyway breaks it, and pays
+// truce rules: the AI never strikes there (it drops truce partners from enemiesOf); a blow at a team that struck at yours in the
+// last TRUCE.defend seconds is self-defence and costs nothing; a human's first blow is stopped with a warning, and only a
+// second blow inside TRUCE.warn seconds breaks the oath (blows in the first TRUCE.grace seconds, like one burst, count as one)
+var TRUCE = { defend: 5, warn: 4, grace: 0.6 };
+function noteAggr(att, def) { if (!att || !def || att.team === def.team) return; G.aggr = G.aggr || {}; G.aggr[att.team + '>' + def.team] = G.time; }
+function selfDefence(att, def) { return !!(G.aggr && G.time - (G.aggr[def.team + '>' + att.team] || -99) < TRUCE.defend); }
+// a truce event at someone's home (the Banquet in the Einzbern courtyard): that home's field spares the guests while it runs
+function fieldHostsTruce(F) {
+  if (!G.tasks) return false;
+  for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && (inHomeField(F, k) || Math.hypot(k.x - F.x, k.y - F.y) < fieldR(F) + 800)) return true; }
+  return false;
+}
+// returns true if the blow is stopped by the truce
 function truceStops(att, def) {
   if (!att || !inTruce(att, def)) return false;
   if (G.ai[att.idx]) return true;
+  if (selfDefence(att, def)) return false;
+  G.oathWarn = G.oathWarn || {}; var w = G.oathWarn[att.team], since = w === undefined ? 99 : G.time - w;
+  if (since > TRUCE.warn) { G.oathWarn[att.team] = G.time; FX.event('truceWarn', { team: att.team }); return true; }
+  if (since < TRUCE.grace) return true;
   G.oath = G.oath || {}; G.oath[att.team] = true; expose(att.team, 60); churchHeat(att.team, CHURCH.sendAt); G.reveal[att.team] = G.time + 60; FX.event('oath', { team: att.team });
   return false;
 }
@@ -3879,7 +3905,10 @@ function threatened(f, e) {
 function aiTick(ai, dt) {
   var f = ai.f, o = f.foe, cfg = ai.cfg, A = f.A;
   var inp = f.inp;
+  if (!o) { inp.mx = inp.my = 0; inp.guard = false; inp.heavy = false; return; }
   if (f.st === 'dead' || o.st === 'dead' || G.over) { inp.mx = inp.my = 0; inp.guard = false; inp.heavy = false; return; }
+  // under a truce the other side is a guest, not a target: no facing, no swings, no casting
+  if (G.mode === 'war' && inTruce(f, o)) { f.lock = null; inp.mx = inp.my = 0; inp.guard = false; inp.heavy = false; return; }
   ai.t += dt; ai.cool -= dt; ai.orbitT -= dt;
   if (ai.orbitT <= 0) { ai.orbit = Math.random() < 0.5 ? 1 : -1; ai.orbitT = 1 + Math.random() * 1.6; }
   var d = dist(f, o), toO = angTo(f, o);
@@ -6718,7 +6747,7 @@ function wrapText(c, s, maxW) { var w = s.split(' '), out = [], cur = ''; w.forE
 function drawBubbles(cx, cy, zoom) {
   if (!G || G.mode !== 'war') { BUB = []; return; }
   // a fighter that turns on a new foe close by may call out
-  if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
+  if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(G.mode === 'war' && inTruce(f, f.foe)) && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
   var now = performance.now(), c = ctx;
   DUO = DUO.filter(function (d) { if (d.text !== undefined || now < d.at) return true; if (d.f.st !== 'dead') { var s2 = pickLine(d.f, d.k); if (s2) { SAYT[d.f.idx] = now / 1000; showBubble(d.f, s2, 2.6, true); } } return false; });
   BUB = BUB.filter(function (b) { return (now - b.t0) / 1000 < b.life && (b.f.st !== 'dead' || INTRO); });
@@ -7084,11 +7113,12 @@ var PERKT = 0;
 function perkHud() {
   if (!G || G.mode !== 'war' || performance.now() < PERKT) return; PERKT = performance.now() + 500;
   var el = $('#perks'); if (!el) return; var me = G.f[MEI], P = (G.perks && G.perks[me.team]) || {}, live = Object.keys(P).filter(function (id) { return PERKS[id] && P[id] > G.time; });
-  el.hidden = !live.length; if (!live.length) { el.innerHTML = ''; return; }
+  var tz = me.st !== 'dead' && truceZone(me) && !(G.oath && G.oath[me.team]);
+  el.hidden = !live.length && !tz; if (!live.length && !tz) { el.innerHTML = ''; return; }
   var hb = $('#hud').getBoundingClientRect(), db = $('#duel').getBoundingClientRect(); el.style.top = Math.round(hb.bottom - db.top + 6) + 'px';
-  el.innerHTML = live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
+  el.innerHTML = (tz ? '<button type="button" class="pk" data-truce="1" style="--pk:#9fd0ff" title="No fighting here"><b>⚑</b>Truce · no fighting</button>' : '') + live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
 }
-document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
+document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-truce]')) { FX.banner('⚑ Truce', 'No one here may fight, and no AI will strike you. Your first blow is stopped with a warning; a second breaks the oath. Striking back at someone who just attacked you is self-defence.'); return; } var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
 FX.event = function (kind, d, msg) {
   if (!G || !G.f[MEI]) return; var my = G.f[MEI].team, mine = d && d.team === my;
   if (kind === 'perk') { var pk = PERKS[d.id]; if (pk && mine) { FX.banner(pk.icon + ' ' + pk.name, pk.desc); FX.snd('chant', G.f[MEI]); } else if (pk) note(teamName(d.team) + ' earned ' + pk.name + '.', pk.col); PERKT = 0; return; }
@@ -7106,6 +7136,7 @@ FX.event = function (kind, d, msg) {
   else if (kind === 'berserk') { if (mine) FX.banner('Your servant breaks loose', 'It hits harder and burns itself out, and it will not heed your orders. Everyone can see it.'); else FX.banner('Berserker Unchained', knownName(d.f) + ' of ' + teamName(d.team) + ' has broken its master’s control. Everyone can see it.'); }
   else if (kind === 'school') { if (d.culprit === my) FX.banner('Your Rider seals the school', 'The bounded field drains everyone inside and feeds your master. Keep the circles standing.'); else FX.banner('Homurahara Academy Is Sealed', 'A blood-red bounded field drains everyone inside. No one can enter or leave until the three circles are broken.'); FX.snd('marble:ubw', { x: d.x, y: d.y, idx: -1 }); }
   else if (kind === 'circle') note('A circle shatters' + (d.left ? ' · ' + d.left + ' left' : '') + (d.team === my ? ' · mana restored' : ''), d.team === my ? '#ffd36b' : '#e9e4d3');
+  else if (kind === 'truceWarn') { if (mine) { note('Truce: your blow is stayed. Strike again now and you break the oath.', '#ffb35a'); FX.text(G.f[MEI], 'TRUCE · STRIKE AGAIN TO BREAK IT'); PERKT = 0; } }
   else if (kind === 'oath') { if (mine) FX.banner('You broke the truce', 'Every master knows where you are. The city will remember.'); else note(teamName(d.team) + ' broke the truce!', '#f0a85a'); }
   else if (kind === 'banquet') FX.banner('The King’s Banquet', knownName(d.f) + ' sets a table at the Einzbern castle. No fighting there. Sit, and learn every guest’s true name, as they learn yours.');
   else if (kind === 'summons') FX.banner('The Overseer’s Summons', 'Every master is called to Fuyuki Church under truce. Those who come leave with a clean name and a secret.');
@@ -7471,7 +7502,7 @@ var PAIRS = {
 };
 var PAIRSEEN = {};
 function tryPair(f, e) {
-  var k = f.def.id + '>' + e.def.id, P = PAIRS[k]; if (!P || PAIRSEEN[k] || e.st === 'dead') return false;
+  var k = f.def.id + '>' + e.def.id, P = PAIRS[k]; if (!P || PAIRSEEN[k] || e.st === 'dead' || (G.mode === 'war' && inTruce(f, e))) return false;
   if (!FX.near(f.x, f.y)) return false;
   PAIRSEEN[k] = PAIRSEEN[e.def.id + '>' + f.def.id] = true;
   SAYT[f.idx] = performance.now() / 1000; showBubble(f, P[0], 3.2, true);
@@ -8760,6 +8791,30 @@ drawFighter = function (f, i, ar) {
   drawFighterA0(f, i, ar);
   if (alter) ctx.restore();
 };
+/* ---- truce zones you can see: a pale ring on the ground around every place where no one may fight ---- */
+function truceRings() {
+  var out = [], E = G.event, L = G.lastSchool;
+  if (E && E.kind === 'horror' && E.boss && !E.boss.dead) out.push({ x: E.boss.x, y: E.boss.y, r: EVT.horror.truceR });
+  if (L && G.time < L.truceEnd) out.push({ x: L.x, y: L.y, r: L.r + 200 });
+  (G.tasks || []).forEach(function (k) { if (k.kind === 'banquet' || k.kind === 'summons') out.push({ x: k.x, y: k.y, r: k.r + 120 }); });
+  return out;
+}
+var truceGfx0 = drawGroundFx;
+drawGroundFx = function (g) {
+  if (G && G.mode === 'war') {
+    var rs = truceRings(), t = G.time;
+    rs.forEach(function (z) {
+      if (VIEWR && (z.x + z.r < VIEWR.x0 || z.x - z.r > VIEWR.x1 || z.y + z.r < VIEWR.y0 || z.y - z.r > VIEWR.y1)) return;
+      g.save();
+      g.globalAlpha = 0.05; g.fillStyle = '#bfe2ff'; g.beginPath(); g.arc(z.x, z.y, z.r, 0, 6.2832); g.fill();
+      g.globalAlpha = 0.55; g.strokeStyle = '#cfe8ff'; g.lineWidth = 4; g.setLineDash([26, 18]); g.lineDashOffset = -t * 18;
+      g.beginPath(); g.arc(z.x, z.y, z.r, 0, 6.2832); g.stroke();
+      g.globalAlpha = 0.22; g.lineWidth = 12; g.setLineDash([]); g.beginPath(); g.arc(z.x, z.y, z.r - 8, 0, 6.2832); g.stroke();
+      g.restore();
+    });
+  }
+  truceGfx0(g);
+};
 /* ---- online play on the hosted site: rooms over the game's own WebSocket relay (server/hub.js) ----
    The same calls as the claude.ai room (join, presence, peers, onPeers, onConnection, leave), so the lobby and
    netsync work unchanged. One socket per game code carries all of its rooms; presence patches are coalesced and
@@ -9689,7 +9744,7 @@ function devGoTo(where) {
     var best = null, bd = 1e9; G.f.forEach(function (o) { if (o.team === me.team || !o.home || o.st === 'dead' || (G.pacts && pactTeams(o.team, me.team))) return; var d = Math.hypot(o.home[0] - me.x, o.home[1] - me.y); if (d < bd) { bd = d; best = o; } });
     p = best ? { x: best.home[0], y: best.home[1] } : null;
   }
-  else if (where === 'church') p = openSpot(MAP.haven.x, MAP.haven.y + 260, 0, 120);
+  else if (where === 'church') { var sk = (G.tasks || []).filter(function (t) { return t.kind === 'summons'; })[0]; p = sk ? openSpot(sk.x, sk.y + 120, 0, 120) : openSpot(MAP.haven.x, MAP.haven.y + 260, 0, 120); }
   else if (where === 'docks') p = openSpot(EVT.challenge.x, EVT.challenge.y, 0, 200);
   else if (where === 'river') p = openSpot(EVT.horror.path[0][0] - 500, EVT.horror.path[0][1], 0, 150);
   else if (where === 'school') p = openSpot(EVT.school.x, EVT.school.y + 500, 0, 200);
@@ -9717,6 +9772,13 @@ function devDo(k) {
     if (DEVST.frozen) { G.ai = DEVST.frozen; DEVST.frozen = null; devRender(); devSay('AI moving again.'); }
     else { DEVST.frozen = G.ai.slice(); G.ai = G.ai.map(function () { return null; }); G.f.forEach(function (f, i) { if (i !== MEI && !(DEVST.frozen[i] === null)) { f.inp = { mx: 0, my: 0 }; f.buf = { name: null, t: 0 }; } }); devRender(); devSay('AI frozen in place.'); }
   }
+  else if (k === 'rival2me') {
+    var me2 = devMe(), rb = null, rd = 1e9;
+    G.f.forEach(function (o) { if (o.team === me2.team || o.st === 'dead' || (G.pacts && pactTeams(o.team, me2.team))) return; var d = Math.hypot(o.x - me2.x, o.y - me2.y); if (d < rd) { rd = d; rb = o; } });
+    if (!rb) { devSay('No rival left.'); return; }
+    G.f.filter(function (o) { return o.team === rb.team && o.st !== 'dead'; }).forEach(function (o, j) { o.x = me2.x + 110 + j * 50; o.y = me2.y + (j ? 40 : -20); o.kx = o.ky = 0; o.inM = me2.inM; o.spirit = 0; });
+    devSay('A rival team now stands beside you. Start an event with a truce (Horror, Banquet, Summons) to test it.');
+  }
   else if (k === 'field3') {
     var me = devMe(), best = null, bd = 1e9;
     for (var t in G.fields) { if (+t === me.team) continue; var o = G.f.filter(function (x) { return x.team === +t && x.home; })[0]; if (!o) continue; var d = Math.hypot(o.home[0] - me.x, o.home[1] - me.y); if (d < bd) { bd = d; best = t; } }
@@ -9733,7 +9795,7 @@ function devRender() {
     '<h4>Clock</h4>' + ['night|1|Night 1', 'day|2|Day 2', 'night|2|Night 2', 'day|3|Day 3', 'night|3|Night 3', 'grail|0|The Grail (midnight)'].map(function (s) { var p = s.split('|'); return '<button data-dvp="' + p[0] + '" data-n="' + p[1] + '">' + p[2] + '</button>'; }).join('') +
     '<h4>Events now</h4>' + DEV_EVENTS.map(function (e) { return '<button data-dve="' + e[1] + '">' + e[2] + '</button>'; }).join('') +
     '<h4>You and your partner</h4>' + b('heal', 'Full health') + b('np', 'Full NP bar') + b('mana', 'Full mana and stamina') + b('seals', 'Restore seals') + b('god', 'Cannot fall', DEVST.god) +
-    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') +
+    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') +
     '<h4>Effects lab</h4><div class="dvl"><select id="devLabId">' + opt('caerwyn') + '</select><select id="devLabKey"><option>light</option><option>heavy</option><option>skill</option><option selected>np</option><option>-</option></select><select id="devLabFoe">' + opt('leonidas') + '</select>' + b('lab', 'Stage it') + '</div>';
 }
 function devToggle(on) {

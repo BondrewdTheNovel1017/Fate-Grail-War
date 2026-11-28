@@ -5,6 +5,7 @@ function livePartner(f) { return !!(f.partner && f.partner.st !== 'dead'); }
 function hurt(att, def, a, mult, src) {
   if (att && G.mode === 'war' && !!att.inM !== !!def.inM) return 'none';
   if (def.st === 'dead' || G.over || def.resc) return 'none';
+  noteAggr(att, def);
   if (truceStops(att, def)) return 'none';
   if (att && att.team !== def.team && pactTeams(att.team, def.team)) return 'none';
   if (def.spirit === 2) return 'none';
@@ -77,6 +78,7 @@ function hurt(att, def, a, mult, src) {
   if (att && def.hp - taken <= 0 && def.hp > 1 && familyHold(att, def)) taken = def.hp - 1; // a bond stops the hand, once
   if (def.hp - taken <= 0 && sealRescue(def, att)) return 'hit'; // a Command Seal burns: master and servant are carried home
   taken *= perkDamageTaken(def);
+  if (G.dbgHurt) G.dbgHurt.push([att ? att.def.id + att.team : '-', def.def.id + def.team, Math.round(taken), a.key || a.kind || '', att ? inTruce(att, def) : null]);
   def.hp -= taken; def.stat.taken += taken; if (a.key === 'np' && att && att !== def) att.stat.npDmg = (att.stat.npDmg || 0) + taken; perkHit(att, def, taken); def.hit = 0.15; witnessHit(att, def, a); if (!def.saidLow && def.hp > 0 && def.hp < def.def.hp * 0.3 && G.mode === 'war') { def.saidLow = true; FX.say(def, 'low'); } if (att && att.def.lifesteal && att.st !== 'dead') att.hp = Math.min(att.def.hp, att.hp + taken * att.def.lifesteal);
   harmMana(att, def, taken);
   if (att) { att.stat.dealt += taken; att.stat.hits++; gainMom(att, taken * 0.6); }
@@ -110,6 +112,13 @@ function hurt(att, def, a, mult, src) {
 }
 
 /* ---- actions ---- */
+// an AI standing under a truce with a rival close by keeps its hands still: no blows, no casting at them (support stays allowed)
+var TRUCE_SUPPORT = { heal: 1, buff: 1, gift: 1, sacrament: 1, fade: 1, conceal: 1 };
+function aiTruceHold(f, a) {
+  if (G.mode !== 'war' || !G.ai[f.idx] || !truceZone(f) || (a && TRUCE_SUPPORT[a.kind])) return false;
+  for (var i = 0; i < G.f.length; i++) { var e = G.f[i]; if (e.team !== f.team && e.st !== 'dead' && dist(f, e) < 900 && inTruce(f, e)) return true; }
+  return false;
+}
 var HASTE_ATK = 1.35;
 function startAct(f, key) {
   var a = f.A[key];
@@ -118,6 +127,7 @@ function startAct(f, key) {
   if ((key === 'light' || key === 'heavy') && f.brokenT > 0) { FX.text(f, 'NO BLADE'); return false; }
   if ((key === 'light' || key === 'heavy') && !canFire(f, a)) return false;
   if (f.sta <= 0 || f.exh > 0) return false;
+  if (aiTruceHold(f, a)) return false;
   f.hidAct = !!(f.hid && key !== 'np'); if (key === 'np') { f.hid = false; f.hidAct = false; }
   f.quietT = 0; f.hid = false; if (f.cnc) { f.cnc = false; f.cncCd = G.time + 3; }
   f.act = a; f.key = key; f.st = 'wind'; f.t = 0; f.hitDone = false; f.atkId++;

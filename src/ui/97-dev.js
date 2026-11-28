@@ -49,7 +49,7 @@ function devGoTo(where) {
     var best = null, bd = 1e9; G.f.forEach(function (o) { if (o.team === me.team || !o.home || o.st === 'dead' || (G.pacts && pactTeams(o.team, me.team))) return; var d = Math.hypot(o.home[0] - me.x, o.home[1] - me.y); if (d < bd) { bd = d; best = o; } });
     p = best ? { x: best.home[0], y: best.home[1] } : null;
   }
-  else if (where === 'church') p = openSpot(MAP.haven.x, MAP.haven.y + 260, 0, 120);
+  else if (where === 'church') { var sk = (G.tasks || []).filter(function (t) { return t.kind === 'summons'; })[0]; p = sk ? openSpot(sk.x, sk.y + 120, 0, 120) : openSpot(MAP.haven.x, MAP.haven.y + 260, 0, 120); }
   else if (where === 'docks') p = openSpot(EVT.challenge.x, EVT.challenge.y, 0, 200);
   else if (where === 'river') p = openSpot(EVT.horror.path[0][0] - 500, EVT.horror.path[0][1], 0, 150);
   else if (where === 'school') p = openSpot(EVT.school.x, EVT.school.y + 500, 0, 200);
@@ -77,6 +77,13 @@ function devDo(k) {
     if (DEVST.frozen) { G.ai = DEVST.frozen; DEVST.frozen = null; devRender(); devSay('AI moving again.'); }
     else { DEVST.frozen = G.ai.slice(); G.ai = G.ai.map(function () { return null; }); G.f.forEach(function (f, i) { if (i !== MEI && !(DEVST.frozen[i] === null)) { f.inp = { mx: 0, my: 0 }; f.buf = { name: null, t: 0 }; } }); devRender(); devSay('AI frozen in place.'); }
   }
+  else if (k === 'rival2me') {
+    var me2 = devMe(), rb = null, rd = 1e9;
+    G.f.forEach(function (o) { if (o.team === me2.team || o.st === 'dead' || (G.pacts && pactTeams(o.team, me2.team))) return; var d = Math.hypot(o.x - me2.x, o.y - me2.y); if (d < rd) { rd = d; rb = o; } });
+    if (!rb) { devSay('No rival left.'); return; }
+    G.f.filter(function (o) { return o.team === rb.team && o.st !== 'dead'; }).forEach(function (o, j) { o.x = me2.x + 110 + j * 50; o.y = me2.y + (j ? 40 : -20); o.kx = o.ky = 0; o.inM = me2.inM; o.spirit = 0; });
+    devSay('A rival team now stands beside you. Start an event with a truce (Horror, Banquet, Summons) to test it.');
+  }
   else if (k === 'field3') {
     var me = devMe(), best = null, bd = 1e9;
     for (var t in G.fields) { if (+t === me.team) continue; var o = G.f.filter(function (x) { return x.team === +t && x.home; })[0]; if (!o) continue; var d = Math.hypot(o.home[0] - me.x, o.home[1] - me.y); if (d < bd) { bd = d; best = t; } }
@@ -93,7 +100,7 @@ function devRender() {
     '<h4>Clock</h4>' + ['night|1|Night 1', 'day|2|Day 2', 'night|2|Night 2', 'day|3|Day 3', 'night|3|Night 3', 'grail|0|The Grail (midnight)'].map(function (s) { var p = s.split('|'); return '<button data-dvp="' + p[0] + '" data-n="' + p[1] + '">' + p[2] + '</button>'; }).join('') +
     '<h4>Events now</h4>' + DEV_EVENTS.map(function (e) { return '<button data-dve="' + e[1] + '">' + e[2] + '</button>'; }).join('') +
     '<h4>You and your partner</h4>' + b('heal', 'Full health') + b('np', 'Full NP bar') + b('mana', 'Full mana and stamina') + b('seals', 'Restore seals') + b('god', 'Cannot fall', DEVST.god) +
-    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') +
+    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') +
     '<h4>Effects lab</h4><div class="dvl"><select id="devLabId">' + opt('caerwyn') + '</select><select id="devLabKey"><option>light</option><option>heavy</option><option>skill</option><option selected>np</option><option>-</option></select><select id="devLabFoe">' + opt('leonidas') + '</select>' + b('lab', 'Stage it') + '</div>';
 }
 function devToggle(on) {

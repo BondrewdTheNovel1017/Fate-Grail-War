@@ -70,7 +70,7 @@ var PAIRS = {
 };
 var PAIRSEEN = {};
 function tryPair(f, e) {
-  var k = f.def.id + '>' + e.def.id, P = PAIRS[k]; if (!P || PAIRSEEN[k] || e.st === 'dead') return false;
+  var k = f.def.id + '>' + e.def.id, P = PAIRS[k]; if (!P || PAIRSEEN[k] || e.st === 'dead' || (G.mode === 'war' && inTruce(f, e))) return false;
   if (!FX.near(f.x, f.y)) return false;
   PAIRSEEN[k] = PAIRSEEN[e.def.id + '>' + f.def.id] = true;
   SAYT[f.idx] = performance.now() / 1000; showBubble(f, P[0], 3.2, true);

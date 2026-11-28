@@ -268,13 +268,29 @@ function truceZone(f) {
   if (G.tasks) for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && (k.kind === 'banquet' || f.x < MAP.cityW) && Math.hypot(f.x - k.x, f.y - k.y) < k.r + 120) return k.kind; }
   return null;
 }
-function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a), zb = truceZone(b); if (za === 'banquet' || zb === 'banquet') return true; return !!za && za === zb; }
+function inTruce(a, b) { if (!eventsOn() || !a || !b || a.team === b.team || (G.oath && (G.oath[a.team] || G.oath[b.team]))) return false; var za = truceZone(a), zb = truceZone(b); if (za === 'banquet' || zb === 'banquet' || za === 'summons' || zb === 'summons') return true; return !!za && za === zb; }
 // the King's table is a sanctuary while the banquet runs: no one at it can be hurt or hurt anyone, even from outside
 function banquetLeft() { var c = G.clock; return c && !c.final && c.phase === 'day' ? c.len - c.t : 0; }
-// returns true if the blow is stopped by the truce; a human who strikes anyway breaks it, and pays
+// truce rules: the AI never strikes there (it drops truce partners from enemiesOf); a blow at a team that struck at yours in the
+// last TRUCE.defend seconds is self-defence and costs nothing; a human's first blow is stopped with a warning, and only a
+// second blow inside TRUCE.warn seconds breaks the oath (blows in the first TRUCE.grace seconds, like one burst, count as one)
+var TRUCE = { defend: 5, warn: 4, grace: 0.6 };
+function noteAggr(att, def) { if (!att || !def || att.team === def.team) return; G.aggr = G.aggr || {}; G.aggr[att.team + '>' + def.team] = G.time; }
+function selfDefence(att, def) { return !!(G.aggr && G.time - (G.aggr[def.team + '>' + att.team] || -99) < TRUCE.defend); }
+// a truce event at someone's home (the Banquet in the Einzbern courtyard): that home's field spares the guests while it runs
+function fieldHostsTruce(F) {
+  if (!G.tasks) return false;
+  for (var i = 0; i < G.tasks.length; i++) { var k = G.tasks[i]; if ((k.kind === 'banquet' || k.kind === 'summons') && (inHomeField(F, k) || Math.hypot(k.x - F.x, k.y - F.y) < fieldR(F) + 800)) return true; }
+  return false;
+}
+// returns true if the blow is stopped by the truce
 function truceStops(att, def) {
   if (!att || !inTruce(att, def)) return false;
   if (G.ai[att.idx]) return true;
+  if (selfDefence(att, def)) return false;
+  G.oathWarn = G.oathWarn || {}; var w = G.oathWarn[att.team], since = w === undefined ? 99 : G.time - w;
+  if (since > TRUCE.warn) { G.oathWarn[att.team] = G.time; FX.event('truceWarn', { team: att.team }); return true; }
+  if (since < TRUCE.grace) return true;
   G.oath = G.oath || {}; G.oath[att.team] = true; expose(att.team, 60); churchHeat(att.team, CHURCH.sendAt); G.reveal[att.team] = G.time + 60; FX.event('oath', { team: att.team });
   return false;
 }

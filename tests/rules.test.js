@@ -1051,3 +1051,52 @@ test('Event sets: the Fourth War set only deals Fate/Zero events', () => {
   const G = E.newWar(E.warTeams('richard', 'rin', 7), { nights: 3, events: 'fourth' }); E.buildDecks();
   assert.ok(G.deck.night.every((k) => ['challenge', 'bounty', 'horror', 'falsedeath', 'berserk', 'demo'].includes(k)) && G.deck.day.every((k) => ['banquet', 'summons'].includes(k)), JSON.stringify(G.deck));
 });
+
+test('truce: the AI never targets a truce partner; a human is warned first, self-defence is free, the second blow breaks the oath', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV, ev = [];
+  E.FX.event = (k) => ev.push(k);
+  const G = E.newWar([{ servant: S.richard, master: M.shirou }, { servant: S.cu, master: M.rin }, { servant: S.medusa, master: M.sakura }], { nights: 3 });
+  G.clock.phase = 'day'; G.ai.forEach((a, i) => { G.ai[i] = null; });
+  const sh = G.f.find((f) => f.def.id === 'shirou'), rin = G.f.find((f) => f.def.id === 'rin');
+  G.f.forEach((f) => { f.x = 200; f.y = 6000; });
+  const R = E.MAP.rooms.find((r) => r.id === 'school'), cx = (R.x0 + R.x1) / 2, cy = (R.y0 + R.y1) / 2;
+  sh.x = cx; sh.y = cy; rin.x = cx + 100; rin.y = cy; E.startSchool();
+  assert.ok(E.inTruce(sh, rin));
+  G.ai[rin.idx] = E.mkAI(rin, E.DIFF.knight);
+  assert.ok(!E.enemiesOf(rin).includes(sh), 'an AI drops its truce partner from its enemies');
+  G.ai[rin.idx] = null;
+  // a human's first blow is stayed with a warning
+  let h0 = rin.hp; E.hurt(sh, rin, { dmg: 10, power: 1 });
+  assert.strictEqual(rin.hp, h0, 'the first blow is stopped'); assert.ok(ev.includes('truceWarn')); assert.ok(!(G.oath && G.oath[sh.team]), 'no oath broken yet');
+  // a blow inside the grace window (a burst) counts as the same one
+  G.time += 0.2; E.hurt(sh, rin, { dmg: 10, power: 1 }); assert.ok(!(G.oath && G.oath[sh.team]), 'one burst is one blow');
+  // self-defence: Rin struck at Shirou's team a moment ago, so his blow lands and costs nothing
+  G.time += 10; G.oathWarn = {}; E.hurt(rin, sh, { dmg: 0, power: 0 }); h0 = rin.hp; E.hurt(sh, rin, { dmg: 10, power: 1 });
+  assert.ok(rin.hp < h0, 'striking back lands'); assert.ok(!(G.oath && G.oath[sh.team]), 'self-defence breaks no oath');
+  // the second deliberate blow breaks it
+  G.time += 10; G.aggr = {}; G.oathWarn = {}; E.hurt(sh, rin, { dmg: 10, power: 1 }); G.time += 1; E.hurt(sh, rin, { dmg: 10, power: 1 });
+  assert.ok(G.oath && G.oath[sh.team], 'a second blow after the warning breaks the oath'); assert.ok(ev.includes('oath'));
+});
+
+test('truce: a field that hosts the Banquet spares the guests', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.iskandar, master: M.waver }, { servant: S.caerwyn, master: M.irisviel }, { servant: S.gilgamesh, master: M.kirei }], { nights: 3 });
+  const F = Object.values(G.fields).find((F) => F.team === G.f.find((f) => f.def.id === 'irisviel').team);
+  assert.ok(F, 'the Einzbern field'); assert.ok(!E.fieldHostsTruce(F));
+  G.tasks = [{ kind: 'banquet', x: F.x, y: F.y, r: 160 }];
+  assert.ok(E.fieldHostsTruce(F), 'a banquet in its grounds turns the field off for guests');
+});
+
+test('truce: the Summons is a sanctuary, and an AI under a truce holds its hands', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.shirou }, { servant: S.cu, master: M.rin }, { servant: S.medusa, master: M.sakura }], { nights: 3 });
+  G.clock.phase = 'day'; G.clock.n = 2; E.startSummons();
+  const k = G.tasks.find((t) => t.kind === 'summons'); assert.ok(k, 'the summons is set at the Church');
+  const sh = G.f.find((f) => f.def.id === 'shirou'), cu = G.f.find((f) => f.def.id === 'cu');
+  G.f.forEach((f) => { f.x = 200; f.y = 6000; });
+  sh.x = k.x; sh.y = k.y + 100; cu.x = k.x; cu.y = k.y + k.r + 300;
+  assert.ok(E.inTruce(cu, sh), 'one outside the ring cannot strike one inside it');
+  G.ai[cu.idx] = E.mkAI(cu, E.DIFF.knight); const h0 = sh.hp; E.hurt(cu, sh, { dmg: 10, power: 1 }); assert.strictEqual(sh.hp, h0);
+  cu.y = k.y + 60; assert.ok(E.aiTruceHold(cu, cu.A.light), 'an AI inside with a rival close keeps its hands still');
+  assert.ok(!E.aiTruceHold(cu, { kind: 'heal' }), 'support is still allowed');
+});

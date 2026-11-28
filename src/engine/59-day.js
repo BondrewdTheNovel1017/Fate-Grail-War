@@ -39,10 +39,10 @@ function fieldsTick(dt) {
   for (var t in G.fields) {
     var F = G.fields[t]; if (F.lvl > 0 && !fieldAlive(F)) { F.lvl = 0; FX.field('fade', F, null); }
     if (F.lvl <= 0) continue;
-    var intr = [];
+    var intr = [], hostsTruce = fieldHostsTruce(F);
     G.f.forEach(function (e) {
       if (e.team === F.team || pactTeams(e.team, F.team) || e.st === 'dead' || e.inM) { F.inside[e.idx] = false; return; }
-      var inside = inHomeField(F, e);
+      var inside = !hostsTruce && inHomeField(F, e);
       if (inside && !concealed(e) && !truceZone(e)) {
         if (!unfelt(e)) { G.seenBy[F.team][e.idx] = G.time + FIELD.seen; if (!F.inside[e.idx]) FX.field('intrude', F, e); intr.push(e); }
         if (FIELD.slow[F.lvl] < 1) { e.fslowT = G.time + 0.3; e.fslowK = FIELD.slow[F.lvl]; }

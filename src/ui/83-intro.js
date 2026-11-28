@@ -134,7 +134,7 @@ function wrapText(c, s, maxW) { var w = s.split(' '), out = [], cur = ''; w.forE
 function drawBubbles(cx, cy, zoom) {
   if (!G || G.mode !== 'war') { BUB = []; return; }
   // a fighter that turns on a new foe close by may call out
-  if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
+  if (!INTRO && G.time > 4) G.f.forEach(function (f) { if (f.foe !== LASTFOE[f.idx]) { LASTFOE[f.idx] = f.foe; if (f.foe && f.st !== 'dead' && dist(f, f.foe) < 600 && !(G.mode === 'war' && inTruce(f, f.foe)) && !(ENGT[f.idx] > G.time)) { ENGT[f.idx] = G.time + 20; FX.say(f, 'engage'); } } });
   var now = performance.now(), c = ctx;
   DUO = DUO.filter(function (d) { if (d.text !== undefined || now < d.at) return true; if (d.f.st !== 'dead') { var s2 = pickLine(d.f, d.k); if (s2) { SAYT[d.f.idx] = now / 1000; showBubble(d.f, s2, 2.6, true); } } return false; });
   BUB = BUB.filter(function (b) { return (now - b.t0) / 1000 < b.life && (b.f.st !== 'dead' || INTRO); });

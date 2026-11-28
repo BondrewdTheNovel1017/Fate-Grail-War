@@ -4,11 +4,12 @@ var PERKT = 0;
 function perkHud() {
   if (!G || G.mode !== 'war' || performance.now() < PERKT) return; PERKT = performance.now() + 500;
   var el = $('#perks'); if (!el) return; var me = G.f[MEI], P = (G.perks && G.perks[me.team]) || {}, live = Object.keys(P).filter(function (id) { return PERKS[id] && P[id] > G.time; });
-  el.hidden = !live.length; if (!live.length) { el.innerHTML = ''; return; }
+  var tz = me.st !== 'dead' && truceZone(me) && !(G.oath && G.oath[me.team]);
+  el.hidden = !live.length && !tz; if (!live.length && !tz) { el.innerHTML = ''; return; }
   var hb = $('#hud').getBoundingClientRect(), db = $('#duel').getBoundingClientRect(); el.style.top = Math.round(hb.bottom - db.top + 6) + 'px';
-  el.innerHTML = live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
+  el.innerHTML = (tz ? '<button type="button" class="pk" data-truce="1" style="--pk:#9fd0ff" title="No fighting here"><b>⚑</b>Truce · no fighting</button>' : '') + live.map(function (id) { var k = PERKS[id], left = Math.ceil(P[id] - G.time); return '<button type="button" class="pk" data-perk="' + id + '" style="--pk:' + k.col + '" title="' + esc(k.desc) + '"><b>' + k.icon + '</b>' + esc(k.name) + ' <i>' + (left >= 60 ? Math.floor(left / 60) + ':' + ('0' + left % 60).slice(-2) : left + 's') + '</i></button>'; }).join('');
 }
-document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
+document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-truce]')) { FX.banner('⚑ Truce', 'No one here may fight, and no AI will strike you. Your first blow is stopped with a warning; a second breaks the oath. Striking back at someone who just attacked you is self-defence.'); return; } var b = e.target.closest && e.target.closest('[data-perk]'); if (b && PERKS[b.dataset.perk]) FX.banner(PERKS[b.dataset.perk].icon + ' ' + PERKS[b.dataset.perk].name, PERKS[b.dataset.perk].desc); });
 FX.event = function (kind, d, msg) {
   if (!G || !G.f[MEI]) return; var my = G.f[MEI].team, mine = d && d.team === my;
   if (kind === 'perk') { var pk = PERKS[d.id]; if (pk && mine) { FX.banner(pk.icon + ' ' + pk.name, pk.desc); FX.snd('chant', G.f[MEI]); } else if (pk) note(teamName(d.team) + ' earned ' + pk.name + '.', pk.col); PERKT = 0; return; }
@@ -26,6 +27,7 @@ FX.event = function (kind, d, msg) {
   else if (kind === 'berserk') { if (mine) FX.banner('Your servant breaks loose', 'It hits harder and burns itself out, and it will not heed your orders. Everyone can see it.'); else FX.banner('Berserker Unchained', knownName(d.f) + ' of ' + teamName(d.team) + ' has broken its master’s control. Everyone can see it.'); }
   else if (kind === 'school') { if (d.culprit === my) FX.banner('Your Rider seals the school', 'The bounded field drains everyone inside and feeds your master. Keep the circles standing.'); else FX.banner('Homurahara Academy Is Sealed', 'A blood-red bounded field drains everyone inside. No one can enter or leave until the three circles are broken.'); FX.snd('marble:ubw', { x: d.x, y: d.y, idx: -1 }); }
   else if (kind === 'circle') note('A circle shatters' + (d.left ? ' · ' + d.left + ' left' : '') + (d.team === my ? ' · mana restored' : ''), d.team === my ? '#ffd36b' : '#e9e4d3');
+  else if (kind === 'truceWarn') { if (mine) { note('Truce: your blow is stayed. Strike again now and you break the oath.', '#ffb35a'); FX.text(G.f[MEI], 'TRUCE · STRIKE AGAIN TO BREAK IT'); PERKT = 0; } }
   else if (kind === 'oath') { if (mine) FX.banner('You broke the truce', 'Every master knows where you are. The city will remember.'); else note(teamName(d.team) + ' broke the truce!', '#f0a85a'); }
   else if (kind === 'banquet') FX.banner('The King’s Banquet', knownName(d.f) + ' sets a table at the Einzbern castle. No fighting there. Sit, and learn every guest’s true name, as they learn yours.');
   else if (kind === 'summons') FX.banner('The Overseer’s Summons', 'Every master is called to Fuyuki Church under truce. Those who come leave with a clean name and a secret.');
