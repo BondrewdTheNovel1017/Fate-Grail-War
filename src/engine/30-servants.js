@@ -3,7 +3,16 @@ var BASE = {
   light: { kind: 'melee', wind: 0.26, act: 0.08, rec: 0.2, dmg: 8, reach: 100, arc: 0.9, cost: 7, stag: 0.32, power: 1, lunge: 34 },
   heavy: { kind: 'melee', wind: 0.45, max: 1.0, act: 0.14, rec: 0.62, dmg: 22, reach: 115, arc: 1.0, cost: 20, stag: 0.6, power: 2, gb: true, lunge: 70 }
 };
-var NP_RW = { wind: 1.3, dmg: 1.25 };
+var NP_RW = { dmg: 1.25 };
+/* ---- war and Arena values (2.0 update 7): every number tuned separately per mode lives here; tune(key) reads the running mode's.
+   The Grail War is the long game (city wars); the Arena is duels, free-for-alls and its Quick Grail War.
+   npWind: a servant's NP wind-up (times its listed wind); npMom: how fast momentum fills (the NP's recharge); npDmg: an extra NP damage factor. */
+var TUNE = {
+  war: { npWind: 0.85, npMom: 0.2, npDmg: 1.35 },
+  arena: { npWind: 0.8, npMom: 0.6, npDmg: 1 }
+};
+function tuneMode() { return typeof G !== 'undefined' && G && G.mode === 'war' && !G.quick ? 'war' : 'arena'; }
+function tune(k) { return TUNE[tuneMode()][k]; }
 function build(def) {
   var A = {};
   A.light = Object.assign({}, BASE.light, def.light || {}, { key: 'light' });
@@ -12,7 +21,7 @@ function build(def) {
   A.skill = Object.assign({ wind: 0.3, act: 0.1, rec: 0.4, dmg: 0, cost: 12, stag: 0.5, power: 1, arc: 1, reach: 100 }, def.skill, { key: 'skill' });
   A.np = Object.assign({ wind: 1.2, act: 0.2, rec: 0.9, dmg: 40, cost: 0, stag: 0.9, power: 3, unblock: true, arc: 1 }, def.np, { key: 'np' });
   // servants' Noble Phantasms: a longer charge that ordinary blows cannot break, and more damage when it lands (NP_RW; tuned per NP later)
-  if (!def.isMaster) { A.np.wind *= NP_RW.wind; if (A.np.dmg) A.np.dmg *= NP_RW.dmg; A.np.npArmor = true; }
+  if (!def.isMaster) { if (A.np.dmg) A.np.dmg *= NP_RW.dmg; A.np.npArmor = true; }
   if (A.np.kind === 'ubw') A.np.sword = Object.assign({ kind: 'proj', key: 'np', power: 1, stag: 0.15, cost: 0, arc: 0 }, def.np.sword);
   ['light', 'heavy', 'np'].forEach(function (k) { if (A[k].kind === 'barrage') A[k].bullet = Object.assign({}, A[k], { kind: 'proj', unblock: false, power: 1, key: k }); });
   if (def.arms) A.arms = def.arms.map(function (m) { return { id: m.id, name: m.name, wpn: m.wpn, mag: m.mag, aiWant: m.aiWant, light: Object.assign({}, BASE.light, m.light, { key: 'light' }), heavy: Object.assign({}, BASE.heavy, m.heavy, { key: 'heavy' }) }; });

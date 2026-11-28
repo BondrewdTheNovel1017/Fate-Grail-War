@@ -1,0 +1,3 @@
+War NP use, 5 AI wars each (scratch tool warnp.js):
+before update 7: {"wars":5,"minutes":18.1,"npTriesPerWar":13.4,"firedPerWar":12.8,"cancelled":"4%","dmgPerFired":60.6}
+after update 7:  {"wars":5,"minutes":19.2,"npTriesPerWar":10.6,"firedPerWar":9.8,"cancelled":"8%","dmgPerFired":56.4}

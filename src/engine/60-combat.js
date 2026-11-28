@@ -15,7 +15,7 @@ function hurt(att, def, a, mult, src) {
   if (def.wallT > 0 && a.key === 'np' && !a.strip) { FX.text(def, 'NP BLOCKED'); FX.fx('wallBlock', def.x, def.y, def); FX.snd('block', def, a); def.stat.blocks++; return 'block'; }
   var dmg = a.dmg * (att ? att.def.dmg : 1) * (mult || 1);
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
-  if (G.mode === 'war' && !G.quick && a.key === 'np' && att && !att.def.isMaster) dmg *= 1.35;
+  if (a.key === 'np' && att && !att.def.isMaster) dmg *= tune('npDmg');
   if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
   // a master in their own workshop is warded: before the final night, enemy servants' blows land at half strength there
   if (att && def.def.isMaster && !att.def.isMaster && clockOn() && !finalNight() && inOwnHome(def)) dmg *= HOME_WARD;
@@ -159,6 +159,7 @@ function startAct(f, key) {
   f.sta -= a.cost; f.stDelay = 0.7;
   if (f.sta <= 0) { f.sta = 0; f.exh = 1.0; f.stDelay = 0.9; FX.snd('exhaust', f); }
   f.curWind = a.wind * (key === 'light' && f.combo > 0 ? 0.8 : 1);
+  if (key === 'np' && !f.def.isMaster) f.curWind *= tune('npWind');
   f.goal = 0; f.windTotal = f.curWind;
   if (a.max && f.ai) { /* AI sets goal */ }
   if (key === 'skill') { f.cd = a.cd || 5; if (a.momGain) gainMom(f, a.momGain); if (a.beam) FX.snd('beamCharge', f, a); if (a.shape === 'drill') FX.snd('drawBow', f, a); }
