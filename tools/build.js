@@ -24,7 +24,7 @@ function buildPage(arena, hosted, dev) {
   const css = read('src/page/style.css').replace(/\n$/, '');
   const page = read('src/page/template.html').replace('{{CSS}}', () => css).replace('{{JS}}', () => js);
   // the hosted site is a plain web page, so it carries its own doctype, viewport and base reset (claude.ai adds these to artifacts)
-  return hosted ? '<!doctype html>\n<html lang="en">\n' + page.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<style>html{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>') : page;
+  return hosted || dev ? '<!doctype html>\n<html lang="en">\n' + page.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<style>html{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>') : page;
 }
 
 module.exports = { engineSource, uiSource, buildPage, nameClashes };
@@ -39,7 +39,7 @@ if (require.main === module) {
   fs.writeFileSync(path.join(ROOT, 'arena', 'servant-duel.html'), buildPage(true));
   console.log('built arena/servant-duel.html');
   // The preview build: the same game with the dev scenarios menu always on, published as its own artifact for review.
-  fs.writeFileSync(path.join(ROOT, 'dist', 'preview.html'), buildPage(false, false, true));
+  fs.writeFileSync(path.join(ROOT, 'dist', 'preview.html'), buildPage(false, false, true).replace('<title>Fate Grail War</title>', '<title>Fate Grail War Preview</title>'));
   console.log('built dist/preview.html');
   // The hosted site (Cloudflare): the same game, with online play through the game's own room relay (server/).
   fs.mkdirSync(path.join(ROOT, 'site'), { recursive: true });
