@@ -18,9 +18,9 @@ function uiSource() { return list('src/ui').map(read).join(''); }
 function topNames(src) { const names = new Set(); src.replace(/^(?:function\s+([A-Za-z_$][\w$]*)|var\s+([A-Za-z_$][\w$]*))/gm, (m, f, v) => { names.add(f || v); return m; }); return names; }
 function nameClashes() { const e = topNames(engineSource()), u = topNames(uiSource()); return [...e].filter((n) => u.has(n)); }
 
-function buildPage(arena, hosted) {
+function buildPage(arena, hosted, dev) {
   const clash = nameClashes(); if (clash.length) throw new Error('engine and UI both declare: ' + clash.join(', ') + ' (rename the engine one)');
-  const js = '(function () {\n' + (arena ? 'var ARENA_ENTRY = true;\n' : '') + (hosted ? 'var NET_WS = true;\n' : '') + '/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
+  const js = '(function () {\n' + (arena ? 'var ARENA_ENTRY = true;\n' : '') + (hosted ? 'var NET_WS = true;\n' : '') + (dev ? 'var DEV_BUILD = true;\n' : '') + '/*ENGINE_START*/\n' + engineSource() + '/*ENGINE_END*/\n' + uiSource() + '})();';
   const css = read('src/page/style.css').replace(/\n$/, '');
   const page = read('src/page/template.html').replace('{{CSS}}', () => css).replace('{{JS}}', () => js);
   // the hosted site is a plain web page, so it carries its own doctype, viewport and base reset (claude.ai adds these to artifacts)
@@ -38,6 +38,9 @@ if (require.main === module) {
   // The Arena entry page: the same game and the same sprites, opening on the Arena setup.
   fs.writeFileSync(path.join(ROOT, 'arena', 'servant-duel.html'), buildPage(true));
   console.log('built arena/servant-duel.html');
+  // The preview build: the same game with the dev scenarios menu always on, published as its own artifact for review.
+  fs.writeFileSync(path.join(ROOT, 'dist', 'preview.html'), buildPage(false, false, true));
+  console.log('built dist/preview.html');
   // The hosted site (Cloudflare): the same game, with online play through the game's own room relay (server/).
   fs.mkdirSync(path.join(ROOT, 'site'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'site', 'index.html'), buildPage(false, true));

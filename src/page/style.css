@@ -482,3 +482,15 @@ body.ingame .hud.war .hc:not(.me) .bar.sta { display: none; }
 .perks .pk { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 6px; border-radius: 999px; background: rgba(10,14,22,.78); border: 1px solid var(--pk, #e0b84a); color: #eee6d4; font: 600 12px/1.2 Inter, system-ui, sans-serif; cursor: pointer; }
 .perks .pk b { color: var(--pk, #e0b84a); font-size: 14px; font-weight: 700; }
 .perks .pk i { font-style: normal; opacity: .7; font-variant-numeric: tabular-nums; }
+/* dev scenarios (preview build or #dev) */
+#devBtn{position:fixed;left:50%;top:max(4px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;font:700 11px/1 system-ui,sans-serif;letter-spacing:.08em;padding:5px 9px;border-radius:6px;border:1px solid #c9a04a;background:#1b1712cc;color:#f0d79a;cursor:pointer}
+#devPanel{position:fixed;left:50%;top:calc(max(4px,env(safe-area-inset-top,0px)) + 30px);transform:translateX(-50%);z-index:61;width:min(440px,calc(100vw - 24px));max-height:72vh;overflow:auto;background:#16130fef;border:1px solid #6d5a36;border-radius:10px;padding:10px 12px 12px;color:#ece3cf;font:13px/1.35 system-ui,sans-serif;box-shadow:0 10px 30px #0009}
+#devPanel .dvh{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+#devPanel .dvm{color:#d9c38e;font-size:12px;min-height:16px;margin-bottom:4px}
+#devPanel h4{margin:10px 0 5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#a99569}
+#devPanel button{margin:0 5px 5px 0;padding:6px 9px;border-radius:6px;border:1px solid #4a3f2c;background:#2a241b;color:#ece3cf;font:inherit;font-size:12px;cursor:pointer}
+#devPanel button.on{background:#6d5420;border-color:#c9a04a}
+#devPanel .dvh button{margin:0;padding:3px 8px}
+#devPanel .dvl{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+#devPanel select{background:#2a241b;color:#ece3cf;border:1px solid #4a3f2c;border-radius:6px;padding:5px;font:inherit;font-size:12px;max-width:31%}
+@media (max-width:600px){#devBtn{top:calc(max(4px,env(safe-area-inset-top,0px)) + 40px)}#devPanel{top:calc(max(4px,env(safe-area-inset-top,0px)) + 70px)}}
