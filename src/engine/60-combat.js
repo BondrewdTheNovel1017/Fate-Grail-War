@@ -15,11 +15,13 @@ function hurt(att, def, a, mult, src) {
   if (def.wallT > 0 && a.key === 'np' && !a.strip) { FX.text(def, 'NP BLOCKED'); FX.fx('wallBlock', def.x, def.y, def); FX.snd('block', def, a); def.stat.blocks++; return 'block'; }
   var dmg = a.dmg * (att ? att.def.dmg : 1) * (mult || 1);
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
-  if (a.key === 'np' && att && !att.def.isMaster) dmg *= tune('npDmg');
+  if (a.key === 'np' && att && !att.def.isMaster) dmg *= tune('npDmg') * tuneNp(att, 'dmg');
   if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
   // a master in their own workshop is warded: before the final night, enemy servants' blows land at half strength there
   if (att && def.def.isMaster && !att.def.isMaster && clockOn() && !finalNight() && inOwnHome(def)) dmg *= HOME_WARD;
   if (att && att.buffT > 0) dmg *= 1.15;
+  if (att && ownMarble(att, 'ionioi')) dmg *= tune('ionioi').dmg; // his army fights beside him
+  if (ownMarble(def, 'ionioi')) dmg *= tune('ionioi').taken;
   if (att && G.tn && att.team !== def.team && !def.def.isMaster && G.clock && G.tn[att.team] && G.tn[att.team][def.def.id]) dmg *= 1.1; // true name known
   if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
   if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
@@ -159,11 +161,11 @@ function startAct(f, key) {
   f.sta -= a.cost; f.stDelay = 0.7;
   if (f.sta <= 0) { f.sta = 0; f.exh = 1.0; f.stDelay = 0.9; FX.snd('exhaust', f); }
   f.curWind = a.wind * (key === 'light' && f.combo > 0 ? 0.8 : 1);
-  if (key === 'np' && !f.def.isMaster) f.curWind *= tune('npWind');
+  if (key === 'np' && !f.def.isMaster) f.curWind *= tune('npWind') * tuneNp(f, 'wind');
   f.goal = 0; f.windTotal = f.curWind;
   if (a.max && f.ai) { /* AI sets goal */ }
   if (key === 'skill') { f.cd = a.cd || 5; if (a.momGain) gainMom(f, a.momGain); if (a.beam) FX.snd('beamCharge', f, a); if (a.shape === 'drill') FX.snd('drawBow', f, a); }
-  if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
+  if (key === 'np' && a.marble === 'ionioi') setMarble('ionioi', f);
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
   else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; if (a.momLock) f.momLockT = G.time + a.momLock; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); npRepelsShadow(f); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
@@ -274,7 +276,7 @@ function stepF(f, dt) {
   var o = f.foe, a = f.act, vx = 0, vy = 0;
   f.iframes = (f.ghT > 0 || (f.st === 'act' && f.act && f.act.diveI && f.t < f.act.diveI) || (f.st === 'dodge' && f.t > 0.03 && f.t < 0.27) || (f.st === 'wind' && f.act && f.act.hop && f.t > 0.03 && f.t < 0.2)) ? 1 : 0;
   f.t += dt * (f.hasteT > 0 && (f.st === 'wind' || f.st === 'act' || f.st === 'rec') ? HASTE_ATK : 1); // Double Accel: his own attacks run faster too
-  if (f.cd > 0) f.cd -= dt * (f.def.cdRate || 1) * (f.field ? 1.5 : 1);
+  if (f.cd > 0) f.cd -= dt * (f.def.cdRate || 1) * (f.field ? 1.5 : 1) * (ownMarble(f, 'ubw') ? tune('ubw').cd : 1);
   if (f.st !== 'dead' && !G.over) {
     if (f.def.field) {
       var still = Math.hypot(f.inp.mx, f.inp.my) < 0.15 && f.st !== 'dodge' && f.st !== 'stag' && f.exh <= 0;

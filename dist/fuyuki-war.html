@@ -1338,18 +1338,18 @@ function summonSpot(h) {
   return { x: h.x, y: h.y - 20, name: h.name };
 }
 /* ---- reality marbles: replace the battlefield until another marble overwrites it or Enuma Elish breaks it ---- */
-var MARBLE_PULL = 900, MARBLE_R = 1150, MARBLE_LIFE = 25;
+var MARBLE_PULL = 900, MARBLE_R = 1150; // how long a marble stands: tune('marbleLife') (war 25 s, Arena 18 s)
 function setMarble(kind, f) {
   if (G.marble && G.marble.kind === kind && G.marble.owner === f) return false;
   if (G.mode === 'war') {
     if (G.marble) endMarble(null, true);
     var cx = f.x, cy = f.y, n = 0;
-    G.marble = { kind: kind, owner: f, t: 0, prev: null, cx: cx, cy: cy, R: MARBLE_R, life: MARBLE_LIFE };
+    G.marble = { kind: kind, owner: f, t: 0, prev: null, cx: cx, cy: cy, R: MARBLE_R, life: tune('marbleLife'), buffT: 0 };
     G.f.forEach(function (o) { if (o.st === 'dead') return; if (o === f || (o.spirit !== 2 && Math.hypot(o.x - cx, o.y - cy) <= MARBLE_PULL)) { o.inM = true; n++; if (o !== f) FX.text(o, 'DRAWN INTO THE MARBLE'); } });
     FX.fx('marbleOn', f.x, f.y, f); FX.snd('marble:' + kind, f); FX.shake(10);
     return true;
   }
-  G.marble = { kind: kind, owner: f, t: 0, prev: G.marble ? G.marble.kind : null };
+  G.marble = { kind: kind, owner: f, t: 0, prev: G.marble ? G.marble.kind : null, life: tune('marbleLife'), buffT: 0 };
   PILLARS = []; RECTS = []; buildGrid(); FX.fx('marbleOn', f.x, f.y, f); FX.snd('marble:' + kind, f); FX.shake(10);
   return true;
 }
@@ -1367,6 +1367,22 @@ function breakMarble(by) {
   return true;
 }
 function tg0Fix(f) { if (f.foe && !sameLayer(f.foe, f)) pickTarget(f); return false; }
+/* ---- 2.0 update 8: one's own marble stops one's NP charging (gainMom) and grants a buff for its life instead ---- */
+function ownMarble(f, kind) { var mb = G.marble; return !!(mb && f && mb.owner === f && f.st !== 'dead' && (!kind || mb.kind === kind) && (G.mode !== 'war' || f.inM)); }
+function marbleFoes(f) { return enemiesOf(f).filter(function (o) { return G.mode !== 'war' || o.inM; }); }
+// the army or the sword field strikes everyone inside on a beat: a few marked circles that land a moment later
+function marbleVolley(f, n, dmg, zshape, r) {
+  marbleFoes(f).forEach(function (o) { for (var i = 0; i < n; i++) { var an = Math.random() * 6.283, rr = i === 0 ? 0 : 60 + Math.random() * 50; G.zones.push({ x: clamp(o.x + Math.cos(an) * rr, 40, W - 40), y: clamp(o.y + Math.sin(an) * rr, 40, H - 40), r: r, delay: 0.75 + i * 0.12, t: 0, owner: f, a: { dmg: dmg, zshape: zshape, key: 'marble', power: 1, stag: 0.25 }, done: false }); } });
+}
+function marbleTick(dt) {
+  var mb = G.marble, f = mb.owner; mb.t += dt;
+  if (mb.t > mb.life || f.st === 'dead') { if (G.mode === 'war') endMarble(null, false); else fadeMarble(); return; }
+  mb.buffT = (mb.buffT || 0) + dt;
+  if (mb.kind === 'ionioi') { var T = tune('ionioi'); if (mb.buffT >= T.armyEvery) { mb.buffT = 0; marbleVolley(f, T.armyN, T.armyDmg, 'arrow', 64); FX.text(f, 'THE ARMY ADVANCES'); } }
+  else if (mb.kind === 'ubw') { var U = tune('ubw'); if (mb.buffT >= U.rainEvery && !(f.ubwT > 0)) { mb.buffT = 0; marbleVolley(f, U.rainN, U.rainDmg, 'sword', 60); } }
+}
+// an Arena marble that runs out: the arena returns, like a broken one but quietly
+function fadeMarble() { var mb = G.marble; if (!mb) return; G.marble = null; setMap(MAP.id); FX.fx('marbleOff', mb.owner.x, mb.owner.y, mb.owner); FX.text(mb.owner, 'THE MARBLE FADES'); }
 function rnd() { G.seed = (G.seed * 1664525 + 1013904223) >>> 0; return G.seed / 4294967296; }
 function gauss() { return (rnd() + rnd() + rnd() - 1.5) / 0.5; }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -1384,11 +1400,20 @@ var NP_RW = { dmg: 1.25 };
    The Grail War is the long game (city wars); the Arena is duels, free-for-alls and its Quick Grail War.
    npWind: a servant's NP wind-up (times its listed wind); npMom: how fast momentum fills (the NP's recharge); npDmg: an extra NP damage factor. */
 var TUNE = {
-  war: { npWind: 0.85, npMom: 0.2, npDmg: 1.35 },
-  arena: { npWind: 0.8, npMom: 0.6, npDmg: 1 }
+  war: { npWind: 0.85, npMom: 0.2, npDmg: 1.35, marbleLife: 25,
+    // per-servant NP tuning (2.0 update 8): dmg scales the NP's damage, mom how fast its bar fills, wind its wind-up
+    np: { gilgamesh: { dmg: 0.65, mom: 0.85 } },
+    // inside one's own reality marble the NP stops charging; these buffs replace it for the marble's life
+    ionioi: { dmg: 1.15, taken: 0.85, armyEvery: 3, armyN: 2, armyDmg: 8 },
+    ubw: { cd: 2, rainEvery: 3, rainN: 2, rainDmg: 8 } },
+  arena: { npWind: 0.8, npMom: 0.6, npDmg: 1, marbleLife: 18,
+    np: { gilgamesh: { dmg: 0.65, mom: 0.8 }, caerwyn: { mom: 0.85, dmg: 0.85 }, atalanta: { mom: 1.3 }, medea: { mom: 1.25 }, gilles: { mom: 1.05 }, diarmuid: { mom: 1.35 }, medusa: { mom: 1.35 }, hassan: { mom: 1.2 } },
+    ionioi: { dmg: 1.15, taken: 0.85, armyEvery: 3, armyN: 2, armyDmg: 7 },
+    ubw: { cd: 2, rainEvery: 3.5, rainN: 2, rainDmg: 7 } }
 };
 function tuneMode() { return typeof G !== 'undefined' && G && G.mode === 'war' && !G.quick ? 'war' : 'arena'; }
 function tune(k) { return TUNE[tuneMode()][k]; }
+function tuneNp(f, k) { var t = tune('np'), e = t && f && f.def && t[f.def.id]; return e && e[k] !== undefined ? e[k] : 1; }
 function build(def) {
   var A = {};
   A.light = Object.assign({}, BASE.light, def.light || {}, { key: 'light' });
@@ -1431,17 +1456,17 @@ var SERV = {
     brief: 'A sovereign swordswoman. Her blade hides in wind, which she can release as a cutting gust, and ends it with Excalibur\'s golden light.',
     light: { reach: 108 }, heavy: { reach: 122 },
     skill: { name: 'Strike Air', kind: 'proj', shape: 'wind', wind: 0.3, act: 0.14, rec: 0.35, lunge: 120, speed: 1700, range: 470, dmg: 22, rad: 26, stag: 0.6, power: 2, cd: 9, cost: 12, reach: 0, desc: 'She dashes in and releases the wind that hides her sword: a thin cone of compressed air that hits hard at range. For a moment the golden blade shows, then the wind wraps around it again.' },
-    np: { name: 'Excalibur', sub: 'Sword of Promised Victory', kind: 'proj', wave: true, beam: true, wind: 1.8, act: 0.1, rec: 1.3, dmg: 45, pillar: { r: 130, delay: 0.35, dmg: 30, zshape: 'excal', key: 'np' }, speed: 2400, range: 1100, stag: 1.0, aiMin: 240, aiMax: 800, desc: 'A beam of golden light that stops on the first one it strikes; a moment later a pillar of light rises there, hurting everyone in it. Cannot be blocked. Dodge at the moment it fires, step out of the circle, or hide behind cover.' } },
+    np: { name: 'Excalibur', sub: 'Sword of Promised Victory', kind: 'proj', wave: true, beam: true, wind: 1.8, act: 0.1, rec: 1.3, dmg: 45, pillar: { r: 130, delay: 0.35, dmg: 30, zshape: 'excal', key: 'np' }, speed: 2400, range: 1100, stag: 1.0, aiMin: 130, aiMax: 800, desc: 'A beam of golden light that stops on the first one it strikes; a moment later a pillar of light rises there, hurting everyone in it. Cannot be blocked. Dodge at the moment it fires, step out of the circle, or hide behind cover.' } },
   diarmuid: { id: 'diarmuid', name: 'Diarmuid Ua Duibhne', cls: 'Lancer', col: '#4fa860', wpn: 'spear', hp: 190, spd: 236, dmg: 1.0, guard: 0.6, combo: 3, recMul: 0.95, guardPierce: 0.4,
     brief: 'Twin-spear duelist. Cursed wounds that keep bleeding and strikes that gnaw through a guard.',
     light: { reach: 140, wind: 0.25 }, heavy: { reach: 156 },
     skill: { name: 'Gae Buidhe', kind: 'melee', wind: 0.28, act: 0.1, rec: 0.45, dmg: 8, reach: 132, arc: 0.5, cd: 5, cost: 10, stag: 0.35, lunge: 40, bleed: { dps: 4, t: 6 }, desc: 'A thrust with the yellow spear. The wound it leaves will not close, and bleeds for 6 seconds.' },
-    np: { name: 'Gae Dearg and Gae Buidhe', sub: 'Crimson Rose of Exorcism, Yellow Rose of Mortality', kind: 'charge', wind: 0.95, act: 0.35, rec: 0.9, dmg: 30, dist: 560, reach: 52, aiMin: 180, aiMax: 520, bleed: { dps: 5, t: 8 }, desc: 'Both spears at once in a rush down the lane. Cannot be blocked, and leaves a wound that bleeds for 8 seconds.' } },
+    np: { name: 'Gae Dearg and Gae Buidhe', sub: 'Crimson Rose of Exorcism, Yellow Rose of Mortality', kind: 'charge', wind: 0.95, act: 0.35, rec: 0.9, dmg: 30, dist: 560, reach: 52, aiMin: 110, aiMax: 520, bleed: { dps: 5, t: 8 }, desc: 'Both spears at once in a rush down the lane. Cannot be blocked, and leaves a wound that bleeds for 8 seconds.' } },
   cu: { id: 'cu', name: 'Cú Chulainn', cls: 'Lancer', col: '#3f86d9', wpn: 'spear', hp: 195, spd: 240, dmg: 1.04, guard: 0.6, combo: 3, recMul: 1, arrowRes: 0.4, bc: true,
     brief: 'Hound of Ulster. Rune fire, a spear that cannot miss, and the will to keep fighting.',
     light: { reach: 128 }, heavy: { reach: 142 },
     skill: { name: 'Rune of Fire', kind: 'rain', wind: 0.4, act: 0.1, rec: 0.4, dmg: 10, count: 3, spread: 110, zr: 86, delay: 0.7, zshape: 'flame', cd: 7, cost: 12, gb: false, aiRange: [140, 520], desc: 'Three runes flare under the enemy and burst into flame a moment later.' },
-    np: { name: 'Gáe Bulg', sub: 'Soaring Spear that Strikes with Death', kind: 'proj', shape: 'spear', wind: 1.3, act: 0.1, rec: 1.1, dmg: 14, speed: 1500, range: 1000, rad: 10, hop: 130, pierce: true, noParry: true, explode: { r: 170, dmg: 34, big: true, unblock: true }, aiMin: 220, aiMax: 900, desc: 'He leaps back and hurls the spear. It explodes where it lands, and nothing blocks the blast.' } },
+    np: { name: 'Gáe Bulg', sub: 'Soaring Spear that Strikes with Death', kind: 'proj', shape: 'spear', wind: 1.3, act: 0.1, rec: 1.1, dmg: 14, speed: 1500, range: 1000, rad: 10, hop: 130, pierce: true, noParry: true, explode: { r: 170, dmg: 34, big: true, unblock: true }, aiMin: 130, aiMax: 900, desc: 'He leaps back and hurls the spear. It explodes where it lands, and nothing blocks the blast.' } },
   gilgamesh: { id: 'gilgamesh', name: 'Gilgamesh of Uruk', cls: 'Archer', col: '#e8bf4a', wpn: 'gate', ranged: true, hp: 200, spd: 220, dmg: 0.95, guard: 0.45, combo: 3, recMul: 1, momMul: 1.25, dmgTaken: 0.9,
     brief: 'A king with no weapon in his hands. Golden gates open around him and rain blades, then a wave of destruction ends the fight.',
     light: { kind: 'proj', gate: true, shape: 'blade', speed: 1050, range: 640, dmg: 6, wind: 0.3, rec: 0.28, reach: 0, lunge: 0, cost: 11 },
@@ -1452,7 +1477,7 @@ var SERV = {
     brief: 'A conqueror who leads from the front. Armored chariot rush and a charge of his whole army.',
     light: { reach: 104 }, heavy: { reach: 118 },
     skill: { name: 'Gordius Wheel', kind: 'charge', wind: 0.45, act: 0.25, rec: 0.7, dmg: 16, dist: 340, reach: 62, cd: 7, cost: 16, stag: 0.7, gb: true, armor: true, aiRange: [180, 420], desc: 'The chariot thunders forward in an armored rush. It breaks guards and cannot be stopped by light hits.' },
-    np: { name: 'Ionioi Hetairoi', sub: 'Army of the King', kind: 'charge', marble: 'ionioi', wind: 1.5, act: 0.8, rec: 1.0, dmg: 46, dist: 900, reach: 130, aiMin: 250, aiMax: 800, desc: 'He calls his reality marble, a sunlit desert, and his whole army charges with him down a wide lane. The desert stays for the rest of the match, and inside it his next charge comes much faster.' } },
+    np: { name: 'Ionioi Hetairoi', sub: 'Army of the King', kind: 'charge', marble: 'ionioi', wind: 1.5, act: 0.8, rec: 1.0, dmg: 46, dist: 900, reach: 130, aiMin: 140, aiMax: 800, desc: 'He calls his reality marble, a sunlit desert, and his whole army charges with him down a wide lane. While the desert stands his army fights beside him: volleys of javelins fall on his enemies, his blows land harder and he takes less damage. His Noble Phantasm does not charge inside his own marble.' } },
   gilles: { id: 'gilles', name: 'Gilles de Rais', cls: 'Caster', col: '#6fb3a0', wpn: 'tome', ranged: true, hp: 172, spd: 212, dmg: 0.88, guard: 0.48, combo: 3, recMul: 1, stagMul: 0.75,
     brief: 'A summoner of horrors. Calls tentacles up from the ground to cover the arena.',
     lightSeq: [
@@ -1484,12 +1509,12 @@ var SERV = {
     brief: 'A fast gorgon who fights with a spiked rondel on a chain. Her gaze slows you, and her chain hooks you in.',
     light: { reach: 126, wind: 0.22, arc: 0.85 }, heavy: { reach: 142 },
     skill: { name: 'Chain Hook', kind: 'proj', pull: true, shape: 'rondel', speed: 1500, range: 480, dmg: 9, power: 1, wind: 0.3, act: 0.05, rec: 0.6, cd: 6.5, cost: 12, stag: 0.55, aiRange: [200, 470], desc: 'She throws the rondel on its chain. If it hits, the chain drags her straight to you, and her next light strike lands 50% harder.' },
-    np: { name: 'Bellerophon', sub: 'Bridle of Chivalry', kind: 'charge', wind: 1.2, act: 0.55, rec: 1.0, dmg: 42, dist: 950, reach: 70, diveI: 0.3, aiMin: 300, aiMax: 850, desc: 'She rises and dives down the lane, untouchable at the moment of the dive. Cannot be blocked.' } },
+    np: { name: 'Bellerophon', sub: 'Bridle of Chivalry', kind: 'charge', wind: 1.2, act: 0.55, rec: 1.0, dmg: 42, dist: 950, reach: 70, diveI: 0.3, aiMin: 130, aiMax: 850, desc: 'She rises and dives down the lane, untouchable at the moment of the dive. Cannot be blocked.' } },
   emiya: { id: 'emiya', name: 'EMIYA', cls: 'Archer', col: '#c4423a', wpn: 'dagger', hp: 200, spd: 228, dmg: 1.06, guard: 0.72, combo: 4, recMul: 0.92, guardEcon: 0.75, blockMom: 9,
     brief: 'A heroic spirit of the future. Twin married swords up close, an exploding arrow from range, and a world of swords to finish.',
     light: { reach: 104, wind: 0.22, arc: 1.0 }, heavy: { reach: 116 },
     skill: { name: 'Caladbolg II', kind: 'proj', shape: 'drill', speed: 1700, range: 950, dmg: 8, rad: 8, power: 2, wind: 0.9, act: 0.06, rec: 0.6, cd: 9, cost: 16, stag: 0.6, explode: { r: 140, dmg: 24 }, aiRange: [260, 900], desc: 'He draws a black bow, charges a twisted sword-arrow and fires. It explodes on impact.' },
-    np: { name: 'Unlimited Blade Works', sub: 'Infinite Creation of Swords', kind: 'ubw', wind: 1.5, act: 0.2, rec: 0.6, dmg: 0, dur: 8, ubwRate: 0.55, rain: 3, rainDmg: 9, sword: { speed: 1250, dmg: 5, shape: 'blade', rad: 4 }, aiMin: 0, aiMax: 900, desc: 'His reality marble: a burning field of swords. Swords rain on his enemies, then for 8 seconds blades float around him and fire at the nearest enemy.' } },
+    np: { name: 'Unlimited Blade Works', sub: 'Infinite Creation of Swords', kind: 'ubw', wind: 1.5, act: 0.2, rec: 0.6, dmg: 0, dur: 8, ubwRate: 0.55, rain: 3, rainDmg: 9, sword: { speed: 1250, dmg: 5, shape: 'blade', rad: 4 }, aiMin: 0, aiMax: 900, desc: 'His reality marble: a burning field of swords. Swords rain on his enemies, then for 8 seconds blades float around him and fire at the nearest enemy. While the marble stands, more swords fall on his enemies and his skill recharges twice as fast; his Noble Phantasm does not charge inside it.' } },
   medea: { id: 'medea', name: 'Medea of Colchis', cls: 'Caster', col: '#7fc4ee', wpn: 'staff', hp: 150, spd: 216, dmg: 0.72, guard: 0.4, combo: 3, recMul: 0.95, cdRate: 1.35, ranged: true,
     brief: 'A sorceress who casts from range. Rapid spells, and a dagger that strips every enchantment.',
     lightSeq: [
@@ -1815,7 +1840,7 @@ function breakField(f, msg) { if (!f.field) return; FX.fx('fieldOff', f.field.x,
 function inField(f, t) { return !!(f.field && Math.hypot(t.x - f.field.x, t.y - f.field.y) <= f.field.r); }
 // Noble Phantasms are rare: every mode builds momentum at NP_MOM of the base rate (Shirou's Trace keeps its own pace)
 var NP_MOM = 0.6; // (2.0: replaced by TUNE.npMom per mode; kept for the tools that read it)
-function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.trace) v *= tune('npMom'); if (v > 0 && G.perks) v *= perkMom(f); if (v > 0 && G.upg) v *= upgMom(f); if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3;  if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
+function gainMom(f, v) { if (v > 0 && f.momLockT > G.time) return; if (v > 0 && !f.def.isMaster && ownMarble(f)) return; if (v > 0 && !f.def.trace) v *= tune('npMom') * tuneNp(f, 'mom'); if (v > 0 && G.perks) v *= perkMom(f); if (v > 0 && G.upg) v *= upgMom(f); if (v > 0 && f.def.momMul) v *= f.def.momMul; if (v > 0 && f.partner && f.partner.def.grailVessel && !f.def.isMaster) v *= 1.3;  if (f.def.trace && f.ubwUsed) return; if (f.def.trace && v > 0 && traceWar()) v *= TRACE.hitMul; f.mom = clamp(f.mom + v, 0, 100); }
 function kill(f, noRevive) {
   if (f.trueTeam !== undefined) unturn(f);
   if (!noRevive && f.def.godHand && !f.gh) {
@@ -2255,11 +2280,13 @@ function hurt(att, def, a, mult, src) {
   if (def.wallT > 0 && a.key === 'np' && !a.strip) { FX.text(def, 'NP BLOCKED'); FX.fx('wallBlock', def.x, def.y, def); FX.snd('block', def, a); def.stat.blocks++; return 'block'; }
   var dmg = a.dmg * (att ? att.def.dmg : 1) * (mult || 1);
   if (att && att.def.lionheart && att.hp < att.def.hp * 0.5) dmg *= 1.12;
-  if (a.key === 'np' && att && !att.def.isMaster) dmg *= tune('npDmg');
+  if (a.key === 'np' && att && !att.def.isMaster) dmg *= tune('npDmg') * tuneNp(att, 'dmg');
   if (att && att.def.isMaster && !def.def.isMaster && !att.def.fightsServants) dmg *= (a.vsServant || 0.5);
   // a master in their own workshop is warded: before the final night, enemy servants' blows land at half strength there
   if (att && def.def.isMaster && !att.def.isMaster && clockOn() && !finalNight() && inOwnHome(def)) dmg *= HOME_WARD;
   if (att && att.buffT > 0) dmg *= 1.15;
+  if (att && ownMarble(att, 'ionioi')) dmg *= tune('ionioi').dmg; // his army fights beside him
+  if (ownMarble(def, 'ionioi')) dmg *= tune('ionioi').taken;
   if (att && G.tn && att.team !== def.team && !def.def.isMaster && G.clock && G.tn[att.team] && G.tn[att.team][def.def.id]) dmg *= 1.1; // true name known
   if (att && G.fields) { var hf = ownField(att); if (hf) dmg *= FIELD.home[hf.lvl]; }
   if (att && att.hidAct && melee) dmg *= 1.2; // struck from concealment
@@ -2399,11 +2426,11 @@ function startAct(f, key) {
   f.sta -= a.cost; f.stDelay = 0.7;
   if (f.sta <= 0) { f.sta = 0; f.exh = 1.0; f.stDelay = 0.9; FX.snd('exhaust', f); }
   f.curWind = a.wind * (key === 'light' && f.combo > 0 ? 0.8 : 1);
-  if (key === 'np' && !f.def.isMaster) f.curWind *= tune('npWind');
+  if (key === 'np' && !f.def.isMaster) f.curWind *= tune('npWind') * tuneNp(f, 'wind');
   f.goal = 0; f.windTotal = f.curWind;
   if (a.max && f.ai) { /* AI sets goal */ }
   if (key === 'skill') { f.cd = a.cd || 5; if (a.momGain) gainMom(f, a.momGain); if (a.beam) FX.snd('beamCharge', f, a); if (a.shape === 'drill') FX.snd('drawBow', f, a); }
-  if (key === 'np' && a.marble === 'ionioi') { if (G.marble && G.marble.kind === 'ionioi' && G.marble.owner === f) { f.curWind = a.wind * 0.55; f.windTotal = f.curWind; } else setMarble('ionioi', f); }
+  if (key === 'np' && a.marble === 'ionioi') setMarble('ionioi', f);
   if (f.def.isMaster && G.mode === 'war' && masterCost(key)) payMana(f, masterCost(key));
   if (key === 'np' && f.def.isMaster) { f.sigCd = a.cd || 20; }
   else if (key === 'np') { spendNP(f); f.mom = 0; f.stat.nps++; if (a.momLock) f.momLockT = G.time + a.momLock; G.dimT = a.wind + 0.35; FX.banner(a.name, a.sub, f); FX.say(f, 'np'); if (!f.inM) { witness(f.x, f.y, [f.team], 4); fightNoise(f.x, f.y, 4500); } if (!f.def.isMaster) { npSeen(f); npHitsBoss(f, a); npRepelsShadow(f); } FX.snd('npcast', f, a); FX.fx('npcast', f.x, f.y, f); }
@@ -2514,7 +2541,7 @@ function stepF(f, dt) {
   var o = f.foe, a = f.act, vx = 0, vy = 0;
   f.iframes = (f.ghT > 0 || (f.st === 'act' && f.act && f.act.diveI && f.t < f.act.diveI) || (f.st === 'dodge' && f.t > 0.03 && f.t < 0.27) || (f.st === 'wind' && f.act && f.act.hop && f.t > 0.03 && f.t < 0.2)) ? 1 : 0;
   f.t += dt * (f.hasteT > 0 && (f.st === 'wind' || f.st === 'act' || f.st === 'rec') ? HASTE_ATK : 1); // Double Accel: his own attacks run faster too
-  if (f.cd > 0) f.cd -= dt * (f.def.cdRate || 1) * (f.field ? 1.5 : 1);
+  if (f.cd > 0) f.cd -= dt * (f.def.cdRate || 1) * (f.field ? 1.5 : 1) * (ownMarble(f, 'ubw') ? tune('ubw').cd : 1);
   if (f.st !== 'dead' && !G.over) {
     if (f.def.field) {
       var still = Math.hypot(f.inp.mx, f.inp.my) < 0.15 && f.st !== 'dodge' && f.st !== 'stag' && f.exh <= 0;
@@ -4107,7 +4134,9 @@ function aiTick(ai, dt) {
   var mx = 0, my = 0;
   var heldArm = f.armT > 0 && f.arm >= 0 && A.arms ? A.arms[f.arm] : null;
   var wantRange = f.def.ranged ? 380 : heldArm && heldArm.aiWant ? heldArm.aiWant : A.light.aiWant || (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14); // aiWant: a whip strikes from closer than its tip
-  if (A.np.aiKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = A.np.aiKeep; } else ai.keepT = 0; // a reach-NP fighter steps back to cast it from out of sword reach
+  // with the NP ready, step to the range it is cast from (a reach grab, a charge down a lane), for at most 5 s (2.0 update 8: every NP, not only aiKeep)
+  var npKeep = A.np.aiKeep || (!f.def.ranged && !f.def.isMaster && A.np.aiMin > wantRange ? Math.min(A.np.aiMin + 60, ((A.np.aiMin + (A.np.aiMax || 400)) / 2)) : 0);
+  if (npKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = npKeep; } else ai.keepT = 0;
   if (f.st === 'idle' || f.st === 'rec') {
     if (ai.plantT > 0) ai.plantT -= dt;
     if (flee) { var fa = Math.atan2(f.y - flee.y, f.x - flee.x); mx = Math.cos(fa); my = Math.sin(fa); }
@@ -4353,7 +4382,7 @@ function aiMaster(ai, dt) {
 }
 function simStep(dt) {
   if (G.hitstop > 0) { G.hitstop -= dt; return; }
-  G.time += dt; if (G.clock) clockTick(dt); if (G.fields) fieldsTick(dt); if (G.clock) eventsTick(dt); if (G.pacts) pactTick(dt); if (G.dimT > 0) G.dimT -= dt; if (G.marble) { G.marble.t += dt; if (G.mode === 'war' && (G.marble.t > G.marble.life || G.marble.owner.st === 'dead')) endMarble(null, false); }
+  G.time += dt; if (G.clock) clockTick(dt); if (G.fields) fieldsTick(dt); if (G.clock) eventsTick(dt); if (G.pacts) pactTick(dt); if (G.dimT > 0) G.dimT -= dt; if (G.marble) marbleTick(dt);
   G.f.forEach(function (f) { if (f.st !== 'dead' && (!f.foe || f.foe.st === 'dead' || G.f.length > 2)) pickTarget(f); });
   turnTick();
   for (var i = 0; i < G.f.length; i++) if (G.ai[i]) { if (G.ai[i].f.trueTeam !== undefined) aiTurned(G.ai[i], dt); else if (G.mode === 'war') aiWar(G.ai[i], dt); else aiTick(G.ai[i], dt); }
@@ -9030,6 +9059,36 @@ FX.event = function (kind, d, msg) {
   upgEv0(kind, d, msg);
 };
 document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-upg]')) upgPanel(true); });
+/* ---- reality marble buffs (2.0 update 8): inside one's own marble the NP does not charge; a buff stands in for it.
+   The owner wears a ring that empties as the marble's life runs out, and the player is told the trade when theirs opens. ---- */
+var MARBLE_TXT = {
+  ionioi: ['Ionioi Hetairoi', 'Your army stands with you: javelins fall on your enemies, your blows land harder and you take less damage. Your Noble Phantasm does not charge while the desert stands.'],
+  ubw: ['Unlimited Blade Works', 'Swords fall on your enemies and your skill recharges twice as fast. Your Noble Phantasm does not charge while the marble stands.']
+};
+var marbleFx0 = FX.fx;
+FX.fx = function (name, x, y, f) {
+  marbleFx0.apply(this, arguments);
+  if (name === 'marbleOn' && f && G && G.f[MEI] === f && G.marble && MARBLE_TXT[G.marble.kind]) { var t = MARBLE_TXT[G.marble.kind]; setTimeout(function () { if (G && G.marble && G.marble.owner === f) FX.banner(t[0], t[1]); }, 2600); }
+};
+var marbleFfx0 = drawFighterFx;
+drawFighterFx = function (g, f) {
+  marbleFfx0(g, f);
+  var mb = G && G.marble; if (!mb || mb.owner !== f || f.st === 'dead' || !mb.life) return;
+  if (G.mode === 'war' && G.f[MEI] && !!G.f[MEI].inM !== !!f.inM) return;
+  var left = Math.max(0, 1 - mb.t / mb.life), ion = mb.kind === 'ionioi', col = ion ? '255,214,140' : '255,140,70', r = 46, tt = G.time;
+  g.save(); g.lineCap = 'round';
+  g.beginPath(); g.arc(f.x, f.y, r, 0, 6.283); g.strokeStyle = 'rgba(' + col + ',.18)'; g.lineWidth = 3; g.stroke();
+  g.beginPath(); g.arc(f.x, f.y, r, -Math.PI / 2, -Math.PI / 2 + 6.283 * left); g.strokeStyle = 'rgba(' + col + ',.75)'; g.lineWidth = 3; g.stroke();
+  // marks circling the owner: spear tips of the army, or small blades of the sword field
+  for (var i = 0; i < 6; i++) {
+    var a = tt * (ion ? 0.8 : -1.1) + i * 1.047, x = f.x + Math.cos(a) * (r + 7), y = f.y + Math.sin(a) * (r + 7);
+    g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2); g.fillStyle = 'rgba(' + col + ',.85)';
+    if (ion) { g.beginPath(); g.moveTo(0, -6); g.lineTo(3, 1); g.lineTo(-3, 1); g.closePath(); g.fill(); }
+    else { g.fillRect(-1, -6, 2, 9); g.fillRect(-3, 2, 6, 1.6); }
+    g.restore();
+  }
+  g.restore();
+};
 /* ---- online play on the hosted site: rooms over the game's own WebSocket relay (server/hub.js) ----
    The same calls as the claude.ai room (join, presence, peers, onPeers, onConnection, leave), so the lobby and
    netsync work unchanged. One socket per game code carries all of its rooms; presence patches are coalesced and

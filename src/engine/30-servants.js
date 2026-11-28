@@ -8,11 +8,20 @@ var NP_RW = { dmg: 1.25 };
    The Grail War is the long game (city wars); the Arena is duels, free-for-alls and its Quick Grail War.
    npWind: a servant's NP wind-up (times its listed wind); npMom: how fast momentum fills (the NP's recharge); npDmg: an extra NP damage factor. */
 var TUNE = {
-  war: { npWind: 0.85, npMom: 0.2, npDmg: 1.35 },
-  arena: { npWind: 0.8, npMom: 0.6, npDmg: 1 }
+  war: { npWind: 0.85, npMom: 0.2, npDmg: 1.35, marbleLife: 25,
+    // per-servant NP tuning (2.0 update 8): dmg scales the NP's damage, mom how fast its bar fills, wind its wind-up
+    np: { gilgamesh: { dmg: 0.65, mom: 0.85 } },
+    // inside one's own reality marble the NP stops charging; these buffs replace it for the marble's life
+    ionioi: { dmg: 1.15, taken: 0.85, armyEvery: 3, armyN: 2, armyDmg: 8 },
+    ubw: { cd: 2, rainEvery: 3, rainN: 2, rainDmg: 8 } },
+  arena: { npWind: 0.8, npMom: 0.6, npDmg: 1, marbleLife: 18,
+    np: { gilgamesh: { dmg: 0.65, mom: 0.8 }, caerwyn: { mom: 0.85, dmg: 0.85 }, atalanta: { mom: 1.3 }, medea: { mom: 1.25 }, gilles: { mom: 1.05 }, diarmuid: { mom: 1.35 }, medusa: { mom: 1.35 }, hassan: { mom: 1.2 } },
+    ionioi: { dmg: 1.15, taken: 0.85, armyEvery: 3, armyN: 2, armyDmg: 7 },
+    ubw: { cd: 2, rainEvery: 3.5, rainN: 2, rainDmg: 7 } }
 };
 function tuneMode() { return typeof G !== 'undefined' && G && G.mode === 'war' && !G.quick ? 'war' : 'arena'; }
 function tune(k) { return TUNE[tuneMode()][k]; }
+function tuneNp(f, k) { var t = tune('np'), e = t && f && f.def && t[f.def.id]; return e && e[k] !== undefined ? e[k] : 1; }
 function build(def) {
   var A = {};
   A.light = Object.assign({}, BASE.light, def.light || {}, { key: 'light' });
@@ -55,17 +64,17 @@ var SERV = {
     brief: 'A sovereign swordswoman. Her blade hides in wind, which she can release as a cutting gust, and ends it with Excalibur\'s golden light.',
     light: { reach: 108 }, heavy: { reach: 122 },
     skill: { name: 'Strike Air', kind: 'proj', shape: 'wind', wind: 0.3, act: 0.14, rec: 0.35, lunge: 120, speed: 1700, range: 470, dmg: 22, rad: 26, stag: 0.6, power: 2, cd: 9, cost: 12, reach: 0, desc: 'She dashes in and releases the wind that hides her sword: a thin cone of compressed air that hits hard at range. For a moment the golden blade shows, then the wind wraps around it again.' },
-    np: { name: 'Excalibur', sub: 'Sword of Promised Victory', kind: 'proj', wave: true, beam: true, wind: 1.8, act: 0.1, rec: 1.3, dmg: 45, pillar: { r: 130, delay: 0.35, dmg: 30, zshape: 'excal', key: 'np' }, speed: 2400, range: 1100, stag: 1.0, aiMin: 240, aiMax: 800, desc: 'A beam of golden light that stops on the first one it strikes; a moment later a pillar of light rises there, hurting everyone in it. Cannot be blocked. Dodge at the moment it fires, step out of the circle, or hide behind cover.' } },
+    np: { name: 'Excalibur', sub: 'Sword of Promised Victory', kind: 'proj', wave: true, beam: true, wind: 1.8, act: 0.1, rec: 1.3, dmg: 45, pillar: { r: 130, delay: 0.35, dmg: 30, zshape: 'excal', key: 'np' }, speed: 2400, range: 1100, stag: 1.0, aiMin: 130, aiMax: 800, desc: 'A beam of golden light that stops on the first one it strikes; a moment later a pillar of light rises there, hurting everyone in it. Cannot be blocked. Dodge at the moment it fires, step out of the circle, or hide behind cover.' } },
   diarmuid: { id: 'diarmuid', name: 'Diarmuid Ua Duibhne', cls: 'Lancer', col: '#4fa860', wpn: 'spear', hp: 190, spd: 236, dmg: 1.0, guard: 0.6, combo: 3, recMul: 0.95, guardPierce: 0.4,
     brief: 'Twin-spear duelist. Cursed wounds that keep bleeding and strikes that gnaw through a guard.',
     light: { reach: 140, wind: 0.25 }, heavy: { reach: 156 },
     skill: { name: 'Gae Buidhe', kind: 'melee', wind: 0.28, act: 0.1, rec: 0.45, dmg: 8, reach: 132, arc: 0.5, cd: 5, cost: 10, stag: 0.35, lunge: 40, bleed: { dps: 4, t: 6 }, desc: 'A thrust with the yellow spear. The wound it leaves will not close, and bleeds for 6 seconds.' },
-    np: { name: 'Gae Dearg and Gae Buidhe', sub: 'Crimson Rose of Exorcism, Yellow Rose of Mortality', kind: 'charge', wind: 0.95, act: 0.35, rec: 0.9, dmg: 30, dist: 560, reach: 52, aiMin: 180, aiMax: 520, bleed: { dps: 5, t: 8 }, desc: 'Both spears at once in a rush down the lane. Cannot be blocked, and leaves a wound that bleeds for 8 seconds.' } },
+    np: { name: 'Gae Dearg and Gae Buidhe', sub: 'Crimson Rose of Exorcism, Yellow Rose of Mortality', kind: 'charge', wind: 0.95, act: 0.35, rec: 0.9, dmg: 30, dist: 560, reach: 52, aiMin: 110, aiMax: 520, bleed: { dps: 5, t: 8 }, desc: 'Both spears at once in a rush down the lane. Cannot be blocked, and leaves a wound that bleeds for 8 seconds.' } },
   cu: { id: 'cu', name: 'Cú Chulainn', cls: 'Lancer', col: '#3f86d9', wpn: 'spear', hp: 195, spd: 240, dmg: 1.04, guard: 0.6, combo: 3, recMul: 1, arrowRes: 0.4, bc: true,
     brief: 'Hound of Ulster. Rune fire, a spear that cannot miss, and the will to keep fighting.',
     light: { reach: 128 }, heavy: { reach: 142 },
     skill: { name: 'Rune of Fire', kind: 'rain', wind: 0.4, act: 0.1, rec: 0.4, dmg: 10, count: 3, spread: 110, zr: 86, delay: 0.7, zshape: 'flame', cd: 7, cost: 12, gb: false, aiRange: [140, 520], desc: 'Three runes flare under the enemy and burst into flame a moment later.' },
-    np: { name: 'Gáe Bulg', sub: 'Soaring Spear that Strikes with Death', kind: 'proj', shape: 'spear', wind: 1.3, act: 0.1, rec: 1.1, dmg: 14, speed: 1500, range: 1000, rad: 10, hop: 130, pierce: true, noParry: true, explode: { r: 170, dmg: 34, big: true, unblock: true }, aiMin: 220, aiMax: 900, desc: 'He leaps back and hurls the spear. It explodes where it lands, and nothing blocks the blast.' } },
+    np: { name: 'Gáe Bulg', sub: 'Soaring Spear that Strikes with Death', kind: 'proj', shape: 'spear', wind: 1.3, act: 0.1, rec: 1.1, dmg: 14, speed: 1500, range: 1000, rad: 10, hop: 130, pierce: true, noParry: true, explode: { r: 170, dmg: 34, big: true, unblock: true }, aiMin: 130, aiMax: 900, desc: 'He leaps back and hurls the spear. It explodes where it lands, and nothing blocks the blast.' } },
   gilgamesh: { id: 'gilgamesh', name: 'Gilgamesh of Uruk', cls: 'Archer', col: '#e8bf4a', wpn: 'gate', ranged: true, hp: 200, spd: 220, dmg: 0.95, guard: 0.45, combo: 3, recMul: 1, momMul: 1.25, dmgTaken: 0.9,
     brief: 'A king with no weapon in his hands. Golden gates open around him and rain blades, then a wave of destruction ends the fight.',
     light: { kind: 'proj', gate: true, shape: 'blade', speed: 1050, range: 640, dmg: 6, wind: 0.3, rec: 0.28, reach: 0, lunge: 0, cost: 11 },
@@ -76,7 +85,7 @@ var SERV = {
     brief: 'A conqueror who leads from the front. Armored chariot rush and a charge of his whole army.',
     light: { reach: 104 }, heavy: { reach: 118 },
     skill: { name: 'Gordius Wheel', kind: 'charge', wind: 0.45, act: 0.25, rec: 0.7, dmg: 16, dist: 340, reach: 62, cd: 7, cost: 16, stag: 0.7, gb: true, armor: true, aiRange: [180, 420], desc: 'The chariot thunders forward in an armored rush. It breaks guards and cannot be stopped by light hits.' },
-    np: { name: 'Ionioi Hetairoi', sub: 'Army of the King', kind: 'charge', marble: 'ionioi', wind: 1.5, act: 0.8, rec: 1.0, dmg: 46, dist: 900, reach: 130, aiMin: 250, aiMax: 800, desc: 'He calls his reality marble, a sunlit desert, and his whole army charges with him down a wide lane. The desert stays for the rest of the match, and inside it his next charge comes much faster.' } },
+    np: { name: 'Ionioi Hetairoi', sub: 'Army of the King', kind: 'charge', marble: 'ionioi', wind: 1.5, act: 0.8, rec: 1.0, dmg: 46, dist: 900, reach: 130, aiMin: 140, aiMax: 800, desc: 'He calls his reality marble, a sunlit desert, and his whole army charges with him down a wide lane. While the desert stands his army fights beside him: volleys of javelins fall on his enemies, his blows land harder and he takes less damage. His Noble Phantasm does not charge inside his own marble.' } },
   gilles: { id: 'gilles', name: 'Gilles de Rais', cls: 'Caster', col: '#6fb3a0', wpn: 'tome', ranged: true, hp: 172, spd: 212, dmg: 0.88, guard: 0.48, combo: 3, recMul: 1, stagMul: 0.75,
     brief: 'A summoner of horrors. Calls tentacles up from the ground to cover the arena.',
     lightSeq: [
@@ -108,12 +117,12 @@ var SERV = {
     brief: 'A fast gorgon who fights with a spiked rondel on a chain. Her gaze slows you, and her chain hooks you in.',
     light: { reach: 126, wind: 0.22, arc: 0.85 }, heavy: { reach: 142 },
     skill: { name: 'Chain Hook', kind: 'proj', pull: true, shape: 'rondel', speed: 1500, range: 480, dmg: 9, power: 1, wind: 0.3, act: 0.05, rec: 0.6, cd: 6.5, cost: 12, stag: 0.55, aiRange: [200, 470], desc: 'She throws the rondel on its chain. If it hits, the chain drags her straight to you, and her next light strike lands 50% harder.' },
-    np: { name: 'Bellerophon', sub: 'Bridle of Chivalry', kind: 'charge', wind: 1.2, act: 0.55, rec: 1.0, dmg: 42, dist: 950, reach: 70, diveI: 0.3, aiMin: 300, aiMax: 850, desc: 'She rises and dives down the lane, untouchable at the moment of the dive. Cannot be blocked.' } },
+    np: { name: 'Bellerophon', sub: 'Bridle of Chivalry', kind: 'charge', wind: 1.2, act: 0.55, rec: 1.0, dmg: 42, dist: 950, reach: 70, diveI: 0.3, aiMin: 130, aiMax: 850, desc: 'She rises and dives down the lane, untouchable at the moment of the dive. Cannot be blocked.' } },
   emiya: { id: 'emiya', name: 'EMIYA', cls: 'Archer', col: '#c4423a', wpn: 'dagger', hp: 200, spd: 228, dmg: 1.06, guard: 0.72, combo: 4, recMul: 0.92, guardEcon: 0.75, blockMom: 9,
     brief: 'A heroic spirit of the future. Twin married swords up close, an exploding arrow from range, and a world of swords to finish.',
     light: { reach: 104, wind: 0.22, arc: 1.0 }, heavy: { reach: 116 },
     skill: { name: 'Caladbolg II', kind: 'proj', shape: 'drill', speed: 1700, range: 950, dmg: 8, rad: 8, power: 2, wind: 0.9, act: 0.06, rec: 0.6, cd: 9, cost: 16, stag: 0.6, explode: { r: 140, dmg: 24 }, aiRange: [260, 900], desc: 'He draws a black bow, charges a twisted sword-arrow and fires. It explodes on impact.' },
-    np: { name: 'Unlimited Blade Works', sub: 'Infinite Creation of Swords', kind: 'ubw', wind: 1.5, act: 0.2, rec: 0.6, dmg: 0, dur: 8, ubwRate: 0.55, rain: 3, rainDmg: 9, sword: { speed: 1250, dmg: 5, shape: 'blade', rad: 4 }, aiMin: 0, aiMax: 900, desc: 'His reality marble: a burning field of swords. Swords rain on his enemies, then for 8 seconds blades float around him and fire at the nearest enemy.' } },
+    np: { name: 'Unlimited Blade Works', sub: 'Infinite Creation of Swords', kind: 'ubw', wind: 1.5, act: 0.2, rec: 0.6, dmg: 0, dur: 8, ubwRate: 0.55, rain: 3, rainDmg: 9, sword: { speed: 1250, dmg: 5, shape: 'blade', rad: 4 }, aiMin: 0, aiMax: 900, desc: 'His reality marble: a burning field of swords. Swords rain on his enemies, then for 8 seconds blades float around him and fire at the nearest enemy. While the marble stands, more swords fall on his enemies and his skill recharges twice as fast; his Noble Phantasm does not charge inside it.' } },
   medea: { id: 'medea', name: 'Medea of Colchis', cls: 'Caster', col: '#7fc4ee', wpn: 'staff', hp: 150, spd: 216, dmg: 0.72, guard: 0.4, combo: 3, recMul: 0.95, cdRate: 1.35, ranged: true,
     brief: 'A sorceress who casts from range. Rapid spells, and a dagger that strips every enchantment.',
     lightSeq: [

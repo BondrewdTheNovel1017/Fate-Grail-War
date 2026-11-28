@@ -1,0 +1,41 @@
+War NP use per servant, 12 AI wars each (node tools/warnp.js 12 --per). Few wars per servant: the team-won column is noise.
+
+before update 8:
+{"wars":12,"minutes":19.9,"npTriesPerWar":11,"firedPerWar":10.5,"cancelled":"5%","dmgPerFired":64}
+servant     wars  tries/war  dmg/fired  team won
+atalanta       4      1.25       46.4       25%
+caerwyn        5      2.20       89.6        0%
+cu             2      3.00       63.4        0%
+diarmuid       6      0.83       24.6       17%
+emiya          5      2.00      105.1       20%
+gilgamesh      3      2.00      219.8       33%
+gilles         7      1.00       48.9       14%
+hassan         6      2.67       23.3       17%
+heracles       8      2.25       85.1        0%
+iskandar       6      1.00       88.9        0%
+kojirou        6      2.00       26.3       17%
+lancelot       4      1.00       41.9        0%
+leonidas       4      2.00        0.0       50%
+medea          5      1.20       23.9       40%
+medusa         6      0.83       62.1        0%
+richard        7      1.00       84.7        0%
+
+after update 8 (Enuma Elish at war dmg 0.85; now 0.65):
+{"wars":12,"minutes":18,"npTriesPerWar":10.2,"firedPerWar":9.8,"cancelled":"4%","dmgPerFired":65.2}
+servant     wars  tries/war  dmg/fired  team won
+atalanta       4      0.75       38.8       25%
+caerwyn        6      2.17       72.2       17%
+cu             4      1.00       44.5        0%
+diarmuid       4      1.25       53.9        0%
+emiya          5      1.00       91.9       20%
+gilgamesh      3      1.33      206.1      100%
+gilles         4      0.50       50.6        0%
+hassan         6      2.00       32.0       50%
+heracles       7      2.29       63.0        0%
+iskandar       5      0.80      112.0        0%
+kojirou        6      2.00       54.1       33%
+lancelot       5      2.20       65.2        0%
+leonidas       4      0.50        0.0        0%
+medea          8      1.13       10.4       25%
+medusa         7      1.57       70.7        0%
+richard        6      1.50      118.0       17%

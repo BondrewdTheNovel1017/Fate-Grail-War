@@ -129,7 +129,9 @@ function aiTick(ai, dt) {
   var mx = 0, my = 0;
   var heldArm = f.armT > 0 && f.arm >= 0 && A.arms ? A.arms[f.arm] : null;
   var wantRange = f.def.ranged ? 380 : heldArm && heldArm.aiWant ? heldArm.aiWant : A.light.aiWant || (((f.armT > 0 && f.arm >= 0 && A.arms) ? A.arms[f.arm].light : A.light).reach + FR - 14); // aiWant: a whip strikes from closer than its tip
-  if (A.np.aiKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = A.np.aiKeep; } else ai.keepT = 0; // a reach-NP fighter steps back to cast it from out of sword reach
+  // with the NP ready, step to the range it is cast from (a reach grab, a charge down a lane), for at most 5 s (2.0 update 8: every NP, not only aiKeep)
+  var npKeep = A.np.aiKeep || (!f.def.ranged && !f.def.isMaster && A.np.aiMin > wantRange ? Math.min(A.np.aiMin + 60, ((A.np.aiMin + (A.np.aiMax || 400)) / 2)) : 0);
+  if (npKeep && f.mom >= 100 && npAffordable(f)) { ai.keepT = (ai.keepT || 0) + dt; if (ai.keepT < 5) wantRange = npKeep; } else ai.keepT = 0;
   if (f.st === 'idle' || f.st === 'rec') {
     if (ai.plantT > 0) ai.plantT -= dt;
     if (flee) { var fa = Math.atan2(f.y - flee.y, f.x - flee.x); mx = Math.cos(fa); my = Math.sin(fa); }

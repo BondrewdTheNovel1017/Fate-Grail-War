@@ -1163,3 +1163,24 @@ test('base upgrades: chosen at home, two ranks each, the AI picks by taste, effe
   assert.strictEqual(E.upg(kay.team, 'thunder'), 1, 'Kayneth picks Thunder Wards');
   E.grantPick(rin.team); G.ai[rin.idx] = E.mkAI(rin, E.DIFF.knight); E.aiUpgrades(); assert.strictEqual(G.upg[rin.team].picks, 1, 'a team with a human servant keeps its pick for the player');
 });
+
+test('reality marbles: no NP charge inside one\'s own marble, a buff instead, and the marble ends in the Arena too', () => {
+  const E = loadEngine(), S = E.SERV_DUEL;
+  const G = E.newGame(S.iskandar, S.richard, { map: 'arena' }); G.ai = [null, null];
+  const [isk, ric] = G.f; isk.mom = 100; E.startAct(isk, 'np');
+  assert.ok(G.marble && G.marble.kind === 'ionioi' && E.ownMarble(isk, 'ionioi'), 'Ionioi Hetairoi opens');
+  isk.mom = 0; E.gainMom(isk, 40); assert.strictEqual(isk.mom, 0, 'his NP does not charge inside his own marble');
+  ric.mom = 0; E.gainMom(ric, 40); assert.ok(ric.mom > 0, 'his rival still charges');
+  isk.st = 'idle'; isk.act = null; ric.st = 'idle'; ric.act = null; ric.iframes = 0; isk.iframes = 0;
+  const a = { dmg: 10, key: 'light', power: 1, stag: 0.1 };
+  ric.hp = 200; E.hurt(isk, ric, a); const dealt = 200 - ric.hp;
+  isk.hp = 200; ric.st = 'idle'; isk.st = 'idle'; E.hurt(ric, isk, a); const taken = 200 - isk.hp;
+  assert.ok(dealt > 10 * isk.def.dmg * 1.05, 'his blows land harder'); assert.ok(taken < 10 * ric.def.dmg, 'he takes less');
+  G.zones = []; G.marble.buffT = E.tune('ionioi').armyEvery; E.marbleTick(0.01); assert.ok(G.zones.length > 0, 'the army sends a volley');
+  G.marble.t = G.marble.life; E.marbleTick(0.01); assert.ok(!G.marble, 'the Arena marble fades after its life');
+  E.gainMom(isk, 40); assert.ok(isk.mom > 0, 'outside it his NP charges again');
+  // Unlimited Blade Works: the skill recharges twice as fast inside it
+  const G2 = E.newGame(S.emiya, S.richard, { map: 'arena' }); G2.ai = [null, null]; const em = G2.f[0]; G2.f[1].x = em.x + 600;
+  E.setMarble('ubw', em); em.cd = 4; for (let i = 0; i < 60; i++) E.simStep(E.STEP); assert.ok(em.cd < 4 - 1.5, 'skill recharges faster');
+  assert.ok(E.tuneNp({ def: { id: 'gilgamesh' } }, 'dmg') < 1, 'Enuma Elish is tuned down');
+});
