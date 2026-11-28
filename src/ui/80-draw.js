@@ -202,14 +202,14 @@ function drawPegasus(f) {
 function drawFighter(f) {
   if (f.st === 'dead' && f !== G.f[MEI] && G.f.length > 2) { ctx.globalAlpha = Math.max(0, 1 - f.t); if (f.t > 1) { ctx.globalAlpha = 1; return; } }
   var d = f.def, base = teamCol(f), I = IMG[d.id].body, ally = f.team === G.f[MEI].team;
-  if (f.spirit === 2 && !ally) { var pd = dist(f, G.f[MEI]); if (pd > 300) return; ctx.globalAlpha = 0.08 + 0.05 * Math.sin(G.time * 9); }
+  var sa = 0; if (f.spirit === 2 && !ally) { if (!spiritSensed(f)) return; sa = 0.13 + 0.07 * Math.sin(G.time * 9); ctx.globalAlpha = sa; }
   if (f.orphanT > 0) { ctx.globalAlpha = Math.max(0.25, Math.min(1, f.orphanT / 6)); }
   if (d.id === 'medusa' && f.key === 'np' && (f.st === 'wind' || f.st === 'act' || (f.st === 'rec' && f.t < 0.35))) drawPegasus(f);
   ctx.beginPath(); ctx.ellipse(f.x, f.y + 6, FR + 6, FR - 2, 0, 0, 6.283); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
-  ctx.beginPath(); ctx.arc(f.x, f.y, FR + 5, 0, 6.283); ctx.strokeStyle = base; ctx.globalAlpha = 0.85; ctx.lineWidth = 3; ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(f.x, f.y, FR + 5, 0, 6.283); ctx.strokeStyle = base; ctx.globalAlpha = sa || 0.85; ctx.lineWidth = 3; ctx.stroke(); ctx.globalAlpha = sa || 1;
   if (f.wallT > 0) drawHotGates(f);
   if (f.iframes > 0) ctx.globalAlpha = 0.45; else if (f.hid) ctx.globalAlpha = ally ? 0.55 : 0.28;
-  if (f.spirit) ctx.globalAlpha = f.spirit === 2 ? (ally ? 0.32 : ctx.globalAlpha) : 0.6 + 0.3 * Math.sin(G.time * 20);
+  if (f.spirit) ctx.globalAlpha = f.spirit === 2 ? (ally ? 0.32 : sa) : 0.6 + 0.3 * Math.sin(G.time * 20);
   if (weaponOK(I)) { var br = (d.isMaster ? 0.8 : 1) * (f.spirit === 2 ? 1.05 : 1) + (f.st === 'idle' ? 0.018 * Math.sin(G.time * 3.2 + f.idx * 1.7) : 0) + (f.st === 'wind' && f.key === 'np' ? 0.05 * clamp(f.t / (f.windTotal || 1), 0, 1) : 0); ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.face); ctx.scale(br, br); ctx.drawImage(I.im, I.x, I.y, I.w, I.h); ctx.restore(); }
   else { ctx.beginPath(); ctx.arc(f.x, f.y, FR, 0, 6.283); ctx.fillStyle = d.col; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = base; ctx.stroke(); }
   ctx.globalAlpha = 1;
@@ -230,6 +230,7 @@ function drawFighter(f) {
   if (f.def.isMaster) { ctx.fillStyle = 'rgba(233,228,211,.7)'; ctx.font = '600 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MASTER', f.x, f.y + FR + 32); }
   if (f.pull > 0) chainLine(f.x, f.y, f.foe.x, f.foe.y);
   if (f.hid) ctx.globalAlpha = ally ? 0.55 : 0.28;
+  if (f.spirit === 2) ctx.globalAlpha = ally ? 0.32 : sa;
   drawWeapon(f); ctx.globalAlpha = 1;
   if (f.hid && f.idx === 0) { ctx.fillStyle = 'rgba(200,215,225,.85)'; ctx.font = '600 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('HIDDEN', f.x, f.y - 40); }
   var bw = 48; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(f.x - bw / 2, f.y + FR + 14, bw, 5);
@@ -243,6 +244,8 @@ var THEME = {
 };
 function mapNoise(m, n, seed) { if (m['_n' + seed]) return m['_n' + seed]; var v = seed >>> 0, out = []; for (var i = 0; i < n; i++) { v = (v * 1664525 + 1013904223) >>> 0; var a = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; var b = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; out.push([a * m.w, b * m.h, v / 4294967296]); } m['_n' + seed] = out; return out; }
 var VIEWR = null;
+// servants sense each other: an enemy in spirit form shimmers when a servant of your side stands within SPIRIT.sense
+function spiritSensed(f) { var me = G.f[MEI]; if (!me) return false; var mine = [me, me.partner]; for (var i = 0; i < 2; i++) { var s = mine[i]; if (s && s.st !== 'dead' && !s.def.isMaster && dist(s, f) <= SPIRIT.sense) return true; } return G.mode !== 'war' && dist(f, me) <= SPIRIT.sense; }
 function drawFloor(g, m) {
   if (m.theme === 'city') { drawCity(g, m); return; }
   var th = m.theme, w = m.w, h = m.h;

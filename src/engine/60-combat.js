@@ -9,7 +9,7 @@ function hurt(att, def, a, mult, src) {
   if (truceStops(att, def)) return 'none';
   if (att && att.team !== def.team && pactTeams(att.team, def.team)) return 'none';
   if (def.spirit === 2) return 'none';
-  if (def.spirit === 1 || def.spirit === 3) { def.spirit = 0; FX.text(def, 'MATERIALIZED'); }
+  if (def.spirit === 1 || def.spirit === 3) { def.spirit = 0; spiritLeft(def); FX.text(def, 'MATERIALIZED'); }
   var s = src || att, melee = !src;
   if (def.iframes > 0 && !a.pierce) { def.stat.dodge++; gainMom(def, 5); FX.text(def, 'DODGE'); FX.snd('whiff', def); FX.fx('dodgeHit', def.x, def.y, def); return 'dodge'; }
   if (def.wallT > 0 && a.key === 'np' && !a.strip) { FX.text(def, 'NP BLOCKED'); FX.fx('wallBlock', def.x, def.y, def); FX.snd('block', def, a); def.stat.blocks++; return 'block'; }
@@ -30,7 +30,7 @@ function hurt(att, def, a, mult, src) {
   if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
-  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; noteFight(att, def); }
+  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; att.lastDealT = G.time; noteFight(att, def); }
   if (outnumbered(att, def)) dmg *= PACT.outnum; // a lone team against a pact
   if (def.reinfT > 0) dmg *= 0.6;
   if (def.def.isMaster && G.clock && !G.clock.final) { dmg *= MASTER_GUARD; if (att && att.def.isMaster) dmg *= 0.5; } // before the final night masters fight from cover, and rarely duel each other
@@ -111,6 +111,28 @@ function hurt(att, def, a, mult, src) {
   return 'hit';
 }
 
+/* ---- spirit form (2.0 update 4): a way to travel unseen and recover, never an escape from a fight ----
+   War only: no entering within SPIRIT.lock s of dealing or taking a blow, no re-entering for SPIRIT.reenter s after
+   materializing; healing starts SPIRIT.quiet s after entering, draws on the master's mana and stops at SPIRIT.cap of
+   full health (full healing is for home). Enemy servants within SPIRIT.sense see a shimmer (drawn in the UI). */
+var SPIRIT = { lock: 6, reenter: 15, quiet: 5, cap: 0.6, heal: 5, mana: 1.2, sense: 300 };
+function spiritCan(f) {
+  if (G.mode !== 'war') return true;
+  var busy = Math.max(f.lastHitT === undefined ? -99 : f.lastHitT, f.lastDealT === undefined ? -99 : f.lastDealT), wait = 0, why = '';
+  if (G.time - busy < SPIRIT.lock) { wait = SPIRIT.lock - (G.time - busy); why = 'IN COMBAT'; }
+  else if (G.time < (f.spiritCd || 0)) { wait = f.spiritCd - G.time; why = 'SPIRIT FORM'; }
+  if (!why) return true;
+  if (!G.ai[f.idx] && G.time > (f.spMsgT || 0)) { f.spMsgT = G.time + 1; FX.text(f, why + ': ' + Math.ceil(wait) + 'S'); }
+  return false;
+}
+function spiritLeft(f) { if (G.mode === 'war') f.spiritCd = G.time + SPIRIT.reenter; }
+function spiritHeal(f, dt) {
+  if (G.mode !== 'war') { f.hp = Math.min(f.def.hp, f.hp + 2 * dt); return; }
+  if (G.time - Math.max(f.spiritAt || 0, f.lastHitT === undefined ? -99 : f.lastHitT) < SPIRIT.quiet) return;
+  var cap = f.def.hp * (inOwnHome(f) ? 1 : SPIRIT.cap); if (f.hp >= cap) return;
+  var m = f.partner; if (m && m.st !== 'dead' && m.manaMax) { if (m.mana <= 0) return; m.mana = Math.max(0, m.mana - SPIRIT.mana * dt); }
+  f.hp = Math.min(cap, f.hp + SPIRIT.heal * dt);
+}
 /* ---- actions ---- */
 // an AI standing under a truce with a rival close by keeps its hands still: no blows, no casting at them (support stays allowed)
 var TRUCE_SUPPORT = { heal: 1, buff: 1, gift: 1, sacrament: 1, fade: 1, conceal: 1 };
@@ -270,9 +292,9 @@ function stepF(f, dt) {
     if (f.ubwCd <= 0) { var tg = f.foe; if (tg && tg.st !== 'dead' && dist(f, tg) < 900) { f.ubwCd = (f.ubwA || f.A.np).ubwRate; var n0 = f.ubwN = (f.ubwN || 0) + 1, sa = n0 * 2.4, sx = f.x + Math.cos(sa) * 46, sy = f.y + Math.sin(sa) * 46; G.proj.push({ x: sx, y: sy, vx: 0, vy: 0, owner: f, a: (f.ubwA || f.A.np).sword, mult: 1, range: 900, trav: 0, dead: false }); var lp = G.proj.at(-1), an = Math.atan2(tg.y - sy, tg.x - sx); lp.vx = Math.cos(an) * lp.a.speed; lp.vy = Math.sin(an) * lp.a.speed; FX.snd('shoot', f, lp.a); } }
   }
   if (f.st !== 'dead' && !G.over) {
-    if (f.spirit === 1) { f.spT -= dt; if (f.spT <= 0) f.spirit = 2; }
-    else if (f.spirit === 3) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 0; FX.text(f, 'MATERIALIZED'); } }
-    else if (f.spirit === 2) { f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
+    if (f.spirit === 1) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 2; f.spiritAt = G.time; } }
+    else if (f.spirit === 3) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 0; spiritLeft(f); FX.text(f, 'MATERIALIZED'); } }
+    else if (f.spirit === 2) spiritHeal(f, dt);
     if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; f.cause = 'fade'; kill(f, true); } }
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.fadeT > 0) f.fadeT -= dt;
@@ -311,7 +333,7 @@ function stepF(f, dt) {
       else if (n === 'skill') { if (f.def.isMaster && G.mode === 'war' && f.cd <= 0 && !(f.silenceT > 0) && !canPay(f, MANA.skillCost)) FX.text(f, 'NO MANA'); else if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
       else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0) && (G.mode !== 'war' || canPay(f, MANA.sigCost))) : (f.mom >= 100 && canNP(f))) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); else if (f.def.isMaster ? f.sigCd <= 0 : f.mom >= 100) FX.text(f.def.isMaster ? f : (livingMaster(f) || f), 'NO MANA'); }
       else if (n === 'spirit' && f.def.cls === 'Assassin') { if (f.cnc) { f.cnc = false; f.hid = false; f.cncCd = G.time + 1; FX.fx('spiritOut', f.x, f.y, f); } else if (G.time >= (f.cncCd || 0) && f.st === 'idle') { f.cnc = true; f.hid = true; FX.fx('hide', f.x, f.y, f); } ok = true; }
-      else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
+      else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0 && !spiritCan(f)) {} else if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
       else if (n === 'heavy') { f.combo = 0; ok = startAct(f, 'heavy'); }
       else if (n === 'light') { f.combo = 0; ok = startAct(f, 'light'); }
       f.buf.name = null;

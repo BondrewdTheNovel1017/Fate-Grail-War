@@ -1100,3 +1100,26 @@ test('truce: the Summons is a sanctuary, and an AI under a truce holds its hands
   cu.y = k.y + 60; assert.ok(E.aiTruceHold(cu, cu.A.light), 'an AI inside with a rival close keeps its hands still');
   assert.ok(!E.aiTruceHold(cu, { kind: 'heal' }), 'support is still allowed');
 });
+
+test('spirit form: no entering in a fight, a wait after materializing, calm healing capped and paid in mana', () => {
+  const E = loadEngine(), M = E.MASTERS, S = E.SERV;
+  const G = E.newWar([{ servant: S.richard, master: M.shirou }, { servant: S.cu, master: M.rin }], { nights: 3 });
+  G.ai.forEach((a, i) => { G.ai[i] = null; });
+  G.deck = { night: [], day: [] }; G.clock.pending = null; G.clock.evDone = true; // no event may pick the wounded servant
+  const rich = G.f.find((f) => f.def.id === 'richard'), cu = G.f.find((f) => f.def.id === 'cu'), sh = rich.partner;
+  rich.x = 200; rich.y = 6000; cu.x = 3000; cu.y = 6000; sh.x = 260; sh.y = 6000;
+  rich.lastHitT = G.time;
+  assert.ok(!E.spiritCan(rich), 'just struck: no spirit form');
+  rich.lastHitT = -99; cu.lastDealT = G.time; assert.ok(E.spiritCan(rich)); rich.lastDealT = G.time; assert.ok(!E.spiritCan(rich), 'just dealt a blow: no spirit form');
+  G.time += E.SPIRIT.lock + 0.1; assert.ok(E.spiritCan(rich), 'calm again: spirit form allowed');
+  rich.spirit = 2; rich.spiritAt = G.time; rich.hp = rich.def.hp * 0.3; sh.mana = sh.manaMax;
+  for (let i = 0; i < 60 * 3; i++) E.simStep(E.STEP);
+  assert.ok(Math.abs(rich.hp - rich.def.hp * 0.3) < 1, 'no healing in the first quiet seconds');
+  for (let i = 0; i < 60 * 5; i++) E.simStep(E.STEP);
+  assert.ok(sh.mana < sh.manaMax - 0.5, 'the master pays for it');
+  for (let i = 0; i < 60 * 60; i++) E.simStep(E.STEP);
+  assert.ok(rich.hp <= rich.def.hp * E.SPIRIT.cap + 0.5 && rich.hp > rich.def.hp * 0.5, 'heals, but only to the cap away from home');
+  rich.spirit = 3; rich.spT = 0.01; E.simStep(E.STEP); E.simStep(E.STEP);
+  assert.strictEqual(rich.spirit, 0); assert.ok(!E.spiritCan(rich), 'a wait before entering again');
+  G.time += E.SPIRIT.reenter + 0.1; assert.ok(E.spiritCan(rich));
+});

@@ -2218,7 +2218,7 @@ function hurt(att, def, a, mult, src) {
   if (truceStops(att, def)) return 'none';
   if (att && att.team !== def.team && pactTeams(att.team, def.team)) return 'none';
   if (def.spirit === 2) return 'none';
-  if (def.spirit === 1 || def.spirit === 3) { def.spirit = 0; FX.text(def, 'MATERIALIZED'); }
+  if (def.spirit === 1 || def.spirit === 3) { def.spirit = 0; spiritLeft(def); FX.text(def, 'MATERIALIZED'); }
   var s = src || att, melee = !src;
   if (def.iframes > 0 && !a.pierce) { def.stat.dodge++; gainMom(def, 5); FX.text(def, 'DODGE'); FX.snd('whiff', def); FX.fx('dodgeHit', def.x, def.y, def); return 'dodge'; }
   if (def.wallT > 0 && a.key === 'np' && !a.strip) { FX.text(def, 'NP BLOCKED'); FX.fx('wallBlock', def.x, def.y, def); FX.snd('block', def, a); def.stat.blocks++; return 'block'; }
@@ -2239,7 +2239,7 @@ function hurt(att, def, a, mult, src) {
   if (att && G.event && grailMad(att)) dmg *= 1.2; // maddened by the corrupted Grail
   if (att && starved(att)) dmg *= MANA.starveDmg;
   if (G.mode === 'war' && !melee && !def.def.ranged && !def.def.isMaster) dmg *= WAR_MELEE_RANGED_TAKEN;
-  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; noteFight(att, def); }
+  if (att) { def.lastHit = { by: att, key: a.key }; def.lastHitT = G.time; att.lastDealT = G.time; noteFight(att, def); }
   if (outnumbered(att, def)) dmg *= PACT.outnum; // a lone team against a pact
   if (def.reinfT > 0) dmg *= 0.6;
   if (def.def.isMaster && G.clock && !G.clock.final) { dmg *= MASTER_GUARD; if (att && att.def.isMaster) dmg *= 0.5; } // before the final night masters fight from cover, and rarely duel each other
@@ -2320,6 +2320,28 @@ function hurt(att, def, a, mult, src) {
   return 'hit';
 }
 
+/* ---- spirit form (2.0 update 4): a way to travel unseen and recover, never an escape from a fight ----
+   War only: no entering within SPIRIT.lock s of dealing or taking a blow, no re-entering for SPIRIT.reenter s after
+   materializing; healing starts SPIRIT.quiet s after entering, draws on the master's mana and stops at SPIRIT.cap of
+   full health (full healing is for home). Enemy servants within SPIRIT.sense see a shimmer (drawn in the UI). */
+var SPIRIT = { lock: 6, reenter: 15, quiet: 5, cap: 0.6, heal: 5, mana: 1.2, sense: 300 };
+function spiritCan(f) {
+  if (G.mode !== 'war') return true;
+  var busy = Math.max(f.lastHitT === undefined ? -99 : f.lastHitT, f.lastDealT === undefined ? -99 : f.lastDealT), wait = 0, why = '';
+  if (G.time - busy < SPIRIT.lock) { wait = SPIRIT.lock - (G.time - busy); why = 'IN COMBAT'; }
+  else if (G.time < (f.spiritCd || 0)) { wait = f.spiritCd - G.time; why = 'SPIRIT FORM'; }
+  if (!why) return true;
+  if (!G.ai[f.idx] && G.time > (f.spMsgT || 0)) { f.spMsgT = G.time + 1; FX.text(f, why + ': ' + Math.ceil(wait) + 'S'); }
+  return false;
+}
+function spiritLeft(f) { if (G.mode === 'war') f.spiritCd = G.time + SPIRIT.reenter; }
+function spiritHeal(f, dt) {
+  if (G.mode !== 'war') { f.hp = Math.min(f.def.hp, f.hp + 2 * dt); return; }
+  if (G.time - Math.max(f.spiritAt || 0, f.lastHitT === undefined ? -99 : f.lastHitT) < SPIRIT.quiet) return;
+  var cap = f.def.hp * (inOwnHome(f) ? 1 : SPIRIT.cap); if (f.hp >= cap) return;
+  var m = f.partner; if (m && m.st !== 'dead' && m.manaMax) { if (m.mana <= 0) return; m.mana = Math.max(0, m.mana - SPIRIT.mana * dt); }
+  f.hp = Math.min(cap, f.hp + SPIRIT.heal * dt);
+}
 /* ---- actions ---- */
 // an AI standing under a truce with a rival close by keeps its hands still: no blows, no casting at them (support stays allowed)
 var TRUCE_SUPPORT = { heal: 1, buff: 1, gift: 1, sacrament: 1, fade: 1, conceal: 1 };
@@ -2479,9 +2501,9 @@ function stepF(f, dt) {
     if (f.ubwCd <= 0) { var tg = f.foe; if (tg && tg.st !== 'dead' && dist(f, tg) < 900) { f.ubwCd = (f.ubwA || f.A.np).ubwRate; var n0 = f.ubwN = (f.ubwN || 0) + 1, sa = n0 * 2.4, sx = f.x + Math.cos(sa) * 46, sy = f.y + Math.sin(sa) * 46; G.proj.push({ x: sx, y: sy, vx: 0, vy: 0, owner: f, a: (f.ubwA || f.A.np).sword, mult: 1, range: 900, trav: 0, dead: false }); var lp = G.proj.at(-1), an = Math.atan2(tg.y - sy, tg.x - sx); lp.vx = Math.cos(an) * lp.a.speed; lp.vy = Math.sin(an) * lp.a.speed; FX.snd('shoot', f, lp.a); } }
   }
   if (f.st !== 'dead' && !G.over) {
-    if (f.spirit === 1) { f.spT -= dt; if (f.spT <= 0) f.spirit = 2; }
-    else if (f.spirit === 3) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 0; FX.text(f, 'MATERIALIZED'); } }
-    else if (f.spirit === 2) { f.hp = Math.min(f.def.hp, f.hp + (G.mode === 'war' ? 5 : 2) * dt); }
+    if (f.spirit === 1) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 2; f.spiritAt = G.time; } }
+    else if (f.spirit === 3) { f.spT -= dt; if (f.spT <= 0) { f.spirit = 0; spiritLeft(f); FX.text(f, 'MATERIALIZED'); } }
+    else if (f.spirit === 2) spiritHeal(f, dt);
     if (f.orphanT > 0) { f.orphanT -= dt; if (f.orphanT <= 0) { FX.text(f, 'FADED'); f.hp = 0; f.cause = 'fade'; kill(f, true); } }
     if (f.hasteT > 0) f.hasteT -= dt;
     if (f.fadeT > 0) f.fadeT -= dt;
@@ -2520,7 +2542,7 @@ function stepF(f, dt) {
       else if (n === 'skill') { if (f.def.isMaster && G.mode === 'war' && f.cd <= 0 && !(f.silenceT > 0) && !canPay(f, MANA.skillCost)) FX.text(f, 'NO MANA'); else if (f.cd <= 0 && !(f.def.isMaster && f.silenceT > 0)) ok = startAct(f, 'skill'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); }
       else if (n === 'np') { if (f.def.isMaster ? (f.sigCd <= 0 && !(f.silenceT > 0) && (G.mode !== 'war' || canPay(f, MANA.sigCost))) : (f.mom >= 100 && canNP(f))) ok = startAct(f, 'np'); else if (f.def.isMaster && f.silenceT > 0) FX.text(f, 'CIRCUITS BURNED'); else if (f.def.isMaster ? f.sigCd <= 0 : f.mom >= 100) FX.text(f.def.isMaster ? f : (livingMaster(f) || f), 'NO MANA'); }
       else if (n === 'spirit' && f.def.cls === 'Assassin') { if (f.cnc) { f.cnc = false; f.hid = false; f.cncCd = G.time + 1; FX.fx('spiritOut', f.x, f.y, f); } else if (G.time >= (f.cncCd || 0) && f.st === 'idle') { f.cnc = true; f.hid = true; FX.fx('hide', f.x, f.y, f); } ok = true; }
-      else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
+      else if (n === 'spirit') { if (!f.def.isMaster) { if (f.spirit === 0 && !spiritCan(f)) {} else if (f.spirit === 0) { f.spirit = 1; f.spT = 1.5; FX.text(f, 'SPIRIT FORM'); FX.fx('spiritIn', f.x, f.y, f); } else if (f.spirit === 2) { f.spirit = 3; f.spT = 1.0; FX.fx('spiritOut', f.x, f.y, f); } } ok = true; }
       else if (n === 'heavy') { f.combo = 0; ok = startAct(f, 'heavy'); }
       else if (n === 'light') { f.combo = 0; ok = startAct(f, 'light'); }
       f.buf.name = null;
@@ -5799,14 +5821,14 @@ function drawPegasus(f) {
 function drawFighter(f) {
   if (f.st === 'dead' && f !== G.f[MEI] && G.f.length > 2) { ctx.globalAlpha = Math.max(0, 1 - f.t); if (f.t > 1) { ctx.globalAlpha = 1; return; } }
   var d = f.def, base = teamCol(f), I = IMG[d.id].body, ally = f.team === G.f[MEI].team;
-  if (f.spirit === 2 && !ally) { var pd = dist(f, G.f[MEI]); if (pd > 300) return; ctx.globalAlpha = 0.08 + 0.05 * Math.sin(G.time * 9); }
+  var sa = 0; if (f.spirit === 2 && !ally) { if (!spiritSensed(f)) return; sa = 0.13 + 0.07 * Math.sin(G.time * 9); ctx.globalAlpha = sa; }
   if (f.orphanT > 0) { ctx.globalAlpha = Math.max(0.25, Math.min(1, f.orphanT / 6)); }
   if (d.id === 'medusa' && f.key === 'np' && (f.st === 'wind' || f.st === 'act' || (f.st === 'rec' && f.t < 0.35))) drawPegasus(f);
   ctx.beginPath(); ctx.ellipse(f.x, f.y + 6, FR + 6, FR - 2, 0, 0, 6.283); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
-  ctx.beginPath(); ctx.arc(f.x, f.y, FR + 5, 0, 6.283); ctx.strokeStyle = base; ctx.globalAlpha = 0.85; ctx.lineWidth = 3; ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(f.x, f.y, FR + 5, 0, 6.283); ctx.strokeStyle = base; ctx.globalAlpha = sa || 0.85; ctx.lineWidth = 3; ctx.stroke(); ctx.globalAlpha = sa || 1;
   if (f.wallT > 0) drawHotGates(f);
   if (f.iframes > 0) ctx.globalAlpha = 0.45; else if (f.hid) ctx.globalAlpha = ally ? 0.55 : 0.28;
-  if (f.spirit) ctx.globalAlpha = f.spirit === 2 ? (ally ? 0.32 : ctx.globalAlpha) : 0.6 + 0.3 * Math.sin(G.time * 20);
+  if (f.spirit) ctx.globalAlpha = f.spirit === 2 ? (ally ? 0.32 : sa) : 0.6 + 0.3 * Math.sin(G.time * 20);
   if (weaponOK(I)) { var br = (d.isMaster ? 0.8 : 1) * (f.spirit === 2 ? 1.05 : 1) + (f.st === 'idle' ? 0.018 * Math.sin(G.time * 3.2 + f.idx * 1.7) : 0) + (f.st === 'wind' && f.key === 'np' ? 0.05 * clamp(f.t / (f.windTotal || 1), 0, 1) : 0); ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.face); ctx.scale(br, br); ctx.drawImage(I.im, I.x, I.y, I.w, I.h); ctx.restore(); }
   else { ctx.beginPath(); ctx.arc(f.x, f.y, FR, 0, 6.283); ctx.fillStyle = d.col; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = base; ctx.stroke(); }
   ctx.globalAlpha = 1;
@@ -5827,6 +5849,7 @@ function drawFighter(f) {
   if (f.def.isMaster) { ctx.fillStyle = 'rgba(233,228,211,.7)'; ctx.font = '600 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MASTER', f.x, f.y + FR + 32); }
   if (f.pull > 0) chainLine(f.x, f.y, f.foe.x, f.foe.y);
   if (f.hid) ctx.globalAlpha = ally ? 0.55 : 0.28;
+  if (f.spirit === 2) ctx.globalAlpha = ally ? 0.32 : sa;
   drawWeapon(f); ctx.globalAlpha = 1;
   if (f.hid && f.idx === 0) { ctx.fillStyle = 'rgba(200,215,225,.85)'; ctx.font = '600 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('HIDDEN', f.x, f.y - 40); }
   var bw = 48; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(f.x - bw / 2, f.y + FR + 14, bw, 5);
@@ -5840,6 +5863,8 @@ var THEME = {
 };
 function mapNoise(m, n, seed) { if (m['_n' + seed]) return m['_n' + seed]; var v = seed >>> 0, out = []; for (var i = 0; i < n; i++) { v = (v * 1664525 + 1013904223) >>> 0; var a = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; var b = v / 4294967296; v = (v * 1664525 + 1013904223) >>> 0; out.push([a * m.w, b * m.h, v / 4294967296]); } m['_n' + seed] = out; return out; }
 var VIEWR = null;
+// servants sense each other: an enemy in spirit form shimmers when a servant of your side stands within SPIRIT.sense
+function spiritSensed(f) { var me = G.f[MEI]; if (!me) return false; var mine = [me, me.partner]; for (var i = 0; i < 2; i++) { var s = mine[i]; if (s && s.st !== 'dead' && !s.def.isMaster && dist(s, f) <= SPIRIT.sense) return true; } return G.mode !== 'war' && dist(f, me) <= SPIRIT.sense; }
 function drawFloor(g, m) {
   if (m.theme === 'city') { drawCity(g, m); return; }
   var th = m.theme, w = m.w, h = m.h;
@@ -9847,6 +9872,13 @@ function devDo(k) {
     G.f.filter(function (o) { return o.team === rb.team && o.st !== 'dead'; }).forEach(function (o, j) { o.x = me2.x + 110 + j * 50; o.y = me2.y + (j ? 40 : -20); o.kx = o.ky = 0; o.inM = me2.inM; o.spirit = 0; });
     devSay('A rival team now stands beside you. Start an event with a truce (Horror, Banquet, Summons) to test it.');
   }
+  else if (k === 'rivalSpirit') {
+    var me3 = devMe(), sv = null, sd = 1e9;
+    G.f.forEach(function (o) { if (o.team === me3.team || o.st === 'dead' || o.def.isMaster || o.def.cls === 'Assassin') return; var d = Math.hypot(o.x - me3.x, o.y - me3.y); if (d < sd) { sd = d; sv = o; } });
+    if (!sv) { devSay('No rival servant left.'); return; }
+    sv.x = me3.x + 220; sv.y = me3.y; sv.kx = sv.ky = 0; sv.spirit = 2; sv.spiritAt = G.time; sv.inM = me3.inM;
+    devSay(knownName(sv) + ' waits in spirit form beside you. A servant of yours within 300 sees its shimmer; step away and it vanishes.');
+  }
   else if (k === 'field3') {
     var me = devMe(), best = null, bd = 1e9;
     for (var t in G.fields) { if (+t === me.team) continue; var o = G.f.filter(function (x) { return x.team === +t && x.home; })[0]; if (!o) continue; var d = Math.hypot(o.home[0] - me.x, o.home[1] - me.y); if (d < bd) { bd = d; best = t; } }
@@ -9863,7 +9895,7 @@ function devRender() {
     '<h4>Clock</h4>' + ['night|1|Night 1', 'day|2|Day 2', 'night|2|Night 2', 'day|3|Day 3', 'night|3|Night 3', 'grail|0|The Grail (midnight)'].map(function (s) { var p = s.split('|'); return '<button data-dvp="' + p[0] + '" data-n="' + p[1] + '">' + p[2] + '</button>'; }).join('') +
     '<h4>Events now</h4>' + DEV_EVENTS.map(function (e) { return '<button data-dve="' + e[1] + '">' + e[2] + '</button>'; }).join('') +
     '<h4>You and your partner</h4>' + b('heal', 'Full health') + b('np', 'Full NP bar') + b('mana', 'Full mana and stamina') + b('seals', 'Restore seals') + b('god', 'Cannot fall', DEVST.god) +
-    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') +
+    '<h4>Go to</h4>' + DEV_PLACES.map(function (q) { return '<button data-dvg="' + q[0] + '">' + q[1] + '</button>'; }).join('') + b('field3', 'Nearest rival field to level 3') + b('rival2me', 'Bring the nearest rival to me') + b('rivalSpirit', 'Rival servant in spirit form beside me') +
     '<h4>Effects lab</h4><div class="dvl"><select id="devLabId">' + opt('caerwyn') + '</select><select id="devLabKey"><option>light</option><option>heavy</option><option>skill</option><option selected>np</option><option>-</option></select><select id="devLabFoe">' + opt('leonidas') + '</select>' + b('lab', 'Stage it') + '</div>';
 }
 function devToggle(on) {
